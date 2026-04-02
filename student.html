@@ -278,56 +278,40 @@ const MAX_RETRIES = 3;
 // ============================================
 
 // Detect if WebSockets are blocked (ad blocker issue)
-// Detect if WebSockets are blocked (ad blocker issue)
 function detectWebSocketBlock() {
     console.log('Checking connection...');
     const warning = document.getElementById('adblockWarning');
     if (!warning) return;
     
     let connectionTestTimeout = setTimeout(() => {
-        console.log('Connection test timeout - possible ad blocker');
-        warning.style.display = 'block';
+        console.log('Connection test timeout - possible ad blocker or network issue');
+        if(warning) warning.style.display = 'block';
     }, 5000);
     
-    // Try a simple Firebase operation to test connection
     const testRef = ref(rtDB, '.info/connected');
-    let unsubscribe = null;  // Declare outside
     
-    unsubscribe = onValue(testRef, (snap) => {
+    // Fix: Define the listener variable first, then assign the result of onValue
+    const unsubscribe = onValue(testRef, (snap) => {
         if (snap.val() === true) {
             console.log('Firebase connected successfully');
             clearTimeout(connectionTestTimeout);
-            warning.style.display = 'none';
-            if (unsubscribe) unsubscribe();
+            if(warning) warning.style.display = 'none';
+            // We don't call unsubscribe() here immediately because we want to keep listening 
+            // OR if you want to stop listening after success:
+            // unsubscribe(); 
         }
     }, (error) => {
         console.error('Connection error:', error);
         clearTimeout(connectionTestTimeout);
-        warning.style.display = 'block';
-        if (unsubscribe) unsubscribe();
+        if(warning) warning.style.display = 'block';
+        // unsubscribe(); 
     });
     
-    // Also detect if WebSocket is blocked via direct test
-    try {
-        const ws = new WebSocket('wss://eduboard-870d3-default-rtdb.firebaseio.com/.ws?v=5');
-        ws.onopen = () => {
-            console.log('WebSockets are working');
-            ws.close();
-        };
-        ws.onerror = () => {
-            console.log('WebSockets appear to be blocked');
-            warning.style.display = 'block';
-        };
-        setTimeout(() => {
-            if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CLOSED) {
-                ws.close();
-            }
-        }, 3000);
-    } catch(e) {
-        console.log('WebSocket test failed:', e);
-    }
+    // Optional: Stop listening after 10 seconds to save resources if still connected
+    setTimeout(() => {
+        if(unsubscribe) unsubscribe();
+    }, 10000);
 }
-
 // Run detection after page loads
 setTimeout(detectWebSocketBlock, 3000);
 
