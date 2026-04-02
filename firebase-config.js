@@ -1,6 +1,5 @@
 // firebase-config.js
-// Version 2 - Module Fix
-
+// Version 3 - Fixed onSnapshot Export
 
 // 1. Import ALL necessary Firebase modules (v10.8.0)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -17,14 +16,15 @@ import {
   EmailAuthProvider 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-// Firestore (Added missing getCountFromServer, addDoc, etc.)
+// Firestore 
 import { 
   getFirestore, 
   doc, setDoc, getDoc, updateDoc, deleteDoc, 
   collection, query, where, getDocs, 
   serverTimestamp, orderBy, limit,
-  addDoc, // <-- Added
-  getCountFromServer // <-- Added
+  addDoc, 
+  getCountFromServer,
+  onSnapshot // <--- 1. ADDED HERE (Import)
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Realtime Database
@@ -33,7 +33,7 @@ import {
   ref, set, push, onValue, update, remove, child, get 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-// 2. Your NEW Web App Configuration (EduBoard Project)
+// 2. Your Web App Configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCDmP9SERcSOmf7G0g70g8UVNB44H0zw_8",
   authDomain: "eduboard-870d3.firebaseapp.com",
@@ -62,9 +62,10 @@ export {
   updatePassword, 
   reauthenticateWithCredential, 
   EmailAuthProvider,
-  doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, // <-- Added addDoc
-  collection, query, where, getDocs, getCountFromServer, // <-- Added getCountFromServer
+  doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, 
+  collection, query, where, getDocs, getCountFromServer, 
   serverTimestamp, orderBy, limit,
+  onSnapshot, // <--- 2. ADDED HERE (Export)
   ref, set, push, onValue, update, remove, child, get
 };
 
