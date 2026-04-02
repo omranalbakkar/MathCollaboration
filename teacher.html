@@ -718,7 +718,7 @@ window.switchTab=function(id,btn){
 };
 
 // ── SESSION CONFIG ──
-async function saveSessionConfig(){
+window.saveSessionConfig=async function(){
   if(!activeSessionId) return showToast('No active session', true);
   const s={
     title:document.getElementById('cfTitle').value.trim()||'Quiz Session',
@@ -735,7 +735,7 @@ async function saveSessionConfig(){
   await dbUpdate(`sessions/${activeSessionId}/config`, s);
   updateSessionChip(s);
   showToast('Configuration saved!');
-}
+};
 
 function setToggle(on){
   const t=document.getElementById('sessionToggle'),l=document.getElementById('sessionToggleLabel'),w=document.getElementById('toggleWrap');
