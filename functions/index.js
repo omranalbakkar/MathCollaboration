@@ -1,7 +1,6 @@
 const firestore = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 const functions = require("firebase-functions");
-
 admin.initializeApp();
 const auth = admin.auth();
 
@@ -14,7 +13,6 @@ async function createUserWithEmailAndPassword(email, password, uid) {
   } catch (error) {
     if (error.code !== 'auth/user-not-found') throw error;
   }
-
   try {
     await auth.createUser({ uid, email, password, disabled: false });
     console.log(`✅ Auth account created for ${email}`);
@@ -48,6 +46,12 @@ exports.autoCreateTeacherAuth = firestore.onDocumentCreated(
     }
 
     await createUserWithEmailAndPassword(data.email, data.pendingPassword, teacherId);
+
+    // 🧹 Delete plain-text password from Firestore after Auth account created
+    await event.data.ref.update({
+      pendingPassword: admin.firestore.FieldValue.delete()
+    });
+    console.log(`🧹 pendingPassword cleared for teacher: ${teacherId}`);
   }
 );
 
@@ -64,6 +68,12 @@ exports.autoCreateStudentAuth = firestore.onDocumentCreated(
     }
 
     await createUserWithEmailAndPassword(data.email, data.pendingPassword, studentId);
+
+    // 🧹 Delete plain-text password from Firestore after Auth account created
+    await event.data.ref.update({
+      pendingPassword: admin.firestore.FieldValue.delete()
+    });
+    console.log(`🧹 pendingPassword cleared for student: ${studentId}`);
   }
 );
 
@@ -81,6 +91,12 @@ exports.onTeacherUpdated = firestore.onDocumentUpdated(
     }
 
     await updateAuthPassword(teacherId, after.pendingPassword);
+
+    // 🧹 Delete plain-text password from Firestore after Auth updated
+    await event.data.after.ref.update({
+      pendingPassword: admin.firestore.FieldValue.delete()
+    });
+    console.log(`🧹 pendingPassword cleared for teacher: ${teacherId}`);
   }
 );
 
@@ -98,5 +114,11 @@ exports.onStudentUpdated = firestore.onDocumentUpdated(
     }
 
     await updateAuthPassword(studentId, after.pendingPassword);
+
+    // 🧹 Delete plain-text password from Firestore after Auth updated
+    await event.data.after.ref.update({
+      pendingPassword: admin.firestore.FieldValue.delete()
+    });
+    console.log(`🧹 pendingPassword cleared for student: ${studentId}`);
   }
 );
