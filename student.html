@@ -135,9 +135,10 @@ mjx-container{vertical-align:middle;}
 .summary-label{font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;}
 .answers-review{text-align:left;}
 .answer-review-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow);}
-.ar-q{font-family:'Lora',serif;font-size:15px;margin-bottom:8px;}
-.ar-a{font-size:14px;color:var(--muted);font-weight:600;}
+.ar-q{font-family:'Lora',serif;font-size:15px;margin-bottom:8px;line-height:1.8;}
+.ar-a{font-size:14px;color:var(--muted);font-weight:600;line-height:1.7;}
 .ar-a span{color:var(--text);}
+.math-content{line-height:1.9;direction:auto;}
 .grade-display{display:inline-flex;align-items:center;gap:6px;background:var(--sage-l);color:var(--sage);border:1px solid var(--sage-m);border-radius:8px;font-size:13px;font-weight:700;padding:4px 10px;margin-top:8px;}
 .feedback-display{margin-top:6px;font-size:13px;color:var(--sky);background:var(--sky-l);padding:6px 10px;border-radius:8px;border-left:3px solid var(--sky);font-weight:600;}
 .btn-retry{background:var(--surface);border:2px solid var(--border);color:var(--text);border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;}
@@ -484,8 +485,14 @@ function renderCompletionScreen(s){
       const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
       const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:null;
       const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:null;
-      function ms(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-      return`<div class="answer-review-item"><div class="ar-q"><strong>Q${i+1}.</strong> ${ms(q.text)}</div><div class="ar-a">Your answer: <span>${ans!==null?esc(String(ans)):'Not answered'}</span></div>${grade!==null?`<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>`:''}${fb?`<div class="feedback-display">💬 ${esc(fb)}</div>`:''}</div>`;
+      // mathHtml: only escapes < > & to prevent tag injection, preserves LaTeX
+      function mh(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+      return`<div class="answer-review-item">
+        <div class="ar-q math-content"><strong>Q${i+1}.</strong> ${mh(q.text)}</div>
+        <div class="ar-a">Your answer: <span class="math-content">${ans!==null?mh(String(ans)):'<em>Not answered</em>'}</span></div>
+        ${grade!==null?`<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>`:''}
+        ${fb?`<div class="feedback-display">💬 ${esc(fb)}</div>`:''}
+      </div>`;
     }).join('')}
     </div>
     <button class="btn-retry" onclick="exitSession()" style="margin-top:24px">← Back to Home</button>`;
