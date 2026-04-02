@@ -837,56 +837,68 @@ async function loadStudents() {
 async function loadClassStatus() {
   if (!activeSessionId || !currentSessionData) return;
 
-  const gradeName = currentSessionData.grade; // This comes from the Session Config
-  document.getElementById('csGradeName').textContent = gradeName || 'Unknown Grade';
+  const sessionGradeName = currentSessionData.grade; // e.g., "Grade 9 - Z"
+  document.getElementById('csGradeName').textContent = sessionGradeName || 'Unknown Grade';
   
   const grid = document.getElementById('classStatusGrid');
   grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
 
   let assignedStudents = [];
   
-  if (gradeName) {
+  if (sessionGradeName) {
     try {
-      const studentsRef = collection(db, 'students');
+      // STEP 1: Find the Grade ID that matches the Session's Grade Name
+      const gradesRef = collection(db, 'grades');
+      // We query for the grade document where nameEn matches the session grade
+      const q = query(gradesRef, where('nameEn', '==', sessionGradeName));
+      const gradeSnap = await getDocs(q);
       
-      // FIX: Try querying by 'grade' first, then 'gradeLevel' if that fails or is empty
-      // Note: Firestore queries are exact matches. Ensure the Session Grade Name matches the Student Grade Name exactly.
-      let q = query(studentsRef, where('grade', '==', gradeName));
-      let snap = await getDocs(q);
-      
-      // If no results found with 'grade', try 'gradeLevel' (common in Admin panels)
-      if (snap.empty) {
-         q = query(studentsRef, where('gradeLevel', '==', gradeName));
-         snap = await getDocs(q);
+      let targetGradeId = null;
+      if (!gradeSnap.empty) {
+        // Assuming only one grade has this exact name
+        targetGradeId = gradeSnap.docs[0].id; 
+      } else {
+         // Fallback: Try searching by code if nameEn fails (optional)
+         const qCode = query(gradesRef, where('code', '==', sessionGradeName));
+         const codeSnap = await getDocs(qCode);
+         if(!codeSnap.empty) targetGradeId = codeSnap.docs[0].id;
       }
 
-      snap.forEach(doc => {
-        assignedStudents.push({ id: doc.id, ...doc.data() });
-      });
+      // STEP 2: If we found the Grade ID, fetch students with that gradeId
+      if (targetGradeId) {
+        const studentsRef = collection(db, 'students');
+        // Query students where gradeId matches the ID we just found
+        const studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
+        const studentSnap = await getDocs(studentQuery);
+        
+        studentSnap.forEach(doc => {
+          assignedStudents.push({ id: doc.id, ...doc.data() });
+        });
+      } else {
+        console.warn(`Could not find Grade ID for name: ${sessionGradeName}`);
+      }
+
     } catch (err) {
-      console.error("Error fetching grade students:", err);
+      console.error("Error fetching class status:", err);
     }
   }
   
   allAssignedStudents = assignedStudents;
 
-  // 2. Fetch students currently in the session (who have logged in)
+  // 3. Fetch students currently in the session (who have logged in)
   const sessionStudentsMap = {};
   currentStudents.forEach(s => {
     sessionStudentsMap[s.id] = s;
   });
 
-  // 3. Merge Data
+  // 4. Merge Data & Render
   let presentCount = 0;
   let absentCount = 0;
   const totalAssigned = assignedStudents.length;
 
-  // If no students assigned to grade, show empty
   if (totalAssigned === 0) {
-    grid.innerHTML = `<div class="empty-state">No students assigned to "${gradeName}".<br><small style="color:var(--muted)">Check if Student 'grade' or 'gradeLevel' matches Session 'grade'.</small></div>`;
-    document.getElementById('csTotalPresent').textContent = 0;
-    document.getElementById('csTotalAbsent').textContent = 0;
-    document.getElementById('csTotalStudents').textContent = 0;
+    grid.innerHTML = `<div class="empty-state">No students found for "${sessionGradeName}".<br><small>Check if Grade Name in Session matches Grade Name in Admin.</small></div>`;
+    updateClassStats(0, 0, 0);
     return;
   }
 
@@ -944,12 +956,16 @@ async function loadClassStatus() {
     return cardHtml;
   }).join('');
 
-  // Update Stats
-  document.getElementById('csTotalPresent').textContent = presentCount;
-  document.getElementById('csTotalAbsent').textContent = absentCount;
-  document.getElementById('csTotalStudents').textContent = totalAssigned;
+  updateClassStats(presentCount, absentCount, totalAssigned);
 }
 
+// Helper to update stats consistently
+function updateClassStats(present, absent, total) {
+  document.getElementById('csTotalPresent').textContent = present;
+  document.getElementById('csTotalAbsent').textContent = absent;
+  document.getElementById('csTotalStudents').textContent = total;
+}
+    
 function setupRealtimeListeners() {
   if (activeSessionId) {
     const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
