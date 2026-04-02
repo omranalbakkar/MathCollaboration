@@ -194,7 +194,7 @@ tr:hover td{background:var(--surface2);}
     <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
     <button class="btn-primary" onclick="doLogin()">Sign In →</button>
     <div class="login-error" id="loginErr">Invalid credentials.</div>
-    <div class="login-hint">Default: <span style="font-family:'DM Mono',monospace;color:var(--amber)">teacher / eduboard2024</span></div>
+    <div class="login-hint">Contact your administrator if you need access.</div>
     <a href="index.html" class="back-link">← Back to Home</a>
   </div>
 </div>
@@ -355,7 +355,7 @@ tr:hover td{background:var(--surface2);}
         </div>
         <div class="settings-card">
           <h3>About</h3>
-          <p style="font-size:13px;color:var(--muted);line-height:1.8;">EduBoard v2.0 — Firebase Edition<br>Default: <span style="font-family:'DM Mono',monospace;color:var(--amber)">teacher / eduboard2024</span></p>
+          <p style="font-size:13px;color:var(--muted);line-height:1.8;">EduBoard v2.0 — Firebase Edition<br>Use the form above to update your login password.</p>
         </div>
       </div>
     </div>
@@ -624,7 +624,7 @@ function renderStudentCards(students){
     const answered=s.answers?Object.keys(s.answers).length:0;
     const pct=qcount?Math.round(answered/qcount*100):0;
     const color=COLORS[i%COLORS.length];
-    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview('${escA(s.name||'')}')">Review Answers →</button></div>`;
+    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700;vertical-align:middle">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview('${escA(s.name||'')}')">Review Answers →</button></div>`;
   }).join('');
 }
 
