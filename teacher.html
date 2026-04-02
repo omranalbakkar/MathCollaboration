@@ -3,36 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — Multi-Session Master</title>
+<title>EduBoard — Teacher Portal</title>
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
-<!-- EXPORT LIBRARIES -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a2040 0%,#0f1117 60%);overflow:hidden;position:relative;}
+
+/* ── LOADING ── */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--muted);}
+
+/* ── LOGIN ── */
+#loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a2040 0%,#0f1117 60%);overflow:hidden;position:relative;}
 #loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,0.06) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none;}
 .login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 52px;width:440px;max-width:95vw;position:relative;z-index:1;box-shadow:0 32px 80px rgba(0,0,0,0.5);}
 .login-logo{font-family:'Fraunces',serif;font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px;margin-bottom:4px;}
 .login-sub{color:var(--muted);font-size:13px;margin-bottom:36px;}
 .field{margin-bottom:18px;}
 .field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
 .field input[type=password]{font-family:'DM Mono',monospace;}
-.field input:focus,.field select:focus{border-color:var(--amber);}
-.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.1s;margin-top:8px;}
+.field input:focus{border-color:var(--amber);}
+.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s;margin-top:8px;}
 .btn-primary:hover{opacity:0.9;}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
 .login-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;margin-top:14px;display:none;}
 .back-link{display:block;text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);text-decoration:none;}
 .back-link:hover{color:var(--amber);}
-.login-hint{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
+
+/* ── APP SHELL ── */
 #app{display:none;}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .topbar-left{display:flex;align-items:center;gap:14px;}
@@ -46,6 +53,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-btn .dot{width:6px;height:6px;background:var(--green);border-radius:50%;position:absolute;top:6px;right:6px;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
 .topbar-right{display:flex;align-items:center;gap:12px;}
+.teacher-name{font-size:13px;color:var(--muted);}
 .live-count{font-size:12px;color:var(--green);background:var(--green-dim);padding:4px 10px;border-radius:20px;border:1px solid rgba(74,222,128,0.25);font-weight:500;}
 .btn-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .btn-logout:hover{color:var(--red);border-color:var(--red);}
@@ -57,24 +65,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .section-title{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.5px;}
 .section-sub{color:var(--muted);font-size:13px;margin-top:3px;}
 
-/* SESSION LIST & MASTER */
-.session-master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 30px; }
-.session-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.2s; position: relative; overflow: hidden; }
-.session-card:hover { border-color: var(--faint); transform: translateY(-2px); }
-.session-card.active-context { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
-.session-card.active-context::after { content: 'VIEWING'; position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 800; color: var(--blue); background: var(--blue-dim); padding: 2px 6px; border-radius: 4px; }
-.session-card.live-session { border-color: var(--green); background: rgba(74,222,128,0.03); }
-.session-card.live-session::before { content: 'OPEN TO STUDENTS'; position: absolute; top: 10px; left: 10px; font-size: 9px; font-weight: 800; color: var(--green); background: var(--green-dim); padding: 2px 6px; border-radius: 4px; }
+/* SESSION CARDS */
+.session-master-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:30px;}
+.session-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all 0.2s;position:relative;overflow:hidden;}
+.session-card:hover{border-color:var(--faint);transform:translateY(-2px);}
+.session-card.active-context{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue);}
+.session-card.active-context::after{content:'VIEWING';position:absolute;top:10px;right:10px;font-size:9px;font-weight:800;color:var(--blue);background:var(--blue-dim);padding:2px 6px;border-radius:4px;}
+.session-card.live-session{border-color:var(--green);background:rgba(74,222,128,0.03);}
+.session-card.live-session::before{content:'OPEN TO STUDENTS';position:absolute;top:10px;left:10px;font-size:9px;font-weight:800;color:var(--green);background:var(--green-dim);padding:2px 6px;border-radius:4px;}
+.sc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.sc-title{font-weight:700;font-size:16px;color:var(--text);}
+.sc-meta{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.sc-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-load{flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px;font-size:12px;cursor:pointer;transition:0.2s;}
+.btn-load:hover{background:var(--blue-dim);color:var(--blue);border-color:var(--blue);}
+.btn-load.is-active{background:var(--blue);color:#fff;border-color:var(--blue);cursor:default;}
 
-.sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-.sc-title { font-weight: 700; font-size: 16px; color: var(--text); }
-.sc-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
-.sc-actions { display: flex; gap: 8px; margin-top: 12px; }
-.btn-load { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
-.btn-load:hover { background: var(--blue-dim); color: var(--blue); border-color: var(--blue); }
-.btn-load.is-active { background: var(--blue); color: #fff; border-color: var(--blue); cursor: default; }
-
-/* SESSION CONFIG FORM */
+/* SESSION CONFIG */
 .session-config-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:28px;position:relative;overflow:hidden;}
 .session-config-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),rgba(245,166,35,0.3));}
 .config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
@@ -101,6 +108,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-save{background:var(--green);color:#0f1117;}
 .btn-cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
 .btn-amber{background:var(--amber);color:#0f1117;}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);width:100%;padding:10px;justify-content:center;}
+.btn-danger:hover{background:var(--red);color:#fff;}
 
 /* QUESTION FORM */
 #questionForm{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:28px;display:none;animation:fadeIn 0.2s;}
@@ -202,67 +211,45 @@ tr:hover td{background:var(--surface2);}
 .s-group input{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
 .s-group input:focus{border-color:var(--amber);}
 .danger-zone{border-color:rgba(248,113,113,0.3);}
-.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:8px;transition:all 0.15s;}
-.btn-danger:hover{background:var(--red);color:#fff;}
-
-/* FB BANNER */
-.fb-banner{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.3);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-bottom:24px;}
-.fb-banner-text{font-size:13px;color:var(--text);line-height:1.7;}
-.fb-banner-text a{color:var(--amber);}
-.fb-banner-text code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;}
+.teacher-info-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;}
+.teacher-info-card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--amber);}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--muted);}
 
 /* MISC */
 .toast{position:fixed;bottom:28px;right:28px;background:var(--green);color:#0f1117;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;}
 .toast.show{transform:translateY(0);opacity:1;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;display:none;backdrop-filter:blur(2px);}
 .overlay.show{display:block;}
-
-/* HIDDEN PRINT CONTAINER FOR PDF GENERATION */
-#print-container {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  width: 210mm; /* A4 Width */
-  background: white;
-  color: black;
-  padding: 20mm;
-  font-family: 'Times New Roman', serif;
-}
-.print-page {
-  min-height: 270mm; /* A4 Height minus padding */
-  position: relative;
-  margin-bottom: 20px;
-  border-bottom: 2px dashed #ccc;
-}
-.print-header {
-  border-bottom: 2px solid #000;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.print-student-name { font-size: 24px; font-weight: bold; }
-.print-meta { font-size: 14px; color: #555; }
-.print-q-item { margin-bottom: 20px; page-break-inside: avoid; }
-.print-q-text { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
-.print-a-label { font-size: 12px; text-transform: uppercase; color: #666; margin-top: 5px; }
-.print-a-text { font-size: 15px; margin-top: 2px; padding: 5px; background: #f9f9f9; border-left: 3px solid #ccc; }
-.print-score { float: right; font-weight: bold; border: 1px solid #000; padding: 2px 8px; }
-
+#print-container{position:absolute;left:-9999px;top:0;width:210mm;background:white;color:black;padding:20mm;font-family:'Times New Roman',serif;}
+.print-page{min-height:270mm;position:relative;margin-bottom:20px;border-bottom:2px dashed #ccc;}
+.print-header{border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+.print-student-name{font-size:24px;font-weight:bold;}
+.print-meta{font-size:14px;color:#555;}
+.print-q-item{margin-bottom:20px;page-break-inside:avoid;}
+.print-q-text{font-weight:bold;font-size:16px;margin-bottom:8px;}
+.print-a-label{font-size:12px;text-transform:uppercase;color:#666;margin-top:5px;}
+.print-a-text{font-size:15px;margin-top:2px;padding:5px;background:#f9f9f9;border-left:3px solid #ccc;}
+.print-score{float:right;font-weight:bold;border:1px solid #000;padding:2px 8px;}
 @media(max-width:700px){.settings-grid{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.topbar-nav .nav-btn span:not(.dot){display:none;}}
 </style>
 </head>
 <body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Verifying access…</div>
+</div>
+
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">EduBoard</div>
-    <div class="login-sub">Teacher Dashboard — Secure Access</div>
-    <div class="field"><label>Username</label><input type="text" id="loginUser" placeholder="teacher" value="teacher"></div>
-    <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
-    <button class="btn-primary" onclick="doLogin()">Sign In →</button>
-    <div class="login-error" id="loginErr">Invalid credentials.</div>
-    <div class="login-hint">Contact your administrator if you need access.</div>
+    <div class="login-sub">Teacher Portal — Secure Access</div>
+    <div class="field"><label>Email Address</label><input type="email" id="loginEmail" autocomplete="email"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="loginErr"></div>
     <a href="index.html" class="back-link">← Back to Home</a>
   </div>
 </div>
@@ -284,32 +271,31 @@ tr:hover td{background:var(--surface2);}
     </div>
     <div class="topbar-right">
       <div class="live-count" id="liveCount">● 0 online</div>
-      <button class="btn-logout" onclick="logout()">Sign Out</button>
+      <span class="teacher-name" id="teacherDisplayName"></span>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
 
   <div class="content">
-    
+
     <!-- MANAGE SESSIONS TAB -->
     <div class="tab-pane active" id="tab-manage">
       <div class="section-header">
         <div>
-          <div class="section-title">Session Master</div>
-          <div class="section-sub">Create multiple sessions. Each has independent questions, students, and active status.</div>
+          <div class="section-title">My Sessions</div>
+          <div class="section-sub">Sessions you own. Create and manage sessions for your assigned grades and subjects.</div>
         </div>
         <button class="btn btn-add" onclick="createNewSession()">＋ Create New Session</button>
       </div>
-      
       <div class="session-master-grid" id="sessionListGrid">
-        <!-- Session Cards injected here -->
-        <div class="empty-state" style="grid-column:1/-1; padding: 40px;">Loading sessions...</div>
+        <div class="empty-state" style="grid-column:1/-1;padding:40px;">Loading sessions…</div>
       </div>
     </div>
 
     <!-- SESSION CONFIG TAB -->
     <div class="tab-pane" id="tab-session">
       <div class="section-header">
-        <div><div class="section-title">Configuration</div><div class="section-sub">Edit settings for the loaded session</div></div>
+        <div><div class="section-title">Session Configuration</div><div class="section-sub">Edit settings for the loaded session</div></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <div class="toggle-wrap" id="toggleWrap">
             <div class="toggle-track" id="sessionToggle" onclick="toggleSession()"><div class="toggle-thumb"></div></div>
@@ -318,22 +304,17 @@ tr:hover td{background:var(--surface2);}
           <button class="btn btn-amber" onclick="saveSessionConfig()">💾 Save Config</button>
         </div>
       </div>
-      <div id="fbBanner" class="fb-banner" style="display:none">
-        <span style="font-size:18px;flex-shrink:0">🔥</span>
-        <div class="fb-banner-text"><strong>Firebase not configured.</strong> Open <code>firebase-config.js</code> and add your credentials for real multi-device sync. <a href="https://console.firebase.google.com/" target="_blank">Get a free project →</a><br><em>Currently in local single-device demo mode.</em></div>
-      </div>
       <div class="session-config-card">
         <div class="config-grid">
           <div class="config-group"><label>Session Title</label><input type="text" id="cfTitle" placeholder="e.g. Chapter 5 Quiz"></div>
           <div class="config-group"><label>Grade Level</label>
-            <select id="cfGrade">
-              <option value="">Select grade…</option>
-              <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option><option>Grade 11</option><option>Grade 12</option><option>University — Year 1</option><option>University — Year 2</option><option>University — Year 3</option><option>University — Year 4</option>
-            </select>
+            <select id="cfGrade"><option value="">Select assigned grade…</option></select>
           </div>
-          <div class="config-group"><label>Class / Section</label><input type="text" id="cfClass" placeholder="e.g. Class A, Section 3B"></div>
-          <div class="config-group"><label>Subject</label><input type="text" id="cfSubject" placeholder="e.g. Mathematics, Biology"></div>
-          <div class="config-group"><label>Teacher Name</label><input type="text" id="cfTeacher" placeholder="e.g. Ms. Johnson"></div>
+          <div class="config-group"><label>Class / Section</label><input type="text" id="cfClass" placeholder="e.g. Class A"></div>
+          <div class="config-group"><label>Subject</label>
+            <select id="cfSubject"><option value="">Select assigned subject…</option></select>
+          </div>
+          <div class="config-group"><label>Teacher Name</label><input type="text" id="cfTeacher" readonly style="opacity:0.6"></div>
           <div class="config-group"><label>Date</label><input type="date" id="cfDate"></div>
           <div class="config-group"><label>Start Time</label><input type="time" id="cfStart"></div>
           <div class="config-group"><label>End Time</label><input type="time" id="cfEnd"></div>
@@ -352,12 +333,12 @@ tr:hover td{background:var(--surface2);}
     <!-- QUESTIONS TAB -->
     <div class="tab-pane" id="tab-questions">
       <div class="section-header">
-        <div><div class="section-title">Question Bank</div><div class="section-sub">Manage questions for this specific session</div></div>
+        <div><div class="section-title">Question Bank</div><div class="section-sub">Questions for the selected session</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-add" onclick="openForm()">＋ Add Question</button>
-        <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);" onclick="document.getElementById('htmlImportInput').click()">📥 Import from HTML Exam</button>
-        <input type="file" id="htmlImportInput" accept=".html" style="display:none" onchange="importFromHTML(event)">
-      </div>
+          <button class="btn btn-add" onclick="openForm()">＋ Add Question</button>
+          <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);" onclick="document.getElementById('htmlImportInput').click()">📥 Import HTML</button>
+          <input type="file" id="htmlImportInput" accept=".html" style="display:none" onchange="importFromHTML(event)">
+        </div>
       </div>
       <div id="questionForm">
         <div class="form-title" id="formTitle">New Question</div>
@@ -379,7 +360,7 @@ tr:hover td{background:var(--surface2);}
         </div>
         <div class="form-row">
           <div class="form-group"><label>Correct Answer (optional)</label><input type="text" id="fCorrect" placeholder="e.g. B or True"></div>
-          <div class="form-group"><label>Subject / Tag</label><input type="text" id="fTag" placeholder="e.g. Math, Algebra"></div>
+          <div class="form-group"><label>Subject / Tag</label><input type="text" id="fTag" placeholder="e.g. Algebra"></div>
         </div>
         <div class="form-actions">
           <button class="btn btn-cancel" onclick="closeForm()">Cancel</button>
@@ -392,7 +373,8 @@ tr:hover td{background:var(--surface2);}
     <!-- MONITOR TAB -->
     <div class="tab-pane" id="tab-monitor">
       <div class="section-header">
-        <div><div class="section-title">Live Monitor</div><div class="section-sub">Real-time student activity — updates automatically</div></div>
+        <div><div class="section-title">Live Monitor</div><div class="section-sub">Real-time student activity</div></div>
+        <button class="btn btn-delete" onclick="clearSessionAnswers()">🗑 Clear All Answers</button>
       </div>
       <div class="stats-row">
         <div class="stat-card"><div class="stat-val green" id="statOnline">0</div><div class="stat-label">Online Now</div></div>
@@ -400,7 +382,9 @@ tr:hover td{background:var(--surface2);}
         <div class="stat-card"><div class="stat-val blue" id="statQuestions">0</div><div class="stat-label">Questions</div></div>
         <div class="stat-card"><div class="stat-val purple" id="statGraded">0</div><div class="stat-label">Graded</div></div>
       </div>
-      <div class="students-grid" id="studentsGrid"><div class="empty-state"><p style="font-size:15px">No students online</p><span style="font-size:13px;margin-top:6px;display:block">Students appear here when they join</span></div></div>
+      <div class="students-grid" id="studentsGrid">
+        <div class="empty-state"><p style="font-size:15px">No students online</p><span style="font-size:13px;display:block;margin-top:6px">Students appear here when they join</span></div>
+      </div>
     </div>
 
     <!-- RESULTS TAB -->
@@ -408,8 +392,8 @@ tr:hover td{background:var(--surface2);}
       <div class="section-header">
         <div><div class="section-title">Results</div><div class="section-sub">All submissions for this session</div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-edit" onclick="exportData()">Export JSON</button>
-            <button class="btn btn-amber" onclick="exportReports()">📄 Export Reports</button>
+          <button class="btn btn-edit" onclick="exportData()">Export JSON</button>
+          <button class="btn btn-amber" onclick="exportReports()">📄 Export Reports</button>
         </div>
       </div>
       <div class="results-controls">
@@ -424,26 +408,23 @@ tr:hover td{background:var(--surface2);}
 
     <!-- SETTINGS TAB -->
     <div class="tab-pane" id="tab-settings">
-      <div class="section-header"><div><div class="section-title">Global Settings</div></div></div>
+      <div class="section-header"><div><div class="section-title">Settings</div></div></div>
       <div class="settings-grid">
         <div class="settings-card">
           <h3>Change Password</h3>
+          <div class="s-group"><label>Current Password</label><input type="password" id="currentPass" placeholder="••••••••"></div>
           <div class="s-group"><label>New Password</label><input type="password" id="newPass" placeholder="••••••••"></div>
-          <div class="s-group"><label>Confirm</label><input type="password" id="confirmPass" placeholder="••••••••"></div>
+          <div class="s-group"><label>Confirm New Password</label><input type="password" id="confirmPass" placeholder="••••••••"></div>
           <button class="btn btn-save" onclick="changePassword()" style="width:100%;justify-content:center">Save Password</button>
         </div>
-        <div class="settings-card">
-          <h3>Firebase Status</h3>
-          <div id="fbConfigStatus" style="font-size:13px;color:var(--muted);line-height:1.8;">Checking…</div>
+        <div class="teacher-info-card">
+          <h3>My Profile</h3>
+          <div id="teacherProfileInfo"></div>
         </div>
         <div class="settings-card danger-zone">
           <h3 style="color:var(--red)">⚠ Danger Zone</h3>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">These affect ALL sessions.</p>
-          <button class="btn-danger" onclick="clearAllData()">Reset Entire System</button>
-        </div>
-        <div class="settings-card">
-          <h3>About</h3>
-          <p style="font-size:13px;color:var(--muted);line-height:1.8;">EduBoard v3.0 — Multi-Session Edition<br>Use the form above to update your login password.</p>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">These actions affect the current session only.</p>
+          <button class="btn-danger" onclick="clearSessionAnswers()" style="margin-bottom:8px">Clear All Student Answers</button>
         </div>
       </div>
     </div>
@@ -459,327 +440,330 @@ tr:hover td{background:var(--surface2);}
   <div id="reviewContent"></div>
 </div>
 
-<!-- Hidden container for generating PDF pages -->
 <div id="print-container"></div>
-
 <div class="toast" id="toast"></div>
 
 <script src="firebase-config.js"></script>
 <script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,set,get,update,onValue,remove,push}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getDatabase, ref, set, get, update, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-let db=null,usingFirebase=false;
-let activeSessionId = null; // GLOBAL STATE FOR ACTIVE SESSION (TEACHER VIEW)
+const app  = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const fdb  = getFirestore(app);
+const rtdb = getDatabase(app);
 
-// ── FIREBASE INIT ──
-function initFirebase(){
-  if(typeof FIREBASE_DEMO_MODE!=='undefined'&&FIREBASE_DEMO_MODE){
-    document.getElementById('fbBanner').style.display='flex';
-    document.getElementById('fbConfigStatus').innerHTML='❌ Not configured — edit <code style="background:var(--surface2);padding:2px 5px;border-radius:4px;font-family:monospace">firebase-config.js</code> to enable multi-device sync.';
-    return false;
-  }
-  try{
-    const app=initializeApp(FIREBASE_CONFIG);
-    db=getDatabase(app);usingFirebase=true;
-    document.getElementById('fbConfigStatus').innerHTML='<span style="color:var(--green)">✅ Firebase connected — real-time sync active.</span>';
-    return true;
-  }catch(e){
-    document.getElementById('fbBanner').style.display='flex';
-    document.getElementById('fbConfigStatus').innerHTML=`❌ Error: ${e.message}`;
-    return false;
-  }
-}
+let currentTeacher   = null; // Firestore teacher profile
+let activeSessionId  = null;
+let editingId        = null;
+let _reviewKeys = []; // DB keys (uid) used to look up student data in RTDB
 
-// ── DATA ABSTRACTION ──
-const LS='eduboard_v3_master';
-function lget(){try{return JSON.parse(localStorage.getItem(LS))||ddata();}catch{return ddata();}}
-function lset(d){localStorage.setItem(LS,JSON.stringify(d));}
-function ddata(){return{password:'eduboard2024',sessions:{}};} // Structure: { sessions: { id: { config, questions, students } } }
-
-function pathGet(obj,path){return path.split('/').reduce((o,k)=>o&&o[k]!==undefined?o[k]:null,obj);}
-function pathSet(obj,path,val){const keys=path.split('/');let cur=obj;for(let i=0;i<keys.length-1;i++){if(!cur[keys[i]]||typeof cur[keys[i]]!=='object')cur[keys[i]]={};cur=cur[keys[i]];}cur[keys[keys.length-1]]=val;}
-function pathDel(obj,path){const keys=path.split('/');let cur=obj;for(let i=0;i<keys.length-1;i++){if(!cur[keys[i]])return;cur=cur[keys[i]];}delete cur[keys[keys.length-1]];}
-
-async function dbGet(path){
-  if(usingFirebase){const s=await get(ref(db,path));return s.val();}
-  return pathGet(lget(),path);
-}
-async function dbSet(path,val){
-  if(usingFirebase){await set(ref(db,path),val);return;}
-  const d=lget();pathSet(d,path,val);lset(d);
-}
-async function dbUpdate(path,val){
-  if(usingFirebase){await update(ref(db,path),val);return;}
-  const d=lget();const existing=pathGet(d,path)||{};pathSet(d,path,{...existing,...val});lset(d);
-}
-async function dbRemove(path){
-  if(usingFirebase){await remove(ref(db,path));return;}
-  const d=lget();pathDel(d,path);lset(d);
-}
-function dbListen(path,cb){
-  if(usingFirebase){onValue(ref(db,path),s=>cb(s.val()));return;}
-  let last=null;
-  function poll(){const d=lget();const v=pathGet(d,path);const s=JSON.stringify(v);if(s!==last){last=s;cb(v);}}
-  poll();setInterval(poll,1500);
-}
-
-// ── AUTH ──
-async function doLogin(){
-  const user=document.getElementById('loginUser').value.trim();
-  const pass=document.getElementById('loginPass').value;
-  const stored=await dbGet('password')||'eduboard2024';
-  if(user==='teacher'&&pass===stored){
-    sessionStorage.setItem('teacher_auth','1');
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    boot();
-  }else{document.getElementById('loginErr').style.display='block';}
-}
-window.doLogin=doLogin;
-document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-window.logout=function(){sessionStorage.removeItem('teacher_auth');window.location.href='index.html';};
-
-// ── BOOT ──
-async function boot(){
-  initFirebase();
-  
-  // Check if we have an active session ID stored locally
-  const savedId = localStorage.getItem('active_session_id');
-  if(savedId) {
-    // Verify it exists
-    const exists = await dbGet(`sessions/${savedId}/config`);
-    if(exists) {
-      activeSessionId = savedId;
-    } else {
-      // If invalid, clear it
-      localStorage.removeItem('active_session_id');
+// ── ROUTE GUARD ──
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  if (!user) { showLogin(); return; }
+  try {
+    const snap = await getDoc(doc(fdb, 'users', user.uid));
+    if (!snap.exists() || snap.data().role !== 'teacher') {
+      await signOut(auth); showLogin('Access denied. This portal is for teachers only.'); return;
     }
-  }
-
-  setupListeners();
-  renderSessionMasterList(); // Render the list of sessions immediately
-  
-  if(activeSessionId) {
-    loadActiveSessionContext();
-  } else {
-    // No active session selected, show empty state or prompt
-    updateSessionChip({ title: 'No Session Selected' });
-    // Disable inputs
-    toggleInputs(false);
-  }
-}
-window.addEventListener('load',()=>{
-  if(sessionStorage.getItem('teacher_auth')){
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('app').style.display='block';
-    boot();
+    if (snap.data().active === false) {
+      await signOut(auth); showLogin('Your account has been deactivated. Contact your administrator.'); return;
+    }
+    // Load teacher profile from teachers collection
+    const teacherDocId = snap.data().teacherDocId || user.uid;
+    const tSnap = await getDoc(doc(fdb, 'teachers', teacherDocId));
+    currentTeacher = { uid: user.uid, firestoreId: teacherDocId, ...(tSnap.exists() ? tSnap.data() : snap.data()) };
+    document.getElementById('teacherDisplayName').textContent = currentTeacher.name || user.email;
+    showApp();
+  } catch(e) {
+    showLogin('Error verifying access: ' + e.message);
   }
 });
 
-function setupListeners(){
-  // Listen to the entire sessions tree to update the master list
-  dbListen('sessions', allSessions => {
-    renderSessionMasterList(allSessions);
-    // If we have an active session, refresh its specific stats
-    if(activeSessionId && allSessions && allSessions[activeSessionId]) {
-       const current = allSessions[activeSessionId];
-       updateStatsFromData(current.questions || {}, current.students || {}, current.config || {});
+function showLogin(msg) {
+  const ls = document.getElementById('loginScreen');
+  ls.style.display = 'flex';
+  ls.style.alignItems = 'center';
+  ls.style.justifyContent = 'center';
+  document.getElementById('app').style.display = 'none';
+  if (msg) { const el=document.getElementById('loginErr'); el.textContent=msg; el.style.display='block'; }
+}
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  populateAssignedDropdowns();
+  populateTeacherProfile();
+  boot();
+}
+
+// ── LOGIN ──
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  if (!email || !pass) { err.textContent='Email and password are required.'; err.style.display='block'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  try { await signInWithEmailAndPassword(auth, email, pass); }
+  catch(e) { err.textContent='Invalid email or password.'; err.style.display='block'; btn.disabled=false; btn.textContent='Sign In →'; }
+};
+document.getElementById('loginPass')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+window.doLogout = async function() { await signOut(auth); window.location.href='index.html'; };
+
+// ── POPULATE ASSIGNED DROPDOWNS ──
+async function populateAssignedDropdowns() {
+  const gradeSelect   = document.getElementById('cfGrade');
+  const subjectSelect = document.getElementById('cfSubject');
+  const assignedGrades   = currentTeacher.assignedGrades   || [];
+  const assignedSubjects = currentTeacher.assignedSubjects || [];
+
+  if (assignedGrades.length) {
+    gradeSelect.innerHTML = '<option value="">Select grade…</option>';
+    for (const gid of assignedGrades) {
+      const g = await getDoc(doc(fdb,'grades',gid));
+      if (g.exists()) {
+        const opt = document.createElement('option');
+        opt.value = g.data().nameEn; opt.textContent = g.data().nameEn;
+        gradeSelect.appendChild(opt);
+      }
+    }
+  } else {
+    // Fallback: all standard grades
+    gradeSelect.innerHTML = `<option value="">Select grade…</option>${['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'].map(g=>`<option>${g}</option>`).join('')}`;
+  }
+
+  if (assignedSubjects.length) {
+    subjectSelect.innerHTML = '<option value="">Select subject…</option>';
+    for (const sid of assignedSubjects) {
+      const s = await getDoc(doc(fdb,'subjects',sid));
+      if (s.exists()) {
+        const opt = document.createElement('option');
+        opt.value = s.data().nameEn; opt.textContent = s.data().nameEn;
+        subjectSelect.appendChild(opt);
+      }
+    }
+  } else {
+    subjectSelect.innerHTML = '<option value="">Select subject…</option>';
+  }
+  document.getElementById('cfTeacher').value = currentTeacher.name || '';
+}
+
+function populateTeacherProfile() {
+  const assignedGradeNames   = (currentTeacher.assignedGrades||[]).join(', ') || '—';
+  const assignedSubjectNames = (currentTeacher.assignedSubjects||[]).join(', ') || '—';
+  document.getElementById('teacherProfileInfo').innerHTML = `
+    <div class="info-row"><span class="info-key">Name</span><span>${esc(currentTeacher.name||'')}</span></div>
+    <div class="info-row"><span class="info-key">Email</span><span>${esc(currentTeacher.email||'')}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Grades</span><span>${esc(assignedGradeNames)}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${esc(assignedSubjectNames)}</span></div>`;
+}
+
+// ── BOOT ──
+async function boot() {
+  const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
+  if (savedId) {
+    const exists = await get(ref(rtdb, `sessions/${savedId}/config`));
+    if (exists.val()) {
+      // Verify ownership
+      const cfg = exists.val();
+      if (cfg.ownerTeacherId === currentTeacher.firestoreId || cfg.ownerTeacherId === currentTeacher.uid) {
+        activeSessionId = savedId;
+      } else {
+        localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
+      }
+    } else {
+      localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
+    }
+  }
+  setupListeners();
+  if (activeSessionId) loadActiveSessionContext();
+  else { updateSessionChip({}); }
+}
+
+function setupListeners() {
+  // Only listen to sessions owned by this teacher
+  onValue(ref(rtdb,'sessions'), allSessions => {
+    const mine = {};
+    if (allSessions) {
+      Object.entries(allSessions).forEach(([id,s]) => {
+        if (s.config && (s.config.ownerTeacherId === currentTeacher.firestoreId || s.config.ownerTeacherId === currentTeacher.uid)) {
+          mine[id] = s;
+        }
+      });
+    }
+    renderSessionMasterList(mine);
+    if (activeSessionId && mine[activeSessionId]) {
+      const current = mine[activeSessionId];
+      updateStatsFromData(current.questions||{}, current.students||{}, current.config||{});
+      // Auto-refresh live monitor if that tab is visible
+      const monitorPane = document.getElementById('tab-monitor');
+      if (monitorPane && monitorPane.classList.contains('active')) {
+        renderStudentCards(current.students||{});
+      }
     }
   });
 }
 
-// ── SESSION MASTER LOGIC ──
-async function renderSessionMasterList(allSessionsData) {
-  if(!allSessionsData) allSessionsData = await dbGet('sessions') || {};
-  
+// ── SESSION MASTER ──
+function renderSessionMasterList(mySessions) {
   const grid = document.getElementById('sessionListGrid');
-  const sessions = Object.entries(allSessionsData).map(([id, data]) => ({id, ...data.config})).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
-
-  if(sessions.length === 0) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:40px;"><p>No sessions created yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
+  const sessions = Object.entries(mySessions||{}).map(([id,data])=>({id,...data.config})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if (!sessions.length) {
+    grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;padding:40px;"><p>No sessions yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
     return;
   }
-
   grid.innerHTML = sessions.map(s => {
-    const isActiveContext = s.id === activeSessionId;
-    const isLive = s.active;
-    const dateStr = s.date ? new Date(s.date).toLocaleDateString() : 'No Date';
-    return `
-    <div class="session-card ${isActiveContext ? 'active-context' : ''} ${isLive ? 'live-session' : ''}">
-      <div class="sc-header">
-        <div class="sc-title">${esc(s.title || 'Untitled Session')}</div>
-      </div>
-      <div class="sc-meta">
-        ${esc(s.subject || 'General')} • ${esc(s.className || 'No Class')}<br>
-        ${dateStr} • ${Object.keys(s.questions||{}).length} Qs
-      </div>
+    const isActiveCtx = s.id === activeSessionId;
+    return `<div class="session-card ${isActiveCtx?'active-context':''} ${s.active?'live-session':''}">
+      <div class="sc-header"><div class="sc-title">${esc(s.title||'Untitled Session')}</div></div>
+      <div class="sc-meta">${esc(s.subject||'—')} • ${esc(s.className||'No Class')}<br>${s.date?new Date(s.date).toLocaleDateString():'No Date'}</div>
       <div class="sc-actions">
-        <button class="btn-load ${isActiveContext ? 'is-active' : ''}" onclick="${isActiveContext ? '' : `activateSession('${s.id}')`}">
-          ${isActiveContext ? 'Viewing' : 'Load Session'}
-        </button>
+        <button class="btn-load ${isActiveCtx?'is-active':''}" onclick="${isActiveCtx?'':'activateSession(\''+s.id+'\')'}">${isActiveCtx?'Viewing':'Load'}</button>
         <button class="btn-load" style="color:var(--red)" onclick="deleteSession('${s.id}')">Delete</button>
       </div>
-    </div>
-    `;
+    </div>`;
   }).join('');
 }
 
 window.createNewSession = async function() {
+  if (!currentTeacher) return;
   const id = 'sess_' + Date.now();
-  const newConfig = {
-    title: 'New Session ' + new Date().toLocaleTimeString(),
-    grade: '', className: '', subject: '', teacher: '',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '', endTime: '', instructions: '',
-    active: false, // Default to closed, teacher can open it
-    createdAt: Date.now()
-  };
-
-  await dbSet(`sessions/${id}/config`, newConfig);
-  await activateSession(id);
-  showToast('Session Created!');
-  switchTab('session', document.querySelectorAll('.nav-btn')[1]); // Switch to config tab
+  await set(ref(rtdb,`sessions/${id}`), {
+    config: {
+      title: 'New Session',
+      grade: '', className: '', subject: '',
+      teacher: currentTeacher.name || '',
+      date: new Date().toISOString().split('T')[0],
+      startTime:'', endTime:'', instructions:'',
+      active: false, createdAt: Date.now(),
+      ownerTeacherId: currentTeacher.firestoreId || currentTeacher.uid,
+      ownerTeacherName: currentTeacher.name || '',
+      createdBy: currentTeacher.uid,
+      createdByRole: 'teacher'
+    },
+    questions:{}, students:{}
+  });
+  activateSession(id);
+  showToast('Session created!');
+  switchTab('session', document.querySelectorAll('.nav-btn')[1]);
 };
 
 window.activateSession = async function(id) {
   activeSessionId = id;
-  localStorage.setItem('active_session_id', id);
-  renderSessionMasterList(); // Re-render to update active states
+  localStorage.setItem('teacher_active_session_' + currentTeacher.uid, id);
   loadActiveSessionContext();
-  showToast('Session Loaded');
 };
 
 window.deleteSession = async function(id) {
-  if(!confirm('Are you sure? This will delete all questions and student data for this session.')) return;
-  await dbRemove(`sessions/${id}`);
-  if(activeSessionId === id) {
-    activeSessionId = null;
-    localStorage.removeItem('active_session_id');
-    location.reload(); // Simplest way to clear UI state
-  } else {
-    renderSessionMasterList();
-  }
+  if (!confirm('Delete this session and all its student data? This cannot be undone.')) return;
+  await remove(ref(rtdb,`sessions/${id}`));
+  if (activeSessionId===id) { activeSessionId=null; localStorage.removeItem('teacher_active_session_'+currentTeacher.uid); location.reload(); }
+  showToast('Session deleted');
 };
 
 function loadActiveSessionContext() {
-  if(!activeSessionId) return;
-  
-  // Enable Inputs
-  toggleInputs(true);
-
-  // Load Config Form
-  dbGet(`sessions/${activeSessionId}/config`).then(cfg => {
-    if(cfg) {
-      document.getElementById('cfTitle').value = cfg.title || '';
-      document.getElementById('cfGrade').value = cfg.grade || '';
-      document.getElementById('cfClass').value = cfg.className || '';
-      document.getElementById('cfSubject').value = cfg.subject || '';
-      document.getElementById('cfTeacher').value = cfg.teacher || '';
-      document.getElementById('cfDate').value = cfg.date || '';
-      document.getElementById('cfStart').value = cfg.startTime || '';
-      document.getElementById('cfEnd').value = cfg.endTime || '';
-      document.getElementById('cfInstructions').value = cfg.instructions || '';
-      setToggle(!!cfg.active);
-      updateSessionChip(cfg);
+  if (!activeSessionId) return;
+  get(ref(rtdb,`sessions/${activeSessionId}/config`)).then(cfg => {
+    if (cfg.val()) {
+      const c = cfg.val();
+      document.getElementById('cfTitle').value       = c.title||'';
+      document.getElementById('cfGrade').value       = c.grade||'';
+      document.getElementById('cfClass').value       = c.className||'';
+      document.getElementById('cfSubject').value     = c.subject||'';
+      document.getElementById('cfTeacher').value     = currentTeacher.name||'';
+      document.getElementById('cfDate').value        = c.date||'';
+      document.getElementById('cfStart').value       = c.startTime||'';
+      document.getElementById('cfEnd').value         = c.endTime||'';
+      document.getElementById('cfInstructions').value = c.instructions||'';
+      setToggle(!!c.active);
+      updateSessionChip(c);
     }
   });
-
-  // Trigger renders for sub-tabs
   renderQuestionsForActiveSession();
-  renderResults(); 
-}
-
-function toggleInputs(enable) {
-  const inputs = document.querySelectorAll('#tab-session input, #tab-session textarea, #tab-session select, #tab-session button');
-  inputs.forEach(el => {
-    if(el.id === 'sessionToggle') return; // Keep toggle clickable
-    el.disabled = !enable;
-    el.style.opacity = enable ? '1' : '0.5';
-  });
+  renderResults();
 }
 
 // ── TAB ──
-window.switchTab=function(id,btn){
+window.switchTab = function(id, btn) {
   document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
-  
-  if(!activeSessionId && id !== 'manage' && id !== 'settings') {
-    showToast('Please select or create a session first', true);
-    switchTab('manage', document.querySelector('.nav-btn'));
-    return;
+  if (!activeSessionId && !['manage','settings'].includes(id)) {
+    showToast('Please select or create a session first',true);
+    switchTab('manage',document.querySelector('.nav-btn')); return;
   }
-
-  if(id==='results') renderResults();
-  if(id==='questions') renderQuestionsForActiveSession();
-  if(id==='monitor') renderStudentCardsFromActive();
+  if (id==='results') renderResults();
+  if (id==='questions') renderQuestionsForActiveSession();
+  if (id==='monitor') renderStudentCardsFromActive();
 };
 
 // ── SESSION CONFIG ──
-window.saveSessionConfig=async function(){
-  if(!activeSessionId) return showToast('No active session', true);
-  const s={
-    title:document.getElementById('cfTitle').value.trim()||'Quiz Session',
-    grade:document.getElementById('cfGrade').value,
-    className:document.getElementById('cfClass').value.trim(),
-    subject:document.getElementById('cfSubject').value.trim(),
-    teacher:document.getElementById('cfTeacher').value.trim(),
-    date:document.getElementById('cfDate').value,
-    startTime:document.getElementById('cfStart').value,
-    endTime:document.getElementById('cfEnd').value,
-    instructions:document.getElementById('cfInstructions').value.trim(),
-    active:document.getElementById('sessionToggle').classList.contains('on') // Preserve active state from toggle
+window.saveSessionConfig = async function() {
+  if (!activeSessionId) return showToast('No active session',true);
+  const s = {
+    title:   document.getElementById('cfTitle').value.trim()||'Quiz Session',
+    grade:   document.getElementById('cfGrade').value,
+    className: document.getElementById('cfClass').value.trim(),
+    subject: document.getElementById('cfSubject').value,
+    teacher: currentTeacher.name||'',
+    date:    document.getElementById('cfDate').value,
+    startTime: document.getElementById('cfStart').value,
+    endTime:   document.getElementById('cfEnd').value,
+    instructions: document.getElementById('cfInstructions').value.trim(),
+    ownerTeacherId: currentTeacher.firestoreId||currentTeacher.uid,
+    ownerTeacherName: currentTeacher.name||''
   };
-  await dbUpdate(`sessions/${activeSessionId}/config`, s);
+  await update(ref(rtdb,`sessions/${activeSessionId}/config`), s);
   updateSessionChip(s);
   showToast('Configuration saved!');
 };
 
-function setToggle(on){
+function setToggle(on) {
   const t=document.getElementById('sessionToggle'),l=document.getElementById('sessionToggleLabel'),w=document.getElementById('toggleWrap');
   if(on){t.classList.add('on');l.textContent='Session Open';w.classList.add('active');}
   else{t.classList.remove('on');l.textContent='Session Closed';w.classList.remove('active');}
 }
-function updateSessionChip(s){
+function updateSessionChip(s) {
   const parts=[s.grade,s.className,s.title].filter(Boolean);
   document.getElementById('topSessionChip').textContent=parts.length?parts.join(' · '):'No Active Session';
 }
-
-window.toggleSession=async function(){
-  if(!activeSessionId) return;
+window.toggleSession = async function() {
+  if (!activeSessionId) return;
   const cur=document.getElementById('sessionToggle').classList.contains('on');
-  await dbUpdate(`sessions/${activeSessionId}/config`, {active: !cur});
+  await update(ref(rtdb,`sessions/${activeSessionId}/config`),{active:!cur});
   setToggle(!cur);
   showToast(!cur?'✅ Session is OPEN — students can join!':'Session closed');
 };
 
 // ── QUESTIONS ──
-let editingId=null;
-
 async function renderQuestionsForActiveSession() {
-  if(!activeSessionId) return;
-  const qs = await dbGet(`sessions/${activeSessionId}/questions`) || {};
-  renderQuestionsFromData(qs);
+  if (!activeSessionId) return;
+  const qs=await get(ref(rtdb,`sessions/${activeSessionId}/questions`));
+  renderQuestionsFromData(qs.val()||{});
 }
 
-window.openForm=function(id=null){
+window.openForm = function(id=null) {
   editingId=id;
   document.getElementById('questionForm').classList.add('open');
   document.getElementById('formTitle').textContent=id?'Edit Question':'New Question';
-  if(id){
-    dbGet(`sessions/${activeSessionId}/questions/${id}`).then(q=>{
-      if(!q)return;
-      document.getElementById('fText').value=q.text||'';
-      document.getElementById('fType').value=q.type||'text';
-      document.getElementById('fPoints').value=q.points||10;
-      document.getElementById('fCorrect').value=q.correct||'';
-      document.getElementById('fTag').value=q.tag||'';
+  if (id) {
+    get(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`)).then(q=>{
+      if(!q.val())return;
+      const qv=q.val();
+      document.getElementById('fText').value=qv.text||'';
+      document.getElementById('fType').value=qv.type||'text';
+      document.getElementById('fPoints').value=qv.points||10;
+      document.getElementById('fCorrect').value=qv.correct||'';
+      document.getElementById('fTag').value=qv.tag||'';
       toggleOptionsBuilder();
-      if(q.options){document.getElementById('optionsBuilder').innerHTML='';q.options.forEach(o=>addOption(o));}
+      if(qv.options){document.getElementById('optionsBuilder').innerHTML='';qv.options.forEach(o=>addOption(o));}
     });
-  }else{
+  } else {
     ['fText','fCorrect','fTag'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fType').value='text';
     document.getElementById('fPoints').value='10';
@@ -788,179 +772,184 @@ window.openForm=function(id=null){
   }
   document.getElementById('questionForm').scrollIntoView({behavior:'smooth'});
 };
-window.closeForm=function(){document.getElementById('questionForm').classList.remove('open');editingId=null;};
-window.toggleOptionsBuilder=function(){
+window.closeForm = function() { document.getElementById('questionForm').classList.remove('open'); editingId=null; };
+window.toggleOptionsBuilder = function() {
   const t=document.getElementById('fType').value,w=document.getElementById('optionsBuilderWrap');
   if(t==='mcq'){w.style.display='block';if(!document.getElementById('optionsBuilder').children.length){addOption('Option A');addOption('Option B');}}
   else w.style.display='none';
 };
-window.addOption=function(val=''){
+window.addOption = function(val='') {
   const b=document.getElementById('optionsBuilder');
   const r=document.createElement('div');r.className='option-row';
   r.innerHTML=`<input type="text" placeholder="Option text" value="${esc(val)}"><button class="btn-rm-opt" onclick="this.parentElement.remove()">×</button>`;
   b.appendChild(r);
 };
-window.saveQuestion=async function(){
-  if(!activeSessionId) return showToast('No active session', true);
+window.saveQuestion = async function() {
+  if (!activeSessionId) return showToast('No active session',true);
   const text=document.getElementById('fText').value.trim();
-  if(!text)return showToast('Question text required',true);
+  if(!text) return showToast('Question text required',true);
   const type=document.getElementById('fType').value;
   let options=null;
-  if(type==='mcq')options=Array.from(document.getElementById('optionsBuilder').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
-  const id=editingId!==null?editingId:'q'+Date.now();
-  const existing=editingId?await dbGet(`sessions/${activeSessionId}/questions/${id}`):null;
-  const q={id,text,type,points:parseInt(document.getElementById('fPoints').value)||10,correct:document.getElementById('fCorrect').value.trim(),tag:document.getElementById('fTag').value.trim(),options,createdAt:existing?.createdAt||Date.now()};
-  await dbSet(`sessions/${activeSessionId}/questions/${id}`,q);
-  closeForm();
+  if(type==='mcq') options=Array.from(document.getElementById('optionsBuilder').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
+  const id=editingId||'q'+Date.now();
+  const existing=editingId?await get(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`)):null;
+  const q={id,text,type,points:parseInt(document.getElementById('fPoints').value)||10,correct:document.getElementById('fCorrect').value.trim(),tag:document.getElementById('fTag').value.trim(),options,createdAt:existing?.val()?.createdAt||Date.now()};
+  await set(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`),q);
+  closeForm(); renderQuestionsForActiveSession();
   showToast(editingId?'Question updated!':'Question added!');
 };
-window.deleteQuestion=async function(id){
-  if(!confirm('Delete?'))return;
-  await dbRemove(`sessions/${activeSessionId}/questions/${id}`);
-  showToast('Deleted');
+window.deleteQuestion = async function(id) {
+  if(!confirm('Delete this question?'))return;
+  await remove(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`));
+  renderQuestionsForActiveSession(); showToast('Deleted');
 };
 
-function renderQuestionsFromData(qs){
+function renderQuestionsFromData(qs) {
   const list=document.getElementById('questionsList');
   const arr=Object.values(qs).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  if(!arr.length){list.innerHTML=`<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started</span></div>`;return;}
-  function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  list.innerHTML=arr.map((q,i)=>`<div class="q-card"><div class="q-num">Q${i+1}</div><div class="q-body"><div class="q-text" style="font-size:14px;line-height:1.7">${mathHtml(q.text)}</div><div class="q-meta" style="margin-top:8px"><span class="q-tag type">${q.type}</span><span class="q-tag pts">${q.points} pts</span>${q.tag?`<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(q.tag)}</span>`:''} ${q.correct?`<span class="q-tag pts" style="color:var(--green);border-color:rgba(74,222,128,0.2);background:var(--green-dim)">✓ ${esc(q.correct)}</span>`:''}</div>${q.options?`<div class="q-opts">${q.options.map(o=>`<span class="q-opt">${mathHtml(o)}</span>`).join('')}</div>`:''}</div><div class="q-actions"><button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button><button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button></div></div>`).join('');
+  if(!arr.length){list.innerHTML=`<div class="empty-state"><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started</span></div>`;return;}
+  list.innerHTML=arr.map((q,i)=>`<div class="q-card"><div class="q-num">Q${i+1}</div><div class="q-body"><div class="q-text">${mathHtml(q.text)}</div><div class="q-meta"><span class="q-tag type">${q.type}</span><span class="q-tag pts">${q.points} pts</span>${q.tag?`<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(q.tag)}</span>`:''} ${q.correct?`<span class="q-tag pts" style="color:var(--green)">✓ ${esc(q.correct)}</span>`:''}</div>${q.options?`<div class="q-opts">${q.options.map(o=>`<span class="q-opt">${mathHtml(o)}</span>`).join('')}</div>`:''}</div><div class="q-actions"><button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button><button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button></div></div>`).join('');
   if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([list]).catch(()=>{});
 }
 
 // ── MONITOR & STATS ──
-function updateStatsFromData(questions, students, config) {
-  const qArr = Object.values(questions);
-  const sArr = Object.values(students);
-  const online = sArr.filter(s => s.online).length;
-  const answers = sArr.reduce((n,s)=>n+(s.answers?Object.keys(s.answers).length:0),0);
-  const graded = sArr.reduce((n,s)=>n+(s.grades?Object.keys(s.grades).length:0),0);
-  const totalPts = qArr.reduce((n,q)=>n+(q.points||0),0);
-
-  // Update Top Bar
-  document.getElementById('liveCount').textContent = `● ${online} online`;
+function updateStatsFromData(questions,students,config) {
+  const qArr=Object.values(questions);
+  const sArr=Object.values(students);
+  const online=sArr.filter(s=>s.online).length;
+  const answers=sArr.reduce((n,s)=>n+(s.answers?Object.keys(s.answers).length:0),0);
+  const graded=sArr.reduce((n,s)=>n+(s.grades?Object.keys(s.grades).length:0),0);
+  const totalPts=qArr.reduce((n,q)=>n+(q.points||0),0);
+  document.getElementById('liveCount').textContent=`● ${online} online`;
   updateSessionChip(config);
-
-  // Update Stats Tab
-  document.getElementById('prevQuestions').textContent = qArr.length;
-  document.getElementById('prevStudents').textContent = online;
-  document.getElementById('prevAnswers').textContent = answers;
-  document.getElementById('prevTotal').textContent = totalPts;
-
-  // Update Monitor Tab
-  document.getElementById('statOnline').textContent = online;
-  document.getElementById('statAnswers').textContent = answers;
-  document.getElementById('statQuestions').textContent = qArr.length;
-  document.getElementById('statGraded').textContent = graded;
+  document.getElementById('prevQuestions').textContent=qArr.length;
+  document.getElementById('prevStudents').textContent=online;
+  document.getElementById('prevAnswers').textContent=answers;
+  document.getElementById('prevTotal').textContent=totalPts;
+  document.getElementById('statOnline').textContent=online;
+  document.getElementById('statAnswers').textContent=answers;
+  document.getElementById('statQuestions').textContent=qArr.length;
+  document.getElementById('statGraded').textContent=graded;
 }
 
 async function renderStudentCardsFromActive() {
-  if(!activeSessionId) return;
-  const students = await dbGet(`sessions/${activeSessionId}/students`) || {};
-  renderStudentCards(students);
+  if (!activeSessionId) return;
+  const students=await get(ref(rtdb,`sessions/${activeSessionId}/students`));
+  renderStudentCards(students.val()||{});
 }
 
-// ── STUDENT CARDS ──
 const COLORS=['#f5a623','#60a5fa','#4ade80','#f87171','#c084fc','#fb923c','#34d399','#fbbf24'];
-function renderStudentCards(students){
+function renderStudentCards(students) {
   const online=Object.values(students||{}).filter(s=>s.online);
   const grid=document.getElementById('studentsGrid');
   const qcount=parseInt(document.getElementById('statQuestions').textContent)||0;
-  if(!online.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p style="font-size:15px">No students online</p><span style="font-size:13px;display:block;margin-top:6px">Students appear when they join</span></div>`;return;}
-  // Build name index — safe lookup without string corruption
-  _reviewNames = online.map(s=>s.name||'');
-  grid.innerHTML=online.map((s,i)=>{
+  if(!online.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><p style="font-size:15px">No students online</p></div>`;return;}
+  // Store the RTDB key (uid) for each online student so review/clear can look them up
+  // The students object may be keyed by uid (new) or by name (legacy) — handle both
+  const onlineWithKeys = Object.entries(students||{})
+    .filter(([k,s])=>s.online)
+    .map(([k,s])=>({key:k, ...s}));
+  _reviewKeys = onlineWithKeys.map(s=>s.key);
+  grid.innerHTML=onlineWithKeys.map((s,i)=>{
     const answered=s.answers?Object.keys(s.answers).length:0;
     const pct=qcount?Math.round(answered/qcount*100):0;
     const color=COLORS[i%COLORS.length];
-    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700;vertical-align:middle">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview(${i})">Review Answers →</button></div>`;
+    const displayName = s.name||s.key||'Student';
+    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(displayName)}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+    <div style="display:flex;gap:6px;margin-top:10px"><button class="btn-review" onclick="openReview(${i})">Review →</button><button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${esc(s.key||'')}')">Clear</button></div></div>`;
   }).join('');
 }
 
 // ── REVIEW PANEL ──
-let _reviewNames = [];
-
-window.openReview=async function(idx){
-  if(!activeSessionId) return;
-  const name = _reviewNames[idx];
-  if(!name) return;
-  const[s,qs]=await Promise.all([dbGet(`sessions/${activeSessionId}/students/${name}`),dbGet(`sessions/${activeSessionId}/questions`)]);
+window.openReview = async function(idx) {
+  if (!activeSessionId) return;
+  const key=_reviewKeys[idx];
+  if (!key) return;
+  const [sSnap,qsSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students/${key}`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`))]);
+  const s=sSnap.val();
   if(!s){showToast('Student data not found',true);return;}
-  const questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  const name=s.name||key;
+  const questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   const color=COLORS[Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%COLORS.length];
-  function mathHtml(str){
-    return String(str)
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/\\&amp;/g,'\\&');
-  }
   let html=`<div class="panel-student-info"><div class="avatar" style="background:${color}22;color:${color}">${name.charAt(0).toUpperCase()}</div><div><div style="font-weight:600">${esc(name)}</div><div style="font-size:12px;color:var(--muted)">${s.submitted?'<span style="color:var(--green);font-weight:700">✓ Submitted</span>':'In progress'}</div></div></div>`;
   if(!questions.length)html+='<p style="color:var(--muted);font-size:14px">No questions.</p>';
   else questions.forEach((q,i)=>{
     const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
     const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
     const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
-    const ansDisplay = ans!==null
-      ? `<div class="review-answer math-content">${mathHtml(String(ans))}</div>`
-      : `<div class="review-answer"><span class="no-answer">No answer submitted</span></div>`;
-    html+=`<div class="review-item">
-      <div class="review-q math-content"><strong>Q${i+1}.</strong> ${mathHtml(q.text)} <span style="color:var(--amber);font-family:'DM Mono',monospace;font-size:12px">(${q.points}pts)</span></div>
-      ${ansDisplay}
-      <div class="grade-row">
-        <label>Score</label>
-        <input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}">
-        <input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}">
-        <button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓ Save</button>
-      </div>
-    </div>`;
+    html+=`<div class="review-item"><div class="review-q math-content"><strong>Q${i+1}.</strong> ${mathHtml(q.text)} <span style="color:var(--amber);font-size:12px">(${q.points}pts)</span></div>
+      ${ans!==null?`<div class="review-answer math-content">${mathHtml(String(ans))}</div>`:`<div class="review-answer"><span class="no-answer">No answer</span></div>`}
+      <div class="grade-row"><label>Score</label><input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}"><input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}"><button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓</button></div></div>`;
   });
-  const panel = document.getElementById('reviewContent');
+  const panel=document.getElementById('reviewContent');
   panel.innerHTML=html;
   document.getElementById('reviewPanel').classList.add('open');
   document.getElementById('overlay').classList.add('show');
-  if(window.MathJax&&MathJax.typesetPromise){
-    MathJax.typesetPromise([panel]).catch(err=>console.warn('MathJax review error:',err));
-  }
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([panel]).catch(()=>{});
 };
-window.saveGrade=async function(idx,qId,qIdx){
-  if(!activeSessionId) return;
-  const name=_reviewNames[idx];
-  if(!name)return;
+window.saveGrade = async function(idx,qId,qIdx) {
+  if(!activeSessionId)return;
+  const key=_reviewKeys[idx];if(!key)return;
   const g=document.getElementById(`gr_${qIdx}_${qId}`)?.value||'';
   const f=document.getElementById(`fb_${qIdx}_${qId}`)?.value||'';
-  await dbUpdate(`sessions/${activeSessionId}/students/${name}/grades`,{[qId]:g});
-  await dbUpdate(`sessions/${activeSessionId}/students/${name}/feedback`,{[qId]:f});
+  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}/grades`),{[qId]:g});
+  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}/feedback`),{[qId]:f});
   showToast('Grade saved!');
 };
-window.closeReview=function(){document.getElementById('reviewPanel').classList.remove('open');document.getElementById('overlay').classList.remove('show');};
+window.closeReview = function() { document.getElementById('reviewPanel').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); };
+
+// ── CLEAR ANSWERS ──
+window.clearSessionAnswers = async function() {
+  if (!activeSessionId) return showToast('No active session',true);
+  if (!confirm('Clear ALL student answers for this session? This cannot be undone.')) return;
+  const studentsSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students`));
+  const students=studentsSnap.val()||{};
+  const updates={};
+  Object.keys(students).forEach(name=>{
+    updates[`sessions/${activeSessionId}/students/${name}/answers`]=null;
+    updates[`sessions/${activeSessionId}/students/${name}/submitted`]=null;
+    updates[`sessions/${activeSessionId}/students/${name}/grades`]=null;
+    updates[`sessions/${activeSessionId}/students/${name}/feedback`]=null;
+  });
+  await update(ref(rtdb),updates);
+  showToast('All answers cleared');
+};
+
+window.clearStudentAnswers = async function(key) {
+  if (!activeSessionId||!key) return;
+  // Get display name for confirmation message
+  const sSnap = await get(ref(rtdb,`sessions/${activeSessionId}/students/${key}`));
+  const displayName = sSnap.val()?.name || key;
+  if (!confirm(`Clear all answers for ${displayName}? This cannot be undone.`)) return;
+  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}`),{answers:null,submitted:null,grades:null,feedback:null});
+  showToast(`Answers cleared for ${displayName}`);
+};
 
 // ── RESULTS ──
-async function renderResults(){
-  if(!activeSessionId) return;
-  const[st,qs]=await Promise.all([dbGet(`sessions/${activeSessionId}/students`),dbGet(`sessions/${activeSessionId}/questions`)]);
-  const students=st||{},questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  const names=Object.keys(students);
+async function renderResults() {
+  if (!activeSessionId) return;
+  const [stSnap,qsSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`))]);
+  const students=stSnap.val()||{},questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  // Build list of {key, displayName} pairs — keys are uids (new) or legacy names
+  const studentEntries = Object.entries(students).map(([k,s])=>({key:k, name:s.name||k, ...s}));
   const fS=document.getElementById('filterStudent'),fQ=document.getElementById('filterQuestion');
   const sS=fS.value,sQ=fQ.value;
   function stripLatex(s){return String(s).replace(/\\\(.*?\\\)/g,'[math]').replace(/\$.*?\$/g,'[math]');}
-  fS.innerHTML='<option value="">All Students</option>'+names.map(n=>`<option value="${esc(n)}" ${n===sS?'selected':''}>${esc(n)}</option>`).join('');
+  fS.innerHTML='<option value="">All Students</option>'+studentEntries.map(s=>`<option value="${esc(s.key)}" ${s.key===sS?'selected':''}>${esc(s.name)}</option>`).join('');
   fQ.innerHTML='<option value="">All Questions</option>'+questions.map(q=>`<option value="${q.id}" ${q.id===sQ?'selected':''}>${esc(stripLatex(q.text).substring(0,55))}</option>`).join('');
   let rows=[];
-  _reviewNames = names;
-  names.forEach((name,ni)=>{
-    if(sS&&name!==sS)return;
-    const s=students[name];
+  _reviewKeys = studentEntries.map(s=>s.key);
+  studentEntries.forEach((entry,ni)=>{
+    const {key, name} = entry;
+    if(sS&&key!==sS)return;
+    const s=students[key];
     questions.forEach(q=>{
       if(sQ&&q.id!==sQ)return;
       const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
       const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
       const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
       const c=grade===''?'var(--muted)':parseInt(grade)===q.points?'var(--green)':parseInt(grade)===0?'var(--red)':'var(--amber)';
-      const qDisplay=`<div class="math-content" style="max-width:220px">${mathHtml(q.text)}</div>`;
-      const aDisplay=ans!==null?`<div class="math-content" style="max-width:180px">${mathHtml(String(ans))}</div>`:'<span style="color:var(--muted);font-style:italic">—</span>';
-      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td>${qDisplay}</td><td>${aDisplay}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
+      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td><div class="math-content" style="max-width:220px">${mathHtml(q.text)}</div></td><td>${ans!==null?`<div class="math-content" style="max-width:180px">${mathHtml(String(ans))}</div>`:'<span style="color:var(--muted);font-style:italic">—</span>'}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
     });
   });
   const tbody=document.getElementById('resultsBody');
@@ -969,198 +958,108 @@ async function renderResults(){
 }
 window.renderResults=renderResults;
 
-// ── EXPORT FUNCTIONS ──
+// ── EXPORT ──
 window.exportReports = async function() {
-    if(!activeSessionId) return showToast('No active session', true);
-    const [st, qs, sess] = await Promise.all([dbGet(`sessions/${activeSessionId}/students`), dbGet(`sessions/${activeSessionId}/questions`), dbGet(`sessions/${activeSessionId}/config`)]);
-    const students = st || {};
-    const questions = Object.values(qs || {}).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
-    const names = Object.keys(students);
-
-    if (!names.length) return showToast('No student data to export', true);
-
-    showToast('Generating Reports...');
-
-    // 1. EXCEL EXPORT
-    let excelData = [['Student Name', 'Question ID', 'Question Text', 'Answer', 'Score', 'Max Points', 'Feedback']];
-    
-    names.forEach(name => {
-        const s = students[name];
-        questions.forEach(q => {
-            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : '';
-            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
-            const fb = s.feedback && s.feedback[q.id] ? s.feedback[q.id] : '';
-            const cleanQ = q.text.replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
-            const cleanA = String(ans).replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
-            excelData.push([name, q.id, cleanQ, cleanA, grade, q.points, fb]);
-        });
+  if(!activeSessionId)return showToast('No active session',true);
+  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`)),get(ref(rtdb,`sessions/${activeSessionId}/config`))]);
+  const students=stSnap.val()||{},questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)),sess=cfgSnap.val()||{};
+  const studentEntries = Object.entries(students).map(([k,s])=>({key:k, name:s.name||k, ...s}));
+  if(!studentEntries.length)return showToast('No student data',true);
+  showToast('Generating…');
+  let excelData=[['Student','Question','Answer','Score','Max','Feedback']];
+  studentEntries.forEach(entry=>{
+    const {key, name} = entry;
+    const s=students[key];
+    questions.forEach(q=>{
+      const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:'';
+      const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
+      const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
+      excelData.push([name,q.text.replace(/<[^>]*>/g,''),String(ans),grade,q.points,fb]);
     });
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, "Results");
-    XLSX.writeFile(wb, `EduBoard_Results_${sess.title || 'Export'}.xlsx`);
-
-    // 2. PDF EXPORT
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const printContainer = document.getElementById('print-container');
-    
-    function cleanForPrint(str) {
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
-
-    for (let i = 0; i < names.length; i++) {
-        const name = names[i];
-        const s = students[name];
-        
-        let html = `
-            <div class="print-page">
-                <div class="print-header">
-                    <div>
-                        <div class="print-student-name">${esc(name)}</div>
-                        <div class="print-meta">Class: ${sess.className || '-'} | Subject: ${sess.subject || '-'}</div>
-                    </div>
-                    <div style="text-align:right">
-                        <div style="font-size:18px;font-weight:bold">${sess.title || 'Exam'}</div>
-                        <div style="font-size:12px">${sess.date || ''}</div>
-                    </div>
-                </div>
-        `;
-
-        questions.forEach((q, idx) => {
-            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
-            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
-            
-            html += `
-                <div class="print-q-item">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                        <div class="print-q-text math-content">Q${idx+1}. ${cleanForPrint(q.text)}</div>
-                        ${grade !== '' ? `<div class="print-score">Score: ${grade} / ${q.points}</div>` : ''}
-                    </div>
-                    <div class="print-a-label">Student Answer:</div>
-                    <div class="print-a-text math-content">
-                        ${ans !== null ? cleanForPrint(String(ans)) : '<em>No Answer</em>'}
-                    </div>
-                </div>
-            `;
-        });
-        html += `</div>`; 
-        
-        printContainer.innerHTML = html;
-        
-        if(window.MathJax && MathJax.typesetPromise) {
-            await MathJax.typesetPromise([printContainer]);
-        }
-
-        const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
-            scale: 2, useCORS: true, backgroundColor: '#ffffff'
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const pdfWidth = 210; 
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-        if (i > 0) doc.addPage();
-        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    }
-
-    doc.save(`EduBoard_Exam_Papers.pdf`);
-    printContainer.innerHTML = ''; 
-    showToast('Reports Exported!');
+  });
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(excelData),'Results');
+  XLSX.writeFile(wb,`EduBoard_Results_${sess.title||'Export'}.xlsx`);
+  const {jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');
+  const printContainer=document.getElementById('print-container');
+  for(let i=0;i<studentEntries.length;i++){
+    const {key, name} = studentEntries[i]; const s=students[key];
+    let html=`<div class="print-page"><div class="print-header"><div><div class="print-student-name">${esc(name)}</div><div class="print-meta">${sess.className||''} | ${sess.subject||''}</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:bold">${sess.title||'Exam'}</div><div style="font-size:12px">${sess.date||''}</div></div></div>`;
+    questions.forEach((q,idx)=>{
+      const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+      const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
+      html+=`<div class="print-q-item"><div style="display:flex;justify-content:space-between"><div class="print-q-text">Q${idx+1}. ${q.text.replace(/<[^>]*>/g,'')}</div>${grade!==''?`<div class="print-score">${grade}/${q.points}</div>`:''}</div><div class="print-a-label">Answer:</div><div class="print-a-text">${ans!==null?String(ans):'<em>No Answer</em>'}</div></div>`;
+    });
+    html+='</div>';printContainer.innerHTML=html;
+    if(window.MathJax&&MathJax.typesetPromise)await MathJax.typesetPromise([printContainer]);
+    const canvas=await html2canvas(printContainer.querySelector('.print-page'),{scale:2,useCORS:true,backgroundColor:'#ffffff'});
+    const imgData=canvas.toDataURL('image/png');
+    const pdfWidth=210;const pdfHeight=(canvas.height*pdfWidth)/canvas.width;
+    if(i>0)doc.addPage();doc.addImage(imgData,'PNG',0,0,pdfWidth,pdfHeight);
+  }
+  doc.save('EduBoard_Reports.pdf');printContainer.innerHTML='';showToast('Exported!');
 };
 
-window.exportData=async function(){
-  if(!activeSessionId) return;
-  const[st,qs,sess]=await Promise.all([dbGet(`sessions/${activeSessionId}/students`),dbGet(`sessions/${activeSessionId}/questions`),dbGet(`sessions/${activeSessionId}/config`)]);
-  const b=new Blob([JSON.stringify({session:sess,questions:qs,students:st},null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`eduboard_export_${sess.title}.json`;a.click();
+window.exportData = async function() {
+  if(!activeSessionId)return;
+  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`)),get(ref(rtdb,`sessions/${activeSessionId}/config`))]);
+  const b=new Blob([JSON.stringify({session:cfgSnap.val(),questions:qsSnap.val(),students:stSnap.val()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`eduboard_export_${cfgSnap.val()?.title||'session'}.json`;a.click();
 };
 
-// ── IMPORT FROM HTML EXAM ──
+// ── IMPORT HTML ──
 window.importFromHTML = async function(event) {
-  if(!activeSessionId) return showToast('No active session', true);
-  const file = event.target.files[0];
-  if (!file) return;
-  event.target.value = '';
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(e.target.result, 'text/html');
-      const cards = doc.querySelectorAll('.question-card');
-      if (!cards.length) { showToast('No questions found in this file', true); return; }
-      let imported = 0;
-      for (const card of cards) {
-        const inputEl = card.querySelector('input.main-q-input');
-        if (!inputEl) continue;
-        const rawText = inputEl.value || inputEl.getAttribute('value') || '';
-        if (!rawText.trim()) continue;
-        const typeSelector = card.querySelector('select.q-type-selector');
-        let rawType = 'text'; 
-        if (typeSelector) {
-          const selectedOpt = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
-          const selVal = selectedOpt ? selectedOpt.value : '';
-          if (selVal === 'mcq') rawType = 'mcq';
-          else if (selVal === 'tf') rawType = 'truefalse';
-          else if (selVal === 'fill') rawType = 'text';
-          else if (selVal === 'matching') rawType = 'text'; 
-          else rawType = 'text'; 
-        }
-        const marksInput = card.querySelector('input.mark-input-field');
-        const points = marksInput ? (parseFloat(marksInput.value) || 10) : 10;
-        let options = null;
-        if (rawType === 'mcq') {
-          const optInputs = card.querySelectorAll('.mcq-option input');
-          if (optInputs.length) {
-            options = Array.from(optInputs).map(i => i.value || i.getAttribute('value') || '').filter(Boolean);
-            if (!options.length) options = null;
-          }
-        }
-        const id = 'q' + Date.now() + '_' + imported;
-        const q = { id, text: rawText.trim(), type: rawType, points, correct: '', tag: 'Imported', options, createdAt: Date.now() + imported };
-        await dbSet(`sessions/${activeSessionId}/questions/${id}`, q);
-        imported++;
-        await new Promise(r => setTimeout(r, 10));
+  if(!activeSessionId)return showToast('No active session',true);
+  const file=event.target.files[0];if(!file)return;
+  event.target.value='';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const parser=new DOMParser();const doc=parser.parseFromString(e.target.result,'text/html');
+      const cards=doc.querySelectorAll('.question-card');
+      if(!cards.length){showToast('No questions found',true);return;}
+      let imported=0;
+      for(const card of cards){
+        const inputEl=card.querySelector('input.main-q-input');if(!inputEl)continue;
+        const rawText=inputEl.value||inputEl.getAttribute('value')||'';if(!rawText.trim())continue;
+        const typeSelector=card.querySelector('select.q-type-selector');let rawType='text';
+        if(typeSelector){const sel=typeSelector.querySelector('option[selected]')||typeSelector.querySelector('option:checked');if(sel?.value==='mcq')rawType='mcq';else if(sel?.value==='tf')rawType='truefalse';}
+        const marksInput=card.querySelector('input.mark-input-field');const points=marksInput?(parseFloat(marksInput.value)||10):10;
+        let options=null;
+        if(rawType==='mcq'){const optInputs=card.querySelectorAll('.mcq-option input');if(optInputs.length)options=Array.from(optInputs).map(i=>i.value||i.getAttribute('value')||'').filter(Boolean);}
+        const id='q'+Date.now()+'_'+imported;
+        await set(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`),{id,text:rawText.trim(),type:rawType,points,correct:'',tag:'Imported',options,createdAt:Date.now()+imported});
+        imported++;await new Promise(r=>setTimeout(r,10));
       }
-      renderQuestionsForActiveSession();
-      showToast(`✅ Imported ${imported} question${imported !== 1 ? 's' : ''} successfully!`);
-    } catch(err) {
-      console.error('Import error:', err);
-      showToast('Import failed: ' + err.message, true);
-    }
+      renderQuestionsForActiveSession();showToast(`✅ Imported ${imported} question(s)`);
+    }catch(err){showToast('Import failed: '+err.message,true);}
   };
   reader.readAsText(file);
+};
+
+// ── CHANGE PASSWORD ──
+window.changePassword = async function() {
+  const currentPass=document.getElementById('currentPass').value;
+  const newPass=document.getElementById('newPass').value;
+  const confirmPass=document.getElementById('confirmPass').value;
+  if(!currentPass||!newPass)return showToast('All fields required',true);
+  if(newPass!==confirmPass)return showToast('Passwords do not match',true);
+  if(newPass.length<6)return showToast('Password must be at least 6 characters',true);
+  try{
+    const credential=EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    await updatePassword(auth.currentUser, newPass);
+    showToast('Password updated successfully!');
+    document.getElementById('currentPass').value='';
+    document.getElementById('newPass').value='';
+    document.getElementById('confirmPass').value='';
+  }catch(e){showToast('Error: '+e.message,true);}
 };
 
 // ── UTILS ──
 function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.background=err?'var(--red)':'var(--green)';t.style.color=err?'#fff':'#0f1117';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 window.showToast=showToast;
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function mathHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-// Global settings actions
-window.changePassword = async function() {
-  const p1 = document.getElementById('newPass').value;
-  const p2 = document.getElementById('confirmPass').value;
-  if(p1 !== p2) return showToast('Passwords do not match', true);
-  if(!p1) return showToast('Password cannot be empty', true);
-  await dbSet('password', p1);
-  showToast('Password updated!');
-  document.getElementById('newPass').value = '';
-  document.getElementById('confirmPass').value = '';
-};
-
-window.clearAllData = async function() {
-  if(!confirm('CRITICAL WARNING: This will delete ALL sessions, questions, and student data. This cannot be undone.')) return;
-  if(usingFirebase) {
-    await remove(ref(db, 'sessions'));
-  } else {
-    localStorage.removeItem(LS);
-  }
-  location.reload();
-};
-
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function mathHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
 </html>
