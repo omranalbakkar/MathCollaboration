@@ -663,7 +663,7 @@ window.createNewSession = async function() {
     createdByRole: 'teacher'
   };
   
-  console.log('Creating session with data:', sessionData);
+  console.log('Creating session with ', sessionData);
   
   try {
     const docRef = await addDoc(collection(db, 'sessions'), sessionData);
@@ -1027,8 +1027,363 @@ function renderStudentCards() {
   }).join('');
 }
 
+// --- REVIEW LOGIC ---
+
 window.openReview = async function(studentId) {
-  showToast('Review feature coming soon');
+  // Find student and their data
+  const student = currentStudents.find(s => s.id === studentId);
+  if (!student) return;
+
+  const panel = document.getElementById('reviewPanel');
+  const overlay = document.getElementById('overlay');
+  const content = document.getElementById('reviewContent');
+
+  // Generate Review HTML
+  let html = `
+    <div class="panel-student-info">
+      <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
+      <div>
+        <div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
+        <div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
+      </div>
+    </div>
+  `;
+
+  // Loop through all questions in the session
+  for (const q of currentQuestions) {
+    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
+    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '';
+    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+
+    // Determine correctness styling
+    let statusColor = 'var(--muted)';
+    let statusIcon = '○';
+    if (score !== '') {
+      const numScore = parseFloat(score);
+      if (numScore >= q.points) { statusColor = 'var(--green)'; statusIcon = '✓'; }
+      else if (numScore > 0) { statusColor = 'var(--amber)'; statusIcon = '◐'; }
+      else { statusColor = 'var(--red)'; statusIcon = '✕'; }
+    }
+
+    html += `
+      <div class="review-item">
+        <div class="review-q">
+          <strong>Q:</strong> <span class="math-content">${mathHtml(q.text)}</span>
+          <span style="float:right;color:${statusColor}">${statusIcon} ${q.points} pts</span>
+        </div>
+        
+        <div class="review-answer math-content">
+          ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>'}
+        </div>
+
+        <div class="grade-row">
+          <label>Grade:</label>
+          <input type="number" class="grade-input" id="grade-${q.id}" value="${score}" placeholder="-" min="0" max="${q.points}">
+          
+          <label>Feedback:</label>
+          <input type="text" class="feedback-input" id="feedback-${q.id}" value="${escapeHtml(feedback)}" placeholder="Optional comment...">
+          
+          <button class="btn-save-grade" onclick="saveGrade('${studentId}', '${q.id}', ${q.points})">Save</button>
+        </div>
+      </div>
+    `;
+  }
+
+  content.innerHTML = html;
+  
+  // Open Panel
+  panel.classList.add('open');
+  overlay.classList.add('show');
+
+  // Render MathJax inside the panel
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([content]).catch(err => console.log('MathJax error:', err));
+  }
+};
+
+window.closeReview = function() {
+  document.getElementById('reviewPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+};
+
+window.saveGrade = async function(studentId, questionId, maxPoints) {
+  const scoreInput = document.getElementById(`grade-${questionId}`);
+  const feedbackInput = document.getElementById(`feedback-${questionId}`);
+  
+  let score = scoreInput.value;
+  const feedback = feedbackInput.value;
+
+  // Validate score
+  if (score !== '') {
+    score = parseFloat(score);
+    if (isNaN(score)) {
+      showToast('Invalid score number', true);
+      return;
+    }
+    if (score < 0) score = 0;
+  }
+
+  try {
+    // Update specific fields in the student document
+    const updates = {};
+    updates[`grades.${questionId}`] = score === '' ? null : score;
+    updates[`feedback.${questionId}`] = feedback;
+
+    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), updates);
+    
+    // Visual feedback
+    scoreInput.style.borderColor = 'var(--green)';
+    setTimeout(() => scoreInput.style.borderColor = 'var(--border)', 1000);
+    
+    showToast('Grade saved');
+    
+    // Refresh local data to update stats
+    await loadStudents();
+    updateStats();
+
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to save grade', true);
+  }
+};
+
+// --- RESULTS & EXPORT LOGIC ---
+
+window.renderResults = async function() {
+  if (!activeSessionId) return;
+  
+  // Ensure we have latest data
+  await loadStudents();
+  
+  const tbody = document.getElementById('resultsBody');
+  const filterStudent = document.getElementById('filterStudent').value;
+  const filterQuestion = document.getElementById('filterQuestion').value;
+  
+  // Populate filters if empty
+  const studentSelect = document.getElementById('filterStudent');
+  if (studentSelect.options.length <= 1) {
+    currentStudents.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name || s.id;
+      studentSelect.appendChild(opt);
+    });
+  }
+  
+  const questionSelect = document.getElementById('filterQuestion');
+  if (questionSelect.options.length <= 1) {
+    currentQuestions.forEach((q, i) => {
+      const opt = document.createElement('option');
+      opt.value = q.id;
+      opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
+      questionSelect.appendChild(opt);
+    });
+  }
+
+  tbody.innerHTML = '';
+  
+  let hasData = false;
+  
+  // Iterate through students
+  for (const student of currentStudents) {
+    if (filterStudent && student.id !== filterStudent) continue;
+    
+    // Iterate through questions
+    for (const q of currentQuestions) {
+      if (filterQuestion && q.id !== filterQuestion) continue;
+      
+      const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
+      const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
+      const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+      
+      // Skip if no answer and we are filtering strictly? No, show all rows for completeness unless filtered.
+      // If you want to hide unanswered, uncomment below:
+      // if (!answer && !filterQuestion) continue; 
+
+      hasData = true;
+      
+      let scoreClass = '';
+      if (score !== '-') {
+        const num = parseFloat(score);
+        if (num >= q.points) scoreClass = 'color:var(--green)';
+        else if (num > 0) scoreClass = 'color:var(--amber)';
+        else scoreClass = 'color:var(--red)';
+      }
+
+      const row = `
+        <tr>
+          <td>
+            <div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
+            <div style="font-size:11px;color:var(--muted)">${student.submitted ? 'Submitted' : 'Draft'}</div>
+          </td>
+          <td>
+            <div style="font-size:11px;color:var(--muted)">Q${currentQuestions.indexOf(q)+1}</div>
+            <div class="math-content" style="font-size:13px">${mathHtml(q.text)}</div>
+          </td>
+          <td>
+            <div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span style="color:var(--muted);font-style:italic">-</span>'}</div>
+          </td>
+          <td>
+            <span class="score-pill" style="${scoreClass};background:var(--surface2);border:1px solid var(--border)">
+              ${score === '-' ? '-' : `${score}/${q.points}`}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">
+              ${escapeHtml(feedback) || '-'}
+            </div>
+          </td>
+          <td>
+             <button class="btn btn-sm btn-edit" onclick="openReview('${student.id}')">View</button>
+          </td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    }
+  }
+  
+  if (!hasData) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
+  }
+  
+  // Render MathJax in table
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+  }
+};
+
+window.exportData = async function() {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  showToast('Preparing JSON export...');
+  
+  const exportObj = {
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    session: currentSessionData,
+    questions: currentQuestions,
+    students: currentStudents.map(s => ({
+      id: s.id,
+      name: s.name,
+      submitted: s.submitted,
+      loginTime: s.loginTime,
+      answers: s.answers,
+      grades: s.grades,
+      feedback: s.feedback
+    }))
+  };
+  
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('JSON Export Complete');
+};
+
+window.exportReports = async function() {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  if (!currentStudents.length) {
+    showToast('No students to export', true);
+    return;
+  }
+
+  showToast('Generating PDF reports... This may take a moment.');
+  
+  const { jsPDF } = window.jspdf;
+  const printContainer = document.getElementById('print-container');
+  
+  // Process students one by one to avoid memory issues
+  for (const student of currentStudents) {
+    // Build HTML for this student
+    let html = `
+      <div class="print-page">
+        <div class="print-header">
+          <div>
+            <h1 style="margin:0;font-size:20px;">${escapeHtml(currentSessionData?.title || 'Quiz Report')}</h1>
+            <div style="font-size:12px;color:#555;">${escapeHtml(currentSessionData?.subject || '')} - ${escapeHtml(currentSessionData?.className || '')}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="print-student-name">${escapeHtml(student.name || student.id)}</div>
+            <div class="print-meta">Date: ${new Date().toLocaleDateString()}</div>
+          </div>
+        </div>
+    `;
+    
+    let totalScore = 0;
+    let maxTotal = 0;
+    
+    currentQuestions.forEach((q, idx) => {
+      const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : 'No Answer';
+      const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : 0;
+      const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+      
+      totalScore += parseFloat(score) || 0;
+      maxTotal += q.points;
+      
+      html += `
+        <div class="print-q-item">
+          <div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
+          <div class="print-a-label">Student Answer:</div>
+          <div class="print-a-text math-content">${mathHtml(answer)}</div>
+          ${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedback: ${escapeHtml(feedback)}</em></div>` : ''}
+          <div class="print-score">${score} / ${q.points}</div>
+          <div style="clear:both;"></div>
+        </div>
+      `;
+    });
+    
+    html += `
+        <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
+          <span>Total Score:</span>
+          <span>${totalScore} / ${maxTotal}</span>
+        </div>
+      </div>
+    `;
+    
+    printContainer.innerHTML = html;
+    
+    // Wait for MathJax to render
+    if (window.MathJax && MathJax.typesetPromise) {
+      await MathJax.typesetPromise([printContainer]);
+    }
+    
+    // Capture with html2canvas
+    try {
+      const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`${student.name || 'Student'}_Report.pdf`);
+      
+    } catch (err) {
+      console.error("PDF Generation Error:", err);
+    }
+    
+    // Small delay between students
+    await new Promise(r => setTimeout(r, 500));
+  }
+  
+  printContainer.innerHTML = '';
+  showToast('PDF Reports Generated');
 };
 
 window.clearStudentAnswers = async function(studentId) {
@@ -1415,589 +1770,6 @@ window.importFromHTML = async function(event) {
   
   reader.readAsText(file);
 };
-
-window.renderResults = async function() {
-  if (!activeSessionId || !currentStudents.length) {
-    document.getElementById('resultsBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No submissions yet</td></tr>`;
-    return;
-  }
-  
-  const filterStudent = document.getElementById('filterStudent').value;
-  const filterQuestion = document.getElementById('filterQuestion').value;
-  
-  // Populate filter dropdowns if empty
-  const studentSelect = document.getElementById('filterStudent');
-  const questionSelect = document.getElementById('filterQuestion');
-  
-  if (studentSelect.options.length === 1) {
-    currentStudents.forEach(student => {
-      const option = document.createElement('option');
-      option.value = student.id;
-      option.textContent = student.name || student.id;
-      studentSelect.appendChild(option);
-    });
-  }
-  
-  if (questionSelect.options.length === 1) {
-    currentQuestions.forEach((q, i) => {
-      const option = document.createElement('option');
-      option.value = q.id;
-      // Strip math syntax for dropdown display
-      const plainText = q.text.replace(/\$\$[\s\S]*?\$\$/g, '[math]').replace(/\$[^$]+\$/g, '[math]').replace(/\\\([\s\S]*?\\\)/g, '[math]');
-      option.textContent = `Q${i + 1}: ${plainText.substring(0, 40)}...`;
-      questionSelect.appendChild(option);
-    });
-  }
-  
-  // Build results data structure - ORDERED BY STUDENT THEN QUESTION
-  const resultsData = [];
-  
-  // Sort students by name
-  const sortedStudents = [...currentStudents].sort((a, b) => {
-    const nameA = (a.name || a.id || '').toLowerCase();
-    const nameB = (b.name || b.id || '').toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
-  
-  for (const student of sortedStudents) {
-    if (filterStudent && student.id !== filterStudent) continue;
-    if (!student.answers || Object.keys(student.answers).length === 0) continue;
-    
-    // Create a map of question ID to question index for sorting
-    const questionIndexMap = new Map();
-    currentQuestions.forEach((q, idx) => {
-      questionIndexMap.set(q.id, idx);
-    });
-    
-    // Get all answered questions for this student and sort by question number
-    const answeredQuestions = Object.entries(student.answers)
-      .map(([qId, answer]) => ({
-        qId,
-        answer,
-        questionIndex: questionIndexMap.get(qId) ?? 999
-      }))
-      .sort((a, b) => a.questionIndex - b.questionIndex);
-    
-    // Add each answer as a row
-    for (const { qId, answer } of answeredQuestions) {
-      if (filterQuestion && qId !== filterQuestion) continue;
-      
-      const question = currentQuestions.find(q => q.id === qId);
-      if (!question) continue;
-      
-      const qIndex = currentQuestions.findIndex(q => q.id === qId) + 1;
-      const grade = student.grades?.[qId] !== undefined ? student.grades[qId] : '';
-      const feedback = student.feedback?.[qId] || '';
-      const maxPoints = question.points || 10;
-      
-      resultsData.push({
-        studentId: student.id,
-        studentName: student.name || student.id,
-        questionId: qId,
-        questionNumber: qIndex,
-        questionText: question.text,
-        questionType: question.type,
-        answer: answer,
-        grade: grade,
-        maxPoints: maxPoints,
-        feedback: feedback
-      });
-    }
-  }
-  
-  // Build HTML rows
-  const rows = resultsData.map(row => {
-    // Don't truncate - show full question text
-    const qTextForDisplay = row.questionText;
-    
-    // Prepare answer for display (will render math)
-    const answerDisplay = row.answer ? row.answer : '<span class="no-answer" style="color:var(--muted);font-style:italic;">No answer</span>';
-    
-    return `
-      <tr>
-        <td style="white-space:nowrap;vertical-align:top;padding-top:16px;">${escapeHtml(row.studentName)}</td>
-        <td style="vertical-align:top;padding-top:16px;"><div class="math-content" style="line-height:1.9;max-width:400px;">Q${row.questionNumber}: ${qTextForDisplay}</div></td>
-        <td style="vertical-align:top;padding-top:16px;"><div class="math-content" style="line-height:1.9;max-width:300px;">${answerDisplay}</div></td>
-        <td style="white-space:nowrap;vertical-align:top;padding-top:16px;">
-          <input type="number" class="grade-input" value="${row.grade}" min="0" max="${row.maxPoints}" 
-                 data-student="${row.studentId}" data-question="${row.questionId}"
-                 placeholder="/${row.maxPoints}" step="0.5" style="width:80px;">
-        </td>
-        <td style="vertical-align:top;padding-top:16px;">
-          <input type="text" class="feedback-input" value="${escapeHtml(row.feedback)}" 
-                 data-student="${row.studentId}" data-question="${row.questionId}"
-                 placeholder="Optional feedback" style="width:100%;min-width:150px;">
-        </td>
-        <td style="white-space:nowrap;vertical-align:top;padding-top:16px;">
-          <button class="btn btn-sm btn-save" onclick="saveGradeAndFeedback('${row.studentId}', '${row.questionId}')">Save</button>
-        </td>
-      </tr>
-    `;
-  });
-  
-  const tbody = document.getElementById('resultsBody');
-  if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No results match the current filters</td></tr>`;
-  } else {
-    tbody.innerHTML = rows.join('');
-  }
-  
-  // CRITICAL: Typeset math after DOM update
-  setTimeout(() => {
-    if (window.MathJax && MathJax.typesetPromise) {
-      MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
-    }
-  }, 100);
-};
-
-window.saveGradeAndFeedback = async function(studentId, questionId) {
-  if (!activeSessionId) return;
-  
-  const row = event.target.closest('tr');
-  const gradeInput = row.querySelector(`.grade-input[data-student="${studentId}"][data-question="${questionId}"]`);
-  const feedbackInput = row.querySelector(`.feedback-input[data-student="${studentId}"][data-question="${questionId}"]`);
-  
-  const grade = parseFloat(gradeInput.value);
-  const feedback = feedbackInput.value.trim();
-  
-  // Validate grade
-  const question = currentQuestions.find(q => q.id === questionId);
-  const maxPoints = question ? question.points : 10;
-  
-  if (isNaN(grade) || grade < 0 || grade > maxPoints) {
-    showToast(`Grade must be between 0 and ${maxPoints}`, true);
-    return;
-  }
-  
-  try {
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentId);
-    const studentDoc = await getDoc(studentRef);
-    
-    if (studentDoc.exists()) {
-      const updateData = {
-        [`grades.${questionId}`]: grade,
-        [`feedback.${questionId}`]: feedback
-      };
-      
-      await updateDoc(studentRef, updateData);
-      
-      // Visual feedback
-      const saveBtn = event.target;
-      const originalText = saveBtn.textContent;
-      saveBtn.textContent = '✓ Saved';
-      saveBtn.style.background = 'var(--green)';
-      saveBtn.style.color = '#0f1117';
-      setTimeout(() => {
-        saveBtn.textContent = originalText;
-        saveBtn.style.background = '';
-        saveBtn.style.color = '';
-      }, 1500);
-      
-      showToast('Grade and feedback saved!');
-      
-      // Refresh to update stats
-      await loadStudents();
-      updateStats();
-    }
-  } catch(e) {
-    console.error('Error saving:', e);
-    showToast('Error saving: ' + e.message, true);
-  }
-};
-window.saveGradeAndFeedback = async function(studentId, questionId) {
-  if (!activeSessionId) return;
-  
-  const row = event.target.closest('tr');
-  const gradeInput = row.querySelector(`.grade-input[data-student="${studentId}"][data-question="${questionId}"]`);
-  const feedbackInput = row.querySelector(`.feedback-input[data-student="${studentId}"][data-question="${questionId}"]`);
-  
-  const grade = parseFloat(gradeInput.value);
-  const feedback = feedbackInput.value.trim();
-  
-  // Validate grade
-  const question = currentQuestions.find(q => q.id === questionId);
-  const maxPoints = question ? question.points : 10;
-  
-  if (isNaN(grade) || grade < 0 || grade > maxPoints) {
-    showToast(`Grade must be between 0 and ${maxPoints}`, true);
-    return;
-  }
-  
-  try {
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentId);
-    const studentDoc = await getDoc(studentRef);
-    
-    if (studentDoc.exists()) {
-      const updateData = {
-        [`grades.${questionId}`]: grade,
-        [`feedback.${questionId}`]: feedback
-      };
-      
-      await updateDoc(studentRef, updateData);
-      
-      // Visual feedback
-      event.target.textContent = '✓ Saved';
-      event.target.style.background = 'var(--green)';
-      setTimeout(() => {
-        event.target.textContent = 'Save';
-        event.target.style.background = '';
-      }, 1500);
-      
-      showToast('Grade and feedback saved!');
-      
-      // Refresh to update stats
-      await loadStudents();
-      updateStats();
-    }
-  } catch(e) {
-    console.error('Error saving:', e);
-    showToast('Error saving: ' + e.message, true);
-  }
-};
-  
-window.updateGrade = function(studentId, questionId, value) {
-  // Store temporarily - will be saved on "Save" button click
-  const input = event.target;
-  input.dataset.modified = 'true';
-};
-
-window.updateFeedback = function(studentId, questionId, value) {
-  // Store temporarily - will be saved on "Save" button click
-  const input = event.target;
-  input.dataset.modified = 'true';
-};
-
-window.saveGradeAndFeedback = async function(studentId, questionId) {
-  if (!activeSessionId) return;
-  
-  const row = event.target.closest('tr');
-  const gradeInput = row.querySelector('.grade-input');
-  const feedbackInput = row.querySelector('.feedback-input');
-  
-  const grade = parseFloat(gradeInput.value) || 0;
-  const feedback = feedbackInput.value.trim();
-  
-  try {
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentId);
-    const studentDoc = await getDoc(studentRef);
-    
-    if (studentDoc.exists()) {
-      const updateData = {
-        [`grades.${questionId}`]: grade,
-        [`feedback.${questionId}`]: feedback
-      };
-      
-      await updateDoc(studentRef, updateData);
-      
-      gradeInput.dataset.modified = 'false';
-      feedbackInput.dataset.modified = 'false';
-      
-      showToast('Grade and feedback saved!');
-      
-      // Refresh to update stats
-      await loadStudents();
-      updateStats();
-    }
-  } catch(e) {
-    console.error('Error saving:', e);
-    showToast('Error saving: ' + e.message, true);
-  }
-};
-
-window.exportData = async function() {
-  if (!activeSessionId) {
-    showToast('No active session', true);
-    return;
-  }
-  
-  if (!currentStudents.length) {
-    showToast('No student data to export', true);
-    return;
-  }
-  
-  // Prepare export data structure
-  const exportObj = {
-    version: "1.0",
-    type: "session_results",
-    exportedAt: new Date().toISOString(),
-    session: {
-      id: activeSessionId,
-      title: currentSessionData?.title || "Untitled Session",
-      grade: currentSessionData?.grade || "",
-      className: currentSessionData?.className || "",
-      subject: currentSessionData?.subject || "",
-      teacher: currentSessionData?.teacher || "",
-      date: currentSessionData?.date || "",
-      totalQuestions: currentQuestions.length
-    },
-    questions: currentQuestions.map((q, i) => ({
-      id: q.id,
-      number: i + 1,
-      text: q.text,
-      type: q.type,
-      points: q.points,
-      correct: q.correct || "",
-      tag: q.tag || "",
-      options: q.options || null
-    })),
-    students: currentStudents.map(student => {
-      const answers = student.answers || {};
-      const grades = student.grades || {};
-      const feedback = student.feedback || {};
-      
-      const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
-      const earnedPoints = Object.entries(grades).reduce((sum, [qId, grade]) => sum + (parseFloat(grade) || 0), 0);
-      const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-      
-      return {
-        id: student.id,
-        name: student.name || student.id,
-        email: student.email || "",
-        loginTime: student.loginTime || "",
-        submitted: student.submitted || false,
-        online: student.online || false,
-        totalAnswered: Object.keys(answers).length,
-        totalGraded: Object.keys(grades).length,
-        earnedPoints: earnedPoints,
-        totalPoints: totalPoints,
-        percentage: percentage,
-        answers: Object.entries(answers).map(([qId, answer]) => {
-          const question = currentQuestions.find(q => q.id === qId);
-          const qIndex = currentQuestions.findIndex(q => q.id === qId) + 1;
-          return {
-            questionId: qId,
-            questionNumber: qIndex,
-            questionText: question?.text || "",
-            answer: answer,
-            grade: grades[qId] !== undefined ? grades[qId] : null,
-            maxPoints: question?.points || 0,
-            feedback: feedback[qId] || ""
-          };
-        })
-      };
-    }),
-    summary: {
-      totalStudents: currentStudents.length,
-      studentsSubmitted: currentStudents.filter(s => s.submitted).length,
-      studentsOnline: currentStudents.filter(s => s.online).length,
-      totalQuestions: currentQuestions.length,
-      totalPossiblePoints: currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0),
-      averageScore: calculateAverageScore()
-    }
-  };
-  
-  // Create and download JSON file
-  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `results_${currentSessionData?.title?.replace(/\s+/g, '_') || 'session'}_${Date.now()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  
-  showToast(`Exported data for ${currentStudents.length} students!`);
-};
-
-window.exportReports = async function() {
-  if (!activeSessionId) {
-    showToast('No active session', true);
-    return;
-  }
-  
-  if (!currentStudents.length) {
-    showToast('No student data to export', true);
-    return;
-  }
-  
-  showToast('Generating reports... Please wait');
-  
-  try {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 20;
-    const contentWidth = pageWidth - (margin * 2);
-    
-    let pageNumber = 0;
-    
-    // Filter students who have submitted
-    const studentsToExport = currentStudents.filter(s => s.submitted || (s.answers && Object.keys(s.answers).length > 0));
-    
-    if (!studentsToExport.length) {
-      showToast('No submitted work to export', true);
-      return;
-    }
-    
-    for (let i = 0; i < studentsToExport.length; i++) {
-      const student = studentsToExport[i];
-      
-      if (i > 0) {
-        pdf.addPage();
-      }
-      pageNumber++;
-      
-      let yPos = margin;
-      
-      // Header
-      pdf.setFontSize(18);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(currentSessionData?.title || 'Assessment Report', margin, yPos);
-      yPos += 10;
-      
-      // Student info box
-      pdf.setFillColor(245, 246, 250);
-      pdf.rect(margin, yPos, contentWidth, 25, 'F');
-      
-      pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Student: ' + (student.name || student.id), margin + 5, yPos + 8);
-      
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Date: ' + (currentSessionData?.date || new Date().toLocaleDateString()), margin + 5, yPos + 15);
-      pdf.text('Subject: ' + (currentSessionData?.subject || '—'), margin + 5, yPos + 21);
-      
-      // Calculate score
-      const answers = student.answers || {};
-      const grades = student.grades || {};
-      const feedback = student.feedback || {};
-      
-      const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
-      const earnedPoints = Object.entries(grades).reduce((sum, [qId, grade]) => sum + (parseFloat(grade) || 0), 0);
-      const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
-      
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(`Score: ${earnedPoints}/${totalPoints} (${percentage}%)`, pageWidth - margin - 50, yPos + 15);
-      
-      yPos += 35;
-      
-      // Questions and answers
-      pdf.setFontSize(12);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Responses', margin, yPos);
-      yPos += 8;
-      
-      for (let qIdx = 0; qIdx < currentQuestions.length; qIdx++) {
-        const question = currentQuestions[qIdx];
-        const answer = answers[question.id];
-        const grade = grades[question.id];
-        const fb = feedback[question.id];
-        
-        // Check if we need a new page
-        if (yPos > pageHeight - 50) {
-          pdf.addPage();
-          yPos = margin;
-        }
-        
-        // Question number and text
-        pdf.setFontSize(11);
-        pdf.setFont('helvetica', 'bold');
-        const qText = `Q${qIdx + 1}: ${stripMathForPDF(question.text)}`;
-        const qLines = pdf.splitTextToSize(qText, contentWidth);
-        pdf.text(qLines, margin, yPos);
-        yPos += qLines.length * 6;
-        
-        // Answer
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'normal');
-        if (answer) {
-          const answerText = 'Answer: ' + stripMathForPDF(answer);
-          const aLines = pdf.splitTextToSize(answerText, contentWidth - 10);
-          pdf.text(aLines, margin + 5, yPos);
-          yPos += aLines.length * 5 + 2;
-        } else {
-          pdf.setTextColor(150, 150, 150);
-          pdf.text('Answer: Not answered', margin + 5, yPos);
-          pdf.setTextColor(0, 0, 0);
-          yPos += 7;
-        }
-        
-        // Score and feedback
-        if (grade !== undefined) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text(`Score: ${grade}/${question.points}`, margin + 5, yPos);
-          yPos += 6;
-          
-          if (fb) {
-            pdf.setFont('helvetica', 'italic');
-            pdf.setTextColor(70, 70, 70);
-            const fbLines = pdf.splitTextToSize('Feedback: ' + fb, contentWidth - 10);
-            pdf.text(fbLines, margin + 5, yPos);
-            pdf.setTextColor(0, 0, 0);
-            yPos += fbLines.length * 5;
-          }
-        }
-        
-        yPos += 8;
-      }
-      
-      // Page number at bottom
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(100, 100, 100);
-      pdf.text(`Page ${pageNumber} of ${studentsToExport.length}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
-      pdf.setTextColor(0, 0, 0);
-    }
-    
-    // Save the PDF
-    const fileName = `reports_${currentSessionData?.title?.replace(/\s+/g, '_') || 'session'}_${Date.now()}.pdf`;
-    pdf.save(fileName);
-    
-    showToast(`✅ Exported ${studentsToExport.length} student report(s)!`);
-    
-  } catch (error) {
-    console.error('PDF export error:', error);
-    showToast('Error generating PDF: ' + error.message, true);
-  }
-};
-
-// Helper function to calculate average score
-function calculateAverageScore() {
-  const studentsWithGrades = currentStudents.filter(s => s.grades && Object.keys(s.grades).length > 0);
-  
-  if (!studentsWithGrades.length) return 0;
-  
-  const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
-  
-  if (totalPoints === 0) return 0;
-  
-  const totalPercentages = studentsWithGrades.reduce((sum, student) => {
-    const earnedPoints = Object.entries(student.grades || {}).reduce((pts, [qId, grade]) => pts + (parseFloat(grade) || 0), 0);
-    const percentage = (earnedPoints / totalPoints) * 100;
-    return sum + percentage;
-  }, 0);
-  
-  return Math.round(totalPercentages / studentsWithGrades.length);
-}
-
-// Helper function to strip math notation for PDF
-function stripMathForPDF(text) {
-  if (!text) return '';
-  
-  // Remove display math $$...$$
-  let result = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-    return `[Math: ${math.trim()}]`;
-  });
-  
-  // Remove inline math $...$
-  result = result.replace(/\$([^$]+)\$/g, (match, math) => {
-    return `[${math.trim()}]`;
-  });
-  
-  // Remove \(...\)
-  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
-    return `[${math.trim()}]`;
-  });
-  
-  // Remove \[...\]
-  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (match, math) => {
-    return `[Math: ${math.trim()}]`;
-  });
-  
-  return result;
-}
 
 window.changePassword = async function() {
   const currentPass = document.getElementById('currentPass').value;
