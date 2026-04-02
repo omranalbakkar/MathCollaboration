@@ -35,7 +35,7 @@ import {
 
 // 2. Your Web App Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyButDd5w_s93F7SW46GIb2EaK7S-LZICrE",
+  apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
   authDomain: "eduboard-870d3.firebaseapp.com",
   databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
   projectId: "eduboard-870d3",
