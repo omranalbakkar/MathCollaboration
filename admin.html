@@ -1094,8 +1094,25 @@ window.downloadCurrentData = function(type) {
   XLSX.writeFile(wb, `${type}_update_data.xlsx`);
 };
 
-// --- PROCESS IMPORT ---
-window.handleBulkImport = async function(input) {
+// Helper to get value from row regardless of case or spaces in header
+function getVal(row, possibleKeys) {
+  // Normalize all keys in the row to lowercase without spaces
+  const normalizedRow = {};
+  Object.keys(row).forEach(key => {
+    normalizedRow[key.toLowerCase().replace(/[^a-z0-9]/g, '')] = row[key];
+  });
+
+  // Check possible variations of the target key
+  for (let key of possibleKeys) {
+    const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (normalizedRow[cleanKey] !== undefined && normalizedRow[cleanKey] !== null) {
+      return normalizedRow[cleanKey];
+    }
+  }
+  return null; // Return null if not found
+}
+
+  window.handleBulkImport = async function(input) {
   const file = input.files[0];
   if (!file) return;
   
@@ -1103,7 +1120,7 @@ window.handleBulkImport = async function(input) {
   reader.onload = async (e) => {
     const data = new Uint8Array(e.target.result);
     const workbook = XLSX.read(data, {type: 'array'});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
     const json = XLSX.utils.sheet_to_json(sheet);
     
     if(!json.length) { showToast('File is empty', true); return; }
@@ -1113,122 +1130,148 @@ window.handleBulkImport = async function(input) {
 
     try {
       for(const row of json) {
-        // Normalize keys (remove spaces, lowercase)
-        const r = {};
-        Object.keys(row).forEach(k => r[k.trim().toLowerCase()] = row[k]);
-
-        if(bulkCurrentType === 'grade') {
-           if(!r['nameenglish'] || !r['code']) continue;
-           await addDoc(collection(db, 'grades'), {
-             nameEn: r['nameenglish'],
-             nameAr: r['namearabic']||'',
-             code: r['code'],
-             active: String(r['active(true/false)']).toLowerCase() === 'true',
-             createdAt: serverTimestamp(),
-             createdBy: currentAdmin.uid
-           });
-        }
-        else if(bulkCurrentType === 'subject') {
-           if(!r['nameenglish'] || !r['code']) continue;
-           await addDoc(collection(db, 'subjects'), {
-             nameEn: r['nameenglish'],
-             nameAr: r['namearabic']||'',
-             code: r['code'],
-             active: String(r['active(true/false)']).toLowerCase() === 'true',
-             createdAt: serverTimestamp(),
-             createdBy: currentAdmin.uid
-           });
-        }
-        else if(bulkCurrentType === 'teacher') {
-           if(!r['name'] || !r['email'] || !r['password(min6)']) continue;
-           // Basic teacher creation logic similar to single save but without checking duplicates strictly here for speed
-           // Ideally check if email exists first
-           const email = r['email'];
-           const pass = r['password(min6)'];
-           const name = r['name'];
-           
-           // Note: Creating Auth users in bulk loop is slow and might hit rate limits. 
-           // For production, use Cloud Functions. Here we do it client side.
-           try {
-             const uCred = await createUserWithEmailAndPassword(auth, email, pass);
-             const uid = uCred.user.uid;
+        try {
+          if(bulkCurrentType === 'grade') {
+             const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
+             const code   = getVal(row, ['Code', 'code']);
              
-             // Resolve Grade IDs from Codes
-             const gCodes = String(r['assignedgrades(codescommasep)']||'').split(',').map(s=>s.trim());
-             const gIds = gCodes.map(code => { const g=allGrades.find(x=>x.code===code); return g?g.id:null; }).filter(Boolean);
-             
-             const sCodes = String(r['assignedsubjects(codescommasep)']||'').split(',').map(s=>s.trim());
-             const sIds = sCodes.map(code => { const s=allSubjects.find(x=>x.code===code); return s?s.id:null; }).filter(Boolean);
+             if(!nameEn || !code) { errorCount++; continue; }
 
-             const tRef = await addDoc(collection(db, 'teachers'), {
-               name, email, 
-               active: String(r['active(true/false)']).toLowerCase() === 'true',
-               assignedGrades: gIds, assignedSubjects: sIds,
-               pendingPassword: pass,
-               createdAt: serverTimestamp(), createdBy: currentAdmin.uid
+             await addDoc(collection(db, 'grades'), {
+               nameEn: String(nameEn),
+               nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
+               code: String(code),
+               active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
+               createdAt: serverTimestamp(),
+               createdBy: currentAdmin.uid
              });
+          }
+          else if(bulkCurrentType === 'subject') {
+             const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
+             const code   = getVal(row, ['Code', 'code']);
              
-             await setDoc(doc(db, 'users', uid), {
-               role:'teacher', name, email, active:true, 
-               assignedGrades: gIds, assignedSubjects: sIds,
-               teacherDocId: tRef.id, createdAt: serverTimestamp()
+             if(!nameEn || !code) { errorCount++; continue; }
+
+             await addDoc(collection(db, 'subjects'), {
+               nameEn: String(nameEn),
+               nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
+               code: String(code),
+               active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
+               createdAt: serverTimestamp(),
+               createdBy: currentAdmin.uid
+             });
+          }
+          else if(bulkCurrentType === 'teacher') {
+             const name = getVal(row, ['Name', 'name']);
+             const email = getVal(row, ['Email', 'email']);
+             const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
+             
+             if(!name || !email || !pass) { errorCount++; continue; }
+             
+             try {
+               const uCred = await createUserWithEmailAndPassword(auth, email, pass);
+               const uid = uCred.user.uid;
+               
+               // Resolve IDs
+               const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codescommasep)']) || '');
+               const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+                 const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
+               }).filter(Boolean);
+               
+               const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codescommasep)']) || '');
+               const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+                 const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
+               }).filter(Boolean);
+
+               const tRef = await addDoc(collection(db, 'teachers'), {
+                 name, email, 
+                 active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
+                 assignedGrades: gIds, 
+                 assignedSubjects: sIds,
+                 pendingPassword: pass,
+                 createdAt: serverTimestamp(), 
+                 createdBy: currentAdmin.uid
+               });
+               
+               await setDoc(doc(db, 'users', uid), {
+                 role:'teacher', name, email, active:true, 
+                 assignedGrades: gIds, assignedSubjects: sIds,
+                 teacherDocId: tRef.id, createdAt: serverTimestamp()
+               });
+               successCount++;
+             } catch(err) { console.error("Teacher Auth Error", err); errorCount++; }
+          }
+          else if(bulkCurrentType === 'student') {
+             const name = getVal(row, ['Name', 'name']);
+             const email = getVal(row, ['Email', 'email']);
+             const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
+             const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
+             
+             if(!name || !email || !pass) { errorCount++; continue; }
+             
+             try {
+               const uCred = await createUserWithEmailAndPassword(auth, email, pass);
+               const uid = uCred.user.uid;
+               const grade = allGrades.find(g => g.code === gradeCode);
+               
+               await setDoc(doc(db, 'students', uid), {
+                 name: String(name), 
+                 email: String(email),
+                 gradeId: grade ? grade.id : '',
+                 active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
+                 uid: uid, 
+                 createdAt: serverTimestamp(), 
+                 createdBy: currentAdmin.uid
+               });
+               
+               await setDoc(doc(db, 'users', uid), {
+                 role:'student', 
+                 name: String(name), 
+                 email: String(email), 
+                 active:true,
+                 gradeId: grade ? grade.id : '', 
+                 studentDocId: uid,
+                 createdAt: serverTimestamp(), 
+                 createdBy: currentAdmin.uid
+               });
+               successCount++;
+             } catch(err) { console.error("Student Auth Error", err); errorCount++; }
+          }
+          else if(bulkCurrentType === 'session') {
+             const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
+             const teacher = allTeachers.find(t => t.email === tEmail);
+             if(!teacher) { errorCount++; continue; }
+             
+             const id = 'sess_bulk_' + Date.now() + Math.random().toString(36).substr(2, 5);
+             await set(ref(rtDB, `sessions/${id}`), {
+               config: {
+                 title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
+                 grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
+                 subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
+                 className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
+                 date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
+                 startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
+                 endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
+                 active: false,
+                 createdAt: Date.now(),
+                 ownerTeacherId: teacher.id,
+                 ownerTeacherName: teacher.name,
+                 createdBy: currentAdmin.uid,
+                 createdByRole: 'superadmin',
+                 instructions: ''
+               },
+               questions: {}, students: {}
              });
              successCount++;
-           } catch(err) { console.error(err); errorCount++; }
-        }
-        else if(bulkCurrentType === 'student') {
-           if(!r['name'] || !r['email'] || !r['password(min6)']) continue;
-           try {
-             const uCred = await createUserWithEmailAndPassword(auth, r['email'], r['password(min6)']);
-             const uid = uCred.user.uid;
-             const grade = allGrades.find(g => g.code === r['gradecode']);
-             
-             await setDoc(doc(db, 'students', uid), {
-               name: r['name'], email: r['email'],
-               gradeId: grade?grade.id:'',
-               active: String(r['active(true/false)']).toLowerCase() === 'true',
-               uid: uid, createdAt: serverTimestamp(), createdBy: currentAdmin.uid
-             });
-             await setDoc(doc(db, 'users', uid), {
-               role:'student', name: r['name'], email: r['email'], active:true,
-               gradeId: grade?grade.id:'', studentDocId: uid,
-               createdAt: serverTimestamp(), createdBy: currentAdmin.uid
-             });
-             successCount++;
-           } catch(err) { console.error(err); errorCount++; }
-        }
-        else if(bulkCurrentType === 'session') {
-           // Find teacher by email
-           const tEmail = r['teacheremail'];
-           const teacher = allTeachers.find(t => t.email === tEmail);
-           if(!teacher) { errorCount++; continue; }
-           
-           const id = 'sess_bulk_' + Date.now() + Math.random().toString(36).substr(2, 5);
-           await set(ref(rtDB, `sessions/${id}`), {
-             config: {
-               title: r['title'],
-               grade: r['gradename'],
-               subject: r['subjectname'],
-               className: r['classname']||'',
-               date: r['date(yyyy-mm-dd)'],
-               startTime: r['starttime(hh:mm)'],
-               endTime: r['endtime(hh:mm)'],
-               active: false,
-               createdAt: Date.now(),
-               ownerTeacherId: teacher.id,
-               ownerTeacherName: teacher.name,
-               createdBy: currentAdmin.uid,
-               createdByRole: 'superadmin',
-               instructions: ''
-             },
-             questions: {}, students: {}
-           });
-           successCount++;
+          }
+        } catch(rowErr) {
+          console.error("Row processing error", rowErr);
+          errorCount++;
         }
       }
-      showToast(`Import Done. Success: ${successCount}, Errors: ${errorCount}`);
+      showToast(`Import Done. Success: ${successCount}, Errors/Skipped: ${errorCount}`);
       closeModal();
-      loadAll(); // Refresh UI
+      loadAll(); 
     } catch(e) {
       console.error(e);
       showToast('Bulk import failed: ' + e.message, true);
@@ -1237,8 +1280,7 @@ window.handleBulkImport = async function(input) {
   reader.readAsArrayBuffer(file);
 };
 
-// --- PROCESS UPDATE ---
-window.handleBulkUpdate = async function(input) {
+  window.handleBulkUpdate = async function(input) {
   const file = input.files[0];
   if (!file) return;
   
@@ -1252,85 +1294,125 @@ window.handleBulkUpdate = async function(input) {
     if(!json.length) { showToast('File is empty', true); return; }
     
     let successCount = 0;
+    let errorCount = 0;
 
     try {
       for(const row of json) {
-        const r = {};
-        Object.keys(row).forEach(k => r[k.trim().toLowerCase()] = row[k]);
-        
-        const id = r['id'] || r['sessionid']; // Session ID key differs
-        if(!id) continue;
+        // Get ID based on type
+        let id = getVal(row, ['ID', 'id', 'Session ID', 'SessionID', 'sessionid']);
+        if(!id) { errorCount++; continue; }
 
-        if(bulkCurrentType === 'grade') {
-          await updateDoc(doc(db, 'grades', id), {
-            nameEn: r['nameenglish'],
-            nameAr: r['namearabic']||'',
-            code: r['code'],
-            active: String(r['active']).toLowerCase() === 'true',
-            updatedAt: serverTimestamp()
-          });
+        try {
+          if(bulkCurrentType === 'grade') {
+            const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
+            // Only update if fields are present in Excel, otherwise keep existing (optional logic, here we overwrite)
+            // To prevent undefined errors, we default to existing values if excel cell is empty, 
+            // BUT usually bulk update implies overwriting. 
+            // Here we assume if column exists in header, we use it. If empty string, we use empty string.
+            
+            const updateData = {};
+            if(getVal(row, ['Name English', 'NameEnglish']) !== null) updateData.nameEn = String(getVal(row, ['Name English', 'NameEnglish']));
+            if(getVal(row, ['Name Arabic', 'NameArabic']) !== null) updateData.nameAr = String(getVal(row, ['Name Arabic', 'NameArabic']));
+            if(getVal(row, ['Code', 'code']) !== null) updateData.code = String(getVal(row, ['Code', 'code']));
+            if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
+            
+            updateData.updatedAt = serverTimestamp();
+            await updateDoc(doc(db, 'grades', id), updateData);
+          }
+          else if(bulkCurrentType === 'subject') {
+            const updateData = {};
+            if(getVal(row, ['Name English', 'NameEnglish']) !== null) updateData.nameEn = String(getVal(row, ['Name English', 'NameEnglish']));
+            if(getVal(row, ['Name Arabic', 'NameArabic']) !== null) updateData.nameAr = String(getVal(row, ['Name Arabic', 'NameArabic']));
+            if(getVal(row, ['Code', 'code']) !== null) updateData.code = String(getVal(row, ['Code', 'code']));
+            if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
+            
+            updateData.updatedAt = serverTimestamp();
+            await updateDoc(doc(db, 'subjects', id), updateData);
+          }
+          else if(bulkCurrentType === 'teacher') {
+             const updateData = {};
+             if(getVal(row, ['Name', 'name']) !== null) updateData.name = String(getVal(row, ['Name', 'name']));
+             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
+             
+             // Handle Arrays
+             if(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codes)']) !== null) {
+                const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codes)']));
+                const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+                  const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
+                }).filter(Boolean);
+                updateData.assignedGrades = gIds;
+             }
+             
+             if(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codes)']) !== null) {
+                const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codes)']));
+                const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+                  const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
+                }).filter(Boolean);
+                updateData.assignedSubjects = sIds;
+             }
+             
+             updateData.updatedAt = serverTimestamp();
+             await updateDoc(doc(db, 'teachers', id), updateData);
+             
+             // Update user sub-collection
+             const t = allTeachers.find(x=>x.id===id);
+             if(t?.uid) {
+               const userUpdate = {};
+               if(updateData.name) userUpdate.name = updateData.name;
+               if(updateData.active !== undefined) userUpdate.active = updateData.active;
+               if(updateData.assignedGrades) userUpdate.assignedGrades = updateData.assignedGrades;
+               if(updateData.assignedSubjects) userUpdate.assignedSubjects = updateData.assignedSubjects;
+               
+               if(Object.keys(userUpdate).length > 0) {
+                 await updateDoc(doc(db, 'users', t.uid), userUpdate);
+               }
+             }
+          }
+          else if(bulkCurrentType === 'student') {
+             const updateData = {};
+             if(getVal(row, ['Name', 'name']) !== null) updateData.name = String(getVal(row, ['Name', 'name']));
+             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
+             
+             if(getVal(row, ['Grade Code', 'GradeCode', 'gradecode']) !== null) {
+                const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
+                const grade = allGrades.find(g => g.code === gradeCode);
+                updateData.gradeId = grade ? grade.id : '';
+             }
+             
+             updateData.updatedAt = serverTimestamp();
+             await updateDoc(doc(db, 'students', id), updateData);
+             
+             const s = allStudents.find(x=>x.id===id);
+             if(s?.uid) {
+               const userUpdate = {};
+               if(updateData.name) userUpdate.name = updateData.name;
+               if(updateData.active !== undefined) userUpdate.active = updateData.active;
+               if(updateData.gradeId !== undefined) userUpdate.gradeId = updateData.gradeId;
+               
+               if(Object.keys(userUpdate).length > 0) {
+                 await updateDoc(doc(db, 'users', s.uid), userUpdate);
+               }
+             }
+          }
+          else if(bulkCurrentType === 'session') {
+             const updateData = {};
+             if(getVal(row, ['Title', 'title']) !== null) updateData.title = String(getVal(row, ['Title', 'title']));
+             if(getVal(row, ['Grade', 'grade']) !== null) updateData.grade = String(getVal(row, ['Grade', 'grade']));
+             if(getVal(row, ['Subject', 'subject']) !== null) updateData.subject = String(getVal(row, ['Subject', 'subject']));
+             if(getVal(row, ['Date', 'date']) !== null) updateData.date = String(getVal(row, ['Date', 'date']));
+             if(getVal(row, ['Start Time', 'StartTime', 'starttime']) !== null) updateData.startTime = String(getVal(row, ['Start Time', 'StartTime', 'starttime']));
+             if(getVal(row, ['End Time', 'EndTime', 'endtime']) !== null) updateData.endTime = String(getVal(row, ['End Time', 'EndTime', 'endtime']));
+             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
+             
+             await update(ref(rtDB, `sessions/${id}/config`), updateData);
+          }
+          successCount++;
+        } catch(rowErr) {
+          console.error("Update Row Error", rowErr);
+          errorCount++;
         }
-        else if(bulkCurrentType === 'subject') {
-          await updateDoc(doc(db, 'subjects', id), {
-            nameEn: r['nameenglish'],
-            nameAr: r['namearabic']||'',
-            code: r['code'],
-            active: String(r['active']).toLowerCase() === 'true',
-            updatedAt: serverTimestamp()
-          });
-        }
-        else if(bulkCurrentType === 'teacher') {
-           const gCodes = String(r['assignedgrades(codes)']||'').split(',').map(s=>s.trim());
-           const gIds = gCodes.map(code => { const g=allGrades.find(x=>x.code===code); return g?g.id:null; }).filter(Boolean);
-           const sCodes = String(r['assignedsubjects(codes)']||'').split(',').map(s=>s.trim());
-           const sIds = sCodes.map(code => { const s=allSubjects.find(x=>x.code===code); return s?s.id:null; }).filter(Boolean);
-
-           await updateDoc(doc(db, 'teachers', id), {
-             name: r['name'],
-             active: String(r['active']).toLowerCase() === 'true',
-             assignedGrades: gIds,
-             assignedSubjects: sIds,
-             updatedAt: serverTimestamp()
-           });
-           // Update user sub-collection
-           const t = allTeachers.find(x=>x.id===id);
-           if(t?.uid) {
-             await updateDoc(doc(db, 'users', t.uid), {
-               name: r['name'], active: String(r['active']).toLowerCase() === 'true',
-               assignedGrades: gIds, assignedSubjects: sIds
-             });
-           }
-        }
-        else if(bulkCurrentType === 'student') {
-           const grade = allGrades.find(g => g.code === r['gradecode']);
-           await updateDoc(doc(db, 'students', id), {
-             name: r['name'],
-             active: String(r['active']).toLowerCase() === 'true',
-             gradeId: grade?grade.id:'',
-             updatedAt: serverTimestamp()
-           });
-           const s = allStudents.find(x=>x.id===id);
-           if(s?.uid) {
-             await updateDoc(doc(db, 'users', s.uid), {
-               name: r['name'], active: String(r['active']).toLowerCase() === 'true',
-               gradeId: grade?grade.id:''
-             });
-           }
-        }
-        else if(bulkCurrentType === 'session') {
-           await update(ref(rtDB, `sessions/${id}/config`), {
-             title: r['title'],
-             grade: r['grade'],
-             subject: r['subject'],
-             date: r['date'],
-             startTime: r['starttime'],
-             endTime: r['endtime'],
-             active: String(r['active']).toLowerCase() === 'true'
-           });
-        }
-        successCount++;
       }
-      showToast(`Update Done. Processed: ${successCount}`);
+      showToast(`Update Done. Processed: ${successCount}, Errors: ${errorCount}`);
       closeModal();
       loadAll();
     } catch(e) {
@@ -1340,6 +1422,8 @@ window.handleBulkUpdate = async function(input) {
   };
   reader.readAsArrayBuffer(file);
 };
+
+  
 
 
 // ── UTILS ──
