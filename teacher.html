@@ -61,15 +61,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .session-master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 30px; }
 .session-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.2s; position: relative; overflow: hidden; }
 .session-card:hover { border-color: var(--faint); transform: translateY(-2px); }
-.session-card.active-session { border-color: var(--green); background: rgba(74,222,128,0.03); }
-.session-card.active-session::before { content: 'ACTIVE'; position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 800; color: var(--green); background: var(--green-dim); padding: 2px 6px; border-radius: 4px; }
+.session-card.active-context { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.session-card.active-context::after { content: 'VIEWING'; position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 800; color: var(--blue); background: var(--blue-dim); padding: 2px 6px; border-radius: 4px; }
+.session-card.live-session { border-color: var(--green); background: rgba(74,222,128,0.03); }
+.session-card.live-session::before { content: 'OPEN TO STUDENTS'; position: absolute; top: 10px; left: 10px; font-size: 9px; font-weight: 800; color: var(--green); background: var(--green-dim); padding: 2px 6px; border-radius: 4px; }
+
 .sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .sc-title { font-weight: 700; font-size: 16px; color: var(--text); }
 .sc-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
 .sc-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-load { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
 .btn-load:hover { background: var(--blue-dim); color: var(--blue); border-color: var(--blue); }
-.btn-load.is-active { background: var(--green); color: #0f1117; border-color: var(--green); cursor: default; }
+.btn-load.is-active { background: var(--blue); color: #fff; border-color: var(--blue); cursor: default; }
 
 /* SESSION CONFIG FORM */
 .session-config-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:28px;position:relative;overflow:hidden;}
@@ -287,14 +290,14 @@ tr:hover td{background:var(--surface2);}
 
   <div class="content">
     
-    <!-- MANAGE SESSIONS TAB (NEW) -->
+    <!-- MANAGE SESSIONS TAB -->
     <div class="tab-pane active" id="tab-manage">
       <div class="section-header">
         <div>
           <div class="section-title">Session Master</div>
-          <div class="section-sub">Create and manage multiple sessions. Each has its own questions and students.</div>
+          <div class="section-sub">Create multiple sessions. Each has independent questions, students, and active status.</div>
         </div>
-        <button class="btn btn-add" onclick="openNewSessionForm()">＋ Create New Session</button>
+        <button class="btn btn-add" onclick="createNewSession()">＋ Create New Session</button>
       </div>
       
       <div class="session-master-grid" id="sessionListGrid">
@@ -306,7 +309,7 @@ tr:hover td{background:var(--surface2);}
     <!-- SESSION CONFIG TAB -->
     <div class="tab-pane" id="tab-session">
       <div class="section-header">
-        <div><div class="section-title">Configuration</div><div class="section-sub">Edit settings for the active session</div></div>
+        <div><div class="section-title">Configuration</div><div class="section-sub">Edit settings for the loaded session</div></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
           <div class="toggle-wrap" id="toggleWrap">
             <div class="toggle-track" id="sessionToggle" onclick="toggleSession()"><div class="toggle-thumb"></div></div>
@@ -467,7 +470,7 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-ap
 import{getDatabase,ref,set,get,update,onValue,remove,push}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 let db=null,usingFirebase=false;
-let activeSessionId = null; // GLOBAL STATE FOR ACTIVE SESSION
+let activeSessionId = null; // GLOBAL STATE FOR ACTIVE SESSION (TEACHER VIEW)
 
 // ── FIREBASE INIT ──
 function initFirebase(){
@@ -594,26 +597,26 @@ async function renderSessionMasterList(allSessionsData) {
   const sessions = Object.entries(allSessionsData).map(([id, data]) => ({id, ...data.config})).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
 
   if(sessions.length === 0) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:40px;"><p>No sessions created yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="openNewSessionForm()">Create First Session</button></div>`;
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:40px;"><p>No sessions created yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
     return;
   }
 
   grid.innerHTML = sessions.map(s => {
-    const isActive = s.id === activeSessionId;
+    const isActiveContext = s.id === activeSessionId;
+    const isLive = s.active;
     const dateStr = s.date ? new Date(s.date).toLocaleDateString() : 'No Date';
     return `
-    <div class="session-card ${isActive ? 'active-session' : ''}">
+    <div class="session-card ${isActiveContext ? 'active-context' : ''} ${isLive ? 'live-session' : ''}">
       <div class="sc-header">
         <div class="sc-title">${esc(s.title || 'Untitled Session')}</div>
-        ${s.active ? '<span style="color:var(--green);font-size:12px">● Live</span>' : ''}
       </div>
       <div class="sc-meta">
         ${esc(s.subject || 'General')} • ${esc(s.className || 'No Class')}<br>
         ${dateStr} • ${Object.keys(s.questions||{}).length} Qs
       </div>
       <div class="sc-actions">
-        <button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : `activateSession('${s.id}')`}">
-          ${isActive ? 'Current Session' : 'Load Session'}
+        <button class="btn-load ${isActiveContext ? 'is-active' : ''}" onclick="${isActiveContext ? '' : `activateSession('${s.id}')`}">
+          ${isActiveContext ? 'Viewing' : 'Load Session'}
         </button>
         <button class="btn-load" style="color:var(--red)" onclick="deleteSession('${s.id}')">Delete</button>
       </div>
@@ -622,17 +625,14 @@ async function renderSessionMasterList(allSessionsData) {
   }).join('');
 }
 
-window.openNewSessionForm = async function() {
-  const title = prompt("Enter Session Title:", "New Session " + new Date().toLocaleDateString());
-  if(!title) return;
-  
+window.createNewSession = async function() {
   const id = 'sess_' + Date.now();
   const newConfig = {
-    title: title,
+    title: 'New Session ' + new Date().toLocaleTimeString(),
     grade: '', className: '', subject: '', teacher: '',
     date: new Date().toISOString().split('T')[0],
     startTime: '', endTime: '', instructions: '',
-    active: false,
+    active: false, // Default to closed, teacher can open it
     createdAt: Date.now()
   };
 
@@ -730,7 +730,7 @@ async function saveSessionConfig(){
     startTime:document.getElementById('cfStart').value,
     endTime:document.getElementById('cfEnd').value,
     instructions:document.getElementById('cfInstructions').value.trim(),
-    active:document.getElementById('sessionToggle').classList.contains('on')
+    active:document.getElementById('sessionToggle').classList.contains('on') // Preserve active state from toggle
   };
   await dbUpdate(`sessions/${activeSessionId}/config`, s);
   updateSessionChip(s);
