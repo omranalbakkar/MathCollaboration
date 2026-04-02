@@ -1039,21 +1039,29 @@ window.importFromHTML = async function(event) {
 
 // ── CHANGE PASSWORD ──
 window.changePassword = async function() {
-  const currentPass=document.getElementById('currentPass').value;
-  const newPass=document.getElementById('newPass').value;
-  const confirmPass=document.getElementById('confirmPass').value;
-  if(!currentPass||!newPass)return showToast('All fields required',true);
-  if(newPass!==confirmPass)return showToast('Passwords do not match',true);
-  if(newPass.length<6)return showToast('Password must be at least 6 characters',true);
-  try{
-    const credential=EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+  const currentPass  = document.getElementById('currentPass').value;
+  const newPass      = document.getElementById('newPass').value;
+  const confirmPass  = document.getElementById('confirmPass').value;
+  if (!currentPass || !newPass) return showToast('All fields required', true);
+  if (newPass !== confirmPass)  return showToast('Passwords do not match', true);
+  if (newPass.length < 6)       return showToast('Password must be at least 6 characters', true);
+  try {
+    // 1. Re-authenticate
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
     await reauthenticateWithCredential(auth.currentUser, credential);
+
+    // 2. Update Firebase Auth directly
     await updatePassword(auth.currentUser, newPass);
+
+    // 3. Also write to Firestore so cloud function stays in sync
+    const uid = auth.currentUser.uid;
+    await updateDoc(doc(db, 'teachers', uid), { pendingPassword: newPass });
+
     showToast('Password updated successfully!');
-    document.getElementById('currentPass').value='';
-    document.getElementById('newPass').value='';
-    document.getElementById('confirmPass').value='';
-  }catch(e){showToast('Error: '+e.message,true);}
+    document.getElementById('currentPass').value = '';
+    document.getElementById('newPass').value = '';
+    document.getElementById('confirmPass').value = '';
+  } catch(e) { showToast('Error: ' + e.message, true); }
 };
 
 // ── UTILS ──
