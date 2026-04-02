@@ -6,6 +6,9 @@
 <title>EduBoard — Super Admin Portal</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- SheetJS for Excel Operations -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--orange:#fb923c;--orange-dim:rgba(251,146,60,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,6 +64,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 /* ── BUTTONS ── */
 .btn{border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
 .btn-add{background:var(--amber);color:#0f1117;}.btn-add:hover{opacity:0.9;}
+.btn-bulk{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);}.btn-bulk:hover{background:rgba(192,132,252,0.2);}
 .btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
 .btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);}
 .btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
@@ -111,6 +115,18 @@ tr:hover td{background:var(--surface2);}
 .multi-check-item:hover{background:var(--surface2);}
 .multi-check-item input[type=checkbox]{accent-color:var(--amber);width:14px;height:14px;cursor:pointer;}
 .multi-check-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
+
+/* ── BULK ACTIONS STYLES ── */
+.bulk-tabs{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;}
+.bulk-tab{background:none;border:none;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:6px;}
+.bulk-tab.active{background:var(--purple-dim);color:var(--purple);}
+.bulk-panel{display:none;}
+.bulk-panel.active{display:block;}
+.file-drop-zone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);}
+.file-drop-zone:hover{border-color:var(--purple);background:rgba(192,132,252,0.05);}
+.file-icon{font-size:32px;margin-bottom:10px;display:block;}
+.bulk-info{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;}
+.bulk-btn-group{display:flex;gap:10px;margin-top:15px;justify-content:center;}
 
 /* ── STATS CARDS ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
@@ -185,7 +201,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-grades">
       <div class="section-header">
         <div><div class="section-title">Grade Master</div><div class="section-sub">Manage all grade levels</div></div>
-        <button class="btn btn-add" onclick="openModal('grade')">＋ Add Grade</button>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-bulk" onclick="openBulkModal('grade')">⚡ Bulk Actions</button>
+            <button class="btn btn-add" onclick="openModal('grade')">＋ Add Grade</button>
+        </div>
       </div>
       <div class="search-bar">
         <input class="search-input" id="gradeSearch" placeholder="Search grades…" oninput="renderGrades()">
@@ -205,7 +224,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-subjects">
       <div class="section-header">
         <div><div class="section-title">Subjects Master</div><div class="section-sub">Manage all subjects</div></div>
-        <button class="btn btn-add" onclick="openModal('subject')">＋ Add Subject</button>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-bulk" onclick="openBulkModal('subject')">⚡ Bulk Actions</button>
+            <button class="btn btn-add" onclick="openModal('subject')">＋ Add Subject</button>
+        </div>
       </div>
       <div class="search-bar">
         <input class="search-input" id="subjectSearch" placeholder="Search subjects…" oninput="renderSubjects()">
@@ -225,7 +247,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-teachers">
       <div class="section-header">
         <div><div class="section-title">Teachers Master</div><div class="section-sub">Manage teacher accounts and assignments</div></div>
-        <button class="btn btn-add" onclick="openModal('teacher')">＋ Add Teacher</button>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-bulk" onclick="openBulkModal('teacher')">⚡ Bulk Actions</button>
+            <button class="btn btn-add" onclick="openModal('teacher')">＋ Add Teacher</button>
+        </div>
       </div>
       <div class="search-bar">
         <input class="search-input" id="teacherSearch" placeholder="Search teachers…" oninput="renderTeachers()">
@@ -245,7 +270,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-students">
       <div class="section-header">
         <div><div class="section-title">Students Master</div><div class="section-sub">Manage student accounts</div></div>
-        <button class="btn btn-add" onclick="openModal('student')">＋ Add Student</button>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-bulk" onclick="openBulkModal('student')">⚡ Bulk Actions</button>
+            <button class="btn btn-add" onclick="openModal('student')">＋ Add Student</button>
+        </div>
       </div>
       <div class="search-bar">
         <input class="search-input" id="studentSearch" placeholder="Search students…" oninput="renderStudents()">
@@ -268,7 +296,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-sessions">
       <div class="section-header">
         <div><div class="section-title">All Sessions</div><div class="section-sub">View and manage sessions across all teachers</div></div>
-        <button class="btn btn-add" onclick="openModal('session-admin')">＋ Create Session</button>
+        <div style="display:flex;gap:10px;">
+            <button class="btn btn-bulk" onclick="openBulkModal('session')">⚡ Bulk Actions</button>
+            <button class="btn btn-add" onclick="openModal('session-admin')">＋ Create Session</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>Session Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
@@ -294,12 +325,10 @@ tr:hover td{background:var(--surface2);}
 
 <!-- 2. Main App Logic (Module) -->
 <script type="module">
-// We do NOT import firebase modules here. They are already exported by firebase-config.js
-// We just import the variables and functions we need from our local config file.
 import { 
   auth, db, rtDB, 
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
-  createUserWithEmailAndPassword, // <--- MAKE SURE THIS IS HERE
+  createUserWithEmailAndPassword, 
   getDoc, doc, getDocs, collection, query, orderBy, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp,
   ref, get, set, remove, onValue 
 } from './firebase-config.js';
@@ -309,6 +338,7 @@ let allGrades    = [];
 let allSubjects  = [];
 let allTeachers  = [];
 let allStudents  = [];
+let allSessions  = []; // Local cache for RTDB sessions
 
 // ── ROUTE GUARD ──
 onAuthStateChanged(auth, async (user) => {
@@ -530,20 +560,21 @@ window.renderStudents = function() {
 // ── ADMIN SESSIONS ──
 async function loadAdminSessions() {
   const snap = await get(ref(rtDB, 'sessions'));
-  const sessions = snap.val() || {};
+  const sessionsObj = snap.val() || {};
+  allSessions = Object.entries(sessionsObj).map(([id, s]) => ({id, ...s.config}));
+  
   const tbody = document.getElementById('adminSessionsBody');
-  const rows = Object.entries(sessions).map(([id, s]) => {
-    const cfg = s.config || {};
-    const teacher = allTeachers.find(t => t.id === cfg.ownerTeacherId);
+  const rows = allSessions.map(s => {
+    const teacher = allTeachers.find(t => t.id === s.ownerTeacherId);
     return `<tr>
-      <td><strong>${esc(cfg.title||'Untitled')}</strong></td>
-      <td>${teacher?esc(teacher.name):`<span style="color:var(--muted)">${esc(cfg.ownerTeacherId||'—')}</span>`}</td>
-      <td>${esc(cfg.grade||'—')}</td>
-      <td>${esc(cfg.subject||'—')}</td>
-      <td>${esc(cfg.date||'—')}</td>
-      <td><span class="${cfg.active?'badge-active':'badge-inactive'}">${cfg.active?'Open':'Closed'}</span></td>
+      <td><strong>${esc(s.title||'Untitled')}</strong></td>
+      <td>${teacher?esc(teacher.name):`<span style="color:var(--muted)">${esc(s.ownerTeacherId||'—')}</span>`}</td>
+      <td>${esc(s.grade||'—')}</td>
+      <td>${esc(s.subject||'—')}</td>
+      <td>${esc(s.date||'—')}</td>
+      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Open':'Closed'}</span></td>
       <td><div class="actions-cell">
-        <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${id}')">Delete</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${s.id}')">Delete</button>
       </div></td>
     </tr>`;
   });
@@ -595,7 +626,7 @@ window.deleteRecord = async function(collName, id, label) {
   if (collName === 'students')  { allStudents = allStudents.filter(x=>x.id!==id);  renderStudents(); }
 };
 
-// ── MODAL ──
+// ── SINGLE ITEM MODAL ──
 let currentModalType = '';
 let currentEditId    = null;
 
@@ -728,7 +759,7 @@ function showFormError(msg) {
   el.textContent = msg; el.style.display = 'block';
 }
 
-// ── SAVE GRADE ──
+// ── SAVE FUNCTIONS (SINGLE) ──
 window.saveGrade = async function() {
   const nameEn = document.getElementById('f_nameEn')?.value.trim();
   const nameAr = document.getElementById('f_nameAr')?.value.trim();
@@ -749,7 +780,6 @@ window.saveGrade = async function() {
   closeModal(); renderGrades(); populateStudentGradeFilter();
 };
 
-// ── SAVE SUBJECT ──
 window.saveSubject = async function() {
   const nameEn = document.getElementById('f_nameEn')?.value.trim();
   const nameAr = document.getElementById('f_nameAr')?.value.trim();
@@ -770,7 +800,6 @@ window.saveSubject = async function() {
   closeModal(); renderSubjects();
 };
 
-// ── SAVE TEACHER ──
 window.saveTeacher = async function() {
   const name     = document.getElementById('f_name')?.value.trim();
   const email    = document.getElementById('f_email')?.value.trim();
@@ -784,7 +813,7 @@ window.saveTeacher = async function() {
   const data = { name, email, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
 
 if (currentEditId) {
-    if (password && password.length >= 6) data.pendingPassword = password; // ← ADD THIS
+    if (password && password.length >= 6) data.pendingPassword = password;
     await updateDoc(doc(db,'teachers',currentEditId), data);
     const t = allTeachers.find(x=>x.id===currentEditId);
     if (t?.uid) await updateDoc(doc(db,'users',t.uid), { name, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp() });
@@ -802,7 +831,6 @@ if (currentEditId) {
   closeModal(); renderTeachers();
 };
 
-// ── SAVE STUDENT (FINAL FIXED VERSION) ──
 window.saveStudent = async function() {
   const name     = document.getElementById('f_name')?.value.trim();
   const email    = document.getElementById('f_email')?.value.trim();
@@ -812,7 +840,6 @@ window.saveStudent = async function() {
   
   if (!name || !email) { showFormError('Name and email are required.'); return; }
   
-  // --- NEW USER CREATION LOGIC ---
   if (!currentEditId) {
     if (!password || password.length < 6) { 
       showFormError('Password must be at least 6 characters.'); 
@@ -820,13 +847,9 @@ window.saveStudent = async function() {
     }
     
     try {
-      // 1. Create Auth User First to get the UID
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUid = userCredential.user.uid;
       
-      console.log("✅ Auth User Created with UID:", newUid);
-      
-      // 2. Prepare Data
       const data = { 
         name, 
         email, 
@@ -837,11 +860,7 @@ window.saveStudent = async function() {
         createdBy: currentAdmin.uid 
       };
       
-      // 3. Save to 'students' collection USING THE AUTH UID AS DOCUMENT ID
       await setDoc(doc(db, 'students', newUid), data);
-      console.log("✅ Student Doc Created");
-      
-      // 4. Save to 'users' collection USING THE SAME UID
       await setDoc(doc(db, 'users', newUid), { 
         role: 'student', 
         name, 
@@ -852,9 +871,7 @@ window.saveStudent = async function() {
         createdAt: serverTimestamp(), 
         createdBy: currentAdmin.uid 
       });
-      console.log("✅ User Role Doc Created");
       
-      // Update local list
       allStudents.unshift({ id: newUid, ...data });
       showToast('Student created successfully!');
       
@@ -872,7 +889,6 @@ window.saveStudent = async function() {
       return;
     }
   } 
-  // --- EDITING EXISTING USER LOGIC ---
   else {
     const data = { 
       name, 
@@ -889,7 +905,6 @@ window.saveStudent = async function() {
     
     await updateDoc(doc(db, 'students', currentEditId), data);
     
-    // Update users collection
     const s = allStudents.find(x => x.id === currentEditId);
     if (s?.uid) {
       await updateDoc(doc(db, 'users', s.uid), { 
@@ -908,7 +923,6 @@ window.saveStudent = async function() {
   renderStudents();
 };
 
-// ── SAVE ADMIN SESSION ──
 window.saveAdminSession = async function() {
   const title     = document.getElementById('f_title')?.value.trim();
   const teacherId = document.getElementById('f_teacherId')?.value;
@@ -936,6 +950,397 @@ window.saveAdminSession = async function() {
   });
   closeModal(); showToast('Session created'); loadAdminSessions();
 };
+
+
+// ──────────────────────────────────────────────
+// ── BULK OPERATIONS LOGIC (NEW) ──
+// ──────────────────────────────────────────────
+
+let bulkCurrentType = '';
+
+window.openBulkModal = function(type) {
+  bulkCurrentType = type;
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody  = document.getElementById('modalBody');
+  const formError  = document.getElementById('formError');
+  formError.style.display = 'none';
+
+  modalTitle.textContent = `Bulk Actions: ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
+  
+  modalBody.innerHTML = `
+    <div class="bulk-tabs">
+      <button class="bulk-tab active" onclick="switchBulkTab('import')">Import New (Excel)</button>
+      <button class="bulk-tab" onclick="switchBulkTab('update')">Update Existing (Excel)</button>
+    </div>
+
+    <!-- IMPORT PANEL -->
+    <div id="bulk-import-panel" class="bulk-panel active">
+      <p style="margin-bottom:15px;color:var(--muted);font-size:13px;">
+        1. Download the template. Sheet 1 is empty headers, Sheet 2 has sample data.<br>
+        2. Fill your data in the Excel file.<br>
+        3. Upload to insert new records.
+      </p>
+      <div class="bulk-btn-group">
+        <button class="btn btn-cancel" onclick="downloadTemplate('${type}')">⬇ Download Template</button>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0;">
+      <div class="file-drop-zone" onclick="document.getElementById('importFileInput').click()">
+        <span class="file-icon">📂</span>
+        <div>Click to upload filled Excel file</div>
+        <input type="file" id="importFileInput" accept=".xlsx, .xls" style="display:none" onchange="handleBulkImport(this)">
+      </div>
+    </div>
+
+    <!-- UPDATE PANEL -->
+    <div id="bulk-update-panel" class="bulk-panel">
+      <p style="margin-bottom:15px;color:var(--muted);font-size:13px;">
+        1. Download current data.<br>
+        2. Edit values (Do NOT change ID column).<br>
+        3. Upload to update records.
+      </p>
+      <div class="bulk-btn-group">
+        <button class="btn btn-cancel" onclick="downloadCurrentData('${type}')">⬇ Download Current Data</button>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0;">
+      <div class="file-drop-zone" onclick="document.getElementById('updateFileInput').click()">
+        <span class="file-icon">📝</span>
+        <div>Click to upload edited Excel file</div>
+        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display:none" onchange="handleBulkUpdate(this)">
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('modalOverlay').classList.add('show');
+};
+
+window.switchBulkTab = function(tab) {
+  document.querySelectorAll('.bulk-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.bulk-panel').forEach(p => p.classList.remove('active'));
+  
+  if(tab === 'import') {
+    document.querySelector('.bulk-tab:nth-child(1)').classList.add('active');
+    document.getElementById('bulk-import-panel').classList.add('active');
+  } else {
+    document.querySelector('.bulk-tab:nth-child(2)').classList.add('active');
+    document.getElementById('bulk-update-panel').classList.add('active');
+  }
+};
+
+// --- DOWNLOAD TEMPLATE (IMPORT) ---
+window.downloadTemplate = function(type) {
+  let wb = XLSX.utils.book_new();
+  let headers = [], sample = [];
+
+  if (type === 'grade') {
+    headers = ['Name English', 'Name Arabic', 'Code', 'Active (true/false)'];
+    sample  = ['Grade 10', 'الصف العاشر', 'G10', 'true'];
+  } else if (type === 'subject') {
+    headers = ['Name English', 'Name Arabic', 'Code', 'Active (true/false)'];
+    sample  = ['Mathematics', 'الرياضيات', 'MATH', 'true'];
+  } else if (type === 'teacher') {
+    headers = ['Name', 'Email', 'Password (Min 6)', 'Active (true/false)', 'Assigned Grades (Codes comma sep)', 'Assigned Subjects (Codes comma sep)'];
+    sample  = ['John Doe', 'john@example.com', 'password123', 'true', 'G10,G11', 'MATH,SCI'];
+  } else if (type === 'student') {
+    headers = ['Name', 'Email', 'Password (Min 6)', 'Grade Code', 'Active (true/false)'];
+    sample  = ['Jane Smith', 'jane@example.com', 'password123', 'G10', 'true'];
+  } else if (type === 'session') {
+    headers = ['Title', 'Teacher Email', 'Grade Name', 'Subject Name', 'Date (YYYY-MM-DD)', 'Start Time (HH:MM)', 'End Time (HH:MM)', 'Class Name'];
+    sample  = ['Physics Quiz', 'john@example.com', 'Grade 10', 'Physics', '2026-05-01', '09:00', '10:00', 'Class A'];
+  }
+
+  // Sheet 1: Empty Headers
+  const ws1 = XLSX.utils.aoa_to_sheet([headers]);
+  XLSX.utils.book_append_sheet(wb, ws1, "Template");
+
+  // Sheet 2: Sample Data
+  const ws2 = XLSX.utils.aoa_to_sheet([headers, sample]);
+  XLSX.utils.book_append_sheet(wb, ws2, "Sample Data");
+
+  XLSX.writeFile(wb, `${type}_import_template.xlsx`);
+};
+
+// --- DOWNLOAD CURRENT DATA (UPDATE) ---
+window.downloadCurrentData = function(type) {
+  let data = [];
+  let headers = [];
+
+  if (type === 'grade') {
+    headers = ['ID', 'Name English', 'Name Arabic', 'Code', 'Active'];
+    data = allGrades.map(g => [g.id, g.nameEn, g.nameAr, g.code, g.active]);
+  } else if (type === 'subject') {
+    headers = ['ID', 'Name English', 'Name Arabic', 'Code', 'Active'];
+    data = allSubjects.map(s => [s.id, s.nameEn, s.nameAr, s.code, s.active]);
+  } else if (type === 'teacher') {
+    headers = ['ID', 'Name', 'Email', 'Active', 'Assigned Grades (Codes)', 'Assigned Subjects (Codes)'];
+    data = allTeachers.map(t => {
+      const gCodes = (t.assignedGrades||[]).map(id => { const g=allGrades.find(x=>x.id===id); return g?g.code:id; }).join(',');
+      const sCodes = (t.assignedSubjects||[]).map(id => { const s=allSubjects.find(x=>x.id===id); return s?s.code:id; }).join(',');
+      return [t.id, t.name, t.email, t.active, gCodes, sCodes];
+    });
+  } else if (type === 'student') {
+    headers = ['ID', 'Name', 'Email', 'Grade Code', 'Active'];
+    data = allStudents.map(s => {
+      const g = allGrades.find(x=>x.id===s.gradeId);
+      return [s.id, s.name, s.email, g?g.code:'', s.active];
+    });
+  } else if (type === 'session') {
+    headers = ['Session ID', 'Title', 'Teacher Email', 'Grade', 'Subject', 'Date', 'Start Time', 'End Time', 'Active'];
+    data = allSessions.map(s => [s.id, s.title, s.ownerTeacherId /*using ID as email might not be avail in session obj directly but we stored ownerTeacherId*/, s.grade, s.subject, s.date, s.startTime, s.endTime, s.active]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Current Data");
+  XLSX.writeFile(wb, `${type}_update_data.xlsx`);
+};
+
+// --- PROCESS IMPORT ---
+window.handleBulkImport = async function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: 'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]]; // First sheet
+    const json = XLSX.utils.sheet_to_json(sheet);
+    
+    if(!json.length) { showToast('File is empty', true); return; }
+    
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for(const row of json) {
+        // Normalize keys (remove spaces, lowercase)
+        const r = {};
+        Object.keys(row).forEach(k => r[k.trim().toLowerCase()] = row[k]);
+
+        if(bulkCurrentType === 'grade') {
+           if(!r['nameenglish'] || !r['code']) continue;
+           await addDoc(collection(db, 'grades'), {
+             nameEn: r['nameenglish'],
+             nameAr: r['namearabic']||'',
+             code: r['code'],
+             active: String(r['active(true/false)']).toLowerCase() === 'true',
+             createdAt: serverTimestamp(),
+             createdBy: currentAdmin.uid
+           });
+        }
+        else if(bulkCurrentType === 'subject') {
+           if(!r['nameenglish'] || !r['code']) continue;
+           await addDoc(collection(db, 'subjects'), {
+             nameEn: r['nameenglish'],
+             nameAr: r['namearabic']||'',
+             code: r['code'],
+             active: String(r['active(true/false)']).toLowerCase() === 'true',
+             createdAt: serverTimestamp(),
+             createdBy: currentAdmin.uid
+           });
+        }
+        else if(bulkCurrentType === 'teacher') {
+           if(!r['name'] || !r['email'] || !r['password(min6)']) continue;
+           // Basic teacher creation logic similar to single save but without checking duplicates strictly here for speed
+           // Ideally check if email exists first
+           const email = r['email'];
+           const pass = r['password(min6)'];
+           const name = r['name'];
+           
+           // Note: Creating Auth users in bulk loop is slow and might hit rate limits. 
+           // For production, use Cloud Functions. Here we do it client side.
+           try {
+             const uCred = await createUserWithEmailAndPassword(auth, email, pass);
+             const uid = uCred.user.uid;
+             
+             // Resolve Grade IDs from Codes
+             const gCodes = String(r['assignedgrades(codescommasep)']||'').split(',').map(s=>s.trim());
+             const gIds = gCodes.map(code => { const g=allGrades.find(x=>x.code===code); return g?g.id:null; }).filter(Boolean);
+             
+             const sCodes = String(r['assignedsubjects(codescommasep)']||'').split(',').map(s=>s.trim());
+             const sIds = sCodes.map(code => { const s=allSubjects.find(x=>x.code===code); return s?s.id:null; }).filter(Boolean);
+
+             const tRef = await addDoc(collection(db, 'teachers'), {
+               name, email, 
+               active: String(r['active(true/false)']).toLowerCase() === 'true',
+               assignedGrades: gIds, assignedSubjects: sIds,
+               pendingPassword: pass,
+               createdAt: serverTimestamp(), createdBy: currentAdmin.uid
+             });
+             
+             await setDoc(doc(db, 'users', uid), {
+               role:'teacher', name, email, active:true, 
+               assignedGrades: gIds, assignedSubjects: sIds,
+               teacherDocId: tRef.id, createdAt: serverTimestamp()
+             });
+             successCount++;
+           } catch(err) { console.error(err); errorCount++; }
+        }
+        else if(bulkCurrentType === 'student') {
+           if(!r['name'] || !r['email'] || !r['password(min6)']) continue;
+           try {
+             const uCred = await createUserWithEmailAndPassword(auth, r['email'], r['password(min6)']);
+             const uid = uCred.user.uid;
+             const grade = allGrades.find(g => g.code === r['gradecode']);
+             
+             await setDoc(doc(db, 'students', uid), {
+               name: r['name'], email: r['email'],
+               gradeId: grade?grade.id:'',
+               active: String(r['active(true/false)']).toLowerCase() === 'true',
+               uid: uid, createdAt: serverTimestamp(), createdBy: currentAdmin.uid
+             });
+             await setDoc(doc(db, 'users', uid), {
+               role:'student', name: r['name'], email: r['email'], active:true,
+               gradeId: grade?grade.id:'', studentDocId: uid,
+               createdAt: serverTimestamp(), createdBy: currentAdmin.uid
+             });
+             successCount++;
+           } catch(err) { console.error(err); errorCount++; }
+        }
+        else if(bulkCurrentType === 'session') {
+           // Find teacher by email
+           const tEmail = r['teacheremail'];
+           const teacher = allTeachers.find(t => t.email === tEmail);
+           if(!teacher) { errorCount++; continue; }
+           
+           const id = 'sess_bulk_' + Date.now() + Math.random().toString(36).substr(2, 5);
+           await set(ref(rtDB, `sessions/${id}`), {
+             config: {
+               title: r['title'],
+               grade: r['gradename'],
+               subject: r['subjectname'],
+               className: r['classname']||'',
+               date: r['date(yyyy-mm-dd)'],
+               startTime: r['starttime(hh:mm)'],
+               endTime: r['endtime(hh:mm)'],
+               active: false,
+               createdAt: Date.now(),
+               ownerTeacherId: teacher.id,
+               ownerTeacherName: teacher.name,
+               createdBy: currentAdmin.uid,
+               createdByRole: 'superadmin',
+               instructions: ''
+             },
+             questions: {}, students: {}
+           });
+           successCount++;
+        }
+      }
+      showToast(`Import Done. Success: ${successCount}, Errors: ${errorCount}`);
+      closeModal();
+      loadAll(); // Refresh UI
+    } catch(e) {
+      console.error(e);
+      showToast('Bulk import failed: ' + e.message, true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+// --- PROCESS UPDATE ---
+window.handleBulkUpdate = async function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: 'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
+    
+    if(!json.length) { showToast('File is empty', true); return; }
+    
+    let successCount = 0;
+
+    try {
+      for(const row of json) {
+        const r = {};
+        Object.keys(row).forEach(k => r[k.trim().toLowerCase()] = row[k]);
+        
+        const id = r['id'] || r['sessionid']; // Session ID key differs
+        if(!id) continue;
+
+        if(bulkCurrentType === 'grade') {
+          await updateDoc(doc(db, 'grades', id), {
+            nameEn: r['nameenglish'],
+            nameAr: r['namearabic']||'',
+            code: r['code'],
+            active: String(r['active']).toLowerCase() === 'true',
+            updatedAt: serverTimestamp()
+          });
+        }
+        else if(bulkCurrentType === 'subject') {
+          await updateDoc(doc(db, 'subjects', id), {
+            nameEn: r['nameenglish'],
+            nameAr: r['namearabic']||'',
+            code: r['code'],
+            active: String(r['active']).toLowerCase() === 'true',
+            updatedAt: serverTimestamp()
+          });
+        }
+        else if(bulkCurrentType === 'teacher') {
+           const gCodes = String(r['assignedgrades(codes)']||'').split(',').map(s=>s.trim());
+           const gIds = gCodes.map(code => { const g=allGrades.find(x=>x.code===code); return g?g.id:null; }).filter(Boolean);
+           const sCodes = String(r['assignedsubjects(codes)']||'').split(',').map(s=>s.trim());
+           const sIds = sCodes.map(code => { const s=allSubjects.find(x=>x.code===code); return s?s.id:null; }).filter(Boolean);
+
+           await updateDoc(doc(db, 'teachers', id), {
+             name: r['name'],
+             active: String(r['active']).toLowerCase() === 'true',
+             assignedGrades: gIds,
+             assignedSubjects: sIds,
+             updatedAt: serverTimestamp()
+           });
+           // Update user sub-collection
+           const t = allTeachers.find(x=>x.id===id);
+           if(t?.uid) {
+             await updateDoc(doc(db, 'users', t.uid), {
+               name: r['name'], active: String(r['active']).toLowerCase() === 'true',
+               assignedGrades: gIds, assignedSubjects: sIds
+             });
+           }
+        }
+        else if(bulkCurrentType === 'student') {
+           const grade = allGrades.find(g => g.code === r['gradecode']);
+           await updateDoc(doc(db, 'students', id), {
+             name: r['name'],
+             active: String(r['active']).toLowerCase() === 'true',
+             gradeId: grade?grade.id:'',
+             updatedAt: serverTimestamp()
+           });
+           const s = allStudents.find(x=>x.id===id);
+           if(s?.uid) {
+             await updateDoc(doc(db, 'users', s.uid), {
+               name: r['name'], active: String(r['active']).toLowerCase() === 'true',
+               gradeId: grade?grade.id:''
+             });
+           }
+        }
+        else if(bulkCurrentType === 'session') {
+           await update(ref(rtDB, `sessions/${id}/config`), {
+             title: r['title'],
+             grade: r['grade'],
+             subject: r['subject'],
+             date: r['date'],
+             startTime: r['starttime'],
+             endTime: r['endtime'],
+             active: String(r['active']).toLowerCase() === 'true'
+           });
+        }
+        successCount++;
+      }
+      showToast(`Update Done. Processed: ${successCount}`);
+      closeModal();
+      loadAll();
+    } catch(e) {
+      console.error(e);
+      showToast('Bulk update failed: ' + e.message, true);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
 
 // ── UTILS ──
 function showToast(msg, err=false) {
