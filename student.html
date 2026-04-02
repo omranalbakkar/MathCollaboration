@@ -9,7 +9,6 @@
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
-/* Your existing CSS styles remain exactly the same */
 :root{--bg:#f7f5f0;--surface:#ffffff;--surface2:#f0ede6;--border:#e0d9cf;--sage:#5a7a5e;--sage-l:rgba(90,122,94,0.1);--sage-m:rgba(90,122,94,0.2);--clay:#c4654a;--clay-l:rgba(196,101,74,0.1);--sky:#4a7aaa;--sky-l:rgba(74,122,170,0.1);--text:#2a2520;--muted:#8a7f72;--faint:#d4cdc3;--shadow:0 4px 24px rgba(42,37,32,0.08);--shadow-lg:0 12px 48px rgba(42,37,32,0.14);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
@@ -134,6 +133,47 @@ mjx-container{vertical-align:middle;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .connection-warning{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--clay);color:white;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;display:none;white-space:nowrap;}
 @media(max-width:500px){.q-card{padding:22px 18px;}.q-text{font-size:17px;}.login-card{padding:36px 24px;}.sc-meta-grid{grid-template-columns:1fr;}}
+
+/* Add this to your existing CSS */
+.adblock-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    text-align: left;
+    font-size: 13px;
+    color: #856404;
+    display: none;
+}
+.adblock-warning strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.adblock-warning ul {
+    margin: 8px 0 0 20px;
+    padding-left: 0;
+}
+.adblock-warning li {
+    margin: 4px 0;
+}
+.troubleshooting-tip {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-radius: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: left;
+    border-left: 3px solid var(--sage);
+}
+.troubleshooting-tip strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 8px;
+}
+
 </style>
 </head>
 <body>
@@ -144,10 +184,23 @@ mjx-container{vertical-align:middle;}
 </div>
 
 <div id="loginScreen">
-  <div class="login-card">
+<div class="login-card">
     <div class="school-icon">📚</div>
     <div class="login-brand">EduBoard</div>
     <div class="login-tagline">Student Portal — Sign in to join your session</div>
+    
+    <!-- Ad Blocker Warning Banner -->
+    <div class="adblock-warning" id="adblockWarning">
+        <strong>⚠️ Connection Issue Detected!</strong>
+        If you're having trouble connecting or logging in, please try one of these fixes:
+        <ul>
+            <li>🔓 <strong>Disable your ad blocker</strong> (uBlock, AdBlock, etc.) for this site</li>
+            <li>🕵️ Use <strong>Incognito/Private mode</strong> (Ctrl+Shift+N on Chrome)</li>
+            <li>🦊 Try <strong>Firefox browser</strong> (works best with EduBoard)</li>
+            <li>🔄 <strong>Refresh the page</strong> after making changes</li>
+        </ul>
+    </div>
+    
     <div id="sessionInfoBox"></div>
     <div class="input-wrap">
       <label>Email Address</label>
@@ -157,6 +210,15 @@ mjx-container{vertical-align:middle;}
       <label>Password</label>
       <input type="password" id="loginPass" autocomplete="current-password">
     </div>
+
+  <div class="troubleshooting-tip">
+    <strong>💡 Having trouble logging in?</strong>
+    • Make sure you're using the correct email and password provided by your teacher<br>
+    • Try disabling your ad blocker for this site<br>
+    • Use Incognito/Private mode (Ctrl+Shift+N)<br>
+    • Contact your teacher if the problem persists
+</div>
+  
     <button class="btn-enter" id="joinBtn" onclick="doStudentLogin()">Sign In & Join Session →</button>
     <div class="error-msg" id="loginErr"></div>
     <a href="index.html" class="back-link">← Back to Home</a>
@@ -210,6 +272,66 @@ let unsubGrades = null;
 let keepAliveInterval = null;
 let connectionRetries = 0;
 const MAX_RETRIES = 3;
+
+// ============================================
+// ADD THE WEBSOCKET DETECTION SCRIPT HERE
+// ============================================
+
+// Detect if WebSockets are blocked (ad blocker issue)
+function detectWebSocketBlock() {
+    console.log('Checking connection...');
+    const warning = document.getElementById('adblockWarning');
+    if (!warning) return;
+    
+    // Test with a timeout - if Firebase operations are slow, show warning
+    let connectionTestTimeout = setTimeout(() => {
+        console.log('Connection test timeout - possible ad blocker');
+        warning.style.display = 'block';
+    }, 5000);
+    
+    // Try a simple Firebase operation to test connection
+    const testRef = ref(rtDB, '.info/connected');
+    const unsubscribe = onValue(testRef, (snap) => {
+        if (snap.val() === true) {
+            console.log('Firebase connected successfully');
+            clearTimeout(connectionTestTimeout);
+            warning.style.display = 'none';
+            unsubscribe();
+        }
+    }, (error) => {
+        console.error('Connection error:', error);
+        clearTimeout(connectionTestTimeout);
+        warning.style.display = 'block';
+        unsubscribe();
+    });
+    
+    // Also detect if WebSocket is blocked via direct test
+    try {
+        const ws = new WebSocket('wss://eduboard-870d3-default-rtdb.firebaseio.com/.ws?v=5');
+        ws.onopen = () => {
+            console.log('WebSockets are working');
+            ws.close();
+        };
+        ws.onerror = () => {
+            console.log('WebSockets appear to be blocked');
+            warning.style.display = 'block';
+        };
+        setTimeout(() => {
+            if (ws.readyState !== WebSocket.OPEN && ws.readyState !== WebSocket.CLOSED) {
+                ws.close();
+            }
+        }, 3000);
+    } catch(e) {
+        console.log('WebSocket test failed:', e);
+    }
+}
+
+// Run detection after page loads
+setTimeout(detectWebSocketBlock, 3000);
+
+// ============================================
+// END OF WEBSOCKET DETECTION SCRIPT
+// ============================================
 
 // Helper function to show connection warning
 function showConnectionWarning(show = true) {
@@ -309,11 +431,15 @@ async function loadLoginSessionInfo() {
       </div>
     </div>`;
     btn.disabled = false;
-  } catch(e) {
+// Find this catch block in loadLoginSessionInfo:
+} catch(e) {
     console.error('Session info error:', e);
     box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please disable ad blockers and refresh.</div>';
     btn.disabled = false;
-  }
+    // Show adblock warning
+    const warning = document.getElementById('adblockWarning');
+    if (warning) warning.style.display = 'block';
+}
 }
 
 // ── STUDENT LOGIN ──
@@ -654,8 +780,19 @@ function renderCompletionScreen(s){
 }
 
 // ── UTILS ──
-function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.style.display='block';}
-function showToast(msg, isError = false){const t=document.getElementById('toast');t.textContent=msg;t.style.background = isError ? 'var(--clay)' : 'var(--text)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+// Replace the existing showErr function with this:
+function showErr(msg) {
+    const e = document.getElementById('loginErr');
+    e.textContent = msg;
+    e.style.display = 'block';
+    
+    // If error is connection-related, show adblock warning
+    if (msg.includes('network') || msg.includes('connection') || msg.includes('timeout')) {
+        const warning = document.getElementById('adblockWarning');
+        if (warning) warning.style.display = 'block';
+    }
+}
+  function showToast(msg, isError = false){const t=document.getElementById('toast');t.textContent=msg;t.style.background = isError ? 'var(--clay)' : 'var(--text)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 </script>
 </body>
