@@ -120,6 +120,7 @@ mjx-container{vertical-align:middle;}
 .btn-nav:disabled{opacity:0.35;cursor:not-allowed;}
 .btn-submit-answer{background:var(--sage);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 12px rgba(90,122,94,0.25);}
 .btn-submit-answer:hover{background:#4a6a4e;}
+.btn-submit-answer.saved{background:#4a6a4e;cursor:default;}
 .btn-finish{background:var(--clay);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;}
 .btn-finish:hover{background:#b05a40;}
 /* COMPLETION */
@@ -276,7 +277,7 @@ async function joinSession(){
   keepAliveInterval=setInterval(keepAlive,10000);
   // Listen for grades/feedback in real time
   if(unsubGrades)unsubGrades();
-  unsubGrades=dbListen(`students/${name}`,sd=>{if(sd&&document.getElementById('completionScreen').style.display!=='none')refreshCompletion(sd);});
+  unsubGrades=dbListen(`students/${currentStudent}`,sd=>{if(sd&&document.getElementById('completionScreen').style.display!=='none')refreshCompletion(sd);});
 }
 window.joinSession=joinSession;
 document.getElementById('studentName').addEventListener('keydown',e=>{if(e.key==='Enter')joinSession();});
@@ -371,6 +372,13 @@ async function renderQuestion(){
   const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
   const total=questions.length;
   const pct=Math.round((currentQIndex+1)/total*100);
+  
+  // Reset Save Button State
+  const btnSubmit = document.getElementById('btnSubmit');
+  btnSubmit.textContent = "Save Answer";
+  btnSubmit.classList.remove('saved');
+  btnSubmit.disabled = false;
+
   // math-safe: preserve LaTeX markers, escape other HTML
   function mathSafe(str){
     return String(str)
@@ -385,7 +393,7 @@ async function renderQuestion(){
     <div class="q-card">
       <div class="q-header"><span class="q-badge">Question ${currentQIndex+1} of ${total}</span><span class="q-points">${q.points} pts${q.tag?' · '+esc(q.tag):''}</span></div>
       <div class="q-text">${mathSafe(q.text)}</div>
-      ${existing!==null?'<div class="answered-badge">✓ Answered — you can change it</div>':''}
+      ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
       ${buildInput(q,existing)}
     </div>`;
   document.getElementById('btnPrev').disabled=currentQIndex===0;
@@ -432,17 +440,73 @@ function getCurrentAnswer(){
 window.submitAnswer=async function(){
   const ans=getCurrentAnswer();
   if(ans===null){showToast('Please provide an answer first');return;}
+  
+  const btn = document.getElementById('btnSubmit');
+  btn.textContent = "Saving...";
+  btn.disabled = true;
+
   const q=questions[currentQIndex];
   await dbUpdate(`students/${currentStudent}/answers`,{[q.id]:ans});
+  
   showToast('Answer saved ✓');
+  
+  // Visual feedback that it is saved
+  btn.textContent = "Saved ✓";
+  btn.classList.add('saved');
+  
+  // Re-render to show the "Answered" badge immediately
+  renderQuestion();
 };
 
-window.prevQ=function(){if(currentQIndex>0){currentQIndex--;renderQuestion();}};
-window.nextQ=function(){if(currentQIndex<questions.length-1){currentQIndex++;renderQuestion();}};
+// Helper to enforce saving before navigation
+async function canNavigate() {
+    const ans = getCurrentAnswer();
+    // If there is no answer in the UI, check DB just in case (though UI should match)
+    if (ans === null) {
+        const q = questions[currentQIndex];
+        const s = await dbGet(`students/${currentStudent}`);
+        if (!s || !s.answers || s.answers[q.id] === undefined) {
+            showToast("Please save your answer first");
+            return false;
+        }
+    }
+    return true;
+}
+
+window.prevQ=async function(){
+    if(await canNavigate()){
+        if(currentQIndex>0){currentQIndex--;renderQuestion();}
+    }
+};
+window.nextQ=async function(){
+    if(await canNavigate()){
+        if(currentQIndex<questions.length-1){currentQIndex++;renderQuestion();}
+    }
+};
+
 window.finishSession=async function(){
+  // 1. Save current question if modified
   const ans=getCurrentAnswer();
-  if(ans!==null){const q=questions[currentQIndex];await dbUpdate(`students/${currentStudent}/answers`,{[q.id]:ans});}
-  // Mark as permanently submitted — no more editing
+  if(ans!==null){
+      const q=questions[currentQIndex];
+      await dbUpdate(`students/${currentStudent}/answers`,{[q.id]:ans});
+  }
+
+  // 2. Check ALL questions are answered
+  const s = await dbGet(`students/${currentStudent}`) || {};
+  const savedAnswers = s.answers || {};
+  
+  for(let i=0; i<questions.length; i++) {
+      const qId = questions[i].id;
+      if(savedAnswers[qId] === undefined || savedAnswers[qId] === null) {
+          showToast(`Question ${i+1} is missing an answer!`);
+          currentQIndex = i; // Jump to the missing question
+          renderQuestion();
+          return; // Stop submission
+      }
+  }
+
+  // 3. All good, submit
   await dbUpdate(`students/${currentStudent}`,{submitted:true});
   showCompletion();
 };
