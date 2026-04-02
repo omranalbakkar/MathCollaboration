@@ -6,6 +6,12 @@
 <title>EduBoard — Teacher Dashboard</title>
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<!-- EXPORT LIBRARIES -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
@@ -183,6 +189,40 @@ tr:hover td{background:var(--surface2);}
 .toast.show{transform:translateY(0);opacity:1;}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;display:none;backdrop-filter:blur(2px);}
 .overlay.show{display:block;}
+
+/* HIDDEN PRINT CONTAINER FOR PDF GENERATION */
+#print-container {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 210mm; /* A4 Width */
+  background: white;
+  color: black;
+  padding: 20mm;
+  font-family: 'Times New Roman', serif;
+}
+.print-page {
+  min-height: 270mm; /* A4 Height minus padding */
+  position: relative;
+  margin-bottom: 20px;
+  border-bottom: 2px dashed #ccc;
+}
+.print-header {
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.print-student-name { font-size: 24px; font-weight: bold; }
+.print-meta { font-size: 14px; color: #555; }
+.print-q-item { margin-bottom: 20px; page-break-inside: avoid; }
+.print-q-text { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+.print-a-label { font-size: 12px; text-transform: uppercase; color: #666; margin-top: 5px; }
+.print-a-text { font-size: 15px; margin-top: 2px; padding: 5px; background: #f9f9f9; border-left: 3px solid #ccc; }
+.print-score { float: right; font-weight: bold; border: 1px solid #000; padding: 2px 8px; }
+
 @media(max-width:700px){.settings-grid{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.topbar-nav .nav-btn span:not(.dot){display:none;}}
 </style>
 </head>
@@ -322,7 +362,10 @@ tr:hover td{background:var(--surface2);}
     <div class="tab-pane" id="tab-results">
       <div class="section-header">
         <div><div class="section-title">Results</div><div class="section-sub">All submissions</div></div>
-        <button class="btn btn-edit" onclick="exportData()">Export JSON</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-edit" onclick="exportData()">Export JSON</button>
+            <button class="btn btn-amber" onclick="exportReports()">📄 Export Reports</button>
+        </div>
       </div>
       <div class="results-controls">
         <select class="select-styled" id="filterStudent" onchange="renderResults()"><option value="">All Students</option></select>
@@ -371,6 +414,10 @@ tr:hover td{background:var(--surface2);}
   </div>
   <div id="reviewContent"></div>
 </div>
+
+<!-- Hidden container for generating PDF pages -->
+<div id="print-container"></div>
+
 <div class="toast" id="toast"></div>
 
 <script src="firebase-config.js"></script>
@@ -728,17 +775,113 @@ async function renderResults(){
 }
 window.renderResults=renderResults;
 
-// ── SETTINGS ──
-window.changePassword=async function(){
-  const p1=document.getElementById('newPass').value,p2=document.getElementById('confirmPass').value;
-  if(!p1)return showToast('Enter a password',true);
-  if(p1!==p2)return showToast('Passwords do not match',true);
-  await dbSet('password',p1);
-  document.getElementById('newPass').value='';document.getElementById('confirmPass').value='';
-  showToast('Password updated!');
+// ── EXPORT FUNCTIONS (EXCEL & PDF) ──
+window.exportReports = async function() {
+    const [st, qs, sess] = await Promise.all([dbGet('students'), dbGet('questions'), dbGet('session')]);
+    const students = st || {};
+    const questions = Object.values(qs || {}).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+    const names = Object.keys(students);
+
+    if (!names.length) return showToast('No student data to export', true);
+
+    showToast('Generating Reports...');
+
+    // 1. EXCEL EXPORT
+    let excelData = [['Student Name', 'Question ID', 'Question Text', 'Answer', 'Score', 'Max Points', 'Feedback']];
+    
+    names.forEach(name => {
+        const s = students[name];
+        questions.forEach(q => {
+            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : '';
+            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
+            const fb = s.feedback && s.feedback[q.id] ? s.feedback[q.id] : '';
+            // Strip HTML/Latex for Excel readability
+            const cleanQ = q.text.replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
+            const cleanA = String(ans).replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
+            excelData.push([name, q.id, cleanQ, cleanA, grade, q.points, fb]);
+        });
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, "Results");
+    XLSX.writeFile(wb, `EduBoard_Results_${sess.title || 'Export'}.xlsx`);
+
+    // 2. PDF EXPORT (One Page Per Student)
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const printContainer = document.getElementById('print-container');
+    
+    // Helper to strip latex for standard text, or keep it if we wanted to re-render (but we use canvas)
+    function cleanForPrint(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    for (let i = 0; i < names.length; i++) {
+        const name = names[i];
+        const s = students[name];
+        
+        // Build HTML for this student
+        let html = `
+            <div class="print-page">
+                <div class="print-header">
+                    <div>
+                        <div class="print-student-name">${esc(name)}</div>
+                        <div class="print-meta">Class: ${sess.className || '-'} | Subject: ${sess.subject || '-'}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:18px;font-weight:bold">${sess.title || 'Exam'}</div>
+                        <div style="font-size:12px">${sess.date || ''}</div>
+                    </div>
+                </div>
+        `;
+
+        questions.forEach((q, idx) => {
+            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
+            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
+            
+            html += `
+                <div class="print-q-item">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                        <div class="print-q-text math-content">Q${idx+1}. ${cleanForPrint(q.text)}</div>
+                        ${grade !== '' ? `<div class="print-score">Score: ${grade} / ${q.points}</div>` : ''}
+                    </div>
+                    <div class="print-a-label">Student Answer:</div>
+                    <div class="print-a-text math-content">
+                        ${ans !== null ? cleanForPrint(String(ans)) : '<em>No Answer</em>'}
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`; // Close page
+        
+        printContainer.innerHTML = html;
+        
+        // Wait for MathJax to render the hidden DOM
+        if(window.MathJax && MathJax.typesetPromise) {
+            await MathJax.typesetPromise([printContainer]);
+        }
+
+        // Convert HTML to Canvas
+        const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
+            scale: 2, // Higher quality
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = 210; // A4 width mm
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        if (i > 0) doc.addPage();
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    }
+
+    doc.save(`EduBoard_Exam_Papers.pdf`);
+    printContainer.innerHTML = ''; // Clean up
+    showToast('Reports Exported!');
 };
-window.clearStudentData=async function(){if(!confirm('Clear all student data?'))return;await dbSet('students',{});showToast('Cleared');};
-window.clearAllData=async function(){if(!confirm('Reset EVERYTHING?'))return;const dd=ddata();if(usingFirebase){await set(ref(db,'/'),dd);}else{lset(dd);}location.reload();};
+
 window.exportData=async function(){
   const[st,qs,sess]=await Promise.all([dbGet('students'),dbGet('questions'),dbGet('session')]);
   const b=new Blob([JSON.stringify({session:sess,questions:qs,students:st},null,2)],{type:'application/json'});
