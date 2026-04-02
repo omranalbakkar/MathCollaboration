@@ -620,18 +620,25 @@ function renderStudentCards(students){
   const grid=document.getElementById('studentsGrid');
   const qcount=parseInt(document.getElementById('statQuestions').textContent)||0;
   if(!online.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p style="font-size:15px">No students online</p><span style="font-size:13px;display:block;margin-top:6px">Students appear when they join</span></div>`;return;}
+  // Build name index — safe lookup without string corruption
+  _reviewNames = online.map(s=>s.name||'');
   grid.innerHTML=online.map((s,i)=>{
     const answered=s.answers?Object.keys(s.answers).length:0;
     const pct=qcount?Math.round(answered/qcount*100):0;
     const color=COLORS[i%COLORS.length];
-    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700;vertical-align:middle">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview('${escA(s.name||'')}')">Review Answers →</button></div>`;
+    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700;vertical-align:middle">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview(${i})">Review Answers →</button></div>`;
   }).join('');
 }
 
 // ── REVIEW PANEL ──
-window.openReview=async function(name){
+// Store name map so onclick can pass index instead of raw name (avoids escaping issues)
+let _reviewNames = [];
+
+window.openReview=async function(idx){
+  const name = _reviewNames[idx];
+  if(!name) return;
   const[s,qs]=await Promise.all([dbGet('students/'+name),dbGet('questions')]);
-  if(!s)return;
+  if(!s){showToast('Student data not found',true);return;}
   const questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   const color=COLORS[Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%COLORS.length];
   function ms(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -641,16 +648,18 @@ window.openReview=async function(name){
     const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
     const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
     const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
-    html+=`<div class="review-item"><div class="review-q"><strong>Q${i+1}.</strong> ${ms(q.text)} <span style="color:var(--amber)">(${q.points}pts)</span></div><div class="review-answer">${ans!==null?esc(String(ans)):'<span class="no-answer">No answer</span>'}</div><div class="grade-row"><label>Score</label><input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="g_${escA(name)}_${q.id}"><input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="f_${escA(name)}_${q.id}"><button class="btn-save-grade" onclick="saveGrade('${escA(name)}','${q.id}')">✓</button></div></div>`;
+    html+=`<div class="review-item"><div class="review-q"><strong>Q${i+1}.</strong> ${ms(q.text)} <span style="color:var(--amber)">(${q.points}pts)</span></div><div class="review-answer">${ans!==null?esc(String(ans)):'<span class="no-answer">No answer</span>'}</div><div class="grade-row"><label>Score</label><input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}"><input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}"><button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓</button></div></div>`;
   });
   document.getElementById('reviewContent').innerHTML=html;
   document.getElementById('reviewPanel').classList.add('open');
   document.getElementById('overlay').classList.add('show');
   if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([document.getElementById('reviewContent')]).catch(()=>{});
 };
-window.saveGrade=async function(name,qId){
-  const g=document.getElementById(`g_${name}_${qId}`)?.value||'';
-  const f=document.getElementById(`f_${name}_${qId}`)?.value||'';
+window.saveGrade=async function(idx,qId,qIdx){
+  const name=_reviewNames[idx];
+  if(!name)return;
+  const g=document.getElementById(`gr_${qIdx}_${qId}`)?.value||'';
+  const f=document.getElementById(`fb_${qIdx}_${qId}`)?.value||'';
   await dbUpdate(`students/${name}/grades`,{[qId]:g});
   await dbUpdate(`students/${name}/feedback`,{[qId]:f});
   showToast('Grade saved!');
@@ -670,7 +679,9 @@ async function renderResults(){
   fS.innerHTML='<option value="">All Students</option>'+names.map(n=>`<option value="${esc(n)}" ${n===sS?'selected':''}>${esc(n)}</option>`).join('');
   fQ.innerHTML='<option value="">All Questions</option>'+questions.map(q=>`<option value="${q.id}" ${q.id===sQ?'selected':''}>${esc(stripLatex(q.text).substring(0,55))}</option>`).join('');
   let rows=[];
-  names.forEach(name=>{
+  // Build full name index for results review buttons
+  _reviewNames = names;
+  names.forEach((name,ni)=>{
     if(sS&&name!==sS)return;
     const s=students[name];
     questions.forEach(q=>{
@@ -679,7 +690,7 @@ async function renderResults(){
       const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
       const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
       const c=grade===''?'var(--muted)':parseInt(grade)===q.points?'var(--green)':parseInt(grade)===0?'var(--red)':'var(--amber)';
-      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mathSafe(q.text)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ans!==null?esc(String(ans)):'<span style="color:var(--muted);font-style:italic">—</span>'}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview('${escA(name)}')">Review</button></td></tr>`);
+      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mathSafe(q.text)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ans!==null?esc(String(ans)):'<span style="color:var(--muted);font-style:italic">—</span>'}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
     });
   });
   const tbody=document.getElementById('resultsBody');
