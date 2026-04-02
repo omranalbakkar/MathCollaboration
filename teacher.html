@@ -310,7 +310,10 @@ tr:hover td{background:var(--surface2);}
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="btn btn-add" onclick="openForm()">＋ Add Question</button>
           <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);" onclick="document.getElementById('htmlImportInput').click()">📥 Import HTML</button>
+          <button class="btn" style="background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);" onclick="document.getElementById('jsonImportInput').click()">📋 Import JSON</button>
+          <button class="btn" style="background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);" onclick="exportAllQuestionsToJSON()">💾 Export All JSON</button>
           <input type="file" id="htmlImportInput" accept=".html" style="display:none" onchange="importFromHTML(event)">
+          <input type="file" id="jsonImportInput" accept=".json" style="display:none" onchange="importFromJSON(event)">
         </div>
       </div>
       <div id="questionForm">
@@ -441,7 +444,6 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { showLogin(); return; }
   
   try {
-    // Check if user exists in Firestore
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
       await signOut(auth);
@@ -455,7 +457,6 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
     
-    // Load teacher profile
     const teacherDocId = userDoc.data().teacherDocId || user.uid;
     const teacherDoc = await getDoc(doc(db, 'teachers', teacherDocId));
     currentTeacher = { 
@@ -527,7 +528,6 @@ async function loadTeacherData() {
   await loadSessions();
   setupRealtimeListeners();
   
-  // Load saved active session
   const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
   if (savedId) {
     activeSessionId = savedId;
@@ -541,7 +541,6 @@ async function populateAssignedDropdowns() {
   const assignedGrades = currentTeacher.assignedGrades || [];
   const assignedSubjects = currentTeacher.assignedSubjects || [];
   
-  // Load grades
   if (assignedGrades.length) {
     gradeSelect.innerHTML = '<option value="">Select grade…</option>';
     for (const gradeId of assignedGrades) {
@@ -557,7 +556,6 @@ async function populateAssignedDropdowns() {
     gradeSelect.innerHTML = '<option value="">Select grade…</option>';
   }
   
-  // Load subjects
   if (assignedSubjects.length) {
     subjectSelect.innerHTML = '<option value="">Select subject…</option>';
     for (const subjectId of assignedSubjects) {
@@ -610,7 +608,6 @@ async function loadSessions() {
     console.error('Error loading sessions:', error);
     showToast('Error loading sessions: ' + error.message, true);
     
-    // Fallback: Get all sessions and filter client-side
     console.log('Trying fallback - loading all sessions');
     const allSessionsSnapshot = await getDocs(sessionsRef);
     const allSessions = [];
@@ -659,7 +656,7 @@ window.createNewSession = async function() {
     endTime: '',
     instructions: '',
     active: false,
-    createdAt: new Date().toISOString(), // Use string instead of serverTimestamp for now
+    createdAt: new Date().toISOString(),
     ownerTeacherId: currentTeacher.firestoreId || currentTeacher.uid,
     ownerTeacherName: currentTeacher.name || '',
     createdBy: currentTeacher.uid,
@@ -673,7 +670,7 @@ window.createNewSession = async function() {
     console.log('Session created with ID:', docRef.id);
     await activateSession(docRef.id);
     showToast('Session created!');
-    await loadSessions(); // Refresh the list
+    await loadSessions();
     switchTab('session', document.querySelectorAll('.nav-btn')[1]);
   } catch (error) {
     console.error('Error creating session:', error);
@@ -690,7 +687,6 @@ window.activateSession = async function(id) {
 window.deleteSession = async function(id) {
   if (!confirm('Delete this session and all its student data? This cannot be undone.')) return;
   
-  // Delete subcollections first (questions, students)
   const questionsRef = collection(db, 'sessions', id, 'questions');
   const questionsSnap = await getDocs(questionsRef);
   for (const doc of questionsSnap.docs) {
@@ -703,7 +699,6 @@ window.deleteSession = async function(id) {
     await deleteDoc(doc.ref);
   }
   
-  // Delete the session
   await deleteDoc(doc(db, 'sessions', id));
   
   if (activeSessionId === id) {
@@ -727,7 +722,6 @@ async function loadActiveSession() {
   
   currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
   
-  // Load config into form
   const config = currentSessionData;
   document.getElementById('cfTitle').value = config.title || '';
   document.getElementById('cfGrade').value = config.grade || '';
@@ -741,12 +735,8 @@ async function loadActiveSession() {
   setToggle(!!config.active);
   updateSessionChip(config);
   
-  // Load questions
   await loadQuestions();
-  
-  // Load students
   await loadStudents();
-  
   updateStats();
 }
 
@@ -776,13 +766,9 @@ async function loadStudents() {
 }
 
 function setupRealtimeListeners() {
-  // Set up real-time listeners for active session
   if (activeSessionId) {
-    // Listen to questions collection
     const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
-    onValue(ref(db), () => {}); // Placeholder for real-time
-  
-    // Listen to students collection
+    onValue(ref(db), () => {});
     const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
     onValue(ref(db), () => {});
   }
@@ -792,30 +778,34 @@ function renderQuestions() {
   const list = document.getElementById('questionsList');
   
   if (!currentQuestions.length) {
-    list.innerHTML = `<div class="empty-state"><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started</span></div>`;
+    list.innerHTML = `<div class="empty-state"><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started or import from HTML/JSON</span></div>`;
     return;
   }
   
-  list.innerHTML = currentQuestions.map((q, i) => `<div class="q-card">
-    <div class="q-num">Q${i + 1}</div>
-    <div class="q-body">
-      <div class="q-text">${mathHtml(q.text)}</div>
-      <div class="q-meta">
-        <span class="q-tag type">${q.type}</span>
-        <span class="q-tag pts">${q.points} pts</span>
-        ${q.tag ? `<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${escapeHtml(q.tag)}</span>` : ''}
-        ${q.correct ? `<span class="q-tag pts" style="color:var(--green)">✓ ${escapeHtml(q.correct)}</span>` : ''}
+  list.innerHTML = currentQuestions.map((q, i) => {
+    let displayText = q.text || '';
+    return `<div class="q-card">
+      <div class="q-num">Q${i + 1}</div>
+      <div class="q-body">
+        <div class="q-text math-content">${displayText}</div>
+        <div class="q-meta">
+          <span class="q-tag type">${q.type}</span>
+          <span class="q-tag pts">${q.points} pts</span>
+          ${q.tag ? `<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${escapeHtml(q.tag)}</span>` : ''}
+          ${q.correct ? `<span class="q-tag pts" style="color:var(--green)">✓ ${escapeHtml(q.correct)}</span>` : ''}
+        </div>
+        ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math-content">${escapeHtml(o)}</span>`).join('')}</div>` : ''}
       </div>
-      ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt">${mathHtml(o)}</span>`).join('')}</div>` : ''}
-    </div>
-    <div class="q-actions">
-      <button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button>
-      <button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button>
-    </div>
-  </div>`).join('');
+      <div class="q-actions">
+        <button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button>
+        <button class="btn btn-sm" style="background:var(--blue-dim);color:var(--blue);" onclick="exportQuestionToJSON('${q.id}')">📋 Export</button>
+      </div>
+    </div>`;
+  }).join('');
   
   if (window.MathJax && MathJax.typesetPromise) {
-    MathJax.typesetPromise([list]).catch(() => {});
+    MathJax.typesetPromise([list]).catch(err => console.log('MathJax error:', err));
   }
 }
 
@@ -1038,7 +1028,6 @@ function renderStudentCards() {
 }
 
 window.openReview = async function(studentId) {
-  // Implementation for review panel
   showToast('Review feature coming soon');
 };
 
@@ -1070,8 +1059,339 @@ window.clearSessionAnswers = async function() {
   showToast('All answers cleared');
 };
 
+// JSON Export Functions
+window.exportQuestionToJSON = async function(questionId) {
+  if (!activeSessionId) return;
+  
+  const question = currentQuestions.find(q => q.id === questionId);
+  if (!question) {
+    showToast('Question not found', true);
+    return;
+  }
+  
+  const exportObj = {
+    version: "1.0",
+    type: "question",
+    exportedAt: new Date().toISOString(),
+    question: {
+      text: question.text,
+      type: question.type,
+      points: question.points,
+      correct: question.correct || "",
+      tag: question.tag || "",
+      options: question.options || null
+    }
+  };
+  
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `question_${question.id}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast('Question exported to JSON!');
+};
+
+window.exportAllQuestionsToJSON = async function() {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  if (!currentQuestions.length) {
+    showToast('No questions to export', true);
+    return;
+  }
+  
+  const exportObj = {
+    version: "1.0",
+    type: "questions_batch",
+    exportedAt: new Date().toISOString(),
+    sessionId: activeSessionId,
+    sessionTitle: currentSessionData?.title || "Untitled",
+    totalQuestions: currentQuestions.length,
+    questions: currentQuestions.map(q => ({
+      id: q.id,
+      text: q.text,
+      type: q.type,
+      points: q.points,
+      correct: q.correct || "",
+      tag: q.tag || "",
+      options: q.options || null,
+      createdAt: q.createdAt
+    }))
+  };
+  
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `questions_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast(`Exported ${currentQuestions.length} questions to JSON!`);
+};
+
+// JSON Import Function
+window.importFromJSON = async function(event) {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  event.target.value = '';
+  showToast('Processing JSON file...');
+  
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      let imported = 0;
+      let skipped = 0;
+      
+      if (data.type === 'question' && data.question) {
+        const q = data.question;
+        const questionData = {
+          text: q.text || '',
+          type: q.type || 'text',
+          points: q.points || 10,
+          correct: q.correct || '',
+          tag: q.tag || 'Imported',
+          options: q.options || null,
+          createdAt: Date.now(),
+          importedFrom: 'JSON'
+        };
+        
+        if (!questionData.text) {
+          showToast('Question text is required', true);
+          return;
+        }
+        
+        const qId = 'q_' + Date.now();
+        await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+        imported = 1;
+      }
+      else if (data.type === 'questions_batch' && Array.isArray(data.questions)) {
+        for (let i = 0; i < data.questions.length; i++) {
+          const q = data.questions[i];
+          if (!q.text || !q.text.trim()) {
+            skipped++;
+            continue;
+          }
+          
+          const questionData = {
+            text: q.text.trim(),
+            type: q.type || 'text',
+            points: q.points || 10,
+            correct: q.correct || '',
+            tag: q.tag || data.sessionTitle || 'Imported',
+            options: q.options || null,
+            createdAt: Date.now() + i,
+            importedFrom: 'JSON'
+          };
+          
+          const qId = q.id || `q_${Date.now()}_${i}`;
+          await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+          imported++;
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+      else if (Array.isArray(data)) {
+        for (let i = 0; i < data.length; i++) {
+          const q = data[i];
+          if (!q.text || !q.text.trim()) {
+            skipped++;
+            continue;
+          }
+          
+          const questionData = {
+            text: q.text.trim(),
+            type: q.type || 'text',
+            points: q.points || 10,
+            correct: q.correct || '',
+            tag: q.tag || 'Imported',
+            options: q.options || null,
+            createdAt: Date.now() + i,
+            importedFrom: 'JSON'
+          };
+          
+          const qId = `q_${Date.now()}_${i}`;
+          await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+          imported++;
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+      else {
+        showToast('Invalid JSON format. Expected question object or array.', true);
+        return;
+      }
+      
+      await loadQuestions();
+      updateStats();
+      
+      if (imported > 0) {
+        showToast(`✅ Imported ${imported} question(s) from JSON${skipped ? ` (${skipped} skipped)` : ''}`);
+      } else {
+        showToast('No valid questions found in JSON file', true);
+      }
+      
+    } catch(err) {
+      console.error('JSON import failed:', err);
+      showToast('Invalid JSON file: ' + err.message, true);
+    }
+  };
+  
+  reader.readAsText(file);
+};
+
+window.importFromHTML = async function(event) {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  event.target.value = '';
+  showToast('Processing HTML file...');
+  
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(e.target.result, 'text/html');
+      
+      let questionCards = doc.querySelectorAll('.question-card');
+      
+      if (!questionCards.length) {
+        questionCards = doc.querySelectorAll('.standalone-q, .master-q');
+      }
+      
+      if (!questionCards.length) {
+        showToast('No questions found in the HTML file. Make sure the file contains .question-card elements.', true);
+        return;
+      }
+      
+      let imported = 0;
+      let errors = [];
+      
+      for (const card of questionCards) {
+        try {
+          let questionText = '';
+          const mainInput = card.querySelector('.main-q-input');
+          if (mainInput) {
+            questionText = mainInput.value || mainInput.getAttribute('value') || '';
+          }
+          
+          if (!questionText.trim()) {
+            const qTextDiv = card.querySelector('.q-text');
+            if (qTextDiv) questionText = qTextDiv.innerText;
+          }
+          
+          if (!questionText.trim()) {
+            errors.push('Skipped a question with no text');
+            continue;
+          }
+          
+          let questionType = 'text';
+          const typeSelector = card.querySelector('.q-type-selector');
+          if (typeSelector) {
+            const selectedOption = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
+            if (selectedOption) {
+              const typeValue = selectedOption.value;
+              if (typeValue === 'mcq') questionType = 'mcq';
+              else if (typeValue === 'tf') questionType = 'truefalse';
+              else if (typeValue === 'matching') questionType = 'matching';
+              else if (typeValue === 'fill') questionType = 'fill';
+              else if (typeValue === 'paragraph') questionType = 'paragraph';
+            }
+          }
+          
+          let points = 10;
+          const marksInput = card.querySelector('.mark-input-field, .marks-input');
+          if (marksInput) {
+            const marksValue = parseFloat(marksInput.value);
+            if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
+          }
+          
+          let options = null;
+          let correctAnswer = '';
+          
+          if (questionType === 'mcq') {
+            const mcqOptions = card.querySelectorAll('.mcq-option input');
+            if (mcqOptions.length) {
+              options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
+            }
+            
+            const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
+            if (checkedOption) {
+              const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
+              if (optionText) correctAnswer = optionText;
+            }
+          } else if (questionType === 'truefalse') {
+            const correctTF = card.querySelector('input[value="true"]:checked, input[value="True"]:checked, input[value="صح"]:checked');
+            if (correctTF) correctAnswer = correctTF.value;
+          }
+          
+          let tag = 'Imported';
+          const headerTitle = doc.querySelector('#hdr-title, .header-title-input');
+          if (headerTitle) {
+            tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
+          }
+          
+          const questionData = {
+            text: questionText.trim(),
+            type: questionType,
+            points: points,
+            correct: correctAnswer,
+            tag: tag,
+            options: options,
+            createdAt: Date.now() + imported,
+            importedFrom: 'HTML'
+          };
+          
+          const qId = 'q_' + Date.now() + '_' + imported;
+          await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+          
+          imported++;
+          await new Promise(r => setTimeout(r, 50));
+          
+        } catch(err) {
+          console.error('Error importing question:', err);
+          errors.push(`Error: ${err.message}`);
+        }
+      }
+      
+      await loadQuestions();
+      updateStats();
+      
+      if (imported > 0) {
+        showToast(`✅ Successfully imported ${imported} question(s) from HTML!${errors.length ? ` (${errors.length} issues)` : ''}`);
+      } else {
+        showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
+      }
+      
+      if (errors.length) {
+        console.warn('Import errors:', errors);
+      }
+      
+    } catch(err) {
+      console.error('Import failed:', err);
+      showToast('Import failed: ' + err.message, true);
+    }
+  };
+  
+  reader.readAsText(file);
+};
+
 window.renderResults = async function() {
-  // Implementation for results
   showToast('Results feature coming soon');
 };
 
@@ -1081,10 +1401,6 @@ window.exportReports = async function() {
 
 window.exportData = async function() {
   showToast('Export feature coming soon');
-};
-
-window.importFromHTML = async function(event) {
-  showToast('Import feature coming soon');
 };
 
 window.changePassword = async function() {
@@ -1154,8 +1470,30 @@ function escapeHtml(str) {
 
 function mathHtml(str) {
   if (!str) return '';
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let result = String(str);
+  const mathBlocks = [];
+  result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    mathBlocks.push(math);
+    return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
+  });
+  result = result.replace(/\$([^$]+)\$/g, (match, math) => {
+    mathBlocks.push(math);
+    return `%%MATHINLINE${mathBlocks.length - 1}%%`;
+  });
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+    mathBlocks.push(math);
+    return `%%MATHPAREN${mathBlocks.length - 1}%%`;
+  });
+  
+  result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  result = result.replace(/%%MATHBLOCK(\d+)%%/g, (match, idx) => `$$${mathBlocks[parseInt(idx)]}$$`);
+  result = result.replace(/%%MATHINLINE(\d+)%%/g, (match, idx) => `$${mathBlocks[parseInt(idx)]}$`);
+  result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
+  
+  return result;
 }
+  
 </script>
 </body>
 </html>
