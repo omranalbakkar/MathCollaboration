@@ -140,9 +140,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-close-panel:hover{color:var(--red);}
 .panel-student-info{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface2);border-radius:10px;margin-bottom:24px;}
 .review-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
-.review-q{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.review-q{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.7;}
 .review-q strong{color:var(--text);}
-.review-answer{font-size:14px;padding:10px 12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;line-height:1.5;}
+.math-content{line-height:1.9;direction:auto;}
+.review-answer{font-size:14px;padding:12px 14px;background:var(--surface2);border-radius:8px;margin-bottom:12px;line-height:1.7;direction:auto;}
 .no-answer{color:var(--muted);font-style:italic;font-size:13px;}
 .grade-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .grade-row label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
@@ -609,7 +610,7 @@ function renderQuestionsFromData(qs){
   const arr=Object.values(qs).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   if(!arr.length){list.innerHTML=`<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started</span></div>`;return;}
   function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  list.innerHTML=arr.map((q,i)=>`<div class="q-card"><div class="q-num">Q${i+1}</div><div class="q-body"><div class="q-text" style="font-size:14px;line-height:1.7">${mathSafe(q.text)}</div><div class="q-meta" style="margin-top:8px"><span class="q-tag type">${q.type}</span><span class="q-tag pts">${q.points} pts</span>${q.tag?`<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(q.tag)}</span>`:''} ${q.correct?`<span class="q-tag pts" style="color:var(--green);border-color:rgba(74,222,128,0.2);background:var(--green-dim)">✓ ${esc(q.correct)}</span>`:''}</div>${q.options?`<div class="q-opts">${q.options.map(o=>`<span class="q-opt">${mathSafe(o)}</span>`).join('')}</div>`:''}</div><div class="q-actions"><button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button><button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button></div></div>`).join('');
+  list.innerHTML=arr.map((q,i)=>`<div class="q-card"><div class="q-num">Q${i+1}</div><div class="q-body"><div class="q-text" style="font-size:14px;line-height:1.7">${mathHtml(q.text)}</div><div class="q-meta" style="margin-top:8px"><span class="q-tag type">${q.type}</span><span class="q-tag pts">${q.points} pts</span>${q.tag?`<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(q.tag)}</span>`:''} ${q.correct?`<span class="q-tag pts" style="color:var(--green);border-color:rgba(74,222,128,0.2);background:var(--green-dim)">✓ ${esc(q.correct)}</span>`:''}</div>${q.options?`<div class="q-opts">${q.options.map(o=>`<span class="q-opt">${mathHtml(o)}</span>`).join('')}</div>`:''}</div><div class="q-actions"><button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button><button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button></div></div>`).join('');
   if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([list]).catch(()=>{});
 }
 
@@ -641,19 +642,45 @@ window.openReview=async function(idx){
   if(!s){showToast('Student data not found',true);return;}
   const questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   const color=COLORS[Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%COLORS.length];
-  function ms(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  let html=`<div class="panel-student-info"><div class="avatar" style="background:${color}22;color:${color}">${name.charAt(0).toUpperCase()}</div><div><div style="font-weight:600">${esc(name)}</div><div style="font-size:12px;color:var(--muted)">Session review</div></div></div>`;
+  // mathHtml: escapes only < and > (to prevent tag injection) but leaves
+  // backslashes, parens, dollar signs intact so MathJax can typeset them.
+  function mathHtml(str){
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      // Restore LaTeX delimiters that were broken by & escaping
+      .replace(/\\&amp;/g,'\\&');
+  }
+  let html=`<div class="panel-student-info"><div class="avatar" style="background:${color}22;color:${color}">${name.charAt(0).toUpperCase()}</div><div><div style="font-weight:600">${esc(name)}</div><div style="font-size:12px;color:var(--muted)">${s.submitted?'<span style="color:var(--green);font-weight:700">✓ Submitted</span>':'In progress'}</div></div></div>`;
   if(!questions.length)html+='<p style="color:var(--muted);font-size:14px">No questions.</p>';
   else questions.forEach((q,i)=>{
     const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
     const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
     const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
-    html+=`<div class="review-item"><div class="review-q"><strong>Q${i+1}.</strong> ${ms(q.text)} <span style="color:var(--amber)">(${q.points}pts)</span></div><div class="review-answer">${ans!==null?esc(String(ans)):'<span class="no-answer">No answer</span>'}</div><div class="grade-row"><label>Score</label><input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}"><input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}"><button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓</button></div></div>`;
+    // Answers: use mathHtml so LaTeX in answers also renders (e.g. student typed \( x=5 \))
+    const ansDisplay = ans!==null
+      ? `<div class="review-answer math-content">${mathHtml(String(ans))}</div>`
+      : `<div class="review-answer"><span class="no-answer">No answer submitted</span></div>`;
+    html+=`<div class="review-item">
+      <div class="review-q math-content"><strong>Q${i+1}.</strong> ${mathHtml(q.text)} <span style="color:var(--amber);font-family:'DM Mono',monospace;font-size:12px">(${q.points}pts)</span></div>
+      ${ansDisplay}
+      <div class="grade-row">
+        <label>Score</label>
+        <input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}">
+        <input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}">
+        <button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓ Save</button>
+      </div>
+    </div>`;
   });
-  document.getElementById('reviewContent').innerHTML=html;
+  const panel = document.getElementById('reviewContent');
+  panel.innerHTML=html;
   document.getElementById('reviewPanel').classList.add('open');
   document.getElementById('overlay').classList.add('show');
-  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([document.getElementById('reviewContent')]).catch(()=>{});
+  // Typeset all math in the panel
+  if(window.MathJax&&MathJax.typesetPromise){
+    MathJax.typesetPromise([panel]).catch(err=>console.warn('MathJax review error:',err));
+  }
 };
 window.saveGrade=async function(idx,qId,qIdx){
   const name=_reviewNames[idx];
@@ -675,7 +702,6 @@ async function renderResults(){
   const sS=fS.value,sQ=fQ.value;
   // Strip LaTeX markers for clean dropdown text
   function stripLatex(s){return String(s).replace(/\\\(.*?\\\)/g,'[math]').replace(/\$.*?\$/g,'[math]');}
-  function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   fS.innerHTML='<option value="">All Students</option>'+names.map(n=>`<option value="${esc(n)}" ${n===sS?'selected':''}>${esc(n)}</option>`).join('');
   fQ.innerHTML='<option value="">All Questions</option>'+questions.map(q=>`<option value="${q.id}" ${q.id===sQ?'selected':''}>${esc(stripLatex(q.text).substring(0,55))}</option>`).join('');
   let rows=[];
@@ -690,7 +716,10 @@ async function renderResults(){
       const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
       const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
       const c=grade===''?'var(--muted)':parseInt(grade)===q.points?'var(--green)':parseInt(grade)===0?'var(--red)':'var(--amber)';
-      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mathSafe(q.text)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ans!==null?esc(String(ans)):'<span style="color:var(--muted);font-style:italic">—</span>'}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
+      // Use mathHtml for question text and answer so MathJax can typeset both
+      const qDisplay=`<div class="math-content" style="max-width:220px">${mathHtml(q.text)}</div>`;
+      const aDisplay=ans!==null?`<div class="math-content" style="max-width:180px">${mathHtml(String(ans))}</div>`:'<span style="color:var(--muted);font-style:italic">—</span>';
+      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td>${qDisplay}</td><td>${aDisplay}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
     });
   });
   const tbody=document.getElementById('resultsBody');
@@ -781,6 +810,8 @@ function showToast(msg,err=false){const t=document.getElementById('toast');t.tex
 window.showToast=showToast;
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function escA(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,'_');}
+// mathHtml: safe for innerHTML — escapes tags but preserves LaTeX \(...\) and $...$
+function mathHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
 </html>
