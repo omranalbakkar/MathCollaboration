@@ -1415,7 +1415,8 @@ window.importFromHTML = async function(event) {
   
   reader.readAsText(file);
 };
-window.renderResults = async function() {
+
+  window.renderResults = async function() {
   if (!activeSessionId || !currentStudents.length) {
     document.getElementById('resultsBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No submissions yet</td></tr>`;
     return;
@@ -1441,7 +1442,9 @@ window.renderResults = async function() {
     currentQuestions.forEach((q, i) => {
       const option = document.createElement('option');
       option.value = q.id;
-      option.textContent = `Q${i + 1}: ${q.text.substring(0, 40)}...`;
+      // Strip math syntax for dropdown display
+      const plainText = q.text.replace(/\$\$[\s\S]*?\$\$/g, '[math]').replace(/\$[^$]+\$/g, '[math]').replace(/\\\([\s\S]*?\\\)/g, '[math]');
+      option.textContent = `Q${i + 1}: ${plainText.substring(0, 40)}...`;
       questionSelect.appendChild(option);
     });
   }
@@ -1460,26 +1463,32 @@ window.renderResults = async function() {
       if (!question) continue;
       
       const qIndex = currentQuestions.findIndex(q => q.id === qId) + 1;
-      const grade = student.grades?.[qId] || '';
+      const grade = student.grades?.[qId] !== undefined ? student.grades[qId] : '';
       const feedback = student.feedback?.[qId] || '';
       const maxPoints = question.points || 10;
       
+      // Prepare question text for display (truncated, will render math)
+      const qTextForDisplay = question.text.length > 80 ? question.text.substring(0, 80) + '...' : question.text;
+      
+      // Prepare answer for display (will render math)
+      const answerDisplay = answer ? answer : '<span class="no-answer" style="color:var(--muted);font-style:italic;">No answer</span>';
+      
       rows.push(`
         <tr>
-          <td>${escapeHtml(student.name || student.id)}</td>
-          <td>Q${qIndex}: ${escapeHtml(question.text.substring(0, 50))}${question.text.length > 50 ? '...' : ''}</td>
-          <td class="math-content">${answer ? escapeHtml(answer) : '<span class="no-answer">No answer</span>'}</td>
-          <td>
+          <td style="white-space:nowrap;">${escapeHtml(student.name || student.id)}</td>
+          <td><div class="math-content" style="line-height:1.7;">Q${qIndex}: ${qTextForDisplay}</div></td>
+          <td><div class="math-content" style="line-height:1.7;max-width:300px;">${answerDisplay}</div></td>
+          <td style="white-space:nowrap;">
             <input type="number" class="grade-input" value="${grade}" min="0" max="${maxPoints}" 
-                   onchange="updateGrade('${student.id}', '${qId}', this.value)" 
-                   placeholder="/${maxPoints}">
+                   data-student="${student.id}" data-question="${qId}"
+                   placeholder="/${maxPoints}" step="0.5" style="width:80px;">
           </td>
           <td>
             <input type="text" class="feedback-input" value="${escapeHtml(feedback)}" 
-                   onchange="updateFeedback('${student.id}', '${qId}', this.value)" 
-                   placeholder="Optional feedback">
+                   data-student="${student.id}" data-question="${qId}"
+                   placeholder="Optional feedback" style="width:100%;min-width:150px;">
           </td>
-          <td>
+          <td style="white-space:nowrap;">
             <button class="btn btn-sm btn-save" onclick="saveGradeAndFeedback('${student.id}', '${qId}')">Save</button>
           </td>
         </tr>
@@ -1494,12 +1503,65 @@ window.renderResults = async function() {
     tbody.innerHTML = rows.join('');
   }
   
-  // Typeset math if available
-  if (window.MathJax && MathJax.typesetPromise) {
-    MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
-  }
+  // CRITICAL: Typeset math after DOM update
+  setTimeout(() => {
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+    }
+  }, 100);
 };
 
+window.saveGradeAndFeedback = async function(studentId, questionId) {
+  if (!activeSessionId) return;
+  
+  const row = event.target.closest('tr');
+  const gradeInput = row.querySelector(`.grade-input[data-student="${studentId}"][data-question="${questionId}"]`);
+  const feedbackInput = row.querySelector(`.feedback-input[data-student="${studentId}"][data-question="${questionId}"]`);
+  
+  const grade = parseFloat(gradeInput.value);
+  const feedback = feedbackInput.value.trim();
+  
+  // Validate grade
+  const question = currentQuestions.find(q => q.id === questionId);
+  const maxPoints = question ? question.points : 10;
+  
+  if (isNaN(grade) || grade < 0 || grade > maxPoints) {
+    showToast(`Grade must be between 0 and ${maxPoints}`, true);
+    return;
+  }
+  
+  try {
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentId);
+    const studentDoc = await getDoc(studentRef);
+    
+    if (studentDoc.exists()) {
+      const updateData = {
+        [`grades.${questionId}`]: grade,
+        [`feedback.${questionId}`]: feedback
+      };
+      
+      await updateDoc(studentRef, updateData);
+      
+      // Visual feedback
+      event.target.textContent = '✓ Saved';
+      event.target.style.background = 'var(--green)';
+      setTimeout(() => {
+        event.target.textContent = 'Save';
+        event.target.style.background = '';
+      }, 1500);
+      
+      showToast('Grade and feedback saved!');
+      
+      // Refresh to update stats
+      await loadStudents();
+      updateStats();
+    }
+  } catch(e) {
+    console.error('Error saving:', e);
+    showToast('Error saving: ' + e.message, true);
+  }
+};
+  
 window.updateGrade = function(studentId, questionId, value) {
   // Store temporarily - will be saved on "Save" button click
   const input = event.target;
