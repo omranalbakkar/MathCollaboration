@@ -443,17 +443,18 @@ tr:hover td{background:var(--surface2);}
 <div id="print-container"></div>
 <div class="toast" id="toast"></div>
 
+<!-- 1. Load Config First (Standard Script) -->
 <script src="firebase-config.js"></script>
-<script type="module">
-import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getDatabase, ref, set, get, update, onValue, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const app  = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(app);
-const fdb  = getFirestore(app);
-const rtdb = getDatabase(app);
+<!-- 2. Main App Logic (Module) -->
+<script type="module">
+// Import ready-made variables from our local config file
+import { 
+  auth, db, rtDB, 
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
+  getDoc, doc, collection, getDocs, query, where,
+  ref, set, get, update, onValue, remove, push 
+} from './firebase-config.js';
 
 let currentTeacher   = null; // Firestore teacher profile
 let activeSessionId  = null;
@@ -465,7 +466,7 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById('loadingOverlay').style.display = 'none';
   if (!user) { showLogin(); return; }
   try {
-    const snap = await getDoc(doc(fdb, 'users', user.uid));
+    const snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() || snap.data().role !== 'teacher') {
       await signOut(auth); showLogin('Access denied. This portal is for teachers only.'); return;
     }
@@ -474,7 +475,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     // Load teacher profile from teachers collection
     const teacherDocId = snap.data().teacherDocId || user.uid;
-    const tSnap = await getDoc(doc(fdb, 'teachers', teacherDocId));
+    const tSnap = await getDoc(doc(db, 'teachers', teacherDocId));
     currentTeacher = { uid: user.uid, firestoreId: teacherDocId, ...(tSnap.exists() ? tSnap.data() : snap.data()) };
     document.getElementById('teacherDisplayName').textContent = currentTeacher.name || user.email;
     showApp();
@@ -524,7 +525,7 @@ async function populateAssignedDropdowns() {
   if (assignedGrades.length) {
     gradeSelect.innerHTML = '<option value="">Select grade…</option>';
     for (const gid of assignedGrades) {
-      const g = await getDoc(doc(fdb,'grades',gid));
+      const g = await getDoc(doc(db,'grades',gid));
       if (g.exists()) {
         const opt = document.createElement('option');
         opt.value = g.data().nameEn; opt.textContent = g.data().nameEn;
@@ -539,7 +540,7 @@ async function populateAssignedDropdowns() {
   if (assignedSubjects.length) {
     subjectSelect.innerHTML = '<option value="">Select subject…</option>';
     for (const sid of assignedSubjects) {
-      const s = await getDoc(doc(fdb,'subjects',sid));
+      const s = await getDoc(doc(db,'subjects',sid));
       if (s.exists()) {
         const opt = document.createElement('option');
         opt.value = s.data().nameEn; opt.textContent = s.data().nameEn;
@@ -562,11 +563,11 @@ function populateTeacherProfile() {
     <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${esc(assignedSubjectNames)}</span></div>`;
 }
 
-// ── BOOT ──
+// ── BOOT ─
 async function boot() {
   const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
   if (savedId) {
-    const exists = await get(ref(rtdb, `sessions/${savedId}/config`));
+    const exists = await get(ref(rtDB, `sessions/${savedId}/config`));
     if (exists.val()) {
       // Verify ownership
       const cfg = exists.val();
@@ -586,7 +587,7 @@ async function boot() {
 
 function setupListeners() {
   // Only listen to sessions owned by this teacher
-  onValue(ref(rtdb,'sessions'), allSessions => {
+  onValue(ref(rtDB,'sessions'), allSessions => {
     const mine = {};
     if (allSessions) {
       Object.entries(allSessions).forEach(([id,s]) => {
@@ -632,7 +633,7 @@ function renderSessionMasterList(mySessions) {
 window.createNewSession = async function() {
   if (!currentTeacher) return;
   const id = 'sess_' + Date.now();
-  await set(ref(rtdb,`sessions/${id}`), {
+  await set(ref(rtDB,`sessions/${id}`), {
     config: {
       title: 'New Session',
       grade: '', className: '', subject: '',
@@ -660,14 +661,14 @@ window.activateSession = async function(id) {
 
 window.deleteSession = async function(id) {
   if (!confirm('Delete this session and all its student data? This cannot be undone.')) return;
-  await remove(ref(rtdb,`sessions/${id}`));
+  await remove(ref(rtDB,`sessions/${id}`));
   if (activeSessionId===id) { activeSessionId=null; localStorage.removeItem('teacher_active_session_'+currentTeacher.uid); location.reload(); }
   showToast('Session deleted');
 };
 
 function loadActiveSessionContext() {
   if (!activeSessionId) return;
-  get(ref(rtdb,`sessions/${activeSessionId}/config`)).then(cfg => {
+  get(ref(rtDB,`sessions/${activeSessionId}/config`)).then(cfg => {
     if (cfg.val()) {
       const c = cfg.val();
       document.getElementById('cfTitle').value       = c.title||'';
@@ -718,7 +719,7 @@ window.saveSessionConfig = async function() {
     ownerTeacherId: currentTeacher.firestoreId||currentTeacher.uid,
     ownerTeacherName: currentTeacher.name||''
   };
-  await update(ref(rtdb,`sessions/${activeSessionId}/config`), s);
+  await update(ref(rtDB,`sessions/${activeSessionId}/config`), s);
   updateSessionChip(s);
   showToast('Configuration saved!');
 };
@@ -735,7 +736,7 @@ function updateSessionChip(s) {
 window.toggleSession = async function() {
   if (!activeSessionId) return;
   const cur=document.getElementById('sessionToggle').classList.contains('on');
-  await update(ref(rtdb,`sessions/${activeSessionId}/config`),{active:!cur});
+  await update(ref(rtDB,`sessions/${activeSessionId}/config`),{active:!cur});
   setToggle(!cur);
   showToast(!cur?'✅ Session is OPEN — students can join!':'Session closed');
 };
@@ -743,7 +744,7 @@ window.toggleSession = async function() {
 // ── QUESTIONS ──
 async function renderQuestionsForActiveSession() {
   if (!activeSessionId) return;
-  const qs=await get(ref(rtdb,`sessions/${activeSessionId}/questions`));
+  const qs=await get(ref(rtDB,`sessions/${activeSessionId}/questions`));
   renderQuestionsFromData(qs.val()||{});
 }
 
@@ -752,7 +753,7 @@ window.openForm = function(id=null) {
   document.getElementById('questionForm').classList.add('open');
   document.getElementById('formTitle').textContent=id?'Edit Question':'New Question';
   if (id) {
-    get(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`)).then(q=>{
+    get(ref(rtDB,`sessions/${activeSessionId}/questions/${id}`)).then(q=>{
       if(!q.val())return;
       const qv=q.val();
       document.getElementById('fText').value=qv.text||'';
@@ -792,15 +793,15 @@ window.saveQuestion = async function() {
   let options=null;
   if(type==='mcq') options=Array.from(document.getElementById('optionsBuilder').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
   const id=editingId||'q'+Date.now();
-  const existing=editingId?await get(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`)):null;
+  const existing=editingId?await get(ref(rtDB,`sessions/${activeSessionId}/questions/${id}`)):null;
   const q={id,text,type,points:parseInt(document.getElementById('fPoints').value)||10,correct:document.getElementById('fCorrect').value.trim(),tag:document.getElementById('fTag').value.trim(),options,createdAt:existing?.val()?.createdAt||Date.now()};
-  await set(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`),q);
+  await set(ref(rtDB,`sessions/${activeSessionId}/questions/${id}`),q);
   closeForm(); renderQuestionsForActiveSession();
   showToast(editingId?'Question updated!':'Question added!');
 };
 window.deleteQuestion = async function(id) {
   if(!confirm('Delete this question?'))return;
-  await remove(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`));
+  await remove(ref(rtDB,`sessions/${activeSessionId}/questions/${id}`));
   renderQuestionsForActiveSession(); showToast('Deleted');
 };
 
@@ -834,7 +835,7 @@ function updateStatsFromData(questions,students,config) {
 
 async function renderStudentCardsFromActive() {
   if (!activeSessionId) return;
-  const students=await get(ref(rtdb,`sessions/${activeSessionId}/students`));
+  const students=await get(ref(rtDB,`sessions/${activeSessionId}/students`));
   renderStudentCards(students.val()||{});
 }
 
@@ -865,7 +866,7 @@ window.openReview = async function(idx) {
   if (!activeSessionId) return;
   const key=_reviewKeys[idx];
   if (!key) return;
-  const [sSnap,qsSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students/${key}`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`))]);
+  const [sSnap,qsSnap]=await Promise.all([get(ref(rtDB,`sessions/${activeSessionId}/students/${key}`)),get(ref(rtDB,`sessions/${activeSessionId}/questions`))]);
   const s=sSnap.val();
   if(!s){showToast('Student data not found',true);return;}
   const name=s.name||key;
@@ -892,8 +893,8 @@ window.saveGrade = async function(idx,qId,qIdx) {
   const key=_reviewKeys[idx];if(!key)return;
   const g=document.getElementById(`gr_${qIdx}_${qId}`)?.value||'';
   const f=document.getElementById(`fb_${qIdx}_${qId}`)?.value||'';
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}/grades`),{[qId]:g});
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}/feedback`),{[qId]:f});
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${key}/grades`),{[qId]:g});
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${key}/feedback`),{[qId]:f});
   showToast('Grade saved!');
 };
 window.closeReview = function() { document.getElementById('reviewPanel').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); };
@@ -902,7 +903,7 @@ window.closeReview = function() { document.getElementById('reviewPanel').classLi
 window.clearSessionAnswers = async function() {
   if (!activeSessionId) return showToast('No active session',true);
   if (!confirm('Clear ALL student answers for this session? This cannot be undone.')) return;
-  const studentsSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students`));
+  const studentsSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students`));
   const students=studentsSnap.val()||{};
   const updates={};
   Object.keys(students).forEach(name=>{
@@ -911,24 +912,24 @@ window.clearSessionAnswers = async function() {
     updates[`sessions/${activeSessionId}/students/${name}/grades`]=null;
     updates[`sessions/${activeSessionId}/students/${name}/feedback`]=null;
   });
-  await update(ref(rtdb),updates);
+  await update(ref(rtDB),updates);
   showToast('All answers cleared');
 };
 
 window.clearStudentAnswers = async function(key) {
   if (!activeSessionId||!key) return;
   // Get display name for confirmation message
-  const sSnap = await get(ref(rtdb,`sessions/${activeSessionId}/students/${key}`));
+  const sSnap = await get(ref(rtDB,`sessions/${activeSessionId}/students/${key}`));
   const displayName = sSnap.val()?.name || key;
   if (!confirm(`Clear all answers for ${displayName}? This cannot be undone.`)) return;
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${key}`),{answers:null,submitted:null,grades:null,feedback:null});
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${key}`),{answers:null,submitted:null,grades:null,feedback:null});
   showToast(`Answers cleared for ${displayName}`);
 };
 
 // ── RESULTS ──
 async function renderResults() {
   if (!activeSessionId) return;
-  const [stSnap,qsSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`))]);
+  const [stSnap,qsSnap]=await Promise.all([get(ref(rtDB,`sessions/${activeSessionId}/students`)),get(ref(rtDB,`sessions/${activeSessionId}/questions`))]);
   const students=stSnap.val()||{},questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   // Build list of {key, displayName} pairs — keys are uids (new) or legacy names
   const studentEntries = Object.entries(students).map(([k,s])=>({key:k, name:s.name||k, ...s}));
@@ -958,10 +959,10 @@ async function renderResults() {
 }
 window.renderResults=renderResults;
 
-// ── EXPORT ──
+// ── EXPORT ─
 window.exportReports = async function() {
   if(!activeSessionId)return showToast('No active session',true);
-  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`)),get(ref(rtdb,`sessions/${activeSessionId}/config`))]);
+  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtDB,`sessions/${activeSessionId}/students`)),get(ref(rtDB,`sessions/${activeSessionId}/questions`)),get(ref(rtDB,`sessions/${activeSessionId}/config`))]);
   const students=stSnap.val()||{},questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)),sess=cfgSnap.val()||{};
   const studentEntries = Object.entries(students).map(([k,s])=>({key:k, name:s.name||k, ...s}));
   if(!studentEntries.length)return showToast('No student data',true);
@@ -1001,7 +1002,7 @@ window.exportReports = async function() {
 
 window.exportData = async function() {
   if(!activeSessionId)return;
-  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtdb,`sessions/${activeSessionId}/students`)),get(ref(rtdb,`sessions/${activeSessionId}/questions`)),get(ref(rtdb,`sessions/${activeSessionId}/config`))]);
+  const [stSnap,qsSnap,cfgSnap]=await Promise.all([get(ref(rtDB,`sessions/${activeSessionId}/students`)),get(ref(rtDB,`sessions/${activeSessionId}/questions`)),get(ref(rtDB,`sessions/${activeSessionId}/config`))]);
   const b=new Blob([JSON.stringify({session:cfgSnap.val(),questions:qsSnap.val(),students:stSnap.val()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`eduboard_export_${cfgSnap.val()?.title||'session'}.json`;a.click();
 };
@@ -1027,7 +1028,7 @@ window.importFromHTML = async function(event) {
         let options=null;
         if(rawType==='mcq'){const optInputs=card.querySelectorAll('.mcq-option input');if(optInputs.length)options=Array.from(optInputs).map(i=>i.value||i.getAttribute('value')||'').filter(Boolean);}
         const id='q'+Date.now()+'_'+imported;
-        await set(ref(rtdb,`sessions/${activeSessionId}/questions/${id}`),{id,text:rawText.trim(),type:rawType,points,correct:'',tag:'Imported',options,createdAt:Date.now()+imported});
+        await set(ref(rtDB,`sessions/${activeSessionId}/questions/${id}`),{id,text:rawText.trim(),type:rawType,points,correct:'',tag:'Imported',options,createdAt:Date.now()+imported});
         imported++;await new Promise(r=>setTimeout(r,10));
       }
       renderQuestionsForActiveSession();showToast(`✅ Imported ${imported} question(s)`);
