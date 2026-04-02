@@ -384,7 +384,11 @@ async function loadStats() {
     document.getElementById('cardAnswers').textContent = answers;
   });
 }
-loadStats();
+// ── Only load stats if user is authenticated ──
+import { onAuthStateChanged as _onAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+onAuthStateChanged(auth, (user) => {
+  if (user) loadStats();
+});
 </script>
 </body>
 </html>
