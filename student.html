@@ -275,76 +275,58 @@ let activeSessionId = null;
 let unsubSession = null;
 
 // ── ROUTE GUARD ──
-// ── ROUTE GUARD ──
 onAuthStateChanged(auth, async (user) => {
-  // Hide loading spinner immediately
   document.getElementById('loadingScreen').style.display = 'none';
 
   if (!user) {
-    // ✅ FIX: Do NOT try to load sessions here. 
-    // The user is not logged in, so Firestore rules will block the read.
-    // Instead, just show a static message or leave it blank.
-    
     const box = document.getElementById('sessionInfoBox');
     if (box) {
-      box.innerHTML = `
-        <div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">
-          🔒 Sign in to view available sessions
-        </div>`;
+      box.innerHTML = `<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>`;
     }
-
-    // Show login screen
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('app').style.display = 'none';
     return;
   }
 
-  // --- USER IS LOGGED IN ---
   try {
-    // 1. Verify User Role in Firestore
-    const snap = await getDoc(doc(db, 'users', user.uid));
+    // ✅ FIX: Changed 'users' to 'students' to match your database structure
+    const snap = await getDoc(doc(db, 'students', user.uid));
     
     if (!snap.exists()) {
+      console.warn("Student profile not found in 'students' collection for UID:", user.uid);
       await signOut(auth);
-      showErr('User profile not found. Contact administrator.');
+      showErr('Student profile not found. Contact administrator.');
       return;
     }
 
-    const userData = snap.data();
+    const studentData = snap.data();
 
-    if (userData.role !== 'student') {
-      await signOut(auth);
-      showErr('Access denied. This portal is for students only.');
-      return;
-    }
-
-    if (userData.active === false) {
+    // Check if account is active (if you have this field)
+    if (studentData.active === false) {
       await signOut(auth);
       showErr('Your account has been deactivated.');
       return;
     }
 
-    // 2. Set Global Variables
+    // Set Global Variables
     currentStudent = user;
-    studentProfile = userData;
+    studentProfile = studentData;
 
-    // 3. Update UI Header
+    // Update UI
     document.getElementById('headerName').textContent = studentProfile.name || user.email;
-
-    // 4. Switch Screens
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
 
-    // 5. NOW load the session (User is authenticated, so rules allow read)
+    // Load Session
     await findAndJoinOpenSession();
 
   } catch (e) {
     console.error('Auth verification error:', e);
     document.getElementById('loginScreen').style.display = 'flex';
-    showErr('Error verifying access: ' + e.message);
+    showErr('Error: ' + e.message);
   }
 });
-
+    
 // ── SESSION INFO ON LOGIN (FIRESTORE VERSION) ──
 async function loadLoginSessionInfo() {
   const box = document.getElementById('sessionInfoBox');
