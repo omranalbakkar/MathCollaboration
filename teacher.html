@@ -246,6 +246,8 @@ tr:hover td{background:var(--surface2);}
       <button class="nav-btn" onclick="switchTab('session',this)"><span>Config</span></button>
       <button class="nav-btn" onclick="switchTab('questions',this)"><span>Questions</span></button>
       <button class="nav-btn" onclick="switchTab('monitor',this)"><span>Live</span> <span class="dot"></span></button>
+      <!-- NEW TAB ADDED HERE -->
+      <button class="nav-btn" onclick="switchTab('class-status',this)"><span>Class Status</span></button>
       <button class="nav-btn" onclick="switchTab('results',this)"><span>Results</span></button>
       <button class="nav-btn" onclick="switchTab('settings',this)"><span>Settings</span></button>
     </div>
@@ -369,6 +371,27 @@ tr:hover td{background:var(--surface2);}
       </div>
     </div>
 
+    <!-- CLASS STATUS TAB (NEW) -->
+    <div class="tab-pane" id="tab-class-status">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Class Status</div>
+          <div class="section-sub">Attendance & Activity for <span id="csGradeName" style="color:var(--amber)">Active Grade</span></div>
+        </div>
+        <button class="btn btn-amber" onclick="exportClassStatusExcel()">📊 Export Excel (.xlsx)</button>
+      </div>
+      
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val green" id="csTotalPresent">0</div><div class="stat-label">Present (Online)</div></div>
+        <div class="stat-card"><div class="stat-val red" style="color:var(--red)" id="csTotalAbsent">0</div><div class="stat-label">Absent (Offline)</div></div>
+        <div class="stat-card"><div class="stat-val blue" id="csTotalStudents">0</div><div class="stat-label">Total Assigned</div></div>
+      </div>
+
+      <div class="students-grid" id="classStatusGrid">
+        <div class="empty-state">Load a session to view class status.</div>
+      </div>
+    </div>
+
     <!-- RESULTS TAB -->
     <div class="tab-pane" id="tab-results">
       <div class="section-header">
@@ -444,6 +467,8 @@ let sessionsListener = null;
 let currentSessionData = null;
 let currentQuestions = [];
 let currentStudents = [];
+// New variable to store all assigned students for the grade
+let allAssignedStudents = []; 
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
@@ -779,6 +804,7 @@ async function loadActiveSession() {
   
   await loadQuestions();
   await loadStudents();
+  await loadClassStatus(); // Load the new tab data
   updateStats();
 }
 
@@ -805,6 +831,113 @@ async function loadStudents() {
     currentStudents.push({ id: doc.id, ...doc.data() });
   });
   renderStudentCards();
+}
+
+// --- NEW FUNCTION FOR CLASS STATUS TAB ---
+async function loadClassStatus() {
+  if (!activeSessionId || !currentSessionData) return;
+
+  const gradeName = currentSessionData.grade;
+  document.getElementById('csGradeName').textContent = gradeName || 'Unknown Grade';
+  
+  const grid = document.getElementById('classStatusGrid');
+  grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
+
+  // 1. Fetch all students assigned to this Grade
+  let assignedStudents = [];
+  if (gradeName) {
+    try {
+      const studentsRef = collection(db, 'students');
+      const q = query(studentsRef, where('grade', '==', gradeName));
+      const snap = await getDocs(q);
+      snap.forEach(doc => {
+        assignedStudents.push({ id: doc.id, ...doc.data() });
+      });
+    } catch (err) {
+      console.error("Error fetching grade students:", err);
+    }
+  }
+  
+  allAssignedStudents = assignedStudents;
+
+  // 2. Fetch students currently in the session (who have logged in)
+  const sessionStudentsMap = {};
+  currentStudents.forEach(s => {
+    sessionStudentsMap[s.id] = s;
+  });
+
+  // 3. Merge Data
+  let presentCount = 0;
+  let absentCount = 0;
+  const totalAssigned = assignedStudents.length;
+
+  // If no students assigned to grade, show empty
+  if (totalAssigned === 0) {
+    grid.innerHTML = `<div class="empty-state">No students assigned to "${gradeName}".</div>`;
+    document.getElementById('csTotalPresent').textContent = 0;
+    document.getElementById('csTotalAbsent').textContent = 0;
+    document.getElementById('csTotalStudents').textContent = 0;
+    return;
+  }
+
+  // Sort assigned students by name
+  assignedStudents.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+
+  grid.innerHTML = assignedStudents.map(student => {
+    const sessionData = sessionStudentsMap[student.id];
+    const isOnline = !!sessionData && sessionData.online;
+    const displayName = student.name || 'Unknown Student';
+    const initial = displayName.charAt(0).toUpperCase();
+    
+    let cardHtml = '';
+    
+    if (isOnline) {
+      presentCount++;
+      const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
+      const qcount = currentQuestions.length;
+      const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+      const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
+
+      cardHtml = `
+        <div class="student-card" style="border-left: 3px solid var(--green)">
+          <div class="student-header">
+            <div class="avatar" style="background:var(--green-dim);color:var(--green)">${initial}</div>
+            <div>
+              <div class="student-name">${escapeHtml(displayName)}</div>
+              <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
+            </div>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
+          </div>
+          <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+           <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
+        </div>
+      `;
+    } else {
+      absentCount++;
+      cardHtml = `
+        <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
+          <div class="student-header">
+            <div class="avatar" style="background:var(--surface2);color:var(--muted)">${initial}</div>
+            <div>
+              <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
+              <div class="student-time">Not Logged In</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
+            Absent / Offline
+          </div>
+        </div>
+      `;
+    }
+    return cardHtml;
+  }).join('');
+
+  // Update Stats
+  document.getElementById('csTotalPresent').textContent = presentCount;
+  document.getElementById('csTotalAbsent').textContent = absentCount;
+  document.getElementById('csTotalStudents').textContent = totalAssigned;
 }
 
 function setupRealtimeListeners() {
@@ -1069,6 +1202,69 @@ function renderStudentCards() {
     </div>`;
   }).join('');
 }
+
+// --- EXPORT CLASS STATUS TO EXCEL ---
+window.exportClassStatusExcel = function() {
+  if (!currentSessionData) {
+    showToast('No active session loaded', true);
+    return;
+  }
+  
+  // Prepare Data
+  const sessionInfo = [
+    ["Session Title", currentSessionData.title || ""],
+    ["Grade", currentSessionData.grade || ""],
+    ["Class", currentSessionData.className || ""],
+    ["Subject", currentSessionData.subject || ""],
+    ["Teacher", currentTeacher?.name || ""],
+    ["Date", currentSessionData.date || ""],
+    ["Export Time", new Date().toLocaleString()]
+  ];
+
+  const headerRow = ["Student Name", "Status", "Login Time", "Progress (%)", "Answers Submitted", "Total Questions"];
+  
+  // Map all assigned students
+  const sessionStudentsMap = {};
+  currentStudents.forEach(s => { sessionStudentsMap[s.id] = s; });
+  const totalQs = currentQuestions.length;
+
+  const dataRows = allAssignedStudents.map(student => {
+    const sData = sessionStudentsMap[student.id];
+    const isOnline = !!sData && sData.online;
+    const status = isOnline ? "Present (Online)" : "Absent";
+    const loginTime = isOnline && sData.loginTime ? new Date(sData.loginTime).toLocaleTimeString() : "N/A";
+    const answers = isOnline && sData.answers ? Object.keys(sData.answers).length : 0;
+    const pct = isOnline && totalQs ? Math.round((answers / totalQs) * 100) + "%" : "0%";
+    
+    return [
+      student.name || student.id,
+      status,
+      loginTime,
+      pct,
+      answers,
+      totalQs
+    ];
+  });
+
+  // Create Worksheet
+  const wb = XLSX.utils.book_new();
+  
+  // Sheet 1: Summary & List
+  const wsData = [...sessionInfo, [], ["--- Student Attendance & Status ---"], headerRow, ...dataRows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  
+  // Set column widths
+  ws['!cols'] = [{wch:25}, {wch:20}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
+  
+  XLSX.utils.book_append_sheet(wb, ws, "Class Status");
+  
+  // Download
+  const fileName = `Class_Status_${(currentSessionData.title||'Session').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  
+  showToast('Excel file downloaded!');
+};
+
 
 // --- REVIEW LOGIC ---
 
@@ -1876,6 +2072,7 @@ window.switchTab = function(id, btn) {
   if (id === 'results') renderResults();
   if (id === 'questions') loadQuestions();
   if (id === 'monitor') loadStudents();
+  if (id === 'class-status') loadClassStatus(); // Load class status when tab clicked
 };
 
 function showToast(msg, isError = false) {
