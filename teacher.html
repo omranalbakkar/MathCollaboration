@@ -3,812 +3,1163 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — Super Admin & Teacher Portal</title>
+<title>EduBoard — Multi-Session Master</title>
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 <!-- EXPORT LIBRARIES -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
-/* LOGIN */
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a2040 0%,#0f1117 60%);}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:400px;max-width:90vw;box-shadow:0 20px 50px rgba(0,0,0,0.5);}
-.login-logo{font-family:'Fraunces',serif;font-size:28px;color:var(--amber);margin-bottom:20px;text-align:center;}
-.field{margin-bottom:15px;}
-.field label{display:block;font-size:11px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600;}
-.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text);outline:none;}
-.field input:focus{border-color:var(--amber);}
-.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:6px;padding:12px;font-weight:700;cursor:pointer;margin-top:10px;}
-.login-error{color:var(--red);font-size:12px;margin-top:10px;text-align:center;display:none;}
-
-/* APP LAYOUT */
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a2040 0%,#0f1117 60%);overflow:hidden;position:relative;}
+#loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(245,166,35,0.06) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 52px;width:440px;max-width:95vw;position:relative;z-index:1;box-shadow:0 32px 80px rgba(0,0,0,0.5);}
+.login-logo{font-family:'Fraunces',serif;font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px;margin-bottom:4px;}
+.login-sub{color:var(--muted);font-size:13px;margin-bottom:36px;}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.field input,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+.field input[type=password]{font-family:'DM Mono',monospace;}
+.field input:focus,.field select:focus{border-color:var(--amber);}
+.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.1s;margin-top:8px;}
+.btn-primary:hover{opacity:0.9;}
+.login-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;margin-top:14px;display:none;}
+.back-link{display:block;text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);text-decoration:none;}
+.back-link:hover{color:var(--amber);}
+.login-hint{margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);}
 #app{display:none;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;}
-.brand{font-family:'Fraunces',serif;font-size:20px;color:var(--amber);font-weight:800;}
-.role-badge{font-size:10px;padding:2px 8px;border-radius:10px;text-transform:uppercase;font-weight:700;margin-left:10px;}
-.role-admin{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);}
-.role-teacher{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);}
-.nav-tabs{display:flex;gap:4px;}
-.nav-btn{background:none;border:none;color:var(--muted);padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:0.2s;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.brand{font-family:'Fraunces',serif;font-size:20px;font-weight:800;color:var(--amber);letter-spacing:-0.5px;}
+.badge-teacher{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;background:var(--amber-dim);color:var(--amber);padding:3px 8px;border-radius:20px;border:1px solid rgba(245,166,35,0.3);}
+.session-chip{font-size:12px;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(96,165,250,0.3);border-radius:20px;padding:4px 12px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;}
+.topbar-nav{display:flex;gap:4px;}
+.nav-btn{background:none;border:none;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;transition:all 0.15s;position:relative;}
 .nav-btn:hover{color:var(--text);background:var(--surface2);}
 .nav-btn.active{color:var(--amber);background:var(--amber-dim);}
-.content{padding:30px 24px;max-width:1200px;margin:0 auto;}
-.tab-pane{display:none;animation:fadeIn 0.2s;}
+.nav-btn .dot{width:6px;height:6px;background:var(--green);border-radius:50%;position:absolute;top:6px;right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.live-count{font-size:12px;color:var(--green);background:var(--green-dim);padding:4px 10px;border-radius:20px;border:1px solid rgba(74,222,128,0.25);font-weight:500;}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn-logout:hover{color:var(--red);border-color:var(--red);}
+.content{padding:32px 28px;max-width:1120px;margin:0 auto;}
+.tab-pane{display:none;animation:fadeIn 0.2s ease;}
 .tab-pane.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.section-title{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.5px;}
+.section-sub{color:var(--muted);font-size:13px;margin-top:3px;}
 
-/* HEADERS & GRIDS */
-.section-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;}
-.section-title{font-family:'Fraunces',serif;font-size:24px;font-weight:600;}
-.section-sub{color:var(--muted);font-size:13px;margin-top:4px;}
-.grid-master{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+/* SESSION LIST & MASTER */
+.session-master-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 30px; }
+.session-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: all 0.2s; position: relative; overflow: hidden; }
+.session-card:hover { border-color: var(--faint); transform: translateY(-2px); }
+.session-card.active-context { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue); }
+.session-card.active-context::after { content: 'VIEWING'; position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 800; color: var(--blue); background: var(--blue-dim); padding: 2px 6px; border-radius: 4px; }
+.session-card.live-session { border-color: var(--green); background: rgba(74,222,128,0.03); }
+.session-card.live-session::before { content: 'OPEN TO STUDENTS'; position: absolute; top: 10px; left: 10px; font-size: 9px; font-weight: 800; color: var(--green); background: var(--green-dim); padding: 2px 6px; border-radius: 4px; }
 
-/* CARDS */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;transition:0.2s;}
-.card:hover{border-color:var(--faint);}
-.card h3{font-size:16px;margin-bottom:8px;color:var(--text);}
-.card-meta{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
-.card-actions{display:flex;gap:8px;margin-top:12px;}
-.btn{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:0.2s;}
-.btn-sm{padding:4px 8px;font-size:11px;}
-.btn-edit{background:var(--blue-dim);color:var(--blue);}
-.btn-delete{background:var(--red-dim);color:var(--red);}
-.btn-view{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-.btn-add{background:var(--amber);color:#0f1117;}
-.btn-impersonate{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);}
+.sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.sc-title { font-weight: 700; font-size: 16px; color: var(--text); }
+.sc-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+.sc-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-load { flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+.btn-load:hover { background: var(--blue-dim); color: var(--blue); border-color: var(--blue); }
+.btn-load.is-active { background: var(--blue); color: #fff; border-color: var(--blue); cursor: default; }
 
-/* FORMS */
-.form-modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
-.form-modal.open{display:flex;}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;}
-.modal-header{display:flex;justify-content:space-between;margin-bottom:20px;}
-.modal-title{font-family:'Fraunces',serif;font-size:20px;}
-.close-modal{background:none;border:none;color:var(--muted);font-size:24px;cursor:pointer;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.form-group{margin-bottom:12px;}
-.form-group label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text);}
-.multi-select{display:flex;flex-wrap:wrap;gap:8px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;min-height:40px;}
-.chip{background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:12px;font-size:11px;display:flex;align-items:center;gap:6px;}
-.chip span{cursor:pointer;color:var(--red);}
+/* SESSION CONFIG FORM */
+.session-config-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;margin-bottom:28px;position:relative;overflow:hidden;}
+.session-config-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--amber),rgba(245,166,35,0.3));}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:20px;}
+.config-group{display:flex;flex-direction:column;gap:7px;}
+.config-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
+.config-group input,.config-group select,.config-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.config-group textarea{resize:vertical;min-height:80px;width:100%;}
+.config-group input:focus,.config-group select:focus,.config-group textarea:focus{border-color:var(--amber);}
+.config-footer{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:4px;}
+.toggle-wrap{display:flex;align-items:center;gap:10px;}
+.toggle-track{width:44px;height:24px;background:var(--faint);border-radius:12px;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.toggle-track.on{background:var(--green);}
+.toggle-thumb{width:18px;height:18px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left 0.2s;}
+.toggle-track.on .toggle-thumb{left:23px;}
+.toggle-label{font-size:13px;font-weight:600;color:var(--muted);}
+.toggle-wrap.active .toggle-label{color:var(--green);}
 
-/* TEACHER SESSION VIEW (INHERITED) */
-.session-card{border-left:3px solid var(--border);}
-.session-card.active{border-left-color:var(--green);}
-.teacher-info-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);padding:4px 8px;border-radius:20px;font-size:11px;margin-bottom:10px;border:1px solid var(--border);}
+/* BUTTONS */
+.btn{border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-add{background:var(--amber);color:#0f1117;}.btn-add:hover{opacity:0.9;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
+.btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);}
+.btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
+.btn-save{background:var(--green);color:#0f1117;}
+.btn-cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-amber{background:var(--amber);color:#0f1117;}
 
-/* TOAST */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--green);color:#000;padding:10px 20px;border-radius:8px;font-weight:600;transform:translateY(100px);transition:0.3s;z-index:999;}
-.toast.show{transform:translateY(0);}
-.toast.err{background:var(--red);color:#fff;}
+/* QUESTION FORM */
+#questionForm{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;margin-bottom:28px;display:none;animation:fadeIn 0.2s;}
+#questionForm.open{display:block;}
+.form-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;margin-bottom:20px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.form-group textarea{resize:vertical;min-height:90px;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--amber);}
+.form-group select option{background:var(--surface);}
+.options-builder{display:flex;flex-direction:column;gap:8px;}
+.option-row{display:flex;gap:8px;align-items:center;}
+.option-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
+.option-row input:focus{border-color:var(--amber);}
+.btn-rm-opt{background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;padding:4px;}
+.btn-add-opt{background:none;border:1px dashed var(--border);color:var(--muted);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;margin-top:4px;width:100%;}
+.btn-add-opt:hover{border-color:var(--amber);color:var(--amber);}
+.form-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
 
-/* UTILS */
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
-.dot-green{background:var(--green);}
-.dot-red{background:var(--red);}
-.hidden{display:none!important;}
+/* QUESTION CARDS */
+.questions-list{display:flex;flex-direction:column;gap:12px;}
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:flex;align-items:flex-start;gap:16px;transition:border-color 0.2s;}
+.q-card:hover{border-color:var(--faint);}
+.q-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--amber);background:var(--amber-dim);border-radius:6px;padding:4px 8px;white-space:nowrap;margin-top:2px;}
+.q-body{flex:1;min-width:0;}
+.q-text{font-size:15px;font-weight:500;margin-bottom:6px;line-height:1.5;}
+.q-meta{display:flex;gap:10px;flex-wrap:wrap;}
+.q-tag{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:500;}
+.q-tag.type{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.q-tag.pts{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,166,35,0.2);}
+.q-opts{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
+.q-opt{font-size:12px;background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;color:var(--muted);}
+.q-actions{display:flex;gap:8px;flex-shrink:0;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.stat-val{font-family:'Fraunces',serif;font-size:32px;font-weight:800;line-height:1;margin-bottom:6px;}
+.stat-val.green{color:var(--green);}.stat-val.amber{color:var(--amber);}.stat-val.blue{color:var(--blue);}.stat-val.purple{color:var(--purple);}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;}
+
+/* STUDENT CARDS */
+.students-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.student-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;transition:border-color 0.2s;}
+.student-card:hover{border-color:var(--faint);}
+.student-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:16px;font-weight:800;flex-shrink:0;}
+.student-name{font-weight:600;font-size:15px;}
+.student-time{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;}
+.progress-bar-wrap{background:var(--bg);border-radius:20px;height:6px;margin-bottom:8px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:20px;background:var(--amber);transition:width 0.4s;}
+.progress-text{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;}
+.btn-review{width:100%;margin-top:14px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn-review:hover{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,166,35,0.3);}
+
+/* REVIEW PANEL */
+#reviewPanel{position:fixed;top:0;right:-540px;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;padding:28px;}
+#reviewPanel.open{right:0;}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.panel-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;}
+.btn-close-panel{background:none;border:none;color:var(--muted);cursor:pointer;font-size:24px;line-height:1;transition:color 0.15s;}
+.btn-close-panel:hover{color:var(--red);}
+.panel-student-info{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface2);border-radius:10px;margin-bottom:24px;}
+.review-item{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+.review-q{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:500;line-height:1.7;}
+.review-q strong{color:var(--text);}
+.math-content{line-height:1.9;direction:auto;}
+.review-answer{font-size:14px;padding:12px 14px;background:var(--surface2);border-radius:8px;margin-bottom:12px;line-height:1.7;direction:auto;}
+.no-answer{color:var(--muted);font-style:italic;font-size:13px;}
+.grade-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.grade-row label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
+.grade-input{width:70px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none;}
+.grade-input:focus{border-color:var(--amber);}
+.feedback-input{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;}
+.feedback-input:focus{border-color:var(--amber);}
+.btn-save-grade{background:var(--green);color:#0f1117;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* RESULTS */
+.results-controls{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;}
+.select-styled{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.results-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--surface2);padding:12px 16px;text-align:left;font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.score-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;font-family:'DM Mono',monospace;}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:780px;}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;}
+.settings-card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--amber);}
+.s-group{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.s-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
+.s-group input{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
+.s-group input:focus{border-color:var(--amber);}
+.danger-zone{border-color:rgba(248,113,113,0.3);}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;margin-top:8px;transition:all 0.15s;}
+.btn-danger:hover{background:var(--red);color:#fff;}
+
+/* FB BANNER */
+.fb-banner{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.3);border-radius:10px;padding:14px 18px;display:flex;gap:12px;align-items:flex-start;margin-bottom:24px;}
+.fb-banner-text{font-size:13px;color:var(--text);line-height:1.7;}
+.fb-banner-text a{color:var(--amber);}
+.fb-banner-text code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;}
+
+/* MISC */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--green);color:#0f1117;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:999;}
+.toast.show{transform:translateY(0);opacity:1;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:150;display:none;backdrop-filter:blur(2px);}
+.overlay.show{display:block;}
+
+/* HIDDEN PRINT CONTAINER FOR PDF GENERATION */
+#print-container {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 210mm; /* A4 Width */
+  background: white;
+  color: black;
+  padding: 20mm;
+  font-family: 'Times New Roman', serif;
+}
+.print-page {
+  min-height: 270mm; /* A4 Height minus padding */
+  position: relative;
+  margin-bottom: 20px;
+  border-bottom: 2px dashed #ccc;
+}
+.print-header {
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.print-student-name { font-size: 24px; font-weight: bold; }
+.print-meta { font-size: 14px; color: #555; }
+.print-q-item { margin-bottom: 20px; page-break-inside: avoid; }
+.print-q-text { font-weight: bold; font-size: 16px; margin-bottom: 8px; }
+.print-a-label { font-size: 12px; text-transform: uppercase; color: #666; margin-top: 5px; }
+.print-a-text { font-size: 15px; margin-top: 2px; padding: 5px; background: #f9f9f9; border-left: 3px solid #ccc; }
+.print-score { float: right; font-weight: bold; border: 1px solid #000; padding: 2px 8px; }
+
+@media(max-width:700px){.settings-grid{grid-template-columns:1fr;}.form-row{grid-template-columns:1fr;}.topbar-nav .nav-btn span:not(.dot){display:none;}}
 </style>
 </head>
 <body>
-
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">EduBoard</div>
-    <div class="field"><label>Username</label><input type="text" id="loginUser" value="admin"></div>
-    <div class="field"><label>Password</label><input type="password" id="loginPass" value="admin123"></div>
-    <button class="btn-primary" onclick="doLogin()">Sign In</button>
-    <div class="login-error" id="loginErr">Invalid credentials</div>
-    <div style="margin-top:20px;font-size:11px;color:var(--muted);text-align:center;">
-      Default Admin: admin / admin123<br>Default Teacher: teacher / teacher123
-    </div>
+    <div class="login-sub">Teacher Dashboard — Secure Access</div>
+    <div class="field"><label>Username</label><input type="text" id="loginUser" placeholder="teacher" value="teacher"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+    <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="loginErr">Invalid credentials.</div>
+    <div class="login-hint">Contact your administrator if you need access.</div>
+    <a href="index.html" class="back-link">← Back to Home</a>
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="app">
   <div class="topbar">
-    <div style="display:flex;align-items:center;">
+    <div class="topbar-left">
       <div class="brand">EduBoard</div>
-      <span id="roleBadge" class="role-badge">Role</span>
+      <span class="badge-teacher">Teacher</span>
+      <span class="session-chip" id="topSessionChip">No Active Session</span>
     </div>
-    <div class="nav-tabs" id="navTabs">
-      <!-- Injected via JS based on role -->
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="switchTab('manage',this)"><span>Manage</span></button>
+      <button class="nav-btn" onclick="switchTab('session',this)"><span>Config</span></button>
+      <button class="nav-btn" onclick="switchTab('questions',this)"><span>Questions</span></button>
+      <button class="nav-btn" onclick="switchTab('monitor',this)"><span>Live</span> <span class="dot"></span></button>
+      <button class="nav-btn" onclick="switchTab('results',this)"><span>Results</span></button>
+      <button class="nav-btn" onclick="switchTab('settings',this)"><span>Settings</span></button>
     </div>
-    <button class="btn btn-view" onclick="logout()">Sign Out</button>
+    <div class="topbar-right">
+      <div class="live-count" id="liveCount">● 0 online</div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
   </div>
 
   <div class="content">
     
-    <!-- ADMIN: DASHBOARD (MASTERS) -->
-    <div id="tab-admin-masters" class="tab-pane">
+    <!-- MANAGE SESSIONS TAB -->
+    <div class="tab-pane active" id="tab-manage">
       <div class="section-header">
-        <div><div class="section-title">System Masters</div><div class="section-sub">Manage Grades, Subjects, and Teachers</div></div>
+        <div>
+          <div class="section-title">Session Master</div>
+          <div class="section-sub">Create multiple sessions. Each has independent questions, students, and active status.</div>
+        </div>
+        <button class="btn btn-add" onclick="createNewSession()">＋ Create New Session</button>
       </div>
       
-      <div style="display:grid;grid-template-columns:1fr 1fr 2fr;gap:20px;">
-        
-        <!-- GRADES -->
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-            <h3 style="font-size:14px;color:var(--amber)">Grades</h3>
-            <button class="btn btn-sm btn-add" onclick="openMasterModal('grade')">+</button>
-          </div>
-          <div id="gradesList" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-
-        <!-- SUBJECTS -->
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-            <h3 style="font-size:14px;color:var(--blue)">Subjects</h3>
-            <button class="btn btn-sm btn-add" onclick="openMasterModal('subject')">+</button>
-          </div>
-          <div id="subjectsList" style="display:flex;flex-direction:column;gap:8px;"></div>
-        </div>
-
-        <!-- TEACHERS -->
-        <div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
-            <h3 style="font-size:14px;color:var(--purple)">Teachers</h3>
-            <button class="btn btn-sm btn-add" onclick="openMasterModal('teacher')">+</button>
-          </div>
-          <div id="teachersList" class="grid-master" style="grid-template-columns:1fr;"></div>
-        </div>
-
+      <div class="session-master-grid" id="sessionListGrid">
+        <!-- Session Cards injected here -->
+        <div class="empty-state" style="grid-column:1/-1; padding: 40px;">Loading sessions...</div>
       </div>
     </div>
 
-    <!-- ADMIN: ALL SESSIONS -->
-    <div id="tab-admin-sessions" class="tab-pane">
+    <!-- SESSION CONFIG TAB -->
+    <div class="tab-pane" id="tab-session">
       <div class="section-header">
-        <div><div class="section-title">All Sessions</div><div class="section-sub">Monitor and manage sessions created by any teacher</div></div>
+        <div><div class="section-title">Configuration</div><div class="section-sub">Edit settings for the loaded session</div></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div class="toggle-wrap" id="toggleWrap">
+            <div class="toggle-track" id="sessionToggle" onclick="toggleSession()"><div class="toggle-thumb"></div></div>
+            <span class="toggle-label" id="sessionToggleLabel">Session Closed</span>
+          </div>
+          <button class="btn btn-amber" onclick="saveSessionConfig()">💾 Save Config</button>
+        </div>
       </div>
-      <div id="adminSessionList" class="grid-master"></div>
+      <div id="fbBanner" class="fb-banner" style="display:none">
+        <span style="font-size:18px;flex-shrink:0">🔥</span>
+        <div class="fb-banner-text"><strong>Firebase not configured.</strong> Open <code>firebase-config.js</code> and add your credentials for real multi-device sync. <a href="https://console.firebase.google.com/" target="_blank">Get a free project →</a><br><em>Currently in local single-device demo mode.</em></div>
+      </div>
+      <div class="session-config-card">
+        <div class="config-grid">
+          <div class="config-group"><label>Session Title</label><input type="text" id="cfTitle" placeholder="e.g. Chapter 5 Quiz"></div>
+          <div class="config-group"><label>Grade Level</label>
+            <select id="cfGrade">
+              <option value="">Select grade…</option>
+              <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option><option>Grade 4</option><option>Grade 5</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option><option>Grade 11</option><option>Grade 12</option><option>University — Year 1</option><option>University — Year 2</option><option>University — Year 3</option><option>University — Year 4</option>
+            </select>
+          </div>
+          <div class="config-group"><label>Class / Section</label><input type="text" id="cfClass" placeholder="e.g. Class A, Section 3B"></div>
+          <div class="config-group"><label>Subject</label><input type="text" id="cfSubject" placeholder="e.g. Mathematics, Biology"></div>
+          <div class="config-group"><label>Teacher Name</label><input type="text" id="cfTeacher" placeholder="e.g. Ms. Johnson"></div>
+          <div class="config-group"><label>Date</label><input type="date" id="cfDate"></div>
+          <div class="config-group"><label>Start Time</label><input type="time" id="cfStart"></div>
+          <div class="config-group"><label>End Time</label><input type="time" id="cfEnd"></div>
+        </div>
+        <div class="config-group"><label>Student Instructions</label><textarea id="cfInstructions" placeholder="Optional: instructions shown to students before they start…"></textarea></div>
+      </div>
+      <div class="section-title" style="font-size:18px;margin-bottom:16px;font-family:'Fraunces',serif;font-weight:600;">Preview</div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val amber" id="prevQuestions">0</div><div class="stat-label">Questions</div></div>
+        <div class="stat-card"><div class="stat-val green" id="prevStudents">0</div><div class="stat-label">Online Now</div></div>
+        <div class="stat-card"><div class="stat-val blue" id="prevAnswers">0</div><div class="stat-label">Answers In</div></div>
+        <div class="stat-card"><div class="stat-val purple" id="prevTotal">0</div><div class="stat-label">Total Points</div></div>
+      </div>
     </div>
 
-    <!-- TEACHER: MY SESSIONS -->
-    <div id="tab-teacher-sessions" class="tab-pane">
+    <!-- QUESTIONS TAB -->
+    <div class="tab-pane" id="tab-questions">
       <div class="section-header">
-        <div><div class="section-title">My Sessions</div><div class="section-sub">Create and manage your class sessions</div></div>
-        <button class="btn btn-add" onclick="createSession()">＋ Create New Session</button>
+        <div><div class="section-title">Question Bank</div><div class="section-sub">Manage questions for this specific session</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-add" onclick="openForm()">＋ Add Question</button>
+        <button class="btn" style="background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);" onclick="document.getElementById('htmlImportInput').click()">📥 Import from HTML Exam</button>
+        <input type="file" id="htmlImportInput" accept=".html" style="display:none" onchange="importFromHTML(event)">
       </div>
-      <div id="teacherSessionList" class="grid-master"></div>
+      </div>
+      <div id="questionForm">
+        <div class="form-title" id="formTitle">New Question</div>
+        <div class="form-row">
+          <div class="form-group full"><label>Question Text</label><textarea id="fText" placeholder="Enter your question here…"></textarea></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Answer Type</label>
+            <select id="fType" onchange="toggleOptionsBuilder()">
+              <option value="text">Open Text</option><option value="mcq">Multiple Choice</option><option value="truefalse">True / False</option><option value="number">Numeric</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Points</label><input type="number" id="fPoints" value="10" min="1" max="100"></div>
+        </div>
+        <div class="form-group" id="optionsBuilderWrap" style="display:none">
+          <label>Answer Options</label>
+          <div class="options-builder" id="optionsBuilder"></div>
+          <button class="btn-add-opt" onclick="addOption()">+ Add Option</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Correct Answer (optional)</label><input type="text" id="fCorrect" placeholder="e.g. B or True"></div>
+          <div class="form-group"><label>Subject / Tag</label><input type="text" id="fTag" placeholder="e.g. Math, Algebra"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-cancel" onclick="closeForm()">Cancel</button>
+          <button class="btn btn-save" onclick="saveQuestion()">Save Question</button>
+        </div>
+      </div>
+      <div class="questions-list" id="questionsList"></div>
     </div>
 
-    <!-- SHARED: SESSION DETAIL (Questions/Live/Results) -->
-    <div id="tab-session-detail" class="tab-pane">
+    <!-- MONITOR TAB -->
+    <div class="tab-pane" id="tab-monitor">
       <div class="section-header">
-        <div>
-          <div class="section-title" id="detailTitle">Session Detail</div>
-          <div class="section-sub" id="detailMeta">...</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-           <button class="btn btn-view" onclick="closeDetail()">← Back</button>
-           <button class="btn btn-delete" onclick="clearSessionData()">🗑 Clear Student Data</button>
+        <div><div class="section-title">Live Monitor</div><div class="section-sub">Real-time student activity — updates automatically</div></div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val green" id="statOnline">0</div><div class="stat-label">Online Now</div></div>
+        <div class="stat-card"><div class="stat-val amber" id="statAnswers">0</div><div class="stat-label">Answers In</div></div>
+        <div class="stat-card"><div class="stat-val blue" id="statQuestions">0</div><div class="stat-label">Questions</div></div>
+        <div class="stat-card"><div class="stat-val purple" id="statGraded">0</div><div class="stat-label">Graded</div></div>
+      </div>
+      <div class="students-grid" id="studentsGrid"><div class="empty-state"><p style="font-size:15px">No students online</p><span style="font-size:13px;margin-top:6px;display:block">Students appear here when they join</span></div></div>
+    </div>
+
+    <!-- RESULTS TAB -->
+    <div class="tab-pane" id="tab-results">
+      <div class="section-header">
+        <div><div class="section-title">Results</div><div class="section-sub">All submissions for this session</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-edit" onclick="exportData()">Export JSON</button>
+            <button class="btn btn-amber" onclick="exportReports()">📄 Export Reports</button>
         </div>
       </div>
-
-      <!-- Sub Tabs for Session -->
-      <div style="display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;">
-        <button class="btn btn-view active" onclick="switchDetailTab('questions',this)">Questions</button>
-        <button class="btn btn-view" onclick="switchDetailTab('live',this)">Live Monitor</button>
-        <button class="btn btn-view" onclick="switchDetailTab('results',this)">Results</button>
+      <div class="results-controls">
+        <select class="select-styled" id="filterStudent" onchange="renderResults()"><option value="">All Students</option></select>
+        <select class="select-styled" id="filterQuestion" onchange="renderResults()"><option value="">All Questions</option></select>
       </div>
-
-      <div id="detail-questions">
-        <div style="margin-bottom:15px;"><button class="btn btn-add" onclick="addQuestionPrompt()">+ Add Question</button></div>
-        <div id="questionsList"></div>
-      </div>
-
-      <div id="detail-live" class="hidden">
-        <div class="grid-master" id="liveStudentGrid"></div>
-      </div>
-
-      <div id="detail-results" class="hidden">
-        <div style="margin-bottom:15px;display:flex;gap:10px;">
-            <button class="btn btn-view" onclick="exportExcel()">Export Excel</button>
-            <button class="btn btn-view" onclick="exportPDF()">Export PDF Reports</button>
-        </div>
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;text-align:left;">
-                <thead style="background:var(--surface2);color:var(--muted);font-size:12px;text-transform:uppercase;">
-                    <tr><th style="padding:10px;">Student</th><th style="padding:10px;">Q1</th><th style="padding:10px;">Q2</th><th style="padding:10px;">Score</th><th style="padding:10px;">Actions</th></tr>
-                </thead>
-                <tbody id="resultsTableBody"></tbody>
-            </table>
-        </div>
+      <div class="results-table-wrap">
+        <table><thead><tr><th>Student</th><th>Question</th><th>Answer</th><th>Score</th><th>Feedback</th><th></th></tr></thead>
+        <tbody id="resultsBody"></tbody></table>
       </div>
     </div>
 
+    <!-- SETTINGS TAB -->
+    <div class="tab-pane" id="tab-settings">
+      <div class="section-header"><div><div class="section-title">Global Settings</div></div></div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>Change Password</h3>
+          <div class="s-group"><label>New Password</label><input type="password" id="newPass" placeholder="••••••••"></div>
+          <div class="s-group"><label>Confirm</label><input type="password" id="confirmPass" placeholder="••••••••"></div>
+          <button class="btn btn-save" onclick="changePassword()" style="width:100%;justify-content:center">Save Password</button>
+        </div>
+        <div class="settings-card">
+          <h3>Firebase Status</h3>
+          <div id="fbConfigStatus" style="font-size:13px;color:var(--muted);line-height:1.8;">Checking…</div>
+        </div>
+        <div class="settings-card danger-zone">
+          <h3 style="color:var(--red)">⚠ Danger Zone</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">These affect ALL sessions.</p>
+          <button class="btn-danger" onclick="clearAllData()">Reset Entire System</button>
+        </div>
+        <div class="settings-card">
+          <h3>About</h3>
+          <p style="font-size:13px;color:var(--muted);line-height:1.8;">EduBoard v3.0 — Multi-Session Edition<br>Use the form above to update your login password.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- MODAL FOR MASTERS -->
-<div id="masterModal" class="form-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">Edit</div>
-      <button class="close-modal" onclick="closeMasterModal()">×</button>
-    </div>
-    <div id="modalContent"></div>
-    <div style="margin-top:20px;text-align:right;">
-      <button class="btn btn-view" onclick="closeMasterModal()">Cancel</button>
-      <button class="btn btn-add" id="modalSaveBtn">Save</button>
-    </div>
+<div class="overlay" id="overlay" onclick="closeReview()"></div>
+<div id="reviewPanel">
+  <div class="panel-header">
+    <div class="panel-title">Review Answers</div>
+    <button class="btn-close-panel" onclick="closeReview()">×</button>
   </div>
+  <div id="reviewContent"></div>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="toast">Action Saved</div>
+<!-- Hidden container for generating PDF pages -->
+<div id="print-container"></div>
+
+<div class="toast" id="toast"></div>
 
 <script src="firebase-config.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import{getDatabase,ref,set,get,update,remove,onValue}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import{getDatabase,ref,set,get,update,onValue,remove,push}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// --- CONFIG & STATE ---
-let db=null, useFirebase=false;
-let currentUser = null; // { id, role, ...details }
-let currentSessionId = null;
-let masters = { grades:{}, subjects:{}, teachers:{} };
+let db=null,usingFirebase=false;
+let activeSessionId = null; // GLOBAL STATE FOR ACTIVE SESSION (TEACHER VIEW)
 
-const LS_KEY = 'eduboard_super_admin_v1';
-
-// --- DATA LAYER ---
-function initDB(){
-    if(typeof FIREBASE_CONFIG !== 'undefined'){
-        try{
-            const app = initializeApp(FIREBASE_CONFIG);
-            db = getDatabase(app);
-            useFirebase = true;
-            return true;
-        }catch(e){ console.error("FB Init Error", e); }
-    }
-    // Fallback LocalStorage
-    if(!localStorage.getItem(LS_KEY)){
-        const seed = {
-            password: { admin: 'admin123', teacher: 'teacher123' },
-            grades: { 'g1': {id:'g1', nameEn:'Grade 1', nameAr:'الصف الأول', code:'G01'} },
-            subjects: { 's1': {id:'s1', nameEn:'Math', nameAr:'رياضيات', code:'MATH', active:true} },
-            teachers: { 't1': {id:'t1', name:'Mr. Smith', username:'teacher', password:'teacher123', active:true, gradeIds:['g1'], subjectIds:['s1']} },
-            sessions: {}
-        };
-        localStorage.setItem(LS_KEY, JSON.stringify(seed));
-    }
+// ── FIREBASE INIT ──
+function initFirebase(){
+  if(typeof FIREBASE_DEMO_MODE!=='undefined'&&FIREBASE_DEMO_MODE){
+    document.getElementById('fbBanner').style.display='flex';
+    document.getElementById('fbConfigStatus').innerHTML='❌ Not configured — edit <code style="background:var(--surface2);padding:2px 5px;border-radius:4px;font-family:monospace">firebase-config.js</code> to enable multi-device sync.';
     return false;
+  }
+  try{
+    const app=initializeApp(FIREBASE_CONFIG);
+    db=getDatabase(app);usingFirebase=true;
+    document.getElementById('fbConfigStatus').innerHTML='<span style="color:var(--green)">✅ Firebase connected — real-time sync active.</span>';
+    return true;
+  }catch(e){
+    document.getElementById('fbBanner').style.display='flex';
+    document.getElementById('fbConfigStatus').innerHTML=`❌ Error: ${e.message}`;
+    return false;
+  }
 }
+
+// ── DATA ABSTRACTION ──
+const LS='eduboard_v3_master';
+function lget(){try{return JSON.parse(localStorage.getItem(LS))||ddata();}catch{return ddata();}}
+function lset(d){localStorage.setItem(LS,JSON.stringify(d));}
+function ddata(){return{password:'eduboard2024',sessions:{}};} // Structure: { sessions: { id: { config, questions, students } } }
+
+function pathGet(obj,path){return path.split('/').reduce((o,k)=>o&&o[k]!==undefined?o[k]:null,obj);}
+function pathSet(obj,path,val){const keys=path.split('/');let cur=obj;for(let i=0;i<keys.length-1;i++){if(!cur[keys[i]]||typeof cur[keys[i]]!=='object')cur[keys[i]]={};cur=cur[keys[i]];}cur[keys[keys.length-1]]=val;}
+function pathDel(obj,path){const keys=path.split('/');let cur=obj;for(let i=0;i<keys.length-1;i++){if(!cur[keys[i]])return;cur=cur[keys[i]];}delete cur[keys[keys.length-1]];}
 
 async function dbGet(path){
-    if(useFirebase){ const s=await get(ref(db,path)); return s.val(); }
-    const keys = path.split('/');
-    let data = JSON.parse(localStorage.getItem(LS_KEY));
-    for(let k of keys){ if(data) data = data[k]; }
-    return data;
+  if(usingFirebase){const s=await get(ref(db,path));return s.val();}
+  return pathGet(lget(),path);
 }
-async function dbSet(path, val){
-    if(useFirebase){ await set(ref(db,path),val); return; }
-    const keys = path.split('/');
-    let data = JSON.parse(localStorage.getItem(LS_KEY));
-    let curr = data;
-    for(let i=0; i<keys.length-1; i++){
-        if(!curr[keys[i]]) curr[keys[i]] = {};
-        curr = curr[keys[i]];
-    }
-    curr[keys[keys.length-1]] = val;
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+async function dbSet(path,val){
+  if(usingFirebase){await set(ref(db,path),val);return;}
+  const d=lget();pathSet(d,path,val);lset(d);
 }
-async function dbUpdate(path, val){
-    if(useFirebase){ await update(ref(db,path),val); return; }
-    const existing = await dbGet(path) || {};
-    await dbSet(path, {...existing, ...val});
+async function dbUpdate(path,val){
+  if(usingFirebase){await update(ref(db,path),val);return;}
+  const d=lget();const existing=pathGet(d,path)||{};pathSet(d,path,{...existing,...val});lset(d);
 }
 async function dbRemove(path){
-    if(useFirebase){ await remove(ref(db,path)); return; }
-    // Simple removal for LS (limited implementation for brevity)
-    // For nested removal in LS object, we'd need a recursive helper. 
-    // For this demo, we will re-read, delete key, re-save.
-    const keys = path.split('/');
-    let data = JSON.parse(localStorage.getItem(LS_KEY));
-    let curr = data;
-    for(let i=0; i<keys.length-1; i++) curr = curr[keys[i]];
-    delete curr[keys[keys.length-1]];
-    localStorage.setItem(LS_KEY, JSON.stringify(data));
+  if(usingFirebase){await remove(ref(db,path));return;}
+  const d=lget();pathDel(d,path);lset(d);
+}
+function dbListen(path,cb){
+  if(usingFirebase){onValue(ref(db,path),s=>cb(s.val()));return;}
+  let last=null;
+  function poll(){const d=lget();const v=pathGet(d,path);const s=JSON.stringify(v);if(s!==last){last=s;cb(v);}}
+  poll();setInterval(poll,1500);
 }
 
-// --- AUTH ---
-window.doLogin = async () => {
-    const u = document.getElementById('loginUser').value;
-    const p = document.getElementById('loginPass').value;
-    
-    // Check Admin
-    if(u === 'admin' && p === (await dbGet('password/admin') || 'admin123')){
-        loginSuccess({id:'admin', role:'admin', name:'Super Admin'});
-        return;
-    }
-    
-    // Check Teachers
-    const teachers = await dbGet('teachers') || {};
-    const teacher = Object.values(teachers).find(t => t.username === u && t.password === p);
-    if(teacher){
-        if(!teacher.active) { showToast('Account disabled', true); return; }
-        loginSuccess({...teacher, role:'teacher'});
-        return;
-    }
-    
-    document.getElementById('loginErr').style.display='block';
-};
-
-function loginSuccess(user){
-    currentUser = user;
-    sessionStorage.setItem('user', JSON.stringify(user));
+// ── AUTH ──
+async function doLogin(){
+  const user=document.getElementById('loginUser').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  const stored=await dbGet('password')||'eduboard2024';
+  if(user==='teacher'&&pass===stored){
+    sessionStorage.setItem('teacher_auth','1');
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
-    initApp();
+    boot();
+  }else{document.getElementById('loginErr').style.display='block';}
 }
+window.doLogin=doLogin;
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+window.logout=function(){sessionStorage.removeItem('teacher_auth');window.location.href='index.html';};
 
-window.logout = () => {
-    sessionStorage.removeItem('user');
-    location.reload();
-};
-
-// --- INIT APP ---
-function initApp(){
-    const badge = document.getElementById('roleBadge');
-    const nav = document.getElementById('navTabs');
-    
-    if(currentUser.role === 'admin'){
-        badge.textContent = 'Super Admin';
-        badge.className = 'role-badge role-admin';
-        nav.innerHTML = `
-            <button class="nav-btn active" onclick="showTab('tab-admin-masters',this)">Masters</button>
-            <button class="nav-btn" onclick="showTab('tab-admin-sessions',this)">All Sessions</button>
-        `;
-        loadMasters();
-        loadAdminSessions();
+// ── BOOT ──
+async function boot(){
+  initFirebase();
+  
+  // Check if we have an active session ID stored locally
+  const savedId = localStorage.getItem('active_session_id');
+  if(savedId) {
+    // Verify it exists
+    const exists = await dbGet(`sessions/${savedId}/config`);
+    if(exists) {
+      activeSessionId = savedId;
     } else {
-        badge.textContent = 'Teacher';
-        badge.className = 'role-badge role-teacher';
-        nav.innerHTML = `
-            <button class="nav-btn active" onclick="showTab('tab-teacher-sessions',this)">My Sessions</button>
-        `;
-        loadTeacherSessions();
+      // If invalid, clear it
+      localStorage.removeItem('active_session_id');
     }
-}
+  }
 
-// Check session on load
-window.addEventListener('load', () => {
-    initDB();
-    const saved = sessionStorage.getItem('user');
-    if(saved) loginSuccess(JSON.parse(saved));
+  setupListeners();
+  renderSessionMasterList(); // Render the list of sessions immediately
+  
+  if(activeSessionId) {
+    loadActiveSessionContext();
+  } else {
+    // No active session selected, show empty state or prompt
+    updateSessionChip({ title: 'No Session Selected' });
+    // Disable inputs
+    toggleInputs(false);
+  }
+}
+window.addEventListener('load',()=>{
+  if(sessionStorage.getItem('teacher_auth')){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    boot();
+  }
 });
 
-// --- UI HELPERS ---
-window.showTab = (id, btn) => {
-    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    if(btn){
-        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
+function setupListeners(){
+  // Listen to the entire sessions tree to update the master list
+  dbListen('sessions', allSessions => {
+    renderSessionMasterList(allSessions);
+    // If we have an active session, refresh its specific stats
+    if(activeSessionId && allSessions && allSessions[activeSessionId]) {
+       const current = allSessions[activeSessionId];
+       updateStatsFromData(current.questions || {}, current.students || {}, current.config || {});
     }
+  });
+}
+
+// ── SESSION MASTER LOGIC ──
+async function renderSessionMasterList(allSessionsData) {
+  if(!allSessionsData) allSessionsData = await dbGet('sessions') || {};
+  
+  const grid = document.getElementById('sessionListGrid');
+  const sessions = Object.entries(allSessionsData).map(([id, data]) => ({id, ...data.config})).sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  if(sessions.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding:40px;"><p>No sessions created yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
+    return;
+  }
+
+  grid.innerHTML = sessions.map(s => {
+    const isActiveContext = s.id === activeSessionId;
+    const isLive = s.active;
+    const dateStr = s.date ? new Date(s.date).toLocaleDateString() : 'No Date';
+    return `
+    <div class="session-card ${isActiveContext ? 'active-context' : ''} ${isLive ? 'live-session' : ''}">
+      <div class="sc-header">
+        <div class="sc-title">${esc(s.title || 'Untitled Session')}</div>
+      </div>
+      <div class="sc-meta">
+        ${esc(s.subject || 'General')} • ${esc(s.className || 'No Class')}<br>
+        ${dateStr} • ${Object.keys(s.questions||{}).length} Qs
+      </div>
+      <div class="sc-actions">
+        <button class="btn-load ${isActiveContext ? 'is-active' : ''}" onclick="${isActiveContext ? '' : `activateSession('${s.id}')`}">
+          ${isActiveContext ? 'Viewing' : 'Load Session'}
+        </button>
+        <button class="btn-load" style="color:var(--red)" onclick="deleteSession('${s.id}')">Delete</button>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+window.createNewSession = async function() {
+  const id = 'sess_' + Date.now();
+  const newConfig = {
+    title: 'New Session ' + new Date().toLocaleTimeString(),
+    grade: '', className: '', subject: '', teacher: '',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '', endTime: '', instructions: '',
+    active: false, // Default to closed, teacher can open it
+    createdAt: Date.now()
+  };
+
+  await dbSet(`sessions/${id}/config`, newConfig);
+  await activateSession(id);
+  showToast('Session Created!');
+  switchTab('session', document.querySelectorAll('.nav-btn')[1]); // Switch to config tab
 };
 
-function showToast(msg, err=false){
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast show' + (err?' err':'');
-    setTimeout(()=>t.className='toast', 3000);
-}
+window.activateSession = async function(id) {
+  activeSessionId = id;
+  localStorage.setItem('active_session_id', id);
+  renderSessionMasterList(); // Re-render to update active states
+  loadActiveSessionContext();
+  showToast('Session Loaded');
+};
 
-// --- MASTER MANAGEMENT (ADMIN) ---
-async function loadMasters(){
-    masters.grades = await dbGet('grades') || {};
-    masters.subjects = await dbGet('subjects') || {};
-    masters.teachers = await dbGet('teachers') || {};
-    renderMasters();
-}
+window.deleteSession = async function(id) {
+  if(!confirm('Are you sure? This will delete all questions and student data for this session.')) return;
+  await dbRemove(`sessions/${id}`);
+  if(activeSessionId === id) {
+    activeSessionId = null;
+    localStorage.removeItem('active_session_id');
+    location.reload(); // Simplest way to clear UI state
+  } else {
+    renderSessionMasterList();
+  }
+};
 
-function renderMasters(){
-    // Grades
-    const gList = document.getElementById('gradesList');
-    gList.innerHTML = Object.values(masters.grades).map(g => `
-        <div class="card" style="padding:12px;">
-            <div style="display:flex;justify-content:space-between;">
-                <strong>${g.nameEn}</strong>
-                <div>
-                    <button class="btn btn-sm btn-edit" onclick="editMaster('grade','${g.id}')">✎</button>
-                    <button class="btn btn-sm btn-delete" onclick="deleteMaster('grades','${g.id}')">×</button>
-                </div>
-            </div>
-            <div style="font-size:12px;color:var(--muted)">${g.nameAr} • ${g.code}</div>
-        </div>
-    `).join('');
+function loadActiveSessionContext() {
+  if(!activeSessionId) return;
+  
+  // Enable Inputs
+  toggleInputs(true);
 
-    // Subjects
-    const sList = document.getElementById('subjectsList');
-    sList.innerHTML = Object.values(masters.subjects).map(s => `
-        <div class="card" style="padding:12px;border-left:3px solid ${s.active?'var(--green)':'var(--red)'}">
-            <div style="display:flex;justify-content:space-between;">
-                <strong>${s.nameEn}</strong>
-                <div>
-                    <button class="btn btn-sm btn-edit" onclick="editMaster('subject','${s.id}')">✎</button>
-                    <button class="btn btn-sm btn-delete" onclick="deleteMaster('subjects','${s.id}')">×</button>
-                </div>
-            </div>
-            <div style="font-size:12px;color:var(--muted)">${s.nameAr} • ${s.code}</div>
-        </div>
-    `).join('');
-
-    // Teachers
-    const tList = document.getElementById('teachersList');
-    tList.innerHTML = Object.values(masters.teachers).map(t => {
-        const gNames = (t.gradeIds||[]).map(id=>masters.grades[id]?.nameEn).filter(Boolean).join(', ');
-        const sNames = (t.subjectIds||[]).map(id=>masters.subjects[id]?.nameEn).filter(Boolean).join(', ');
-        return `
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:start">
-                <h3>${t.name}</h3>
-                <span class="status-dot ${t.active?'dot-green':'dot-red'}"></span>
-            </div>
-            <div class="card-meta">
-                @${t.username}<br>
-                <span style="color:var(--amber)">Grades:</span> ${gNames || 'None'}<br>
-                <span style="color:var(--blue)">Subjects:</span> ${sNames || 'None'}
-            </div>
-            <div class="card-actions">
-                <button class="btn btn-edit" onclick="editMaster('teacher','${t.id}')">Edit</button>
-                <button class="btn btn-delete" onclick="deleteMaster('teachers','${t.id}')">Delete</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-// --- MASTER CRUD MODAL ---
-let editType = null, editId = null;
-
-window.openMasterModal = (type, id=null) => {
-    editType = type; editId = id;
-    const modal = document.getElementById('masterModal');
-    const content = document.getElementById('modalContent');
-    const title = document.getElementById('modalTitle');
-    const saveBtn = document.getElementById('modalSaveBtn');
-    
-    modal.classList.add('open');
-    title.textContent = (id ? 'Edit ' : 'New ') + type.charAt(0).toUpperCase() + type.slice(1);
-    
-    let html = '';
-    const data = id ? (type==='grade'?masters.grades[id]:type==='subject'?masters.subjects[id]:masters.teachers[id]) : {};
-
-    if(type === 'grade'){
-        html = `
-            <div class="form-row">
-                <div class="form-group"><label>Name English</label><input id="m_nameEn" value="${data.nameEn||''}"></div>
-                <div class="form-group"><label>Name Arabic</label><input id="m_nameAr" value="${data.nameAr||''}"></div>
-            </div>
-            <div class="form-group"><label>Code</label><input id="m_code" value="${data.code||''}"></div>
-        `;
-    } else if(type === 'subject'){
-        html = `
-            <div class="form-row">
-                <div class="form-group"><label>Name English</label><input id="m_nameEn" value="${data.nameEn||''}"></div>
-                <div class="form-group"><label>Name Arabic</label><input id="m_nameAr" value="${data.nameAr||''}"></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Code</label><input id="m_code" value="${data.code||''}"></div>
-                <div class="form-group"><label>Status</label>
-                    <select id="m_active">
-                        <option value="true" ${data.active!==false?'selected':''}>Active</option>
-                        <option value="false" ${data.active===false?'selected':''}>Inactive</option>
-                    </select>
-                </div>
-            </div>
-        `;
-    } else if(type === 'teacher'){
-        // Multi-select helpers
-        const gOptions = Object.values(masters.grades).map(g => 
-            `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px;">
-                <input type="checkbox" class="t_grade" value="${g.id}" ${(data.gradeIds||[]).includes(g.id)?'checked':''}> ${g.nameEn}
-            </label>`
-        ).join('');
-        const sOptions = Object.values(masters.subjects).map(s => 
-            `<label style="display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px;">
-                <input type="checkbox" class="t_subject" value="${s.id}" ${(data.subjectIds||[]).includes(s.id)?'checked':''}> ${s.nameEn}
-            </label>`
-        ).join('');
-
-        html = `
-            <div class="form-row">
-                <div class="form-group"><label>Full Name</label><input id="m_name" value="${data.name||''}"></div>
-                <div class="form-group"><label>Username</label><input id="m_user" value="${data.username||''}" ${id?'disabled':''}></div>
-            </div>
-            <div class="form-group"><label>Password</label><input id="m_pass" value="${data.password||''}" placeholder="Leave blank to keep"></div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Assigned Grades</label>
-                    <div style="max-height:100px;overflow-y:auto;border:1px solid var(--border);padding:8px;border-radius:6px;">${gOptions}</div>
-                </div>
-                <div class="form-group">
-                    <label>Assigned Subjects</label>
-                    <div style="max-height:100px;overflow-y:auto;border:1px solid var(--border);padding:8px;border-radius:6px;">${sOptions}</div>
-                </div>
-            </div>
-            <div class="form-group"><label>Status</label>
-                 <select id="m_active">
-                    <option value="true" ${data.active!==false?'selected':''}>Active</option>
-                    <option value="false" ${data.active===false?'selected':''}>Inactive</option>
-                </select>
-            </div>
-        `;
+  // Load Config Form
+  dbGet(`sessions/${activeSessionId}/config`).then(cfg => {
+    if(cfg) {
+      document.getElementById('cfTitle').value = cfg.title || '';
+      document.getElementById('cfGrade').value = cfg.grade || '';
+      document.getElementById('cfClass').value = cfg.className || '';
+      document.getElementById('cfSubject').value = cfg.subject || '';
+      document.getElementById('cfTeacher').value = cfg.teacher || '';
+      document.getElementById('cfDate').value = cfg.date || '';
+      document.getElementById('cfStart').value = cfg.startTime || '';
+      document.getElementById('cfEnd').value = cfg.endTime || '';
+      document.getElementById('cfInstructions').value = cfg.instructions || '';
+      setToggle(!!cfg.active);
+      updateSessionChip(cfg);
     }
+  });
+
+  // Trigger renders for sub-tabs
+  renderQuestionsForActiveSession();
+  renderResults(); 
+}
+
+function toggleInputs(enable) {
+  const inputs = document.querySelectorAll('#tab-session input, #tab-session textarea, #tab-session select, #tab-session button');
+  inputs.forEach(el => {
+    if(el.id === 'sessionToggle') return; // Keep toggle clickable
+    el.disabled = !enable;
+    el.style.opacity = enable ? '1' : '0.5';
+  });
+}
+
+// ── TAB ──
+window.switchTab=function(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  
+  if(!activeSessionId && id !== 'manage' && id !== 'settings') {
+    showToast('Please select or create a session first', true);
+    switchTab('manage', document.querySelector('.nav-btn'));
+    return;
+  }
+
+  if(id==='results') renderResults();
+  if(id==='questions') renderQuestionsForActiveSession();
+  if(id==='monitor') renderStudentCardsFromActive();
+};
+
+// ── SESSION CONFIG ──
+window.saveSessionConfig=async function(){
+  if(!activeSessionId) return showToast('No active session', true);
+  const s={
+    title:document.getElementById('cfTitle').value.trim()||'Quiz Session',
+    grade:document.getElementById('cfGrade').value,
+    className:document.getElementById('cfClass').value.trim(),
+    subject:document.getElementById('cfSubject').value.trim(),
+    teacher:document.getElementById('cfTeacher').value.trim(),
+    date:document.getElementById('cfDate').value,
+    startTime:document.getElementById('cfStart').value,
+    endTime:document.getElementById('cfEnd').value,
+    instructions:document.getElementById('cfInstructions').value.trim(),
+    active:document.getElementById('sessionToggle').classList.contains('on') // Preserve active state from toggle
+  };
+  await dbUpdate(`sessions/${activeSessionId}/config`, s);
+  updateSessionChip(s);
+  showToast('Configuration saved!');
+};
+
+function setToggle(on){
+  const t=document.getElementById('sessionToggle'),l=document.getElementById('sessionToggleLabel'),w=document.getElementById('toggleWrap');
+  if(on){t.classList.add('on');l.textContent='Session Open';w.classList.add('active');}
+  else{t.classList.remove('on');l.textContent='Session Closed';w.classList.remove('active');}
+}
+function updateSessionChip(s){
+  const parts=[s.grade,s.className,s.title].filter(Boolean);
+  document.getElementById('topSessionChip').textContent=parts.length?parts.join(' · '):'No Active Session';
+}
+
+window.toggleSession=async function(){
+  if(!activeSessionId) return;
+  const cur=document.getElementById('sessionToggle').classList.contains('on');
+  await dbUpdate(`sessions/${activeSessionId}/config`, {active: !cur});
+  setToggle(!cur);
+  showToast(!cur?'✅ Session is OPEN — students can join!':'Session closed');
+};
+
+// ── QUESTIONS ──
+let editingId=null;
+
+async function renderQuestionsForActiveSession() {
+  if(!activeSessionId) return;
+  const qs = await dbGet(`sessions/${activeSessionId}/questions`) || {};
+  renderQuestionsFromData(qs);
+}
+
+window.openForm=function(id=null){
+  editingId=id;
+  document.getElementById('questionForm').classList.add('open');
+  document.getElementById('formTitle').textContent=id?'Edit Question':'New Question';
+  if(id){
+    dbGet(`sessions/${activeSessionId}/questions/${id}`).then(q=>{
+      if(!q)return;
+      document.getElementById('fText').value=q.text||'';
+      document.getElementById('fType').value=q.type||'text';
+      document.getElementById('fPoints').value=q.points||10;
+      document.getElementById('fCorrect').value=q.correct||'';
+      document.getElementById('fTag').value=q.tag||'';
+      toggleOptionsBuilder();
+      if(q.options){document.getElementById('optionsBuilder').innerHTML='';q.options.forEach(o=>addOption(o));}
+    });
+  }else{
+    ['fText','fCorrect','fTag'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fType').value='text';
+    document.getElementById('fPoints').value='10';
+    document.getElementById('optionsBuilder').innerHTML='';
+    toggleOptionsBuilder();
+  }
+  document.getElementById('questionForm').scrollIntoView({behavior:'smooth'});
+};
+window.closeForm=function(){document.getElementById('questionForm').classList.remove('open');editingId=null;};
+window.toggleOptionsBuilder=function(){
+  const t=document.getElementById('fType').value,w=document.getElementById('optionsBuilderWrap');
+  if(t==='mcq'){w.style.display='block';if(!document.getElementById('optionsBuilder').children.length){addOption('Option A');addOption('Option B');}}
+  else w.style.display='none';
+};
+window.addOption=function(val=''){
+  const b=document.getElementById('optionsBuilder');
+  const r=document.createElement('div');r.className='option-row';
+  r.innerHTML=`<input type="text" placeholder="Option text" value="${esc(val)}"><button class="btn-rm-opt" onclick="this.parentElement.remove()">×</button>`;
+  b.appendChild(r);
+};
+window.saveQuestion=async function(){
+  if(!activeSessionId) return showToast('No active session', true);
+  const text=document.getElementById('fText').value.trim();
+  if(!text)return showToast('Question text required',true);
+  const type=document.getElementById('fType').value;
+  let options=null;
+  if(type==='mcq')options=Array.from(document.getElementById('optionsBuilder').querySelectorAll('input')).map(i=>i.value.trim()).filter(Boolean);
+  const id=editingId!==null?editingId:'q'+Date.now();
+  const existing=editingId?await dbGet(`sessions/${activeSessionId}/questions/${id}`):null;
+  const q={id,text,type,points:parseInt(document.getElementById('fPoints').value)||10,correct:document.getElementById('fCorrect').value.trim(),tag:document.getElementById('fTag').value.trim(),options,createdAt:existing?.createdAt||Date.now()};
+  await dbSet(`sessions/${activeSessionId}/questions/${id}`,q);
+  closeForm();
+  showToast(editingId?'Question updated!':'Question added!');
+};
+window.deleteQuestion=async function(id){
+  if(!confirm('Delete?'))return;
+  await dbRemove(`sessions/${activeSessionId}/questions/${id}`);
+  showToast('Deleted');
+};
+
+function renderQuestionsFromData(qs){
+  const list=document.getElementById('questionsList');
+  const arr=Object.values(qs).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  if(!arr.length){list.innerHTML=`<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started</span></div>`;return;}
+  function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  list.innerHTML=arr.map((q,i)=>`<div class="q-card"><div class="q-num">Q${i+1}</div><div class="q-body"><div class="q-text" style="font-size:14px;line-height:1.7">${mathHtml(q.text)}</div><div class="q-meta" style="margin-top:8px"><span class="q-tag type">${q.type}</span><span class="q-tag pts">${q.points} pts</span>${q.tag?`<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(q.tag)}</span>`:''} ${q.correct?`<span class="q-tag pts" style="color:var(--green);border-color:rgba(74,222,128,0.2);background:var(--green-dim)">✓ ${esc(q.correct)}</span>`:''}</div>${q.options?`<div class="q-opts">${q.options.map(o=>`<span class="q-opt">${mathHtml(o)}</span>`).join('')}</div>`:''}</div><div class="q-actions"><button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button><button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button></div></div>`).join('');
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([list]).catch(()=>{});
+}
+
+// ── MONITOR & STATS ──
+function updateStatsFromData(questions, students, config) {
+  const qArr = Object.values(questions);
+  const sArr = Object.values(students);
+  const online = sArr.filter(s => s.online).length;
+  const answers = sArr.reduce((n,s)=>n+(s.answers?Object.keys(s.answers).length:0),0);
+  const graded = sArr.reduce((n,s)=>n+(s.grades?Object.keys(s.grades).length:0),0);
+  const totalPts = qArr.reduce((n,q)=>n+(q.points||0),0);
+
+  // Update Top Bar
+  document.getElementById('liveCount').textContent = `● ${online} online`;
+  updateSessionChip(config);
+
+  // Update Stats Tab
+  document.getElementById('prevQuestions').textContent = qArr.length;
+  document.getElementById('prevStudents').textContent = online;
+  document.getElementById('prevAnswers').textContent = answers;
+  document.getElementById('prevTotal').textContent = totalPts;
+
+  // Update Monitor Tab
+  document.getElementById('statOnline').textContent = online;
+  document.getElementById('statAnswers').textContent = answers;
+  document.getElementById('statQuestions').textContent = qArr.length;
+  document.getElementById('statGraded').textContent = graded;
+}
+
+async function renderStudentCardsFromActive() {
+  if(!activeSessionId) return;
+  const students = await dbGet(`sessions/${activeSessionId}/students`) || {};
+  renderStudentCards(students);
+}
+
+// ── STUDENT CARDS ──
+const COLORS=['#f5a623','#60a5fa','#4ade80','#f87171','#c084fc','#fb923c','#34d399','#fbbf24'];
+function renderStudentCards(students){
+  const online=Object.values(students||{}).filter(s=>s.online);
+  const grid=document.getElementById('studentsGrid');
+  const qcount=parseInt(document.getElementById('statQuestions').textContent)||0;
+  if(!online.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p style="font-size:15px">No students online</p><span style="font-size:13px;display:block;margin-top:6px">Students appear when they join</span></div>`;return;}
+  // Build name index — safe lookup without string corruption
+  _reviewNames = online.map(s=>s.name||'');
+  grid.innerHTML=online.map((s,i)=>{
+    const answered=s.answers?Object.keys(s.answers).length:0;
+    const pct=qcount?Math.round(answered/qcount*100):0;
+    const color=COLORS[i%COLORS.length];
+    return`<div class="student-card"><div class="student-header"><div class="avatar" style="background:${color}22;color:${color}">${(s.name||'?').charAt(0).toUpperCase()}</div><div><div class="student-name">${esc(s.name||'')}${s.submitted?'<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700;vertical-align:middle">✓ SUBMITTED</span>':''}</div><div class="student-time">${s.loginTime?new Date(s.loginTime).toLocaleTimeString():'—'}</div></div></div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%;background:${s.submitted?'var(--green)':'var(--amber)'}"></div></div><div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div><button class="btn-review" onclick="openReview(${i})">Review Answers →</button></div>`;
+  }).join('');
+}
+
+// ── REVIEW PANEL ──
+let _reviewNames = [];
+
+window.openReview=async function(idx){
+  if(!activeSessionId) return;
+  const name = _reviewNames[idx];
+  if(!name) return;
+  const[s,qs]=await Promise.all([dbGet(`sessions/${activeSessionId}/students/${name}`),dbGet(`sessions/${activeSessionId}/questions`)]);
+  if(!s){showToast('Student data not found',true);return;}
+  const questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  const color=COLORS[Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%COLORS.length];
+  function mathHtml(str){
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/\\&amp;/g,'\\&');
+  }
+  let html=`<div class="panel-student-info"><div class="avatar" style="background:${color}22;color:${color}">${name.charAt(0).toUpperCase()}</div><div><div style="font-weight:600">${esc(name)}</div><div style="font-size:12px;color:var(--muted)">${s.submitted?'<span style="color:var(--green);font-weight:700">✓ Submitted</span>':'In progress'}</div></div></div>`;
+  if(!questions.length)html+='<p style="color:var(--muted);font-size:14px">No questions.</p>';
+  else questions.forEach((q,i)=>{
+    const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+    const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
+    const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
+    const ansDisplay = ans!==null
+      ? `<div class="review-answer math-content">${mathHtml(String(ans))}</div>`
+      : `<div class="review-answer"><span class="no-answer">No answer submitted</span></div>`;
+    html+=`<div class="review-item">
+      <div class="review-q math-content"><strong>Q${i+1}.</strong> ${mathHtml(q.text)} <span style="color:var(--amber);font-family:'DM Mono',monospace;font-size:12px">(${q.points}pts)</span></div>
+      ${ansDisplay}
+      <div class="grade-row">
+        <label>Score</label>
+        <input class="grade-input" type="number" min="0" max="${q.points}" placeholder="/${q.points}" value="${esc(String(grade))}" id="gr_${i}_${q.id}">
+        <input class="feedback-input" type="text" placeholder="Feedback…" value="${esc(fb)}" id="fb_${i}_${q.id}">
+        <button class="btn-save-grade" onclick="saveGrade(${idx},'${q.id}',${i})">✓ Save</button>
+      </div>
+    </div>`;
+  });
+  const panel = document.getElementById('reviewContent');
+  panel.innerHTML=html;
+  document.getElementById('reviewPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  if(window.MathJax&&MathJax.typesetPromise){
+    MathJax.typesetPromise([panel]).catch(err=>console.warn('MathJax review error:',err));
+  }
+};
+window.saveGrade=async function(idx,qId,qIdx){
+  if(!activeSessionId) return;
+  const name=_reviewNames[idx];
+  if(!name)return;
+  const g=document.getElementById(`gr_${qIdx}_${qId}`)?.value||'';
+  const f=document.getElementById(`fb_${qIdx}_${qId}`)?.value||'';
+  await dbUpdate(`sessions/${activeSessionId}/students/${name}/grades`,{[qId]:g});
+  await dbUpdate(`sessions/${activeSessionId}/students/${name}/feedback`,{[qId]:f});
+  showToast('Grade saved!');
+};
+window.closeReview=function(){document.getElementById('reviewPanel').classList.remove('open');document.getElementById('overlay').classList.remove('show');};
+
+// ── RESULTS ──
+async function renderResults(){
+  if(!activeSessionId) return;
+  const[st,qs]=await Promise.all([dbGet(`sessions/${activeSessionId}/students`),dbGet(`sessions/${activeSessionId}/questions`)]);
+  const students=st||{},questions=Object.values(qs||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  const names=Object.keys(students);
+  const fS=document.getElementById('filterStudent'),fQ=document.getElementById('filterQuestion');
+  const sS=fS.value,sQ=fQ.value;
+  function stripLatex(s){return String(s).replace(/\\\(.*?\\\)/g,'[math]').replace(/\$.*?\$/g,'[math]');}
+  fS.innerHTML='<option value="">All Students</option>'+names.map(n=>`<option value="${esc(n)}" ${n===sS?'selected':''}>${esc(n)}</option>`).join('');
+  fQ.innerHTML='<option value="">All Questions</option>'+questions.map(q=>`<option value="${q.id}" ${q.id===sQ?'selected':''}>${esc(stripLatex(q.text).substring(0,55))}</option>`).join('');
+  let rows=[];
+  _reviewNames = names;
+  names.forEach((name,ni)=>{
+    if(sS&&name!==sS)return;
+    const s=students[name];
+    questions.forEach(q=>{
+      if(sQ&&q.id!==sQ)return;
+      const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+      const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:'';
+      const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:'';
+      const c=grade===''?'var(--muted)':parseInt(grade)===q.points?'var(--green)':parseInt(grade)===0?'var(--red)':'var(--amber)';
+      const qDisplay=`<div class="math-content" style="max-width:220px">${mathHtml(q.text)}</div>`;
+      const aDisplay=ans!==null?`<div class="math-content" style="max-width:180px">${mathHtml(String(ans))}</div>`:'<span style="color:var(--muted);font-style:italic">—</span>';
+      rows.push(`<tr><td><strong>${esc(name)}</strong></td><td>${qDisplay}</td><td>${aDisplay}</td><td><span class="score-pill" style="background:${c}22;color:${c}">${grade!==''?grade+'/'+q.points:'—'}</span></td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">${fb?esc(fb):'—'}</td><td><button class="btn btn-sm btn-edit" onclick="openReview(${ni})">Review</button></td></tr>`);
+    });
+  });
+  const tbody=document.getElementById('resultsBody');
+  tbody.innerHTML=rows.length?rows.join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No results yet</td></tr>`;
+  if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise([tbody]).catch(()=>{});
+}
+window.renderResults=renderResults;
+
+// ── EXPORT FUNCTIONS ──
+window.exportReports = async function() {
+    if(!activeSessionId) return showToast('No active session', true);
+    const [st, qs, sess] = await Promise.all([dbGet(`sessions/${activeSessionId}/students`), dbGet(`sessions/${activeSessionId}/questions`), dbGet(`sessions/${activeSessionId}/config`)]);
+    const students = st || {};
+    const questions = Object.values(qs || {}).sort((a,b) => (a.createdAt||0) - (b.createdAt||0));
+    const names = Object.keys(students);
+
+    if (!names.length) return showToast('No student data to export', true);
+
+    showToast('Generating Reports...');
+
+    // 1. EXCEL EXPORT
+    let excelData = [['Student Name', 'Question ID', 'Question Text', 'Answer', 'Score', 'Max Points', 'Feedback']];
     
-    content.innerHTML = html;
+    names.forEach(name => {
+        const s = students[name];
+        questions.forEach(q => {
+            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : '';
+            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
+            const fb = s.feedback && s.feedback[q.id] ? s.feedback[q.id] : '';
+            const cleanQ = q.text.replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
+            const cleanA = String(ans).replace(/<[^>]*>/g, '').replace(/\\\(|\\\)|\$/g, '');
+            excelData.push([name, q.id, cleanQ, cleanA, grade, q.points, fb]);
+        });
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, "Results");
+    XLSX.writeFile(wb, `EduBoard_Results_${sess.title || 'Export'}.xlsx`);
+
+    // 2. PDF EXPORT
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const printContainer = document.getElementById('print-container');
     
-    saveBtn.onclick = async () => {
-        const payload = {};
-        if(type==='grade'){
-            payload.nameEn = document.getElementById('m_nameEn').value;
-            payload.nameAr = document.getElementById('m_nameAr').value;
-            payload.code = document.getElementById('m_code').value;
-            payload.id = editId || 'g'+Date.now();
-        } else if(type==='subject'){
-            payload.nameEn = document.getElementById('m_nameEn').value;
-            payload.nameAr = document.getElementById('m_nameAr').value;
-            payload.code = document.getElementById('m_code').value;
-            payload.active = document.getElementById('m_active').value === 'true';
-            payload.id = editId || 's'+Date.now();
-        } else if(type==='teacher'){
-            payload.name = document.getElementById('m_name').value;
-            payload.username = document.getElementById('m_user').value;
-            const p = document.getElementById('m_pass').value;
-            if(p) payload.password = p;
-            payload.active = document.getElementById('m_active').value === 'true';
-            payload.gradeIds = Array.from(document.querySelectorAll('.t_grade:checked')).map(c=>c.value);
-            payload.subjectIds = Array.from(document.querySelectorAll('.t_subject:checked')).map(c=>c.value);
-            if(!editId) {
-                payload.id = 't'+Date.now();
-                if(!payload.password) payload.password = '123456';
-            } else {
-                payload.id = editId;
-                if(!payload.password) delete payload.password; // keep old
-            }
+    function cleanForPrint(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    for (let i = 0; i < names.length; i++) {
+        const name = names[i];
+        const s = students[name];
+        
+        let html = `
+            <div class="print-page">
+                <div class="print-header">
+                    <div>
+                        <div class="print-student-name">${esc(name)}</div>
+                        <div class="print-meta">Class: ${sess.className || '-'} | Subject: ${sess.subject || '-'}</div>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="font-size:18px;font-weight:bold">${sess.title || 'Exam'}</div>
+                        <div style="font-size:12px">${sess.date || ''}</div>
+                    </div>
+                </div>
+        `;
+
+        questions.forEach((q, idx) => {
+            const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
+            const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : '';
+            
+            html += `
+                <div class="print-q-item">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                        <div class="print-q-text math-content">Q${idx+1}. ${cleanForPrint(q.text)}</div>
+                        ${grade !== '' ? `<div class="print-score">Score: ${grade} / ${q.points}</div>` : ''}
+                    </div>
+                    <div class="print-a-label">Student Answer:</div>
+                    <div class="print-a-text math-content">
+                        ${ans !== null ? cleanForPrint(String(ans)) : '<em>No Answer</em>'}
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`; 
+        
+        printContainer.innerHTML = html;
+        
+        if(window.MathJax && MathJax.typesetPromise) {
+            await MathJax.typesetPromise([printContainer]);
         }
 
-        if(editId) await dbUpdate(`${type}s/${editId}`, payload);
-        else await dbSet(`${type}s/${payload.id}`, payload);
-        
-        closeMasterModal();
-        loadMasters();
-        showToast('Saved Successfully');
-    };
-};
+        const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
+            scale: 2, useCORS: true, backgroundColor: '#ffffff'
+        });
 
-window.editMaster = (type, id) => openMasterModal(type, id);
-window.closeMasterModal = () => document.getElementById('masterModal').classList.remove('open');
-window.deleteMaster = async (col, id) => {
-    if(!confirm('Are you sure?')) return;
-    await dbRemove(`${col}/${id}`);
-    loadMasters();
-};
+        const imgData = canvas.toDataURL('image/png');
+        const pdfWidth = 210; 
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-// --- SESSION LOGIC ---
-
-// 1. CREATE SESSION (Teacher)
-window.createSession = async () => {
-    if(currentUser.role !== 'teacher') return;
-    const id = 'sess_'+Date.now();
-    const session = {
-        id: id,
-        teacherId: currentUser.id,
-        title: 'New Session ' + new Date().toLocaleDateString(),
-        active: false,
-        createdAt: Date.now(),
-        questions: {},
-        students: {}
-    };
-    await dbSet(`sessions/${id}`, session);
-    openSessionDetail(id);
-};
-
-// 2. LOAD SESSIONS
-async function loadTeacherSessions(){
-    const sessions = await dbGet('sessions') || {};
-    const mySessions = Object.values(sessions).filter(s => s.teacherId === currentUser.id);
-    renderSessionGrid(mySessions, 'teacherSessionList', false);
-}
-
-async function loadAdminSessions(){
-    const sessions = await dbGet('sessions') || {};
-    renderSessionGrid(Object.values(sessions), 'adminSessionList', true);
-}
-
-function renderSessionGrid(sessions, containerId, isAdmin){
-    const el = document.getElementById(containerId);
-    if(!sessions.length) { el.innerHTML='<div style="color:var(--muted)">No sessions found.</div>'; return; }
-    
-    el.innerHTML = sessions.sort((a,b)=>b.createdAt-a.createdAt).map(s => {
-        const teacherName = isAdmin ? (masters.teachers[s.teacherId]?.name || 'Unknown') : '';
-        return `
-        <div class="card session-card ${s.active?'active':''}">
-            <div style="display:flex;justify-content:space-between;">
-                <h3>${s.title}</h3>
-                <span class="status-dot ${s.active?'dot-green':'dot-red'}"></span>
-            </div>
-            ${isAdmin ? `<div class="teacher-info-pill">👤 ${teacherName}</div>` : ''}
-            <div class="card-meta">
-                📅 ${new Date(s.createdAt).toLocaleDateString()}<br>
-                ❓ ${Object.keys(s.questions||{}).length} Questions<br>
-                👥 ${Object.keys(s.students||{}).length} Students
-            </div>
-            <div class="card-actions">
-                <button class="btn btn-view" onclick="openSessionDetail('${s.id}')">Manage</button>
-                ${isAdmin ? `<button class="btn btn-impersonate" onclick="openSessionDetail('${s.id}')">View As Teacher</button>` : ''}
-                <button class="btn btn-delete" onclick="deleteSession('${s.id}')">Delete</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-}
-
-window.deleteSession = async (id) => {
-    if(!confirm('Delete session and all data?')) return;
-    await dbRemove(`sessions/${id}`);
-    if(currentUser.role==='admin') loadAdminSessions(); else loadTeacherSessions();
-};
-
-// 3. SESSION DETAIL (The "Meat" of the app)
-window.openSessionDetail = async (id) => {
-    currentSessionId = id;
-    const s = await dbGet(`sessions/${id}`);
-    if(!s) return;
-
-    // Populate Header
-    document.getElementById('detailTitle').textContent = s.title;
-    const teacher = masters.teachers[s.teacherId] || {};
-    document.getElementById('detailMeta').innerHTML = `
-        Teacher: <strong>${teacher.name || 'Unknown'}</strong> | 
-        Status: <span style="color:${s.active?'var(--green)':'var(--red)'}">${s.active?'Open':'Closed'}</span>
-    `;
-
-    // Show Tab
-    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
-    document.getElementById('tab-session-detail').classList.add('active');
-    
-    // Load Questions
-    renderQuestions(s.questions);
-};
-
-window.closeDetail = () => {
-    currentSessionId = null;
-    if(currentUser.role==='admin') showTab('tab-admin-sessions');
-    else showTab('tab-teacher-sessions');
-};
-
-// --- QUESTIONS CRUD ---
-async function renderQuestions(questions){
-    const list = document.getElementById('questionsList');
-    if(!questions || !Object.keys(questions).length){
-        list.innerHTML = '<div style="color:var(--muted);padding:20px;text-align:center">No questions yet.</div>';
-        return;
-    }
-    list.innerHTML = Object.values(questions).map((q,idx) => `
-        <div class="card" style="margin-bottom:10px;">
-            <div style="display:flex;justify-content:space-between;">
-                <strong>Q${idx+1}: ${q.text.substring(0,50)}...</strong>
-                <button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">×</button>
-            </div>
-            <div style="font-size:12px;color:var(--muted)">${q.type} • ${q.points} pts</div>
-        </div>
-    `).join('');
-}
-
-window.addQuestionPrompt = async () => {
-    const text = prompt("Enter Question Text:");
-    if(!text) return;
-    const q = {
-        id: 'q'+Date.now(),
-        text: text,
-        type: 'text',
-        points: 10
-    };
-    await dbUpdate(`sessions/${currentSessionId}/questions/${q.id}`, q);
-    const s = await dbGet(`sessions/${currentSessionId}`);
-    renderQuestions(s.questions);
-};
-
-window.deleteQuestion = async (qid) => {
-    if(!confirm('Delete question?')) return;
-    await dbRemove(`sessions/${currentSessionId}/questions/${qid}`);
-    const s = await dbGet(`sessions/${currentSessionId}`);
-    renderQuestions(s.questions);
-};
-
-// --- LIVE MONITOR & RESULTS (Simplified for Single Page) ---
-window.switchDetailTab = async (subTab, btn) => {
-    document.querySelectorAll('#tab-session-detail .btn-view').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    ['questions','live','results'].forEach(t => document.getElementById('detail-'+t).classList.add('hidden'));
-    document.getElementById('detail-'+subTab).classList.remove('hidden');
-
-    if(subTab === 'live' || subTab === 'results'){
-        const s = await dbGet(`sessions/${currentSessionId}`);
-        if(subTab === 'live') renderLiveMonitor(s.students);
-        if(subTab === 'results') renderResultsTable(s);
-    }
-};
-
-function renderLiveMonitor(students){
-    const grid = document.getElementById('liveStudentGrid');
-    if(!students || !Object.keys(students).length){
-        grid.innerHTML = '<div style="color:var(--muted)">Waiting for students...</div>';
-        return;
-    }
-    grid.innerHTML = Object.values(students).map(st => `
-        <div class="card">
-            <h3>${st.name}</h3>
-            <div class="card-meta">Status: ${st.submitted ? 'Submitted' : 'Typing...'}</div>
-            <button class="btn btn-sm btn-delete" onclick="removeStudent('${st.name}')">Remove Student</button>
-        </div>
-    `).join('');
-}
-
-window.removeStudent = async (name) => {
-    if(!confirm(`Remove ${name} and their answers?`)) return;
-    await dbRemove(`sessions/${currentSessionId}/students/${name}`);
-    const s = await dbGet(`sessions/${currentSessionId}`);
-    renderLiveMonitor(s.students);
-};
-
-window.clearSessionData = async () => {
-    if(!confirm('Clear ALL student answers for this session?')) return;
-    await dbSet(`sessions/${currentSessionId}/students`, {});
-    showToast('Session Data Cleared');
-    switchDetailTab('live', document.querySelector('#detail-live').previousElementSibling);
-};
-
-function renderResultsTable(session){
-    const tbody = document.getElementById('resultsTableBody');
-    const students = session.students || {};
-    const questions = Object.values(session.questions || {});
-    
-    if(!Object.keys(students).length){
-        tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted)">No submissions yet.</td></tr>';
-        return;
+        if (i > 0) doc.addPage();
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     }
 
-    tbody.innerHTML = Object.values(students).map(st => {
-        let total = 0;
-        const qCells = questions.map(q => {
-            const ans = st.answers?.[q.id];
-            const grade = st.grades?.[q.id];
-            if(grade) total += parseFloat(grade)||0;
-            return `<td style="padding:10px;border-bottom:1px solid var(--border);font-size:12px;">
-                ${ans ? (ans+'').substring(0,10)+'...' : '-'} 
-                ${grade ? `<br><b style="color:var(--green)">${grade}/${q.points}</b>` : ''}
-            </td>`;
-        }).join('');
-        
-        return `
-        <tr>
-            <td style="padding:10px;border-bottom:1px solid var(--border);font-weight:bold;">${st.name}</td>
-            ${qCells}
-            <td style="padding:10px;border-bottom:1px solid var(--border);font-weight:bold;color:var(--amber)">${total}</td>
-            <td style="padding:10px;border-bottom:1px solid var(--border);">
-                <button class="btn btn-sm btn-delete" onclick="removeStudent('${st.name}')">Del</button>
-            </td>
-        </tr>
-        `;
-    }).join('');
-}
+    doc.save(`EduBoard_Exam_Papers.pdf`);
+    printContainer.innerHTML = ''; 
+    showToast('Reports Exported!');
+};
 
-// --- EXPORTS (Placeholders using previous logic) ---
-window.exportExcel = () => showToast('Excel Export Triggered (See prev code)');
-window.exportPDF = () => showToast('PDF Export Triggered (See prev code)');
+window.exportData=async function(){
+  if(!activeSessionId) return;
+  const[st,qs,sess]=await Promise.all([dbGet(`sessions/${activeSessionId}/students`),dbGet(`sessions/${activeSessionId}/questions`),dbGet(`sessions/${activeSessionId}/config`)]);
+  const b=new Blob([JSON.stringify({session:sess,questions:qs,students:st},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`eduboard_export_${sess.title}.json`;a.click();
+};
+
+// ── IMPORT FROM HTML EXAM ──
+window.importFromHTML = async function(event) {
+  if(!activeSessionId) return showToast('No active session', true);
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(e.target.result, 'text/html');
+      const cards = doc.querySelectorAll('.question-card');
+      if (!cards.length) { showToast('No questions found in this file', true); return; }
+      let imported = 0;
+      for (const card of cards) {
+        const inputEl = card.querySelector('input.main-q-input');
+        if (!inputEl) continue;
+        const rawText = inputEl.value || inputEl.getAttribute('value') || '';
+        if (!rawText.trim()) continue;
+        const typeSelector = card.querySelector('select.q-type-selector');
+        let rawType = 'text'; 
+        if (typeSelector) {
+          const selectedOpt = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
+          const selVal = selectedOpt ? selectedOpt.value : '';
+          if (selVal === 'mcq') rawType = 'mcq';
+          else if (selVal === 'tf') rawType = 'truefalse';
+          else if (selVal === 'fill') rawType = 'text';
+          else if (selVal === 'matching') rawType = 'text'; 
+          else rawType = 'text'; 
+        }
+        const marksInput = card.querySelector('input.mark-input-field');
+        const points = marksInput ? (parseFloat(marksInput.value) || 10) : 10;
+        let options = null;
+        if (rawType === 'mcq') {
+          const optInputs = card.querySelectorAll('.mcq-option input');
+          if (optInputs.length) {
+            options = Array.from(optInputs).map(i => i.value || i.getAttribute('value') || '').filter(Boolean);
+            if (!options.length) options = null;
+          }
+        }
+        const id = 'q' + Date.now() + '_' + imported;
+        const q = { id, text: rawText.trim(), type: rawType, points, correct: '', tag: 'Imported', options, createdAt: Date.now() + imported };
+        await dbSet(`sessions/${activeSessionId}/questions/${id}`, q);
+        imported++;
+        await new Promise(r => setTimeout(r, 10));
+      }
+      renderQuestionsForActiveSession();
+      showToast(`✅ Imported ${imported} question${imported !== 1 ? 's' : ''} successfully!`);
+    } catch(err) {
+      console.error('Import error:', err);
+      showToast('Import failed: ' + err.message, true);
+    }
+  };
+  reader.readAsText(file);
+};
+
+// ── UTILS ──
+function showToast(msg,err=false){const t=document.getElementById('toast');t.textContent=msg;t.style.background=err?'var(--red)':'var(--green)';t.style.color=err?'#fff':'#0f1117';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+window.showToast=showToast;
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function mathHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// Global settings actions
+window.changePassword = async function() {
+  const p1 = document.getElementById('newPass').value;
+  const p2 = document.getElementById('confirmPass').value;
+  if(p1 !== p2) return showToast('Passwords do not match', true);
+  if(!p1) return showToast('Password cannot be empty', true);
+  await dbSet('password', p1);
+  showToast('Password updated!');
+  document.getElementById('newPass').value = '';
+  document.getElementById('confirmPass').value = '';
+};
+
+window.clearAllData = async function() {
+  if(!confirm('CRITICAL WARNING: This will delete ALL sessions, questions, and student data. This cannot be undone.')) return;
+  if(usingFirebase) {
+    await remove(ref(db, 'sessions'));
+  } else {
+    localStorage.removeItem(LS);
+  }
+  location.reload();
+};
 
 </script>
 </body>
