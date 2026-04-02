@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — Classroom Quiz Platform</title>
+<title>EduBoard — School Learning Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -22,168 +22,51 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{
-  font-family:'Outfit',sans-serif;
-  background:var(--cream);
-  color:var(--ink);
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* ── GRAIN OVERLAY ── */
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:999;opacity:0.4;
-}
-
-/* ── HEADER ── */
-header{
-  padding:22px 48px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:1px solid var(--border);
-  background:var(--cream);
-  position:sticky;top:0;z-index:50;
-}
-.logo{
-  display:flex;align-items:center;gap:12px;
-}
-.logo-mark{
-  width:38px;height:38px;
-  background:var(--ink);
-  border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--cream);
-  font-size:18px;
-}
-.logo-text{
-  font-family:'Playfair Display',serif;
-  font-size:22px;font-weight:700;
-  letter-spacing:-0.5px;
-}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:0.4;}
+header{padding:22px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--cream);position:sticky;top:0;z-index:50;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-mark{width:38px;height:38px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--cream);font-size:18px;}
+.logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:-0.5px;}
 .header-nav{display:flex;gap:10px;align-items:center;}
-.nav-link{
-  font-size:13px;font-weight:500;color:var(--muted);
-  text-decoration:none;padding:7px 16px;border-radius:20px;
-  transition:all 0.15s;border:1px solid transparent;
-}
+.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:7px 16px;border-radius:20px;transition:all 0.15s;border:1px solid transparent;}
 .nav-link:hover{color:var(--ink);background:var(--warm);border-color:var(--border);}
+.nav-link.primary{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+.nav-link.primary:hover{background:#2a2018;color:var(--cream);}
 
-/* ── HERO ── */
-.hero{
-  min-height:88vh;
-  display:flex;align-items:center;
-  padding:60px 48px;
-  position:relative;
-  overflow:hidden;
-}
-.hero::before{
-  content:'';
-  position:absolute;
-  width:700px;height:700px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(192,82,42,0.06) 0%,transparent 65%);
-  right:-200px;top:-200px;
-  pointer-events:none;
-}
-.hero::after{
-  content:'';
-  position:absolute;
-  width:500px;height:500px;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(42,122,106,0.06) 0%,transparent 65%);
-  left:-150px;bottom:-150px;
-  pointer-events:none;
-}
-.hero-inner{
-  max-width:1100px;margin:0 auto;width:100%;
-  display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center;
-}
-.hero-left{}
-.hero-tag{
-  display:inline-flex;align-items:center;gap:8px;
-  background:var(--paper);border:1px solid var(--border);
-  border-radius:20px;padding:6px 14px;
-  font-size:12px;font-weight:600;color:var(--muted);
-  margin-bottom:28px;
-  animation:fadeUp 0.6s ease both;
-}
+/* AUTH REDIRECT BANNER */
+.auth-banner{background:rgba(42,122,106,0.08);border:1px solid rgba(42,122,106,0.25);border-radius:14px;padding:14px 20px;display:none;align-items:center;gap:12px;margin:20px 48px 0;font-size:13px;color:var(--ink);}
+.auth-banner.show{display:flex;}
+.auth-banner-spinner{width:16px;height:16px;border:2px solid rgba(42,122,106,0.3);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hero{min-height:88vh;display:flex;align-items:center;padding:60px 48px;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(192,82,42,0.06) 0%,transparent 65%);right:-200px;top:-200px;pointer-events:none;}
+.hero::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(42,122,106,0.06) 0%,transparent 65%);left:-150px;bottom:-150px;pointer-events:none;}
+.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center;}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:28px;animation:fadeUp 0.6s ease both;}
 .hero-tag .dot{width:7px;height:7px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
-h1{
-  font-family:'Playfair Display',serif;
-  font-size:clamp(42px,5.5vw,72px);
-  font-weight:900;
-  line-height:1.05;
-  letter-spacing:-2px;
-  margin-bottom:24px;
-  animation:fadeUp 0.6s 0.1s ease both;
-}
+h1{font-family:'Playfair Display',serif;font-size:clamp(42px,5.5vw,72px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;animation:fadeUp 0.6s 0.1s ease both;}
 h1 em{font-style:italic;color:var(--rust);}
-.hero-desc{
-  font-size:17px;line-height:1.75;color:var(--muted);
-  max-width:480px;margin-bottom:44px;font-weight:400;
-  animation:fadeUp 0.6s 0.2s ease both;
-}
-.hero-cta{
-  display:flex;gap:14px;flex-wrap:wrap;
-  animation:fadeUp 0.6s 0.3s ease both;
-}
-.btn-hero{
-  display:inline-flex;align-items:center;gap:10px;
-  padding:16px 32px;border-radius:14px;
-  font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;
-  text-decoration:none;transition:all 0.2s;letter-spacing:0.01em;
-  border:2px solid transparent;
-}
-.btn-teacher{
-  background:var(--ink);color:var(--cream);
-  box-shadow:0 6px 24px rgba(26,20,16,0.2);
-}
+.hero-desc{font-size:17px;line-height:1.75;color:var(--muted);max-width:480px;margin-bottom:44px;font-weight:400;animation:fadeUp 0.6s 0.2s ease both;}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp 0.6s 0.3s ease both;}
+.btn-hero{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;border-radius:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;text-decoration:none;transition:all 0.2s;letter-spacing:0.01em;border:2px solid transparent;}
+.btn-teacher{background:var(--ink);color:var(--cream);box-shadow:0 6px 24px rgba(26,20,16,0.2);}
 .btn-teacher:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(26,20,16,0.28);}
-.btn-student{
-  background:var(--teal);color:#fff;
-  box-shadow:0 6px 24px rgba(42,122,106,0.25);
-}
+.btn-student{background:var(--teal);color:#fff;box-shadow:0 6px 24px rgba(42,122,106,0.25);}
 .btn-student:hover{background:#236859;transform:translateY(-2px);box-shadow:0 12px 32px rgba(42,122,106,0.35);}
 
-/* ── SESSION CARD ── */
 .hero-right{animation:fadeUp 0.6s 0.25s ease both;}
-.session-card{
-  background:var(--paper);
-  border:1px solid var(--border);
-  border-radius:24px;
-  padding:32px;
-  box-shadow:var(--shadow);
-  position:relative;
-  overflow:hidden;
-}
-.session-card::before{
-  content:'';
-  position:absolute;top:0;left:0;right:0;height:4px;
-  background:linear-gradient(90deg,var(--rust),var(--gold),var(--teal));
-}
-.card-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:24px;
-}
-.card-title{
-  font-family:'Playfair Display',serif;
-  font-size:17px;font-weight:700;
-}
-.status-pill{
-  font-size:11px;font-weight:700;
-  padding:5px 12px;border-radius:20px;
-  letter-spacing:0.06em;text-transform:uppercase;
-}
+.session-card{background:var(--paper);border:1px solid var(--border);border-radius:24px;padding:32px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+.session-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--rust),var(--gold),var(--teal));}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
+.status-pill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:0.06em;text-transform:uppercase;}
 .status-active{background:rgba(42,122,106,0.12);color:var(--teal);border:1px solid rgba(42,122,106,0.25);}
 .status-idle{background:var(--warm);color:var(--muted);border:1px solid var(--border);}
 .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
-.info-item{
-  background:var(--cream);border:1px solid var(--border);
-  border-radius:12px;padding:14px 16px;
-}
+.info-item{background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
 .info-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
 .info-val{font-size:15px;font-weight:700;color:var(--ink);}
 .info-val.loading{color:var(--muted);font-weight:400;font-style:italic;font-size:13px;}
@@ -197,114 +80,61 @@ h1 em{font-style:italic;color:var(--rust);}
 .stat-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
 .card-note{font-size:12px;color:var(--muted);text-align:center;line-height:1.6;}
 
-/* ── FEATURES ── */
-.features{
-  padding:100px 48px;
-  background:var(--paper);
-  border-top:1px solid var(--border);
-}
+.features{padding:100px 48px;background:var(--paper);border-top:1px solid var(--border);}
 .features-inner{max-width:1100px;margin:0 auto;}
-.section-tag{
-  font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-  color:var(--rust);margin-bottom:16px;
-}
-.section-title{
-  font-family:'Playfair Display',serif;
-  font-size:clamp(28px,3.5vw,44px);font-weight:700;
-  letter-spacing:-1px;margin-bottom:56px;
-  max-width:500px;line-height:1.15;
-}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--rust);margin-bottom:16px;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,44px);font-weight:700;letter-spacing:-1px;margin-bottom:56px;max-width:500px;line-height:1.15;}
 .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
-.feat-card{
-  background:var(--cream);border:1px solid var(--border);
-  border-radius:18px;padding:28px;
-  transition:transform 0.2s,box-shadow 0.2s;
-}
+.feat-card{background:var(--cream);border:1px solid var(--border);border-radius:18px;padding:28px;transition:transform 0.2s,box-shadow 0.2s;}
 .feat-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(26,20,16,0.1);}
-.feat-icon{
-  width:46px;height:46px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;margin-bottom:18px;
-}
+.feat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px;}
 .feat-title{font-size:16px;font-weight:700;margin-bottom:8px;}
 .feat-desc{font-size:13px;color:var(--muted);line-height:1.7;}
 
-/* ── HOW IT WORKS ── */
 .how{padding:100px 48px;border-top:1px solid var(--border);}
 .how-inner{max-width:1100px;margin:0 auto;}
 .steps{display:grid;grid-template-columns:1fr 1fr;gap:40px 80px;margin-top:56px;}
 .step{display:flex;gap:20px;}
-.step-num{
-  font-family:'Playfair Display',serif;
-  font-size:52px;font-weight:900;
-  color:var(--border);line-height:1;
-  flex-shrink:0;width:52px;
-}
-.step-body{}
+.step-num{font-family:'Playfair Display',serif;font-size:52px;font-weight:900;color:var(--border);line-height:1;flex-shrink:0;width:52px;}
 .step-title{font-size:16px;font-weight:700;margin-bottom:6px;}
 .step-desc{font-size:13px;color:var(--muted);line-height:1.7;}
 
-/* ── FOOTER ── */
-footer{
-  padding:40px 48px;
-  border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:16px;
-}
+.portals-section{padding:100px 48px;background:var(--paper);border-top:1px solid var(--border);}
+.portals-inner{max-width:1100px;margin:0 auto;}
+.portals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px;}
+.portal-card{border-radius:20px;padding:32px;border:1px solid var(--border);text-align:center;transition:transform 0.2s,box-shadow 0.2s;}
+.portal-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(26,20,16,0.12);}
+.portal-card.admin{background:linear-gradient(135deg,rgba(192,82,42,0.06),rgba(184,134,11,0.04));}
+.portal-card.teacher{background:linear-gradient(135deg,rgba(26,20,16,0.04),rgba(26,20,16,0.02));}
+.portal-card.student{background:linear-gradient(135deg,rgba(42,122,106,0.06),rgba(42,122,106,0.02));}
+.portal-icon{font-size:40px;margin-bottom:16px;}
+.portal-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:8px;}
+.portal-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
+.portal-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;transition:all 0.2s;border:2px solid transparent;}
+.portal-btn.admin-btn{background:var(--rust);color:#fff;}
+.portal-btn.admin-btn:hover{background:#a8401c;}
+.portal-btn.teacher-btn{background:var(--ink);color:var(--cream);}
+.portal-btn.teacher-btn:hover{background:#2a2018;}
+.portal-btn.student-btn{background:var(--teal);color:#fff;}
+.portal-btn.student-btn:hover{background:#236859;}
+
+footer{padding:40px 48px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
 .footer-logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
 .footer-note{font-size:12px;color:var(--muted);}
 .footer-links{display:flex;gap:20px;}
 .footer-links a{font-size:12px;color:var(--muted);text-decoration:none;font-weight:500;}
 .footer-links a:hover{color:var(--ink);}
 
-/* ── SETUP BANNER ── */
-.setup-banner{
-  background:rgba(192,82,42,0.08);
-  border:1px solid rgba(192,82,42,0.25);
-  border-radius:14px;
-  padding:16px 20px;
-  display:flex;align-items:flex-start;gap:12px;
-  margin:24px 48px 0;
-  display:none;
-}
-.setup-banner.show{display:flex;}
-.setup-banner-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
-.setup-banner-text{font-size:13px;line-height:1.6;color:var(--ink);}
-.setup-banner-text strong{color:var(--rust);}
-.setup-banner-text a{color:var(--rust);font-weight:600;}
-
-/* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .hero-inner{grid-template-columns:1fr;gap:48px;}
-  .hero-right{order:-1;}
-  .features-grid{grid-template-columns:1fr 1fr;}
-  .steps{grid-template-columns:1fr;}
-  header{padding:16px 24px;}
-  .hero{padding:40px 24px;}
-  .features,.how{padding:60px 24px;}
-  footer{padding:28px 24px;}
-  .setup-banner{margin:16px 24px 0;}
-}
-@media(max-width:560px){
-  .features-grid{grid-template-columns:1fr;}
-  .info-grid{grid-template-columns:1fr;}
-  h1{letter-spacing:-1px;}
-  .hero-cta{flex-direction:column;}
-  .btn-hero{justify-content:center;}
-}
+@media(max-width:900px){.hero-inner{grid-template-columns:1fr;gap:48px;}.hero-right{order:-1;}.features-grid,.portals-grid{grid-template-columns:1fr 1fr;}.steps{grid-template-columns:1fr;}header{padding:16px 24px;}.hero,.features,.how,.portals-section{padding:40px 24px;}footer{padding:28px 24px;}.auth-banner{margin:16px 24px 0;}}
+@media(max-width:560px){.features-grid,.portals-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr;}h1{letter-spacing:-1px;}.hero-cta{flex-direction:column;}.btn-hero{justify-content:center;}}
 </style>
 </head>
 <body>
 
-<div class="setup-banner" id="setupBanner">
-  <div class="setup-banner-icon">⚠️</div>
-  <div class="setup-banner-text">
-    <strong>Firebase not configured.</strong> This platform requires a Firebase Realtime Database for multi-device sync.
-    Open <code>firebase-config.js</code> and add your project credentials.
-  </div>
+<div class="auth-banner" id="authBanner">
+  <div class="auth-banner-spinner"></div>
+  <span id="authBannerText">Checking your session…</span>
 </div>
 
 <header>
@@ -313,8 +143,9 @@ footer{
     <div class="logo-text">EduBoard</div>
   </div>
   <nav class="header-nav">
-    <a href="teacher.html" class="nav-link">Teacher Login</a>
-    <a href="student.html" class="nav-link">Student Portal</a>
+    <a href="admin.html" class="nav-link">Admin</a>
+    <a href="teacher.html" class="nav-link">Teacher</a>
+    <a href="student.html" class="nav-link primary">Student Portal</a>
   </nav>
 </header>
 
@@ -323,12 +154,12 @@ footer{
     <div class="hero-left">
       <div class="hero-tag">
         <span class="dot"></span>
-        Live Classroom Platform
+        Secure School Platform
       </div>
       <h1>Where every<br>answer <em>matters.</em></h1>
       <p class="hero-desc">
         A real-time quiz platform that connects teachers and students across devices.
-        Create questions, monitor progress live, and provide instant feedback — all in the browser.
+        Secure role-based access. Live monitoring. Instant feedback — all in the browser.
       </p>
       <div class="hero-cta">
         <a href="teacher.html" class="btn-hero btn-teacher">
@@ -342,33 +173,60 @@ footer{
     <div class="hero-right">
       <div class="session-card">
         <div class="card-header">
-          <div class="card-title">Current Session</div>
-          <div class="status-pill status-idle" id="sessionStatus">No Session</div>
+          <div class="card-title">Platform Status</div>
+          <div class="status-pill status-active" id="sessionStatus">Live</div>
         </div>
         <div class="info-grid">
           <div class="info-item">
-            <div class="info-label">Session</div>
-            <div class="info-val loading" id="cardTitle">Waiting…</div>
+            <div class="info-label">Active Sessions</div>
+            <div class="info-val loading" id="cardSessions">—</div>
           </div>
           <div class="info-item">
-            <div class="info-label">Grade & Class</div>
-            <div class="info-val loading" id="cardClass">—</div>
+            <div class="info-label">Teachers</div>
+            <div class="info-val loading" id="cardTeachers">—</div>
           </div>
           <div class="info-item">
-            <div class="info-label">Date</div>
-            <div class="info-val loading" id="cardDate">—</div>
+            <div class="info-label">Students</div>
+            <div class="info-val loading" id="cardStudents">—</div>
           </div>
           <div class="info-item">
-            <div class="info-label">Timing</div>
-            <div class="info-val loading" id="cardTime">—</div>
+            <div class="info-label">Grades</div>
+            <div class="info-val loading" id="cardGrades">—</div>
           </div>
         </div>
         <div class="stats-row">
           <div class="stat"><div class="stat-n rust" id="cardQuestions">—</div><div class="stat-lbl">Questions</div></div>
-          <div class="stat"><div class="stat-n teal" id="cardStudents">—</div><div class="stat-lbl">Online</div></div>
+          <div class="stat"><div class="stat-n teal" id="cardOnline">—</div><div class="stat-lbl">Online Now</div></div>
           <div class="stat"><div class="stat-n gold" id="cardAnswers">—</div><div class="stat-lbl">Answers</div></div>
         </div>
-        <div class="card-note">Session details update live once a teacher opens a session.</div>
+        <div class="card-note">Platform statistics update live.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="portals-section">
+  <div class="portals-inner">
+    <div class="section-tag">Access Portals</div>
+    <div class="section-title">Choose your role to get started.</div>
+    <div class="portals-grid">
+      <div class="portal-card admin">
+        <div class="portal-icon">🛡️</div>
+        <div class="portal-name">Super Admin</div>
+        <div class="portal-desc">Full system administration. Manage grades, subjects, teachers, students, and all sessions across the platform.</div>
+        <a href="admin.html" class="portal-btn admin-btn">Admin Portal →</a>
+      </div>
+      <div class="portal-card teacher">
+        <div class="portal-icon">🎓</div>
+        <div class="portal-name">Teacher</div>
+        <div class="portal-desc">Create and manage sessions, build question banks, monitor live student activity, and review results.</div>
+        <a href="teacher.html" class="portal-btn teacher-btn">Teacher Portal →</a>
+      </div>
+      <div class="portal-card student">
+        <div class="portal-icon">✏️</div>
+        <div class="portal-name">Student</div>
+        <div class="portal-desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time.</div>
+        <a href="student.html" class="portal-btn student-btn">Student Portal →</a>
       </div>
     </div>
   </div>
@@ -392,22 +250,22 @@ footer{
       <div class="feat-card">
         <div class="feat-icon" style="background:rgba(184,134,11,0.1)">⭐</div>
         <div class="feat-title">Instant Grading</div>
-        <div class="feat-desc">Review each student's answers per question. Add scores and written feedback that students see on their completion screen.</div>
+        <div class="feat-desc">Review each student's answers per question. Add scores and written feedback that students see immediately.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(192,82,42,0.1)">📅</div>
-        <div class="feat-title">Session Configuration</div>
-        <div class="feat-desc">Teachers define grade level, class name, session date, and start/end timing before opening the session to students.</div>
+        <div class="feat-icon" style="background:rgba(192,82,42,0.1)">🛡️</div>
+        <div class="feat-title">Secure Role Access</div>
+        <div class="feat-desc">Firebase Authentication with Firestore roles. Every portal enforces backend security rules — not just hidden links.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon" style="background:rgba(42,122,106,0.1)">📱</div>
         <div class="feat-title">Any Device</div>
-        <div class="feat-desc">Students join from their phones, tablets, or laptops. No app install needed — just a browser and the link.</div>
+        <div class="feat-desc">Students join from phones, tablets, or laptops. No app install needed — just a browser and a login.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon" style="background:rgba(184,134,11,0.1)">💾</div>
         <div class="feat-title">Firebase Sync</div>
-        <div class="feat-desc">Powered by Firebase Realtime Database. Free tier handles hundreds of concurrent users with sub-second sync.</div>
+        <div class="feat-desc">Powered by Firestore + Realtime Database. Free tier handles hundreds of concurrent users with sub-second sync.</div>
       </div>
     </div>
   </div>
@@ -421,29 +279,29 @@ footer{
       <div class="step">
         <div class="step-num">01</div>
         <div class="step-body">
-          <div class="step-title">Teacher configures session</div>
-          <div class="step-desc">Log in to the teacher dashboard, set the grade, class, date and timing, then add your questions to the bank.</div>
+          <div class="step-title">Admin sets up the platform</div>
+          <div class="step-desc">Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">02</div>
         <div class="step-body">
-          <div class="step-title">Share the student link</div>
-          <div class="step-desc">Send students the URL to <code style="font-size:12px;background:var(--paper);padding:2px 6px;border-radius:4px">student.html</code>. They enter their name and join instantly — no accounts, no passwords.</div>
+          <div class="step-title">Teacher creates a session</div>
+          <div class="step-desc">Teacher logs in, creates a session for their assigned grade and subject, and builds the question bank.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">03</div>
         <div class="step-body">
           <div class="step-title">Students answer live</div>
-          <div class="step-desc">The teacher's Live Monitor shows each student's progress in real time. Every answer syncs across all devices instantly via Firebase.</div>
+          <div class="step-desc">Students log in securely, join the open session, and submit answers. The teacher sees progress in real time.</div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">04</div>
         <div class="step-body">
           <div class="step-title">Review, grade & feedback</div>
-          <div class="step-desc">Once submitted, teachers review each student's answers, assign scores, and write feedback — which students see immediately on their screen.</div>
+          <div class="step-desc">Teachers assign scores and written feedback. Students see their results immediately on their screen.</div>
         </div>
       </div>
     </div>
@@ -453,6 +311,7 @@ footer{
 <footer>
   <div class="footer-logo">EduBoard</div>
   <div class="footer-links">
+    <a href="admin.html">Admin</a>
     <a href="teacher.html">Teacher Login</a>
     <a href="student.html">Student Portal</a>
   </div>
@@ -462,56 +321,69 @@ footer{
 <script src="firebase-config.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-if (typeof FIREBASE_DEMO_MODE !== 'undefined' && FIREBASE_DEMO_MODE) {
-  document.getElementById('setupBanner').classList.add('show');
-  // Show placeholder data
-  document.getElementById('cardTitle').textContent = 'Demo Mode';
-  document.getElementById('cardClass').textContent = 'Configure Firebase';
-  document.getElementById('cardDate').textContent = '—';
-  document.getElementById('cardTime').textContent = '—';
-  document.getElementById('cardQuestions').textContent = '—';
-  document.getElementById('cardStudents').textContent = '—';
-  document.getElementById('cardAnswers').textContent = '—';
-} else {
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const rtdb = getDatabase(app);
+
+// ── AUTH REDIRECT: if already logged in, redirect to correct portal ──
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+  const banner = document.getElementById('authBanner');
+  banner.classList.add('show');
+  document.getElementById('authBannerText').textContent = 'You are signed in. Redirecting…';
   try {
-    const app = initializeApp(FIREBASE_CONFIG);
-    const db = getDatabase(app);
-
-    onValue(ref(db, 'session'), (snap) => {
-      const s = snap.val();
-      if (!s) return;
-      document.getElementById('cardTitle').textContent = s.title || '—';
-      document.getElementById('cardTitle').classList.remove('loading');
-      document.getElementById('cardClass').textContent = (s.grade ? `Grade ${s.grade}` : '') + (s.className ? ` — ${s.className}` : '') || '—';
-      document.getElementById('cardClass').classList.remove('loading');
-      document.getElementById('cardDate').textContent = s.date || '—';
-      document.getElementById('cardDate').classList.remove('loading');
-      document.getElementById('cardTime').textContent = s.startTime && s.endTime ? `${s.startTime} – ${s.endTime}` : (s.startTime || '—');
-      document.getElementById('cardTime').classList.remove('loading');
-      const statusEl = document.getElementById('sessionStatus');
-      statusEl.textContent = s.active ? 'Active' : 'Closed';
-      statusEl.className = 'status-pill ' + (s.active ? 'status-active' : 'status-idle');
-    });
-
-    onValue(ref(db, 'questions'), (snap) => {
-      const q = snap.val();
-      document.getElementById('cardQuestions').textContent = q ? Object.keys(q).length : '0';
-    });
-
-    onValue(ref(db, 'students'), (snap) => {
-      const st = snap.val() || {};
-      const online = Object.values(st).filter(s => s.online).length;
-      const answers = Object.values(st).reduce((n, s) => n + (s.answers ? Object.keys(s.answers).length : 0), 0);
-      document.getElementById('cardStudents').textContent = online;
-      document.getElementById('cardAnswers').textContent = answers;
-    });
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (snap.exists()) {
+      const role = snap.data().role;
+      if (role === 'superadmin') { window.location.href = 'admin.html'; return; }
+      if (role === 'teacher')    { window.location.href = 'teacher.html'; return; }
+      if (role === 'student')    { window.location.href = 'student.html'; return; }
+    }
   } catch(e) {
-    console.warn('Firebase init failed:', e);
-    document.getElementById('setupBanner').classList.add('show');
+    banner.classList.remove('show');
   }
+});
+
+// ── LIVE STATS from Firestore + RTDB ──
+async function loadStats() {
+  try {
+    const [teachersSnap, studentsSnap, gradesSnap] = await Promise.all([
+      getCountFromServer(collection(db, 'teachers')),
+      getCountFromServer(collection(db, 'students')),
+      getCountFromServer(collection(db, 'grades')),
+    ]);
+    document.getElementById('cardTeachers').textContent = teachersSnap.data().count;
+    document.getElementById('cardTeachers').classList.remove('loading');
+    document.getElementById('cardStudents').textContent = studentsSnap.data().count;
+    document.getElementById('cardStudents').classList.remove('loading');
+    document.getElementById('cardGrades').textContent = gradesSnap.data().count;
+    document.getElementById('cardGrades').classList.remove('loading');
+  } catch(e) { /* silent — stats are non-critical */ }
+
+  // RTDB live stats
+  onValue(ref(rtdb, 'sessions'), (snap) => {
+    const sessions = snap.val() || {};
+    const active = Object.values(sessions).filter(s => s.config && s.config.active).length;
+    document.getElementById('cardSessions').textContent = active;
+    document.getElementById('cardSessions').classList.remove('loading');
+    const qCount = Object.values(sessions).reduce((n, s) => n + Object.keys(s.questions || {}).length, 0);
+    document.getElementById('cardQuestions').textContent = qCount;
+    const online = Object.values(sessions).reduce((n, s) => {
+      return n + Object.values(s.students || {}).filter(st => st.online).length;
+    }, 0);
+    document.getElementById('cardOnline').textContent = online;
+    const answers = Object.values(sessions).reduce((n, s) => {
+      return n + Object.values(s.students || {}).reduce((m, st) => m + Object.keys(st.answers || {}).length, 0);
+    }, 0);
+    document.getElementById('cardAnswers').textContent = answers;
+  });
 }
+loadStats();
 </script>
 </body>
 </html>
