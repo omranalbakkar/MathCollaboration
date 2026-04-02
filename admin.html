@@ -685,15 +685,25 @@ window.deleteAdminSession = async function(id) {
   
 
 // ── DASHBOARD STATS ──
-function loadDashboardStats() {
+async function loadDashboardStats() {
+  // 1. Count Local Arrays (Firestore Collections)
   document.getElementById('dashGrades').textContent    = allGrades.length;
   document.getElementById('dashSubjects').textContent  = allSubjects.length;
   document.getElementById('dashTeachers').textContent  = allTeachers.length;
   document.getElementById('dashStudents').textContent  = allStudents.length;
-  onValue(ref(rtDB,'sessions'), snap => {
-    const sessions = snap.val() || {};
-    document.getElementById('dashSessions').textContent = Object.keys(sessions).length;
-  }, { onlyOnce: true });
+
+  // 2. Count Sessions (Firestore Collection)
+  // We fetch the count directly from Firestore 'sessions' collection
+  try {
+    const sessionsRef = collection(db, 'sessions');
+    // Note: counting documents client-side can be expensive if you have thousands. 
+    // For small/medium apps, getDocs is fine.
+    const snapshot = await getDocs(sessionsRef);
+    document.getElementById('dashSessions').textContent = snapshot.size;
+  } catch (error) {
+    console.error("Error counting sessions:", error);
+    document.getElementById('dashSessions').textContent = "Err";
+  }
 }
 
 // ── TOGGLE ACTIVE ──
@@ -1383,33 +1393,30 @@ function getVal(row, possibleKeys) {
                successCount++;
              } catch(err) { console.error("Student Auth Error", err); errorCount++; }
           }
-          else if(bulkCurrentType === 'session') {
-             const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
-             const teacher = allTeachers.find(t => t.email === tEmail);
-             if(!teacher) { errorCount++; continue; }
-             
-             const id = 'sess_bulk_' + Date.now() + Math.random().toString(36).substr(2, 5);
-             await set(ref(rtDB, `sessions/${id}`), {
-               config: {
-                 title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
-                 grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
-                 subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
-                 className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
-                 date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
-                 startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
-                 endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
-                 active: false,
-                 createdAt: Date.now(),
-                 ownerTeacherId: teacher.id,
-                 ownerTeacherName: teacher.name,
-                 createdBy: currentAdmin.uid,
-                 createdByRole: 'superadmin',
-                 instructions: ''
-               },
-               questions: {}, students: {}
-             });
-             successCount++;
-          }
+else if(bulkCurrentType === 'session') {
+   const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
+   const teacher = allTeachers.find(t => t.email === tEmail);
+   if(!teacher) { errorCount++; continue; }
+   
+   // Add to Firestore Collection
+   await addDoc(collection(db, 'sessions'), {
+     title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
+     grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
+     subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
+     className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
+     date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
+     startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
+     endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
+     active: false,
+     createdAt: serverTimestamp(),
+     ownerTeacherId: teacher.id,
+     ownerTeacherName: teacher.name,
+     createdBy: currentAdmin.uid,
+     createdByRole: 'superadmin',
+     instructions: ''
+   });
+   successCount++;
+}
         } catch(rowErr) {
           console.error("Row processing error", rowErr);
           errorCount++;
