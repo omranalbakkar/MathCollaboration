@@ -299,6 +299,7 @@ tr:hover td{background:var(--surface2);}
 import { 
   auth, db, rtDB, 
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
+  createUserWithEmailAndPassword, // <--- MAKE SURE THIS IS HERE
   getDoc, doc, getDocs, collection, query, orderBy, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp,
   ref, get, set, remove, onValue 
 } from './firebase-config.js';
@@ -801,8 +802,7 @@ if (currentEditId) {
   closeModal(); renderTeachers();
 };
 
-// ── SAVE STUDENT ──
-// ── SAVE STUDENT (FIXED) ──
+// ── SAVE STUDENT (FINAL FIXED VERSION) ──
 window.saveStudent = async function() {
   const name     = document.getElementById('f_name')?.value.trim();
   const email    = document.getElementById('f_email')?.value.trim();
@@ -824,19 +824,22 @@ window.saveStudent = async function() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUid = userCredential.user.uid;
       
+      console.log("✅ Auth User Created with UID:", newUid);
+      
       // 2. Prepare Data
       const data = { 
         name, 
         email, 
         gradeId: gradeId||'', 
         active, 
-        uid: newUid, // Store the UID inside the doc too for reference
+        uid: newUid, 
         createdAt: serverTimestamp(), 
         createdBy: currentAdmin.uid 
       };
       
       // 3. Save to 'students' collection USING THE AUTH UID AS DOCUMENT ID
       await setDoc(doc(db, 'students', newUid), data);
+      console.log("✅ Student Doc Created");
       
       // 4. Save to 'users' collection USING THE SAME UID
       await setDoc(doc(db, 'users', newUid), { 
@@ -849,15 +852,20 @@ window.saveStudent = async function() {
         createdAt: serverTimestamp(), 
         createdBy: currentAdmin.uid 
       });
+      console.log("✅ User Role Doc Created");
       
       // Update local list
       allStudents.unshift({ id: newUid, ...data });
       showToast('Student created successfully!');
       
     } catch (error) {
-      console.error("Auth creation error:", error);
+      console.error("❌ Auth creation error:", error);
       if (error.code === 'auth/email-already-in-use') {
         showFormError('This email is already registered.');
+      } else if (error.code === 'auth/invalid-email') {
+        showFormError('Invalid email address.');
+      } else if (error.code === 'auth/weak-password') {
+        showFormError('Password should be at least 6 characters.');
       } else {
         showFormError('Error creating account: ' + error.message);
       }
@@ -876,7 +884,7 @@ window.saveStudent = async function() {
     };
     
     if (password && password.length >= 6) {
-      data.pendingPassword = password; // Flag for backend or handle password change here if needed
+      data.pendingPassword = password;
     }
     
     await updateDoc(doc(db, 'students', currentEditId), data);
