@@ -166,7 +166,6 @@ tr:hover td{background:var(--surface2);}
   </div>
 
   <div class="content">
-
     <!-- DASHBOARD TAB -->
     <div class="tab-pane active" id="tab-dashboard">
       <div class="section-header">
@@ -275,7 +274,6 @@ tr:hover td{background:var(--surface2);}
         <tbody id="adminSessionsBody"></tbody></table>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -290,20 +288,19 @@ tr:hover td{background:var(--surface2);}
 
 <div class="toast" id="toast"></div>
 
+<!-- 1. Load Config First (Standard Script) -->
 <script src="firebase-config.js"></script>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs,
-  updateDoc, deleteDoc, query, where, serverTimestamp, orderBy
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getDatabase, ref, set, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const app  = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-const rtdb = getDatabase(app);
+<!-- 2. Main App Logic (Module) -->
+<script type="module">
+// We do NOT import firebase modules here. They are already exported by firebase-config.js
+// We just import the variables and functions we need from our local config file.
+import { 
+  auth, db, rtDB, 
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, 
+  getDoc, doc, getDocs, collection, query, orderBy, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp,
+  ref, get, set, remove, onValue 
+} from './firebase-config.js';
 
 let currentAdmin = null;
 let allGrades    = [];
@@ -367,6 +364,7 @@ window.doLogin = async function() {
   }
 };
 document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
 window.doLogout = async function() {
   await signOut(auth);
   window.location.href = 'index.html';
@@ -529,7 +527,7 @@ window.renderStudents = function() {
 
 // ── ADMIN SESSIONS ──
 async function loadAdminSessions() {
-  const snap = await get(ref(rtdb, 'sessions'));
+  const snap = await get(ref(rtDB, 'sessions'));
   const sessions = snap.val() || {};
   const tbody = document.getElementById('adminSessionsBody');
   const rows = Object.entries(sessions).map(([id, s]) => {
@@ -552,7 +550,7 @@ async function loadAdminSessions() {
 
 window.deleteAdminSession = async function(id) {
   if (!confirm('Delete this session and all its data? This cannot be undone.')) return;
-  await remove(ref(rtdb, `sessions/${id}`));
+  await remove(ref(rtDB, `sessions/${id}`));
   showToast('Session deleted');
   loadAdminSessions();
 };
@@ -563,7 +561,7 @@ function loadDashboardStats() {
   document.getElementById('dashSubjects').textContent  = allSubjects.length;
   document.getElementById('dashTeachers').textContent  = allTeachers.length;
   document.getElementById('dashStudents').textContent  = allStudents.length;
-  onValue(ref(rtdb,'sessions'), snap => {
+  onValue(ref(rtDB,'sessions'), snap => {
     const sessions = snap.val() || {};
     document.getElementById('dashSessions').textContent = Object.keys(sessions).length;
   }, { onlyOnce: true });
@@ -624,7 +622,6 @@ window.openModal = function(type, editId = null) {
         <button class="btn btn-save" onclick="saveGrade()">Save Grade</button>
       </div>`;
   }
-
   else if (type === 'subject') {
     const s = editId ? allSubjects.find(x=>x.id===editId) : null;
     modalTitle.textContent = editId ? 'Edit Subject' : 'Add Subject';
@@ -642,7 +639,6 @@ window.openModal = function(type, editId = null) {
         <button class="btn btn-save" onclick="saveSubject()">Save Subject</button>
       </div>`;
   }
-
   else if (type === 'teacher') {
     const t = editId ? allTeachers.find(x=>x.id===editId) : null;
     const activeGrades   = allGrades.filter(g=>g.active);
@@ -672,7 +668,6 @@ window.openModal = function(type, editId = null) {
         <button class="btn btn-save" onclick="saveTeacher()">Save Teacher</button>
       </div>`;
   }
-
   else if (type === 'student') {
     const s = editId ? allStudents.find(x=>x.id===editId) : null;
     const activeGrades = allGrades.filter(g=>g.active);
@@ -697,7 +692,6 @@ window.openModal = function(type, editId = null) {
         <button class="btn btn-save" onclick="saveStudent()">Save Student</button>
       </div>`;
   }
-
   else if (type === 'session-admin') {
     modalTitle.textContent = 'Create Session (as Admin)';
     modalBody.innerHTML = `
@@ -721,7 +715,6 @@ window.openModal = function(type, editId = null) {
         <button class="btn btn-save" onclick="saveAdminSession()">Create Session</button>
       </div>`;
   }
-
   document.getElementById('modalOverlay').classList.add('show');
 };
 
@@ -786,26 +779,19 @@ window.saveTeacher = async function() {
   if (!name || !email) { showFormError('Name and email are required.'); return; }
   if (!currentEditId && (!password || password.length < 6)) { showFormError('Password must be at least 6 characters.'); return; }
 
-  // For creating new teacher: use Admin SDK via callable function is ideal,
-  // but since we have no Cloud Functions, we use the client SDK createUser approach
-  // The teacher's Firebase Auth account will be created on first login via the invitation flow
-  // Here we store the profile in Firestore; Auth account is provisioned separately.
   const data = { name, email, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
 
   if (currentEditId) {
     await updateDoc(doc(db,'teachers',currentEditId), data);
-    // Also update users collection
     const t = allTeachers.find(x=>x.id===currentEditId);
     if (t?.uid) await updateDoc(doc(db,'users',t.uid), { name, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp() });
     allTeachers = allTeachers.map(t=>t.id===currentEditId?{...t,...data}:t);
     showToast('Teacher updated');
   } else {
     if (!password || password.length < 6) { showFormError('Password required for new teacher.'); return; }
-    // Store pending teacher — Auth provisioning note in Firestore
     data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
-    data.pendingPassword = password; // stored for self-service first login
+    data.pendingPassword = password; 
     const ref_ = await addDoc(collection(db,'teachers'), data);
-    // Also create user document for role check
     await setDoc(doc(db,'users', ref_.id), { role:'teacher', name, email, active, assignedGrades, assignedSubjects, teacherDocId: ref_.id, createdAt: serverTimestamp(), createdBy: currentAdmin.uid });
     allTeachers.unshift({ id: ref_.id, ...data });
     showToast('Teacher profile created. Auth account will be provisioned on first login.');
@@ -854,7 +840,7 @@ window.saveAdminSession = async function() {
   if (!title || !teacherId) { showFormError('Title and teacher are required.'); return; }
   const teacher = allTeachers.find(t=>t.id===teacherId);
   const id = 'sess_' + Date.now();
-  await set(ref(rtdb, `sessions/${id}`), {
+  await set(ref(rtDB, `sessions/${id}`), {
     config: {
       title, grade, subject, className, date, startTime, endTime,
       active: false, createdAt: Date.now(),
