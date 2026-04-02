@@ -44,7 +44,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .back-link:hover{color:var(--sage);}
 .error-msg{background:var(--clay-l);border:1.5px solid var(--clay);color:var(--clay);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;font-weight:600;text-align:left;}
 
-/* ── APP ── */
+/* ── APP ─ */
 #app{display:none;position:relative;z-index:1;}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(42,37,32,0.06);}
 .header-brand{font-family:'Lora',serif;font-size:20px;font-weight:600;}
@@ -197,17 +197,18 @@ mjx-container{vertical-align:middle;}
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- 1. Load Config First (Standard Script) -->
 <script src="firebase-config.js"></script>
-<script type="module">
-import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const app  = initializeApp(FIREBASE_CONFIG);
-const auth = getAuth(app);
-const fdb  = getFirestore(app);
-const rtdb = getDatabase(app);
+<!-- 2. Main App Logic (Module) -->
+<script type="module">
+// Import ready-made variables from our local config file
+import { 
+  auth, db, rtDB, 
+  onAuthStateChanged, signInWithEmailAndPassword, signOut, 
+  getDoc, doc, 
+  ref, set, get, update, onValue 
+} from './firebase-config.js';
 
 let currentStudent  = null; // Firebase Auth user
 let studentProfile  = null; // Firestore profile
@@ -229,7 +230,7 @@ onAuthStateChanged(auth, async (user) => {
   }
   // Logged in — verify role
   try {
-    const snap = await getDoc(doc(fdb,'users',user.uid));
+    const snap = await getDoc(doc(db,'users',user.uid));
     if (!snap.exists() || snap.data().role !== 'student') {
       await signOut(auth);
       document.getElementById('loginScreen').style.display = 'flex';
@@ -260,7 +261,7 @@ async function loadLoginSessionInfo() {
   const btn = document.getElementById('joinBtn');
   box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
   try {
-    const snap = await get(ref(rtdb,'sessions'));
+    const snap = await get(ref(rtDB,'sessions'));
     const sessions = snap.val() || {};
     const openSessions = Object.entries(sessions).filter(([id,s])=>s.config&&s.config.active);
     if (!openSessions.length) {
@@ -313,7 +314,7 @@ document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.ke
 
 // ── FIND AND JOIN OPEN SESSION ──
 async function findAndJoinOpenSession() {
-  const snap = await get(ref(rtdb,'sessions'));
+  const snap = await get(ref(rtDB,'sessions'));
   const sessions = snap.val() || {};
   const openSessions = Object.entries(sessions).filter(([id,s])=>s.config&&s.config.active);
   if (!openSessions.length) {
@@ -334,7 +335,7 @@ async function findAndJoinOpenSession() {
   sessionData = s.config;
   const studentKey = currentStudent.uid;
   // Register student presence in RTDB
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${studentKey}`), {
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${studentKey}`), {
     name: studentProfile.name || currentStudent.email,
     uid: currentStudent.uid,
     online: true,
@@ -346,7 +347,7 @@ async function findAndJoinOpenSession() {
   window.addEventListener('beforeunload', markOffline);
   // Listen for grade/feedback updates
   if (unsubGrades) unsubGrades();
-  unsubGrades = onValue(ref(rtdb,`sessions/${activeSessionId}/students/${studentKey}`), sd => {
+  unsubGrades = onValue(ref(rtDB,`sessions/${activeSessionId}/students/${studentKey}`), sd => {
     if (sd.val() && document.getElementById('completionScreen').style.display !== 'none') refreshCompletion(sd.val());
   });
   await loadAndShowWelcome();
@@ -354,11 +355,11 @@ async function findAndJoinOpenSession() {
 
 function keepAlive() {
   if (!currentStudent || !activeSessionId) return;
-  update(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:true});
+  update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:true});
 }
 function markOffline() {
   if (!currentStudent || !activeSessionId) return;
-  update(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:false});
+  update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:false});
 }
 
 window.exitSession = async function() {
@@ -371,9 +372,9 @@ window.exitSession = async function() {
 
 // ── WELCOME ──
 async function loadAndShowWelcome() {
-  const qsSnap = await get(ref(rtdb,`sessions/${activeSessionId}/questions`));
+  const qsSnap = await get(ref(rtDB,`sessions/${activeSessionId}/questions`));
   questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  const sSnap = await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+  const sSnap = await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
   const s = sSnap.val()||{};
   if (s.submitted) { showCompletion(); return; }
   showWelcome();
@@ -389,7 +390,7 @@ function showWelcome() {
     ws.innerHTML=`<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet.</div></div>`;
     return;
   }
-  get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`)).then(sSnap=>{
+  get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`)).then(sSnap=>{
     const s=sSnap.val()||{};
     const answered=s.answers?Object.keys(s.answers).length:0;
     const instrHtml=sessionData.instructions?`<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>`:'';
@@ -423,7 +424,7 @@ function showWelcome() {
 // ── QUIZ ──
 window.startQuiz = async function() {
   if (!questions.length) return;
-  const sSnap = await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+  const sSnap = await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
   const s = sSnap.val()||{};
   let start=0;
   for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
@@ -435,11 +436,11 @@ window.startQuiz = async function() {
 };
 
 async function renderQuestion() {
-  const qsSnap=await get(ref(rtdb,`sessions/${activeSessionId}/questions`));
+  const qsSnap=await get(ref(rtDB,`sessions/${activeSessionId}/questions`));
   questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
   if(!questions.length)return;
   const q=questions[currentQIndex];
-  const sSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
   const s=sSnap.val()||{};
   const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
   const total=questions.length;
@@ -494,7 +495,7 @@ window.submitAnswer = async function() {
   const btn=document.getElementById('btnSubmit');
   btn.textContent='Saving…';btn.disabled=true;
   const q=questions[currentQIndex];
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});
   showToast('Answer saved ✓');
   btn.textContent='Saved ✓';btn.classList.add('saved');
   renderQuestion();
@@ -504,7 +505,7 @@ async function canNavigate(){
   const ans=getCurrentAnswer();
   if(ans===null){
     const q=questions[currentQIndex];
-    const sSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
     if(sSnap.val()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
   }
   return true;
@@ -515,8 +516,8 @@ window.nextQ=async function(){if(await canNavigate()&&currentQIndex<questions.le
 
 window.finishSession = async function() {
   const ans=getCurrentAnswer();
-  if(ans!==null){const q=questions[currentQIndex];await update(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});}
-  const sSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+  if(ans!==null){const q=questions[currentQIndex];await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});}
+  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
   const savedAnswers=sSnap.val()?.answers||{};
   for(let i=0;i<questions.length;i++){
     if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
@@ -524,7 +525,7 @@ window.finishSession = async function() {
       currentQIndex=i;renderQuestion();return;
     }
   }
-  await update(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`),{submitted:true});
+  await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`),{submitted:true});
   showCompletion();
 };
 
@@ -534,7 +535,7 @@ async function showCompletion(){
   document.getElementById('welcomeScreen').style.display='none';
   document.getElementById('navFooter').style.display='none';
   document.getElementById('completionScreen').style.display='block';
-  const sSnap=await get(ref(rtdb,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
+  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
   renderCompletionScreen(sSnap.val()||{});
 }
 async function refreshCompletion(s){renderCompletionScreen(s);}
