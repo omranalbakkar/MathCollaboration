@@ -254,12 +254,13 @@ mjx-container{vertical-align:middle;}
 <div class="toast" id="toast"></div>
 
 <script type="module">
-// Import from firebase-config.js
+// Import from firebase-config.js (Ensure this file exports Firestore functions)
 import { 
-  auth, db, rtDB, 
+  auth, db, // Make sure 'db' is Firestore, not RTDB
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
   getDoc, doc, 
-  ref, set, get, update, onValue
+  collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
+  onSnapshot // For real-time updates in Firestore
 } from './firebase-config.js';
 
 let currentStudent = null;
@@ -268,88 +269,7 @@ let currentQIndex = 0;
 let questions = [];
 let sessionData = {};
 let activeSessionId = null;
-let unsubGrades = null;
-let keepAliveInterval = null;
-let connectionRetries = 0;
-const MAX_RETRIES = 3;
-
-// ============================================
-// ADD THE WEBSOCKET DETECTION SCRIPT HERE
-// ============================================
-
-// Detect if WebSockets are blocked (ad blocker issue)
-function detectWebSocketBlock() {
-    console.log('Checking connection...');
-    const warning = document.getElementById('adblockWarning');
-    if (!warning) return;
-    
-    let connectionTestTimeout = setTimeout(() => {
-        console.log('Connection test timeout - possible ad blocker or network issue');
-        if(warning) warning.style.display = 'block';
-    }, 5000);
-    
-    const testRef = ref(rtDB, '.info/connected');
-    
-    // Fix: Define the listener variable first, then assign the result of onValue
-    const unsubscribe = onValue(testRef, (snap) => {
-        if (snap.val() === true) {
-            console.log('Firebase connected successfully');
-            clearTimeout(connectionTestTimeout);
-            if(warning) warning.style.display = 'none';
-            // We don't call unsubscribe() here immediately because we want to keep listening 
-            // OR if you want to stop listening after success:
-            // unsubscribe(); 
-        }
-    }, (error) => {
-        console.error('Connection error:', error);
-        clearTimeout(connectionTestTimeout);
-        if(warning) warning.style.display = 'block';
-        // unsubscribe(); 
-    });
-    
-    // Optional: Stop listening after 10 seconds to save resources if still connected
-    setTimeout(() => {
-        if(unsubscribe) unsubscribe();
-    }, 10000);
-}
-// Run detection after page loads
-setTimeout(detectWebSocketBlock, 3000);
-
-// ============================================
-// END OF WEBSOCKET DETECTION SCRIPT
-// ============================================
-
-// Helper function to show connection warning
-function showConnectionWarning(show = true) {
-  const warning = document.getElementById('connectionWarning');
-  if (warning) {
-    warning.style.display = show ? 'block' : 'none';
-    if (show) {
-      setTimeout(() => {
-        warning.style.display = 'none';
-      }, 8000);
-    }
-  }
-}
-
-// Wrapper for RTDB operations with retry
-async function safeRTDBOperation(operation, ...args) {
-  for (let i = 0; i < MAX_RETRIES; i++) {
-    try {
-      return await operation(...args);
-    } catch (error) {
-      console.error(`RTDB operation failed (attempt ${i + 1}):`, error);
-      if (error.message?.includes('BLOCKED_BY_CLIENT')) {
-        showConnectionWarning(true);
-        if (i === MAX_RETRIES - 1) {
-          showToast('Connection issue. Please disable ad blockers and refresh.', true);
-        }
-      }
-      if (i === MAX_RETRIES - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
-    }
-  }
-}
+let unsubSession = null;
 
 // ── ROUTE GUARD ──
 onAuthStateChanged(auth, async (user) => {
@@ -360,6 +280,7 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
   try {
+    // Check user role in Firestore
     const snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() || snap.data().role !== 'student') {
       await signOut(auth);
@@ -370,7 +291,7 @@ onAuthStateChanged(auth, async (user) => {
     if (snap.data().active === false) {
       await signOut(auth);
       document.getElementById('loginScreen').style.display = 'flex';
-      showErr('Your account has been deactivated. Contact your administrator.');
+      showErr('Your account has been deactivated.');
       return;
     }
     currentStudent = user;
@@ -386,46 +307,55 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ── SESSION INFO ON LOGIN ──
+// ── SESSION INFO ON LOGIN (FIRESTORE VERSION) ──
 async function loadLoginSessionInfo() {
   const box = document.getElementById('sessionInfoBox');
   const btn = document.getElementById('joinBtn');
   box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
+  
   try {
-    const snap = await safeRTDBOperation(get, ref(rtDB, 'sessions'));
-    const sessions = snap.val() || {};
-    const openSessions = Object.entries(sessions).filter(([id,s]) => s.config && s.config.active);
-    if (!openSessions.length) {
+    // Query Firestore for active sessions
+    const sessionsRef = collection(db, 'sessions');
+    const q = query(sessionsRef, where('active', '==', true));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
       box.innerHTML = '<div class="session-closed-box">🔒 No sessions are currently open.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open a session.</span></div>';
       btn.disabled = false;
       return;
     }
-    const [id, s] = openSessions[0];
-    const cfg = s.config;
-    activeSessionId = id;
-    sessionData = cfg;
-    const parts = [cfg.grade, cfg.className, cfg.subject].filter(Boolean);
-    const timeStr = cfg.startTime && cfg.endTime ? `${cfg.startTime} – ${cfg.endTime}` : (cfg.startTime||'');
-    box.innerHTML = `<div class="session-info-box">
-      <div class="sib-label">Open Session</div>
-      <div class="sib-title">${esc(cfg.title||'Quiz Session')}</div>
-      <div class="sib-meta">
-        ${parts.map(p=>`<span class="sib-tag">${esc(p)}</span>`).join('')}
-        ${cfg.date?`<span class="sib-tag">📅 ${esc(cfg.date)}</span>`:''}
-        ${timeStr?`<span class="sib-tag">⏰ ${esc(timeStr)}</span>`:''}
-        ${cfg.ownerTeacherName?`<span class="sib-tag">👩‍🏫 ${esc(cfg.ownerTeacherName)}</span>`:''}
-      </div>
-    </div>`;
-    btn.disabled = false;
-// Find this catch block in loadLoginSessionInfo:
-} catch(e) {
+
+    // Take the first active session
+    const firstDoc = snapshot.docs[0];
+    activeSessionId = firstDoc.id;
+    sessionData = firstDoc.data();
+    
+    displaySessionInfo(sessionData, btn);
+  } catch(e) {
     console.error('Session info error:', e);
-    box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please disable ad blockers and refresh.</div>';
+    box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please refresh.</div>';
     btn.disabled = false;
-    // Show adblock warning
     const warning = document.getElementById('adblockWarning');
     if (warning) warning.style.display = 'block';
+  }
 }
+
+function displaySessionInfo(cfg, btn) {
+  const box = document.getElementById('sessionInfoBox');
+  const parts = [cfg.grade, cfg.className, cfg.subject].filter(Boolean);
+  const timeStr = cfg.startTime && cfg.endTime ? `${cfg.startTime} – ${cfg.endTime}` : (cfg.startTime||'');
+  
+  box.innerHTML = `<div class="session-info-box">
+    <div class="sib-label">Open Session</div>
+    <div class="sib-title">${esc(cfg.title||'Quiz Session')}</div>
+    <div class="sib-meta">
+      ${parts.map(p=>`<span class="sib-tag">${esc(p)}</span>`).join('')}
+      ${cfg.date?`<span class="sib-tag">📅 ${esc(cfg.date)}</span>`:''}
+      ${timeStr?`<span class="sib-tag">⏰ ${esc(timeStr)}</span>`:''}
+      ${cfg.ownerTeacherName?`<span class="sib-tag">👩‍ ${esc(cfg.ownerTeacherName)}</span>`:''}
+    </div>
+  </div>`;
+  btn.disabled = false;
 }
 
 // ── STUDENT LOGIN ──
@@ -448,46 +378,60 @@ window.doStudentLogin = async function() {
 
 document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doStudentLogin(); });
 
-// ── FIND AND JOIN OPEN SESSION ──
+// ── FIND AND JOIN OPEN SESSION (FIRESTORE VERSION) ──
 async function findAndJoinOpenSession() {
   try {
-    const snap = await safeRTDBOperation(get, ref(rtDB, 'sessions'));
-    const sessions = snap.val() || {};
-    const openSessions = Object.entries(sessions).filter(([id,s]) => s.config && s.config.active);
-    if (!openSessions.length) {
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('welcomeScreen').innerHTML = `
-        <div style="text-align:center;padding:60px 0">
-          <div style="font-size:56px;margin-bottom:16px">⏳</div>
-          <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
-          <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet. Please wait.</div>
-          <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
-          <div style="margin-top:16px"><button class="btn-retry" onclick="checkConnectionAgain()">Check Connection</button></div>
-        </div>`;
-      document.getElementById('welcomeScreen').style.display = 'block';
-      return;
+    // If we already have an ID from login screen, use it. Otherwise query.
+    if (!activeSessionId) {
+      const sessionsRef = collection(db, 'sessions');
+      const q = query(sessionsRef, where('active', '==', true));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) {
+        showNoSessions();
+        return;
+      }
+      activeSessionId = snapshot.docs[0].id;
+      sessionData = snapshot.docs[0].data();
+    } else {
+      // Re-fetch latest data for the known session ID
+      const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+      if (!sessDoc.exists() || !sessDoc.data().active) {
+        showNoSessions();
+        return;
+      }
+      sessionData = sessDoc.data();
     }
-    const [id, s] = openSessions[0];
-    activeSessionId = id;
-    sessionData = s.config;
+
     const studentKey = currentStudent.uid;
-    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${studentKey}`), {
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+    
+    // Create or Update student record in Firestore Sub-collection
+    await updateDoc(studentRef, {
       name: studentProfile.name || currentStudent.email,
       uid: currentStudent.uid,
       online: true,
       loginTime: Date.now()
+    }).catch(async () => {
+      // If update fails (doc doesn't exist), create it
+      await addDoc(collection(db, 'sessions', activeSessionId, 'students'), {
+        name: studentProfile.name || currentStudent.email,
+        uid: currentStudent.uid,
+        online: true,
+        loginTime: Date.now()
+      });
     });
+
     document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
     document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
     
-    if (keepAliveInterval) clearInterval(keepAliveInterval);
-    keepAliveInterval = setInterval(keepAlive, 10000);
-    window.addEventListener('beforeunload', markOffline);
-    
-    if (unsubGrades) unsubGrades();
-    unsubGrades = onValue(ref(rtDB, `sessions/${activeSessionId}/students/${studentKey}`), sd => {
-      if (sd.val() && document.getElementById('completionScreen').style.display !== 'none') refreshCompletion(sd.val());
+    // Listen for real-time updates on this student's grade/feedback
+    if (unsubSession) unsubSession();
+    unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
+      if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
+        refreshCompletion(sd.data());
+      }
     });
+
     await loadAndShowWelcome();
   } catch(e) {
     console.error('Join session error:', e);
@@ -496,30 +440,31 @@ async function findAndJoinOpenSession() {
       <div style="text-align:center;padding:60px 0">
         <div style="font-size:56px;margin-bottom:16px">⚠️</div>
         <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
-        <div style="color:var(--muted);font-size:15px">Unable to connect. Please disable ad blockers and refresh.</div>
+        <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
       </div>`;
   }
 }
 
-window.checkConnectionAgain = function() {
-  location.reload();
-};
-
-function keepAlive() {
-  if (!currentStudent || !activeSessionId) return;
-  update(ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {online: true}).catch(e => console.warn('KeepAlive failed:', e));
-}
-
-function markOffline() {
-  if (!currentStudent || !activeSessionId) return;
-  update(ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {online: false}).catch(e => console.warn('Offline mark failed:', e));
+function showNoSessions() {
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('welcomeScreen').innerHTML = `
+    <div style="text-align:center;padding:60px 0">
+      <div style="font-size:56px;margin-bottom:16px">⏳</div>
+      <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
+      <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet.</div>
+      <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
+    </div>`;
+  document.getElementById('welcomeScreen').style.display = 'block';
 }
 
 window.exitSession = async function() {
-  markOffline();
-  if (keepAliveInterval) clearInterval(keepAliveInterval);
-  if (unsubGrades) unsubGrades();
+  if (activeSessionId && currentStudent) {
+    try {
+      await updateDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid), { online: false });
+    } catch(e) {}
+  }
+  if (unsubSession) unsubSession();
   await signOut(auth);
   window.location.href = 'index.html';
 };
@@ -527,10 +472,18 @@ window.exitSession = async function() {
 // ── WELCOME ──
 async function loadAndShowWelcome() {
   try {
-    const qsSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/questions`));
-    questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-    const sSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    const s = sSnap.val()||{};
+    // Load Questions from Firestore Sub-collection
+    const qRef = collection(db, 'sessions', activeSessionId, 'questions');
+    const qSnap = await getDocs(qRef);
+    questions = [];
+    qSnap.forEach(d => questions.push({ id: d.id, ...d.data() }));
+    questions.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+
+    // Load Student Data
+    const sRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+    const sSnap = await getDoc(sRef);
+    const s = sSnap.exists() ? sSnap.data() : {};
+
     if (s.submitted) { showCompletion(); return; }
     showWelcome();
   } catch(e) {
@@ -545,12 +498,15 @@ function showWelcome() {
   document.getElementById('navFooter').style.display='none';
   const ws = document.getElementById('welcomeScreen');
   ws.style.display='block';
+  
   if (!questions.length) {
     ws.innerHTML=`<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet.</div></div>`;
     return;
   }
-  get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`)).then(sSnap=>{
-    const s=sSnap.val()||{};
+
+  // Fetch fresh student data for stats
+  getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid)).then(sSnap=>{
+    const s=sSnap.exists()?sSnap.data():{};
     const answered=s.answers?Object.keys(s.answers).length:0;
     const instrHtml=sessionData.instructions?`<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>`:'';
     ws.innerHTML=`<div style="text-align:center;padding:20px 0">
@@ -584,8 +540,8 @@ function showWelcome() {
 window.startQuiz = async function() {
   if (!questions.length) return;
   try {
-    const sSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    const s = sSnap.val()||{};
+    const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+    const s = sSnap.exists() ? sSnap.data() : {};
     let start=0;
     for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
     currentQIndex=start;
@@ -595,23 +551,31 @@ window.startQuiz = async function() {
     renderQuestion();
   } catch(e) {
     console.error('Start quiz error:', e);
-    showToast('Error loading quiz. Please refresh.', true);
+    showToast('Error loading quiz.', true);
   }
 };
 
 async function renderQuestion() {
   try {
-    const qsSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/questions`));
-    questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    // Re-fetch questions to ensure sync
+    const qRef = collection(db, 'sessions', activeSessionId, 'questions');
+    const qsSnap = await getDocs(qRef);
+    questions = [];
+    qsSnap.forEach(d => questions.push({ id: d.id, ...d.data() }));
+    questions.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+    
     if(!questions.length)return;
     const q=questions[currentQIndex];
-    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    const s=sSnap.val()||{};
+    
+    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+    const s=sSnap.exists()?sSnap.data():{};
     const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+    
     const total=questions.length;
     const pct=Math.round((currentQIndex+1)/total*100);
     const btnSubmit=document.getElementById('btnSubmit');
     btnSubmit.textContent='Save Answer';btnSubmit.classList.remove('saved');btnSubmit.disabled=false;
+    
     function mathSafe(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
     const qscreen=document.getElementById('quizScreen');
     qscreen.innerHTML=`
@@ -625,13 +589,14 @@ async function renderQuestion() {
         ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
         ${buildInput(q,existing)}
       </div>`;
+      
     document.getElementById('btnPrev').disabled=currentQIndex===0;
     document.getElementById('btnNext').style.display=currentQIndex<total-1?'inline-flex':'none';
     document.getElementById('btnFinish').style.display=currentQIndex===total-1?'inline-flex':'none';
     renderMath(qscreen);
   } catch(e) {
     console.error('Render question error:', e);
-    showToast('Error loading question. Please refresh.', true);
+    showToast('Error loading question.', true);
   }
 }
 
@@ -666,14 +631,25 @@ window.submitAnswer = async function() {
   btn.textContent='Saving…';btn.disabled=true;
   const q=questions[currentQIndex];
   try {
-    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}/answers`), {[q.id]:ans});
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+    // Use updateDoc with dot notation for nested fields
+    await updateDoc(studentRef, {
+      [`answers.${q.id}`]: ans
+    });
     showToast('Answer saved ✓');
     btn.textContent='Saved ✓';btn.classList.add('saved');
     renderQuestion();
   } catch(e) {
     console.error('Submit error:', e);
-    showToast('Failed to save. Please try again.', true);
-    btn.textContent='Save Answer';btn.disabled=false;
+    // Fallback: try to ensure doc exists
+    try {
+       // If update fails because doc missing, we might need to create it, 
+       // but usually in this flow the doc exists from join.
+       throw e; 
+    } catch (e2) {
+        showToast('Failed to save. Please try again.', true);
+        btn.textContent='Save Answer';btn.disabled=false;
+    }
   }
 };
 
@@ -682,8 +658,8 @@ async function canNavigate(){
   if(ans===null){
     const q=questions[currentQIndex];
     try {
-      const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-      if(sSnap.val()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
+      const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+      if(!sSnap.exists() || sSnap.data()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
     } catch(e) {
       return true;
     }
@@ -696,21 +672,26 @@ window.nextQ=async function(){if(await canNavigate()&&currentQIndex<questions.le
 
 window.finishSession = async function() {
   const ans=getCurrentAnswer();
-  if(ans!==null){const q=questions[currentQIndex];await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});}
+  if(ans!==null){
+    const q=questions[currentQIndex];
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+    await updateDoc(studentRef, {[`answers.${q.id}`]: ans});
+  }
   try {
-    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    const savedAnswers=sSnap.val()?.answers||{};
+    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+    const savedAnswers=sSnap.exists()?sSnap.data()?.answers||{}:{};
     for(let i=0;i<questions.length;i++){
       if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
         showToast(`Question ${i+1} is missing an answer!`);
         currentQIndex=i;renderQuestion();return;
       }
     }
-    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {submitted:true});
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+    await updateDoc(studentRef, {submitted:true});
     showCompletion();
   } catch(e) {
     console.error('Finish error:', e);
-    showToast('Error submitting. Please try again.', true);
+    showToast('Error submitting.', true);
   }
 };
 
@@ -721,8 +702,8 @@ async function showCompletion(){
   document.getElementById('navFooter').style.display='none';
   document.getElementById('completionScreen').style.display='block';
   try {
-    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    renderCompletionScreen(sSnap.val()||{});
+    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+    renderCompletionScreen(sSnap.exists()?sSnap.data():{});
   } catch(e) {
     console.error('Completion error:', e);
   }
@@ -740,7 +721,7 @@ function renderCompletionScreen(s){
     <div class="completion-title">All Done!</div>
     <div class="submitted-lock-banner">
       <span style="font-size:18px">🔒</span>
-      <span>Your answers have been submitted and <strong>cannot be changed</strong>. Your teacher will review and grade them.</span>
+      <span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
     </div>
     <div class="summary-grid">
       <div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
@@ -766,19 +747,26 @@ function renderCompletionScreen(s){
 }
 
 // ── UTILS ──
-// Replace the existing showErr function with this:
 function showErr(msg) {
     const e = document.getElementById('loginErr');
     e.textContent = msg;
     e.style.display = 'block';
-    
-    // If error is connection-related, show adblock warning
-    if (msg.includes('network') || msg.includes('connection') || msg.includes('timeout')) {
+    if (msg.includes('network') || msg.includes('connection')) {
         const warning = document.getElementById('adblockWarning');
         if (warning) warning.style.display = 'block';
     }
 }
-  function showToast(msg, isError = false){const t=document.getElementById('toast');t.textContent=msg;t.style.background = isError ? 'var(--clay)' : 'var(--text)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function showConnectionWarning(show = true) {
+  const warning = document.getElementById('connectionWarning');
+  if (warning) warning.style.display = show ? 'block' : 'none';
+}
+function showToast(msg, isError = false){
+    const t=document.getElementById('toast');
+    t.textContent=msg;
+    t.style.background = isError ? 'var(--clay)' : 'var(--text)';
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2200);
+}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 </script>
 </body>
