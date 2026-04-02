@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduBoard — Student Portal</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(','\\)'],['$','$']] },
+  svg: { fontCache: 'global' },
+  startup: { typeset: false }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f5f0;--surface:#ffffff;--surface2:#f0ede6;--border:#e0d9cf;--sage:#5a7a5e;--sage-l:rgba(90,122,94,0.1);--sage-m:rgba(90,122,94,0.2);--clay:#c4654a;--clay-l:rgba(196,101,74,0.1);--sky:#4a7aaa;--sky-l:rgba(74,122,170,0.1);--text:#2a2520;--muted:#8a7f72;--faint:#d4cdc3;--shadow:0 4px 24px rgba(42,37,32,0.08);--shadow-lg:0 12px 48px rgba(42,37,32,0.14);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 80% 10%,rgba(90,122,94,0.06) 0%,transparent 50%),radial-gradient(ellipse at 10% 90%,rgba(196,101,74,0.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;z-index:1;}
+.login-card{background:var(--surface);border-radius:24px;padding:48px 44px;width:440px;max-width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);text-align:center;}
+.school-icon{width:64px;height:64px;background:var(--sage-l);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:30px;}
+.login-brand{font-family:'Lora',serif;font-size:30px;font-weight:600;color:var(--text);letter-spacing:-0.5px;margin-bottom:6px;}
+.login-tagline{color:var(--muted);font-size:14px;margin-bottom:28px;}
+/* Session info on login */
+.session-info-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:24px;text-align:left;}
+.sib-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.sib-title{font-family:'Lora',serif;font-size:16px;font-weight:600;margin-bottom:6px;}
+.sib-meta{display:flex;flex-wrap:wrap;gap:8px;}
+.sib-tag{font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--muted);}
+.session-closed-box{background:rgba(196,101,74,0.08);border:1.5px solid var(--clay);border-radius:14px;padding:16px;text-align:center;color:var(--clay);font-size:14px;font-weight:700;margin-bottom:24px;}
+.session-loading{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);}
+.input-wrap{position:relative;margin-bottom:16px;text-align:left;}
+.input-wrap label{display:block;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.input-wrap input{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;outline:none;transition:border-color 0.2s,background 0.2s;}
+.input-wrap input:focus{border-color:var(--sage);background:var(--surface);}
+.btn-enter{width:100%;background:var(--sage);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.02em;box-shadow:0 6px 20px rgba(90,122,94,0.25);}
+.btn-enter:hover{background:#4a6a4e;transform:translateY(-1px);}
+.btn-enter:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.back-link{display:block;margin-top:18px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;}
+.back-link:hover{color:var(--sage);}
+.error-msg{background:var(--clay-l);border:1.5px solid var(--clay);color:var(--clay);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;font-weight:600;}
+
+/* APP */
+#app{display:none;position:relative;z-index:1;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(42,37,32,0.06);}
+.header-brand{font-family:'Lora',serif;font-size:20px;font-weight:600;}
+.header-session{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--sage-l);border:1px solid var(--sage-m);border-radius:20px;padding:6px 14px;}
+.user-dot{width:8px;height:8px;background:var(--sage);border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+.user-name{font-size:13px;font-weight:700;color:var(--sage);}
+.btn-exit{background:none;border:1.5px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Nunito',sans-serif;transition:all 0.15s;}
+.btn-exit:hover{border-color:var(--clay);color:var(--clay);}
+.main{max-width:720px;margin:0 auto;padding:32px 20px 80px;}
+
+/* WELCOME */
+#welcomeScreen{text-align:center;padding:20px 0;}
+.welcome-icon{font-size:56px;margin-bottom:16px;}
+.welcome-title{font-family:'Lora',serif;font-size:28px;font-weight:600;margin-bottom:8px;}
+.welcome-sub{color:var(--muted);font-size:15px;max-width:400px;margin:0 auto 32px;line-height:1.6;}
+.session-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 28px;margin-bottom:24px;text-align:left;box-shadow:var(--shadow);}
+.sc-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.sc-title{font-family:'Lora',serif;font-size:20px;font-weight:600;margin-bottom:12px;}
+.sc-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.sc-meta-item{background:var(--surface2);border-radius:10px;padding:10px 12px;}
+.sc-meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:3px;}
+.sc-meta-val{font-size:13px;font-weight:700;color:var(--text);}
+.sc-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;}
+.sc-stat{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600;}
+.sc-stat .dot{width:7px;height:7px;border-radius:50%;}
+.instructions-box{background:var(--sky-l);border:1px solid rgba(74,122,170,0.2);border-radius:12px;padding:14px 16px;margin-bottom:20px;text-align:left;font-size:13px;color:var(--text);line-height:1.7;}
+.instructions-box strong{color:var(--sky);font-size:11px;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;}
+.btn-start{background:var(--sage);color:#fff;border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s;letter-spacing:0.02em;box-shadow:0 6px 20px rgba(90,122,94,0.25);}
+.btn-start:hover{background:#4a6a4e;transform:translateY(-2px);}
+.no-questions{background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:48px 24px;text-align:center;color:var(--muted);font-size:15px;font-weight:600;}
+
+/* QUIZ */
+#quizScreen{display:none;}
+.progress-header{background:var(--surface);border-radius:16px;padding:18px 22px;margin-bottom:24px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.progress-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.progress-fraction{font-family:'Lora',serif;font-size:18px;font-weight:600;}
+.progress-track{height:8px;background:var(--surface2);border-radius:20px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--sage),#7aaa7e);border-radius:20px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1);}
+.q-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.q-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.q-badge{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--sage-l);color:var(--sage);border-radius:20px;padding:5px 12px;border:1px solid var(--sage-m);}
+.q-points{font-size:12px;font-weight:700;color:var(--clay);background:var(--clay-l);padding:5px 10px;border-radius:20px;}
+.q-text{font-family:'Lora',serif;font-size:18px;font-weight:400;line-height:1.8;color:var(--text);margin-bottom:24px;direction:auto;text-align:start;}
+/* MathJax display tweaks */
+mjx-container{vertical-align:middle;}
+.option-text{flex:1;line-height:1.5;}
+.answered-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sage-l);color:var(--sage);border:1px solid var(--sage-m);border-radius:8px;font-size:12px;font-weight:700;padding:5px 10px;margin-bottom:12px;}
+/* MCQ */
+.options-list{display:flex;flex-direction:column;gap:10px;}
+.option-btn{background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:14px 18px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text);transition:all 0.15s;display:flex;align-items:center;gap:12px;}
+.option-btn:hover{border-color:var(--sage);background:var(--sage-l);}
+.option-btn.selected{border-color:var(--sage);background:var(--sage-l);color:var(--sage);}
+.option-letter{width:28px;height:28px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
+/* T/F */
+.tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tf-btn{background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:20px 14px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;text-align:center;color:var(--text);transition:all 0.15s;}
+.tf-btn:hover,.tf-btn.selected{border-color:var(--sage);background:var(--sage-l);color:var(--sage);}
+.tf-icon{font-size:28px;display:block;margin-bottom:6px;}
+/* TEXT/NUM */
+.answer-textarea{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:16px 18px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;color:var(--text);outline:none;resize:vertical;min-height:120px;transition:border-color 0.2s;line-height:1.6;}
+.answer-textarea:focus{border-color:var(--sage);background:var(--surface);}
+.answer-number{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:16px 18px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;color:var(--text);outline:none;transition:border-color 0.2s;}
+.answer-number:focus{border-color:var(--sage);background:var(--surface);}
+/* NAV FOOTER */
+.nav-footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 24px;display:flex;gap:12px;justify-content:center;z-index:50;box-shadow:0 -4px 20px rgba(42,37,32,0.08);}
+.btn-nav{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:11px 22px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:var(--text);transition:all 0.15s;}
+.btn-nav:hover{border-color:var(--sage);color:var(--sage);}
+.btn-nav:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-submit-answer{background:var(--sage);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 12px rgba(90,122,94,0.25);}
+.btn-submit-answer:hover{background:#4a6a4e;}
+.btn-finish{background:var(--clay);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.btn-finish:hover{background:#b05a40;}
+/* COMPLETION */
+#completionScreen{display:none;text-align:center;padding:40px 0;}
+.completion-icon{font-size:72px;margin-bottom:20px;animation:pop 0.5s ease;}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.completion-title{font-family:'Lora',serif;font-size:32px;font-weight:600;margin-bottom:10px;}
+.completion-sub{color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 32px;line-height:1.7;}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:32px;}
+.summary-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;box-shadow:var(--shadow);}
+.summary-val{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--sage);}
+.summary-label{font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;}
+.answers-review{text-align:left;}
+.answer-review-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow);}
+.ar-q{font-family:'Lora',serif;font-size:15px;margin-bottom:8px;}
+.ar-a{font-size:14px;color:var(--muted);font-weight:600;}
+.ar-a span{color:var(--text);}
+.grade-display{display:inline-flex;align-items:center;gap:6px;background:var(--sage-l);color:var(--sage);border:1px solid var(--sage-m);border-radius:8px;font-size:13px;font-weight:700;padding:4px 10px;margin-top:8px;}
+.feedback-display{margin-top:6px;font-size:13px;color:var(--sky);background:var(--sky-l);padding:6px 10px;border-radius:8px;border-left:3px solid var(--sky);font-weight:600;}
+.btn-retry{background:var(--surface);border:2px solid var(--border);color:var(--text);border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.btn-retry:hover{border-color:var(--sage);color:var(--sage);}
+/* SPINNER */
+.spinner-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:var(--muted);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--sage);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 22px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:all 0.3s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media(max-width:500px){.q-card{padding:22px 18px;}.q-text{font-size:17px;}.login-card{padding:36px 24px;}.sc-meta-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="school-icon">📚</div>
+    <div class="login-brand">EduBoard</div>
+    <div class="login-tagline">Enter your name to join the session</div>
+    <div id="sessionInfoBox"></div>
+    <div class="input-wrap">
+      <label>Your Full Name</label>
+      <input type="text" id="studentName" placeholder="e.g. Alex Johnson" autocomplete="name">
+    </div>
+    <button class="btn-enter" id="joinBtn" onclick="joinSession()">Join Session →</button>
+    <div class="error-msg" id="loginErr"></div>
+    <a href="index.html" class="back-link">← Back to Home</a>
+  </div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <div class="header-brand">EduBoard</div>
+    <div class="header-session" id="headerSession">—</div>
+    <div class="header-right">
+      <div class="user-chip"><div class="user-dot"></div><div class="user-name" id="headerName">Student</div></div>
+      <button class="btn-exit" onclick="exitSession()">Exit</button>
+    </div>
+  </div>
+  <div class="main">
+    <div id="welcomeScreen"></div>
+    <div id="quizScreen"></div>
+    <div id="completionScreen"></div>
+  </div>
+</div>
+
+<div class="nav-footer" id="navFooter" style="display:none">
+  <button class="btn-nav" id="btnPrev" onclick="prevQ()">← Prev</button>
+  <button class="btn-submit-answer" id="btnSubmit" onclick="submitAnswer()">Save Answer</button>
+  <button class="btn-nav" id="btnNext" onclick="nextQ()">Next →</button>
+  <button class="btn-finish" id="btnFinish" onclick="finishSession()" style="display:none">Submit All ✓</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getDatabase,ref,set,get,update,onValue}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+let db=null,usingFirebase=false,currentStudent=null,currentQIndex=0,questions=[],sessionData={};
+let unsubGrades=null;
+
+// ── FIREBASE INIT ──
+function tryFirebase(){
+  if(typeof FIREBASE_DEMO_MODE!=='undefined'&&FIREBASE_DEMO_MODE)return false;
+  try{const app=initializeApp(FIREBASE_CONFIG);db=getDatabase(app);usingFirebase=true;return true;}
+  catch(e){console.warn('Firebase failed:',e);return false;}
+}
+
+// ── DATA ABSTRACTION ──
+const LS='eduboard_v2';
+function lget(){try{return JSON.parse(localStorage.getItem(LS))||{};}catch{return{};}}
+function lset(d){localStorage.setItem(LS,JSON.stringify(d));}
+function pathGet(obj,path){return path.split('/').reduce((o,k)=>o&&o[k]!==undefined?o[k]:null,obj);}
+function pathSet(obj,path,val){const keys=path.split('/');let cur=obj;for(let i=0;i<keys.length-1;i++){if(!cur[keys[i]]||typeof cur[keys[i]]!=='object')cur[keys[i]]={};cur=cur[keys[i]];}cur[keys[keys.length-1]]=val;}
+
+async function dbGet(path){if(usingFirebase){const s=await get(ref(db,path));return s.val();}return pathGet(lget(),path);}
+async function dbSet(path,val){if(usingFirebase){await set(ref(db,path),val);return;}const d=lget();pathSet(d,path,val);lset(d);}
+async function dbUpdate(path,val){if(usingFirebase){await update(ref(db,path),val);return;}const d=lget();const ex=pathGet(d,path)||{};pathSet(d,path,{...(typeof ex==='object'?ex:{}), ...val});lset(d);}
+function dbListen(path,cb){if(usingFirebase){return onValue(ref(db,path),s=>cb(s.val()));}let last=null;const iv=setInterval(()=>{const d=lget();const v=pathGet(d,path);const s=JSON.stringify(v);if(s!==last){last=s;cb(v);}},1500);cb(pathGet(lget(),path));return()=>clearInterval(iv);}
+
+// ── SESSION DISPLAY ON LOGIN PAGE ──
+async function loadLoginSessionInfo(){
+  tryFirebase();
+  const sess=await dbGet('session');
+  const box=document.getElementById('sessionInfoBox');
+  const btn=document.getElementById('joinBtn');
+  if(!sess){
+    box.innerHTML='<div class="session-loading">⏳ Waiting for teacher to start a session…</div>';
+    btn.disabled=true;return;
+  }
+  if(!sess.active){
+    box.innerHTML='<div class="session-closed-box">🔒 Session is currently closed.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open the session.</span></div>';
+    btn.disabled=true;return;
+  }
+  btn.disabled=false;
+  const parts=[];
+  if(sess.grade)parts.push(sess.grade);
+  if(sess.className)parts.push(sess.className);
+  if(sess.subject)parts.push(sess.subject);
+  const timeStr=sess.startTime&&sess.endTime?`${sess.startTime} – ${sess.endTime}`:(sess.startTime||'');
+  box.innerHTML=`<div class="session-info-box">
+    <div class="sib-label">Active Session</div>
+    <div class="sib-title">${esc(sess.title||'Quiz Session')}</div>
+    <div class="sib-meta">
+      ${parts.map(p=>`<span class="sib-tag">${esc(p)}</span>`).join('')}
+      ${sess.date?`<span class="sib-tag">📅 ${esc(sess.date)}</span>`:''}
+      ${timeStr?`<span class="sib-tag">⏰ ${esc(timeStr)}</span>`:''}
+      ${sess.teacher?`<span class="sib-tag">👩‍🏫 ${esc(sess.teacher)}</span>`:''}
+    </div>
+  </div>`;
+  sessionData=sess;
+}
+loadLoginSessionInfo();
+
+// ── JOIN ──
+async function joinSession(){
+  const name=document.getElementById('studentName').value.trim();
+  if(!name||name.length<2){showErr('Please enter your full name.');return;}
+  // Re-check session is still active
+  const sess=await dbGet('session');
+  if(!sess||!sess.active){showErr('Session is not open yet. Please wait for your teacher.');return;}
+  sessionData=sess;
+  currentStudent=name;
+  // Write student online
+  await dbSet(`students/${name}`,{name,online:true,loginTime:Date.now()});
+  sessionStorage.setItem('student_name',name);
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('headerName').textContent=name;
+  document.getElementById('headerSession').textContent=[sess.grade,sess.className,sess.title].filter(Boolean).join(' · ')||'Session';
+  await loadAndShowWelcome();
+  window.addEventListener('beforeunload',markOffline);
+  keepAliveInterval=setInterval(keepAlive,10000);
+  // Listen for grades/feedback in real time
+  if(unsubGrades)unsubGrades();
+  unsubGrades=dbListen(`students/${name}`,sd=>{if(sd&&document.getElementById('completionScreen').style.display!=='none')refreshCompletion(sd);});
+}
+window.joinSession=joinSession;
+document.getElementById('studentName').addEventListener('keydown',e=>{if(e.key==='Enter')joinSession();});
+function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.style.display='block';}
+
+let keepAliveInterval=null;
+function keepAlive(){if(!currentStudent)return;dbUpdate(`students/${currentStudent}`,{online:true});}
+function markOffline(){if(!currentStudent)return;dbSet(`students/${currentStudent}/online`,false);}
+
+window.exitSession=function(){
+  markOffline();
+  clearInterval(keepAliveInterval);
+  if(unsubGrades)unsubGrades();
+  sessionStorage.removeItem('student_name');
+  currentStudent=null;
+  window.location.href='index.html';
+};
+
+// ── WELCOME ──
+async function loadAndShowWelcome(){
+  const qs=await dbGet('questions')||{};
+  questions=Object.values(qs).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  showWelcome();
+}
+
+function showWelcome(){
+  document.getElementById('quizScreen').style.display='none';
+  document.getElementById('completionScreen').style.display='none';
+  document.getElementById('navFooter').style.display='none';
+  const ws=document.getElementById('welcomeScreen');
+  ws.style.display='block';
+  if(!questions.length){
+    ws.innerHTML=`<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet. Please wait.</div></div>`;
+    return;
+  }
+  dbGet(`students/${currentStudent}`).then(s=>{
+    const answered=s&&s.answers?Object.keys(s.answers).length:0;
+    const instrHtml=sessionData.instructions?`<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>`:'';
+    ws.innerHTML=`<div style="text-align:center;padding:20px 0">
+      <div class="welcome-icon">🎓</div>
+      <div class="welcome-title">Welcome, ${esc((currentStudent||'').split(' ')[0])}!</div>
+      <div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
+    </div>
+    <div class="session-card">
+      <div class="sc-label">Session</div>
+      <div class="sc-title">${esc(sessionData.title||'Quiz Session')}</div>
+      <div class="sc-meta-grid">
+        ${sessionData.grade?`<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${esc(sessionData.grade)}</div></div>`:''}
+        ${sessionData.className?`<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${esc(sessionData.className)}</div></div>`:''}
+        ${sessionData.date?`<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${esc(sessionData.date)}</div></div>`:''}
+        ${sessionData.startTime?`<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${esc(sessionData.startTime)}${sessionData.endTime?' – '+esc(sessionData.endTime):''}</div></div>`:''}
+      </div>
+      <div class="sc-stats">
+        <div class="sc-stat"><span class="dot" style="background:var(--sage)"></span>${questions.length} Questions</div>
+        <div class="sc-stat"><span class="dot" style="background:var(--clay)"></span>${questions.reduce((n,q)=>n+q.points,0)} Total Points</div>
+        <div class="sc-stat"><span class="dot" style="background:var(--sky)"></span>${answered} Answered</div>
+      </div>
+    </div>
+    ${instrHtml}
+    <div style="text-align:center">
+      <button class="btn-start" onclick="startQuiz()">${answered>0?'Continue Quiz →':'Start Quiz →'}</button>
+    </div>`;
+  });
+}
+
+// ── QUIZ ──
+window.startQuiz=async function(){
+  if(!questions.length)return;
+  const s=await dbGet(`students/${currentStudent}`)||{};
+  let start=0;
+  for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
+  currentQIndex=start;
+  document.getElementById('welcomeScreen').style.display='none';
+  document.getElementById('quizScreen').style.display='block';
+  document.getElementById('navFooter').style.display='flex';
+  renderQuestion();
+};
+
+async function renderQuestion(){
+  // Refresh questions in case teacher added more
+  const qs=await dbGet('questions')||{};
+  questions=Object.values(qs).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  if(!questions.length)return;
+  const q=questions[currentQIndex];
+  const s=await dbGet(`students/${currentStudent}`)||{};
+  const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+  const total=questions.length;
+  const pct=Math.round((currentQIndex+1)/total*100);
+  // math-safe: preserve LaTeX markers, escape other HTML
+  function mathSafe(str){
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  const qscreen = document.getElementById('quizScreen');
+  qscreen.innerHTML=`
+    <div class="progress-header">
+      <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex+1} / ${total}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="q-card">
+      <div class="q-header"><span class="q-badge">Question ${currentQIndex+1} of ${total}</span><span class="q-points">${q.points} pts${q.tag?' · '+esc(q.tag):''}</span></div>
+      <div class="q-text">${mathSafe(q.text)}</div>
+      ${existing!==null?'<div class="answered-badge">✓ Answered — you can change it</div>':''}
+      ${buildInput(q,existing)}
+    </div>`;
+  document.getElementById('btnPrev').disabled=currentQIndex===0;
+  document.getElementById('btnNext').style.display=currentQIndex<total-1?'inline-flex':'none';
+  document.getElementById('btnFinish').style.display=currentQIndex===total-1?'inline-flex':'none';
+  // Render MathJax on the new content
+  renderMath(qscreen);
+}
+
+// ── MATHJAX TYPESET HELPER ──
+function renderMath(el) {
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
+  }
+}
+
+function buildInput(q, existing) {
+  // Escape HTML but preserve \( \) LaTeX markers
+  function mathSafe(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      // un-escape the backslashes we need for LaTeX
+      .replace(/\\&lt;/g,'\\<').replace(/\\&gt;/g,'\\>');
+  }
+  if (q.type === 'mcq' && q.options && q.options.length) {
+    const L = 'ABCDEFGHIJ';
+    return `<div class="options-list">${q.options.map((o,i) => `<button class="option-btn ${existing===o?'selected':''}" onclick="selectOption(this)" data-val="${escA(o)}"><span class="option-letter">${L[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
+  }
+  if (q.type === 'truefalse') return `<div class="tf-row"><button class="tf-btn ${existing==='True'?'selected':''}" onclick="selectTF(this,'True')"><span class="tf-icon">✅</span>True</button><button class="tf-btn ${existing==='False'?'selected':''}" onclick="selectTF(this,'False')"><span class="tf-icon">❌</span>False</button></div>`;
+  if (q.type === 'number') return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing!==null?esc(String(existing)):''}">`;
+  return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing!==null?esc(String(existing)):''}</textarea>`;
+}
+
+window.selectOption=function(btn){document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
+window.selectTF=function(btn,val){document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
+
+function getCurrentAnswer(){
+  const q=questions[currentQIndex];
+  if(q.type==='mcq'){const s=document.querySelector('.option-btn.selected');return s?s.getAttribute('data-val'):null;}
+  if(q.type==='truefalse'){const s=document.querySelector('.tf-btn.selected');return s?s.textContent.trim():null;}
+  const el=document.getElementById('answerInput');return el&&el.value.trim()?el.value.trim():null;
+}
+
+window.submitAnswer=async function(){
+  const ans=getCurrentAnswer();
+  if(ans===null){showToast('Please provide an answer first');return;}
+  const q=questions[currentQIndex];
+  await dbUpdate(`students/${currentStudent}/answers`,{[q.id]:ans});
+  showToast('Answer saved ✓');
+};
+
+window.prevQ=function(){if(currentQIndex>0){currentQIndex--;renderQuestion();}};
+window.nextQ=function(){if(currentQIndex<questions.length-1){currentQIndex++;renderQuestion();}};
+window.finishSession=async function(){
+  const ans=getCurrentAnswer();
+  if(ans!==null){const q=questions[currentQIndex];await dbUpdate(`students/${currentStudent}/answers`,{[q.id]:ans});}
+  showCompletion();
+};
+
+// ── COMPLETION ──
+async function showCompletion(){
+  document.getElementById('quizScreen').style.display='none';
+  document.getElementById('welcomeScreen').style.display='none';
+  document.getElementById('navFooter').style.display='none';
+  document.getElementById('completionScreen').style.display='block';
+  const s=await dbGet(`students/${currentStudent}`)||{};
+  renderCompletionScreen(s);
+}
+
+async function refreshCompletion(s){
+  if(!s)return;
+  renderCompletionScreen(s);
+}
+
+function renderCompletionScreen(s){
+  const answered=s.answers?Object.keys(s.answers).length:0;
+  const graded=s.grades?Object.keys(s.grades).length:0;
+  const score=s.grades?Object.values(s.grades).reduce((n,v)=>n+(parseFloat(v)||0),0):0;
+  const maxScore=questions.reduce((n,q)=>n+q.points,0);
+  const cs = document.getElementById('completionScreen');
+  cs.innerHTML=`
+    <div class="completion-icon">🌟</div>
+    <div class="completion-title">All Done!</div>
+    <div class="completion-sub">Your answers have been submitted. Your teacher will review and grade them.</div>
+    <div class="summary-grid">
+      <div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
+      <div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
+      <div class="summary-item"><div class="summary-val" style="color:var(--clay)">${score}/${maxScore}</div><div class="summary-label">Your Score</div></div>
+    </div>
+    <div class="answers-review"><h3 style="font-family:'Lora',serif;font-size:18px;margin-bottom:16px;font-weight:600">Your Answers</h3>
+    ${questions.map((q,i)=>{
+      const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+      const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:null;
+      const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:null;
+      function ms(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+      return`<div class="answer-review-item"><div class="ar-q"><strong>Q${i+1}.</strong> ${ms(q.text)}</div><div class="ar-a">Your answer: <span>${ans!==null?esc(String(ans)):'Not answered'}</span></div>${grade!==null?`<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>`:''}${fb?`<div class="feedback-display">💬 ${esc(fb)}</div>`:''}</div>`;
+    }).join('')}
+    </div>
+    <button class="btn-retry" onclick="exitSession()" style="margin-top:24px">← Back to Home</button>`;
+  renderMath(cs);
+}
+
+// ── RESUME ──
+window.addEventListener('load',async()=>{
+  const saved=sessionStorage.getItem('student_name');
+  if(saved){document.getElementById('studentName').value=saved;await loadLoginSessionInfo();joinSession();}
+});
+
+// ── UTILS ──
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function escA(s){return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+</script>
+</body>
+</html>
