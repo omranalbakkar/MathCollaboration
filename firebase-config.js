@@ -1,34 +1,61 @@
-// ============================================================
-//  EDUBOARD — FIREBASE CONFIGURATION
-//  Enhanced for multi-role platform with Auth + Firestore + RTDB
-//
-//  HOW TO SET UP:
-//  1. Go to https://console.firebase.google.com/
-//  2. Open your project (or create one)
-//  3. Enable Authentication → Sign-in method → Email/Password
-//  4. Enable Firestore Database → Create database (production mode)
-//  5. Enable Realtime Database → Create database
-//  6. Replace the values below with your project config
-//
-//  FIRESTORE SECURITY RULES (paste in Firebase Console):
-//  See firestore.rules file or the README for full rules.
-//
-//  INITIAL SUPER ADMIN SETUP:
-//  1. Create a user in Firebase Auth Console (Authentication → Users → Add)
-//  2. Note the UID
-//  3. In Firestore → users collection → create document with that UID
-//     Fields: { role: "superadmin", name: "Super Admin",
-//               email: "your@email.com", active: true,
-//               createdAt: <timestamp> }
-// ============================================================
+// firebase-config.js
 
-const FIREBASE_CONFIG = {
-    apiKey: "AIzaSyBR2PLuRdA88cSXOz44WxNQxubb8i6CcsU",
-    authDomain: "edu-interact.firebaseapp.com",
-    databaseURL: "https://edu-interact-default-rtdb.firebaseio.com",
-    projectId: "edu-interact",
-    storageBucket: "edu-interact.firebasestorage.app",
-    messagingSenderId: "651012797078",
-    appId: "1:651012797078:web:16647c0adb49b27d3ac8b7",
-    measurementId: "G-LBCLK24BX9"
+// 1. Import necessary Firebase modules (v10.8.0)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    createUserWithEmailAndPassword, 
+    updatePassword, 
+    reauthenticateWithCredential, 
+    EmailAuthProvider 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { 
+    getFirestore, 
+    doc, setDoc, getDoc, updateDoc, deleteDoc, 
+    collection, query, where, getDocs, 
+    serverTimestamp, orderBy, limit 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+    getDatabase, 
+    ref, set, push, onValue, update, remove, child, get 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+// 2. Your NEW Web App Configuration (EduBoard Project)
+const firebaseConfig = {
+    apiKey: "AIzaSyCDmP9SERcSOmf7G0g70g8UVNB44H0zw_8",
+    authDomain: "eduboard-870d3.firebaseapp.com",
+    databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
+    projectId: "eduboard-870d3",
+    storageBucket: "eduboard-870d3.firebasestorage.app",
+    messagingSenderId: "658705588696",
+    appId: "1:658705588696:web:9e55ce87364f26a9fb52ad",
+    measurementId: "G-LMDZHSMSB7"
 };
+
+// 3. Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// 4. Initialize Services
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const rtDB = getDatabase(app);
+
+// 5. Export functions for use in HTML pages
+export { 
+    onAuthStateChanged, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    createUserWithEmailAndPassword, 
+    updatePassword, 
+    reauthenticateWithCredential, 
+    EmailAuthProvider,
+    doc, setDoc, getDoc, updateDoc, deleteDoc, 
+    collection, query, where, getDocs, 
+    serverTimestamp, orderBy, limit,
+    ref, set, push, onValue, update, remove, child, get
+};
+
+console.log("✅ EduBoard Connected to: eduboard-870d3");
