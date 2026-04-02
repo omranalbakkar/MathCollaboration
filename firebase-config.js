@@ -1,4 +1,6 @@
 // firebase-config.js
+// Version 2 - Module Fix
+
 
 // 1. Import ALL necessary Firebase modules (v10.8.0)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
