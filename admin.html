@@ -781,7 +781,8 @@ window.saveTeacher = async function() {
 
   const data = { name, email, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
 
-  if (currentEditId) {
+if (currentEditId) {
+    if (password && password.length >= 6) data.pendingPassword = password; // ← ADD THIS
     await updateDoc(doc(db,'teachers',currentEditId), data);
     const t = allTeachers.find(x=>x.id===currentEditId);
     if (t?.uid) await updateDoc(doc(db,'users',t.uid), { name, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp() });
@@ -809,7 +810,8 @@ window.saveStudent = async function() {
   if (!name || !email) { showFormError('Name and email are required.'); return; }
   const data = { name, email, gradeId: gradeId||'', active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
 
-  if (currentEditId) {
+if (currentEditId) {
+    if (password && password.length >= 6) data.pendingPassword = password; // ← ADD THIS
     await updateDoc(doc(db,'students',currentEditId), data);
     const s = allStudents.find(x=>x.id===currentEditId);
     if (s?.uid) await updateDoc(doc(db,'users',s.uid), { name, active, gradeId, updatedAt: serverTimestamp() });
