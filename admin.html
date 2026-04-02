@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduBoard — Super Admin Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--orange:#fb923c;--orange-dim:rgba(251,146,60,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+
+/* ── LOGIN ── */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a1030 0%,#0f1117 60%);overflow:hidden;position:relative;}
+#loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(192,82,42,0.07) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none;}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 52px;width:440px;max-width:95vw;position:relative;z-index:1;box-shadow:0 32px 80px rgba(0,0,0,0.5);}
+.login-logo{font-family:'Fraunces',serif;font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px;margin-bottom:4px;}
+.login-sub{color:var(--muted);font-size:13px;margin-bottom:36px;}
+.login-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(192,82,42,0.12);color:#e87a4a;border:1px solid rgba(192,82,42,0.3);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:24px;}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
+.field input[type=password]{font-family:'DM Mono',monospace;}
+.field input:focus{border-color:var(--amber);}
+.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s;margin-top:8px;}
+.btn-primary:hover{opacity:0.9;}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+.login-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;margin-top:14px;display:none;}
+.back-link{display:block;text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);text-decoration:none;}
+.back-link:hover{color:var(--amber);}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--muted);}
+
+/* ── APP SHELL ── */
+#app{display:none;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.topbar-left{display:flex;align-items:center;gap:14px;}
+.brand{font-family:'Fraunces',serif;font-size:20px;font-weight:800;color:var(--amber);letter-spacing:-0.5px;}
+.badge-admin{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(192,82,42,0.12);color:#e87a4a;padding:3px 8px;border-radius:20px;border:1px solid rgba(192,82,42,0.3);}
+.topbar-nav{display:flex;gap:4px;}
+.nav-btn{background:none;border:none;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.nav-btn:hover{color:var(--text);background:var(--surface2);}
+.nav-btn.active{color:var(--amber);background:var(--amber-dim);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.admin-name{font-size:13px;color:var(--muted);font-weight:500;}
+.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.btn-logout:hover{color:var(--red);border-color:var(--red);}
+.content{padding:32px 28px;max-width:1200px;margin:0 auto;}
+.tab-pane{display:none;animation:fadeIn 0.2s ease;}
+.tab-pane.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION HEADERS ── */
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.section-title{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.5px;}
+.section-sub{color:var(--muted);font-size:13px;margin-top:3px;}
+
+/* ── BUTTONS ── */
+.btn{border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-add{background:var(--amber);color:#0f1117;}.btn-add:hover{opacity:0.9;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
+.btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);}
+.btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
+.btn-save{background:var(--green);color:#0f1117;}
+.btn-cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);width:100%;padding:10px;justify-content:center;}
+.btn-danger:hover{background:var(--red);color:#fff;}
+.btn-toggle-on{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);font-size:11px;padding:4px 10px;border-radius:20px;}
+.btn-toggle-off{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);font-size:11px;padding:4px 10px;border-radius:20px;}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
+.search-input:focus{border-color:var(--amber);}
+.filter-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--surface2);padding:12px 16px;text-align:left;font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.badge-active{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.badge-inactive{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+.tag-pill{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.2);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block;margin:2px;}
+.actions-cell{display:flex;gap:6px;flex-wrap:wrap;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;}
+.modal-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:24px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--amber);}
+.form-group select option{background:var(--surface);}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
+.form-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;display:none;margin-bottom:12px;}
+
+/* ── MULTI-SELECT CHECKBOXES ── */
+.multi-select-wrap{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;}
+.multi-check-item{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer;transition:background 0.1s;}
+.multi-check-item:hover{background:var(--surface2);}
+.multi-check-item input[type=checkbox]{accent-color:var(--amber);width:14px;height:14px;cursor:pointer;}
+.multi-check-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
+
+/* ── STATS CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.stat-val{font-family:'Fraunces',serif;font-size:32px;font-weight:800;line-height:1;margin-bottom:6px;}
+.stat-val.amber{color:var(--amber);}.stat-val.green{color:var(--green);}.stat-val.blue{color:var(--blue);}.stat-val.purple{color:var(--purple);}.stat-val.orange{color:var(--orange);}
+.stat-label{font-size:12px;color:var(--muted);font-weight:500;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;right:28px;background:var(--green);color:#0f1117;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:1000;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+@media(max-width:700px){.form-grid{grid-template-columns:1fr;}.topbar-nav .nav-btn span{display:none;}.content{padding:16px 14px;}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Verifying access…</div>
+</div>
+
+<div id="loginScreen" style="display:none">
+  <div class="login-box">
+    <div class="login-logo">EduBoard</div>
+    <div class="login-sub">Secure Administration Portal</div>
+    <div class="login-badge">🛡️ Super Admin Access</div>
+    <div class="field"><label>Email Address</label><input type="email" id="loginEmail" autocomplete="email"></div>
+    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="loginErr"></div>
+    <a href="index.html" class="back-link">← Back to Home</a>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand">EduBoard</div>
+      <span class="badge-admin">Super Admin</span>
+    </div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="switchTab('dashboard',this)"><span>Dashboard</span></button>
+      <button class="nav-btn" onclick="switchTab('grades',this)"><span>Grades</span></button>
+      <button class="nav-btn" onclick="switchTab('subjects',this)"><span>Subjects</span></button>
+      <button class="nav-btn" onclick="switchTab('teachers',this)"><span>Teachers</span></button>
+      <button class="nav-btn" onclick="switchTab('students',this)"><span>Students</span></button>
+      <button class="nav-btn" onclick="switchTab('sessions',this)"><span>Sessions</span></button>
+    </div>
+    <div class="topbar-right">
+      <div class="admin-name" id="adminName"></div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="section-header">
+        <div><div class="section-title">System Overview</div><div class="section-sub">Platform-wide statistics</div></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
+        <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
+        <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
+        <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
+        <div class="stat-card"><div class="stat-val orange" id="dashSessions">—</div><div class="stat-label">Sessions</div></div>
+      </div>
+    </div>
+
+    <!-- GRADES TAB -->
+    <div class="tab-pane" id="tab-grades">
+      <div class="section-header">
+        <div><div class="section-title">Grade Master</div><div class="section-sub">Manage all grade levels</div></div>
+        <button class="btn btn-add" onclick="openModal('grade')">＋ Add Grade</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="gradeSearch" placeholder="Search grades…" oninput="renderGrades()">
+        <select class="filter-select" id="gradeStatusFilter" onchange="renderGrades()">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Grade Name (English)</th><th>Grade Name (Arabic)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="gradesBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SUBJECTS TAB -->
+    <div class="tab-pane" id="tab-subjects">
+      <div class="section-header">
+        <div><div class="section-title">Subjects Master</div><div class="section-sub">Manage all subjects</div></div>
+        <button class="btn btn-add" onclick="openModal('subject')">＋ Add Subject</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="subjectSearch" placeholder="Search subjects…" oninput="renderSubjects()">
+        <select class="filter-select" id="subjectStatusFilter" onchange="renderSubjects()">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Subject Name (English)</th><th>Subject Name (Arabic)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="subjectsBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- TEACHERS TAB -->
+    <div class="tab-pane" id="tab-teachers">
+      <div class="section-header">
+        <div><div class="section-title">Teachers Master</div><div class="section-sub">Manage teacher accounts and assignments</div></div>
+        <button class="btn btn-add" onclick="openModal('teacher')">＋ Add Teacher</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="teacherSearch" placeholder="Search teachers…" oninput="renderTeachers()">
+        <select class="filter-select" id="teacherStatusFilter" onchange="renderTeachers()">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Teacher Name</th><th>Email</th><th>Assigned Grades</th><th>Assigned Subjects</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="teachersBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- STUDENTS TAB -->
+    <div class="tab-pane" id="tab-students">
+      <div class="section-header">
+        <div><div class="section-title">Students Master</div><div class="section-sub">Manage student accounts</div></div>
+        <button class="btn btn-add" onclick="openModal('student')">＋ Add Student</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="studentSearch" placeholder="Search students…" oninput="renderStudents()">
+        <select class="filter-select" id="studentGradeFilter" onchange="renderStudents()">
+          <option value="">All Grades</option>
+        </select>
+        <select class="filter-select" id="studentStatusFilter" onchange="renderStudents()">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Student Name</th><th>Email</th><th>Grade</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="studentsBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SESSIONS TAB -->
+    <div class="tab-pane" id="tab-sessions">
+      <div class="section-header">
+        <div><div class="section-title">All Sessions</div><div class="section-sub">View and manage sessions across all teachers</div></div>
+        <button class="btn btn-add" onclick="openModal('session-admin')">＋ Create Session</button>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th>Session Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="adminSessionsBody"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MODALS ── -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-title" id="modalTitle">—</div>
+    <div class="form-error" id="formError"></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs,
+  updateDoc, deleteDoc, query, where, serverTimestamp, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getDatabase, ref, set, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const app  = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const rtdb = getDatabase(app);
+
+let currentAdmin = null;
+let allGrades    = [];
+let allSubjects  = [];
+let allTeachers  = [];
+let allStudents  = [];
+
+// ── ROUTE GUARD ──
+onAuthStateChanged(auth, async (user) => {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  if (!user) { showLogin(); return; }
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists() || snap.data().role !== 'superadmin') {
+      await signOut(auth);
+      showLogin('Access denied. This portal is for Super Admin only.');
+      return;
+    }
+    if (snap.data().active === false) {
+      await signOut(auth);
+      showLogin('Your account has been deactivated.');
+      return;
+    }
+    currentAdmin = { uid: user.uid, ...snap.data() };
+    document.getElementById('adminName').textContent = currentAdmin.name || user.email;
+    showApp();
+  } catch(e) {
+    showLogin('Error verifying access: ' + e.message);
+  }
+});
+
+function showLogin(msg) {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  if (msg) {
+    const el = document.getElementById('loginErr');
+    el.textContent = msg; el.style.display = 'block';
+  }
+}
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadAll();
+}
+
+// ── LOGIN ──
+window.doLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  if (!email || !pass) { err.textContent = 'Email and password are required.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    err.textContent = 'Invalid email or password.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In →';
+  }
+};
+document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+window.doLogout = async function() {
+  await signOut(auth);
+  window.location.href = 'index.html';
+};
+
+// ── TAB SWITCH ──
+window.switchTab = function(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'sessions') loadAdminSessions();
+};
+
+// ── LOAD ALL DATA ──
+async function loadAll() {
+  await Promise.all([loadGrades(), loadSubjects(), loadTeachers(), loadStudents()]);
+  loadDashboardStats();
+}
+
+// ── GRADES ──
+async function loadGrades() {
+  const snap = await getDocs(query(collection(db,'grades'), orderBy('createdAt','desc')));
+  allGrades = snap.docs.map(d => ({id:d.id,...d.data()}));
+  renderGrades();
+  populateStudentGradeFilter();
+}
+
+window.renderGrades = function() {
+  const search = (document.getElementById('gradeSearch')?.value||'').toLowerCase();
+  const statusF = document.getElementById('gradeStatusFilter')?.value;
+  let rows = allGrades.filter(g => {
+    const matchText = g.nameEn?.toLowerCase().includes(search) || g.nameAr?.includes(search) || g.code?.toLowerCase().includes(search);
+    const matchStatus = statusF === '' || String(g.active) === statusF;
+    return matchText && matchStatus;
+  });
+  const tbody = document.getElementById('gradesBody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No grades found</td></tr>`; return; }
+  tbody.innerHTML = rows.map(g => `
+    <tr>
+      <td>${esc(g.nameEn||'')}</td>
+      <td style="font-family:'DM Mono',monospace;direction:rtl">${esc(g.nameAr||'')}</td>
+      <td><span class="tag-pill">${esc(g.code||'')}</span></td>
+      <td><span class="${g.active?'badge-active':'badge-inactive'}">${g.active?'Active':'Inactive'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-edit" onclick="openModal('grade','${g.id}')">Edit</button>
+        <button class="btn btn-sm ${g.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('grades','${g.id}',${!g.active})">${g.active?'Deactivate':'Activate'}</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteRecord('grades','${g.id}','grade')">Delete</button>
+      </div></td>
+    </tr>`).join('');
+};
+
+// ── SUBJECTS ──
+async function loadSubjects() {
+  const snap = await getDocs(query(collection(db,'subjects'), orderBy('createdAt','desc')));
+  allSubjects = snap.docs.map(d => ({id:d.id,...d.data()}));
+  renderSubjects();
+}
+
+window.renderSubjects = function() {
+  const search = (document.getElementById('subjectSearch')?.value||'').toLowerCase();
+  const statusF = document.getElementById('subjectStatusFilter')?.value;
+  let rows = allSubjects.filter(s => {
+    const matchText = s.nameEn?.toLowerCase().includes(search) || s.nameAr?.includes(search) || s.code?.toLowerCase().includes(search);
+    const matchStatus = statusF === '' || String(s.active) === statusF;
+    return matchText && matchStatus;
+  });
+  const tbody = document.getElementById('subjectsBody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No subjects found</td></tr>`; return; }
+  tbody.innerHTML = rows.map(s => `
+    <tr>
+      <td>${esc(s.nameEn||'')}</td>
+      <td style="font-family:'DM Mono',monospace;direction:rtl">${esc(s.nameAr||'')}</td>
+      <td><span class="tag-pill">${esc(s.code||'')}</span></td>
+      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Active':'Inactive'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-edit" onclick="openModal('subject','${s.id}')">Edit</button>
+        <button class="btn btn-sm ${s.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('subjects','${s.id}',${!s.active})">${s.active?'Deactivate':'Activate'}</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteRecord('subjects','${s.id}','subject')">Delete</button>
+      </div></td>
+    </tr>`).join('');
+};
+
+// ── TEACHERS ──
+async function loadTeachers() {
+  const snap = await getDocs(query(collection(db,'teachers'), orderBy('createdAt','desc')));
+  allTeachers = snap.docs.map(d => ({id:d.id,...d.data()}));
+  renderTeachers();
+}
+
+window.renderTeachers = function() {
+  const search = (document.getElementById('teacherSearch')?.value||'').toLowerCase();
+  const statusF = document.getElementById('teacherStatusFilter')?.value;
+  let rows = allTeachers.filter(t => {
+    const matchText = t.name?.toLowerCase().includes(search) || t.email?.toLowerCase().includes(search);
+    const matchStatus = statusF === '' || String(t.active) === statusF;
+    return matchText && matchStatus;
+  });
+  const tbody = document.getElementById('teachersBody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No teachers found</td></tr>`; return; }
+  tbody.innerHTML = rows.map(t => {
+    const gradeNames = (t.assignedGrades||[]).map(gid => { const g = allGrades.find(x=>x.id===gid); return g?g.nameEn:gid; });
+    const subjectNames = (t.assignedSubjects||[]).map(sid => { const s = allSubjects.find(x=>x.id===sid); return s?s.nameEn:sid; });
+    return `<tr>
+      <td><strong>${esc(t.name||'')}</strong></td>
+      <td style="color:var(--muted)">${esc(t.email||'')}</td>
+      <td>${gradeNames.map(n=>`<span class="tag-pill">${esc(n)}</span>`).join('')||'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${subjectNames.map(n=>`<span class="tag-pill" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(n)}</span>`).join('')||'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="${t.active?'badge-active':'badge-inactive'}">${t.active?'Active':'Inactive'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-edit" onclick="openModal('teacher','${t.id}')">Edit</button>
+        <button class="btn btn-sm ${t.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('teachers','${t.id}',${!t.active})">${t.active?'Deactivate':'Activate'}</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteRecord('teachers','${t.id}','teacher')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+};
+
+// ── STUDENTS ──
+async function loadStudents() {
+  const snap = await getDocs(query(collection(db,'students'), orderBy('createdAt','desc')));
+  allStudents = snap.docs.map(d => ({id:d.id,...d.data()}));
+  renderStudents();
+}
+
+function populateStudentGradeFilter() {
+  const sel = document.getElementById('studentGradeFilter');
+  if (!sel) return;
+  const existing = sel.innerHTML;
+  sel.innerHTML = '<option value="">All Grades</option>' + allGrades.map(g=>`<option value="${g.id}">${esc(g.nameEn)}</option>`).join('');
+}
+
+window.renderStudents = function() {
+  const search  = (document.getElementById('studentSearch')?.value||'').toLowerCase();
+  const statusF = document.getElementById('studentStatusFilter')?.value;
+  const gradeF  = document.getElementById('studentGradeFilter')?.value;
+  let rows = allStudents.filter(s => {
+    const matchText   = s.name?.toLowerCase().includes(search) || s.email?.toLowerCase().includes(search);
+    const matchStatus = statusF === '' || String(s.active) === statusF;
+    const matchGrade  = gradeF === '' || s.gradeId === gradeF;
+    return matchText && matchStatus && matchGrade;
+  });
+  const tbody = document.getElementById('studentsBody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No students found</td></tr>`; return; }
+  tbody.innerHTML = rows.map(s => {
+    const grade = allGrades.find(g=>g.id===s.gradeId);
+    return `<tr>
+      <td><strong>${esc(s.name||'')}</strong></td>
+      <td style="color:var(--muted)">${esc(s.email||'')}</td>
+      <td>${grade?`<span class="tag-pill">${esc(grade.nameEn)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Active':'Inactive'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-edit" onclick="openModal('student','${s.id}')">Edit</button>
+        <button class="btn btn-sm ${s.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('students','${s.id}',${!s.active})">${s.active?'Deactivate':'Activate'}</button>
+        <button class="btn btn-sm btn-delete" onclick="deleteRecord('students','${s.id}','student')">Delete</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+};
+
+// ── ADMIN SESSIONS ──
+async function loadAdminSessions() {
+  const snap = await get(ref(rtdb, 'sessions'));
+  const sessions = snap.val() || {};
+  const tbody = document.getElementById('adminSessionsBody');
+  const rows = Object.entries(sessions).map(([id, s]) => {
+    const cfg = s.config || {};
+    const teacher = allTeachers.find(t => t.id === cfg.ownerTeacherId);
+    return `<tr>
+      <td><strong>${esc(cfg.title||'Untitled')}</strong></td>
+      <td>${teacher?esc(teacher.name):`<span style="color:var(--muted)">${esc(cfg.ownerTeacherId||'—')}</span>`}</td>
+      <td>${esc(cfg.grade||'—')}</td>
+      <td>${esc(cfg.subject||'—')}</td>
+      <td>${esc(cfg.date||'—')}</td>
+      <td><span class="${cfg.active?'badge-active':'badge-inactive'}">${cfg.active?'Open':'Closed'}</span></td>
+      <td><div class="actions-cell">
+        <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${id}')">Delete</button>
+      </div></td>
+    </tr>`;
+  });
+  tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="7" class="empty-state">No sessions found</td></tr>`;
+}
+
+window.deleteAdminSession = async function(id) {
+  if (!confirm('Delete this session and all its data? This cannot be undone.')) return;
+  await remove(ref(rtdb, `sessions/${id}`));
+  showToast('Session deleted');
+  loadAdminSessions();
+};
+
+// ── DASHBOARD STATS ──
+function loadDashboardStats() {
+  document.getElementById('dashGrades').textContent    = allGrades.length;
+  document.getElementById('dashSubjects').textContent  = allSubjects.length;
+  document.getElementById('dashTeachers').textContent  = allTeachers.length;
+  document.getElementById('dashStudents').textContent  = allStudents.length;
+  onValue(ref(rtdb,'sessions'), snap => {
+    const sessions = snap.val() || {};
+    document.getElementById('dashSessions').textContent = Object.keys(sessions).length;
+  }, { onlyOnce: true });
+}
+
+// ── TOGGLE ACTIVE ──
+window.toggleActive = async function(collName, id, newState) {
+  await updateDoc(doc(db, collName, id), { active: newState, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid });
+  showToast(newState ? 'Activated' : 'Deactivated');
+  if (collName === 'grades')    { allGrades   = allGrades.map(g=>g.id===id?{...g,active:newState}:g);    renderGrades(); }
+  if (collName === 'subjects')  { allSubjects = allSubjects.map(s=>s.id===id?{...s,active:newState}:s);  renderSubjects(); }
+  if (collName === 'teachers')  { allTeachers = allTeachers.map(t=>t.id===id?{...t,active:newState}:t);  renderTeachers(); }
+  if (collName === 'students')  { allStudents = allStudents.map(s=>s.id===id?{...s,active:newState}:s);  renderStudents(); }
+};
+
+// ── DELETE RECORD ──
+window.deleteRecord = async function(collName, id, label) {
+  if (!confirm(`Delete this ${label}? This action cannot be undone.`)) return;
+  await deleteDoc(doc(db, collName, id));
+  // Also delete from users collection
+  if (collName === 'teachers' || collName === 'students') {
+    const item = (collName === 'teachers' ? allTeachers : allStudents).find(x=>x.id===id);
+    if (item?.uid) await deleteDoc(doc(db, 'users', item.uid));
+  }
+  showToast(`${label} deleted`);
+  if (collName === 'grades')    { allGrades   = allGrades.filter(x=>x.id!==id);    renderGrades(); }
+  if (collName === 'subjects')  { allSubjects = allSubjects.filter(x=>x.id!==id);  renderSubjects(); }
+  if (collName === 'teachers')  { allTeachers = allTeachers.filter(x=>x.id!==id);  renderTeachers(); }
+  if (collName === 'students')  { allStudents = allStudents.filter(x=>x.id!==id);  renderStudents(); }
+};
+
+// ── MODAL ──
+let currentModalType = '';
+let currentEditId    = null;
+
+window.openModal = function(type, editId = null) {
+  currentModalType = type;
+  currentEditId    = editId;
+  const modalTitle = document.getElementById('modalTitle');
+  const modalBody  = document.getElementById('modalBody');
+  const formError  = document.getElementById('formError');
+  formError.style.display = 'none';
+
+  if (type === 'grade') {
+    const g = editId ? allGrades.find(x=>x.id===editId) : null;
+    modalTitle.textContent = editId ? 'Edit Grade' : 'Add Grade';
+    modalBody.innerHTML = `
+      <div class="form-grid">
+        <div class="form-group"><label>Grade Name (English)</label><input id="f_nameEn" value="${esc(g?.nameEn||'')}"></div>
+        <div class="form-group"><label>Grade Name (Arabic)</label><input id="f_nameAr" dir="rtl" value="${esc(g?.nameAr||'')}"></div>
+        <div class="form-group"><label>Grade Code</label><input id="f_code" placeholder="e.g. G10" value="${esc(g?.code||'')}"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="f_active"><option value="true" ${g?.active!==false?'selected':''}>Active</option><option value="false" ${g?.active===false?'selected':''}>Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveGrade()">Save Grade</button>
+      </div>`;
+  }
+
+  else if (type === 'subject') {
+    const s = editId ? allSubjects.find(x=>x.id===editId) : null;
+    modalTitle.textContent = editId ? 'Edit Subject' : 'Add Subject';
+    modalBody.innerHTML = `
+      <div class="form-grid">
+        <div class="form-group"><label>Subject Name (English)</label><input id="f_nameEn" value="${esc(s?.nameEn||'')}"></div>
+        <div class="form-group"><label>Subject Name (Arabic)</label><input id="f_nameAr" dir="rtl" value="${esc(s?.nameAr||'')}"></div>
+        <div class="form-group"><label>Subject Code</label><input id="f_code" placeholder="e.g. MATH" value="${esc(s?.code||'')}"></div>
+        <div class="form-group"><label>Status</label>
+          <select id="f_active"><option value="true" ${s?.active!==false?'selected':''}>Active</option><option value="false" ${s?.active===false?'selected':''}>Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveSubject()">Save Subject</button>
+      </div>`;
+  }
+
+  else if (type === 'teacher') {
+    const t = editId ? allTeachers.find(x=>x.id===editId) : null;
+    const activeGrades   = allGrades.filter(g=>g.active);
+    const activeSubjects = allSubjects.filter(s=>s.active);
+    modalTitle.textContent = editId ? 'Edit Teacher' : 'Add Teacher';
+    modalBody.innerHTML = `
+      <div class="form-grid">
+        <div class="form-group full"><label>Teacher Name</label><input id="f_name" value="${esc(t?.name||'')}"></div>
+        <div class="form-group"><label>Email (Login)</label><input type="email" id="f_email" value="${esc(t?.email||'')}" ${editId?'readonly style="opacity:0.5"':''}></div>
+        ${!editId ? `<div class="form-group"><label>Password</label><input type="password" id="f_password" placeholder="Min 6 characters"></div>` : `<div class="form-group"><label>Password (leave blank = no change)</label><input type="password" id="f_password" placeholder="New password (optional)"></div>`}
+        <div class="form-group"><label>Status</label>
+          <select id="f_active"><option value="true" ${t?.active!==false?'selected':''}>Active</option><option value="false" ${t?.active===false?'selected':''}>Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-group full" style="margin-bottom:16px"><label>Assigned Grades</label>
+        <div class="multi-select-wrap" id="gradesCheckboxes">
+          ${activeGrades.map(g=>`<div class="multi-check-item"><input type="checkbox" id="ag_${g.id}" value="${g.id}" ${(t?.assignedGrades||[]).includes(g.id)?'checked':''}><label for="ag_${g.id}">${esc(g.nameEn)}</label></div>`).join('')}
+        </div>
+      </div>
+      <div class="form-group full" style="margin-bottom:16px"><label>Assigned Subjects</label>
+        <div class="multi-select-wrap" id="subjectsCheckboxes">
+          ${activeSubjects.map(s=>`<div class="multi-check-item"><input type="checkbox" id="as_${s.id}" value="${s.id}" ${(t?.assignedSubjects||[]).includes(s.id)?'checked':''}><label for="as_${s.id}">${esc(s.nameEn)}</label></div>`).join('')}
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveTeacher()">Save Teacher</button>
+      </div>`;
+  }
+
+  else if (type === 'student') {
+    const s = editId ? allStudents.find(x=>x.id===editId) : null;
+    const activeGrades = allGrades.filter(g=>g.active);
+    modalTitle.textContent = editId ? 'Edit Student' : 'Add Student';
+    modalBody.innerHTML = `
+      <div class="form-grid">
+        <div class="form-group full"><label>Student Name</label><input id="f_name" value="${esc(s?.name||'')}"></div>
+        <div class="form-group"><label>Email (Login)</label><input type="email" id="f_email" value="${esc(s?.email||'')}" ${editId?'readonly style="opacity:0.5"':''}></div>
+        ${!editId ? `<div class="form-group"><label>Password</label><input type="password" id="f_password" placeholder="Min 6 characters"></div>` : `<div class="form-group"><label>Password (leave blank = no change)</label><input type="password" id="f_password" placeholder="New password (optional)"></div>`}
+        <div class="form-group"><label>Grade</label>
+          <select id="f_gradeId">
+            <option value="">Select Grade…</option>
+            ${activeGrades.map(g=>`<option value="${g.id}" ${s?.gradeId===g.id?'selected':''}>${esc(g.nameEn)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Status</label>
+          <select id="f_active"><option value="true" ${s?.active!==false?'selected':''}>Active</option><option value="false" ${s?.active===false?'selected':''}>Inactive</option></select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveStudent()">Save Student</button>
+      </div>`;
+  }
+
+  else if (type === 'session-admin') {
+    modalTitle.textContent = 'Create Session (as Admin)';
+    modalBody.innerHTML = `
+      <div class="form-grid">
+        <div class="form-group full"><label>Session Title</label><input id="f_title" placeholder="e.g. Chapter 5 Quiz"></div>
+        <div class="form-group"><label>Owner Teacher</label>
+          <select id="f_teacherId">
+            <option value="">Select Teacher…</option>
+            ${allTeachers.filter(t=>t.active).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group"><label>Grade</label><input id="f_grade" placeholder="e.g. Grade 10"></div>
+        <div class="form-group"><label>Subject</label><input id="f_subject" placeholder="e.g. Mathematics"></div>
+        <div class="form-group"><label>Class / Section</label><input id="f_className" placeholder="e.g. Class A"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="f_date"></div>
+        <div class="form-group"><label>Start Time</label><input type="time" id="f_start"></div>
+        <div class="form-group"><label>End Time</label><input type="time" id="f_end"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-save" onclick="saveAdminSession()">Create Session</button>
+      </div>`;
+  }
+
+  document.getElementById('modalOverlay').classList.add('show');
+};
+
+window.closeModal = function() { document.getElementById('modalOverlay').classList.remove('show'); };
+window.closeModalOnOverlay = function(e) { if(e.target===document.getElementById('modalOverlay')) closeModal(); };
+
+function showFormError(msg) {
+  const el = document.getElementById('formError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// ── SAVE GRADE ──
+window.saveGrade = async function() {
+  const nameEn = document.getElementById('f_nameEn')?.value.trim();
+  const nameAr = document.getElementById('f_nameAr')?.value.trim();
+  const code   = document.getElementById('f_code')?.value.trim();
+  const active = document.getElementById('f_active')?.value === 'true';
+  if (!nameEn || !code) { showFormError('Grade Name (English) and Code are required.'); return; }
+  const data = { nameEn, nameAr: nameAr||'', code, active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
+  if (currentEditId) {
+    await updateDoc(doc(db,'grades',currentEditId), data);
+    allGrades = allGrades.map(g=>g.id===currentEditId?{...g,...data}:g);
+    showToast('Grade updated');
+  } else {
+    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
+    const ref_ = await addDoc(collection(db,'grades'), data);
+    allGrades.unshift({ id: ref_.id, ...data });
+    showToast('Grade added');
+  }
+  closeModal(); renderGrades(); populateStudentGradeFilter();
+};
+
+// ── SAVE SUBJECT ──
+window.saveSubject = async function() {
+  const nameEn = document.getElementById('f_nameEn')?.value.trim();
+  const nameAr = document.getElementById('f_nameAr')?.value.trim();
+  const code   = document.getElementById('f_code')?.value.trim();
+  const active = document.getElementById('f_active')?.value === 'true';
+  if (!nameEn || !code) { showFormError('Subject Name (English) and Code are required.'); return; }
+  const data = { nameEn, nameAr: nameAr||'', code, active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
+  if (currentEditId) {
+    await updateDoc(doc(db,'subjects',currentEditId), data);
+    allSubjects = allSubjects.map(s=>s.id===currentEditId?{...s,...data}:s);
+    showToast('Subject updated');
+  } else {
+    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
+    const ref_ = await addDoc(collection(db,'subjects'), data);
+    allSubjects.unshift({ id: ref_.id, ...data });
+    showToast('Subject added');
+  }
+  closeModal(); renderSubjects();
+};
+
+// ── SAVE TEACHER ──
+window.saveTeacher = async function() {
+  const name     = document.getElementById('f_name')?.value.trim();
+  const email    = document.getElementById('f_email')?.value.trim();
+  const password = document.getElementById('f_password')?.value;
+  const active   = document.getElementById('f_active')?.value === 'true';
+  const assignedGrades   = [...document.querySelectorAll('#gradesCheckboxes input:checked')].map(i=>i.value);
+  const assignedSubjects = [...document.querySelectorAll('#subjectsCheckboxes input:checked')].map(i=>i.value);
+  if (!name || !email) { showFormError('Name and email are required.'); return; }
+  if (!currentEditId && (!password || password.length < 6)) { showFormError('Password must be at least 6 characters.'); return; }
+
+  // For creating new teacher: use Admin SDK via callable function is ideal,
+  // but since we have no Cloud Functions, we use the client SDK createUser approach
+  // The teacher's Firebase Auth account will be created on first login via the invitation flow
+  // Here we store the profile in Firestore; Auth account is provisioned separately.
+  const data = { name, email, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
+
+  if (currentEditId) {
+    await updateDoc(doc(db,'teachers',currentEditId), data);
+    // Also update users collection
+    const t = allTeachers.find(x=>x.id===currentEditId);
+    if (t?.uid) await updateDoc(doc(db,'users',t.uid), { name, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp() });
+    allTeachers = allTeachers.map(t=>t.id===currentEditId?{...t,...data}:t);
+    showToast('Teacher updated');
+  } else {
+    if (!password || password.length < 6) { showFormError('Password required for new teacher.'); return; }
+    // Store pending teacher — Auth provisioning note in Firestore
+    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
+    data.pendingPassword = password; // stored for self-service first login
+    const ref_ = await addDoc(collection(db,'teachers'), data);
+    // Also create user document for role check
+    await setDoc(doc(db,'users', ref_.id), { role:'teacher', name, email, active, assignedGrades, assignedSubjects, teacherDocId: ref_.id, createdAt: serverTimestamp(), createdBy: currentAdmin.uid });
+    allTeachers.unshift({ id: ref_.id, ...data });
+    showToast('Teacher profile created. Auth account will be provisioned on first login.');
+  }
+  closeModal(); renderTeachers();
+};
+
+// ── SAVE STUDENT ──
+window.saveStudent = async function() {
+  const name    = document.getElementById('f_name')?.value.trim();
+  const email   = document.getElementById('f_email')?.value.trim();
+  const password = document.getElementById('f_password')?.value;
+  const gradeId = document.getElementById('f_gradeId')?.value;
+  const active  = document.getElementById('f_active')?.value === 'true';
+  if (!name || !email) { showFormError('Name and email are required.'); return; }
+  const data = { name, email, gradeId: gradeId||'', active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
+
+  if (currentEditId) {
+    await updateDoc(doc(db,'students',currentEditId), data);
+    const s = allStudents.find(x=>x.id===currentEditId);
+    if (s?.uid) await updateDoc(doc(db,'users',s.uid), { name, active, gradeId, updatedAt: serverTimestamp() });
+    allStudents = allStudents.map(s=>s.id===currentEditId?{...s,...data}:s);
+    showToast('Student updated');
+  } else {
+    if (!password || password.length < 6) { showFormError('Password must be at least 6 characters.'); return; }
+    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
+    data.pendingPassword = password;
+    const ref_ = await addDoc(collection(db,'students'), data);
+    await setDoc(doc(db,'users', ref_.id), { role:'student', name, email, active, gradeId, studentDocId: ref_.id, createdAt: serverTimestamp(), createdBy: currentAdmin.uid });
+    allStudents.unshift({ id: ref_.id, ...data });
+    showToast('Student profile created.');
+  }
+  closeModal(); renderStudents();
+};
+
+// ── SAVE ADMIN SESSION ──
+window.saveAdminSession = async function() {
+  const title     = document.getElementById('f_title')?.value.trim();
+  const teacherId = document.getElementById('f_teacherId')?.value;
+  const grade     = document.getElementById('f_grade')?.value.trim();
+  const subject   = document.getElementById('f_subject')?.value.trim();
+  const className = document.getElementById('f_className')?.value.trim();
+  const date      = document.getElementById('f_date')?.value;
+  const startTime = document.getElementById('f_start')?.value;
+  const endTime   = document.getElementById('f_end')?.value;
+  if (!title || !teacherId) { showFormError('Title and teacher are required.'); return; }
+  const teacher = allTeachers.find(t=>t.id===teacherId);
+  const id = 'sess_' + Date.now();
+  await set(ref(rtdb, `sessions/${id}`), {
+    config: {
+      title, grade, subject, className, date, startTime, endTime,
+      active: false, createdAt: Date.now(),
+      ownerTeacherId: teacherId,
+      ownerTeacherName: teacher?.name || '',
+      createdBy: currentAdmin.uid,
+      createdByRole: 'superadmin',
+      instructions: ''
+    },
+    questions: {},
+    students: {}
+  });
+  closeModal(); showToast('Session created'); loadAdminSessions();
+};
+
+// ── UTILS ──
+function showToast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = err ? 'var(--red)' : 'var(--green)';
+  t.style.color = err ? '#fff' : '#0f1117';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+</script>
+</body>
+</html>
