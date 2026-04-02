@@ -589,16 +589,39 @@ function populateTeacherProfile() {
 }
 
 async function loadSessions() {
+  console.log('Loading sessions for teacher:', currentTeacher);
+  console.log('Teacher ID to match:', currentTeacher.firestoreId || currentTeacher.uid);
+  
   const sessionsRef = collection(db, 'sessions');
   const q = query(sessionsRef, where('ownerTeacherId', '==', currentTeacher.firestoreId || currentTeacher.uid));
-  const querySnapshot = await getDocs(q);
   
-  const sessions = [];
-  querySnapshot.forEach(doc => {
-    sessions.push({ id: doc.id, ...doc.data() });
-  });
-  
-  renderSessionList(sessions);
+  try {
+    const querySnapshot = await getDocs(q);
+    console.log('Query found:', querySnapshot.size, 'sessions');
+    
+    const sessions = [];
+    querySnapshot.forEach(doc => {
+      console.log('Session found:', doc.id, doc.data());
+      sessions.push({ id: doc.id, ...doc.data() });
+    });
+    
+    renderSessionList(sessions);
+  } catch (error) {
+    console.error('Error loading sessions:', error);
+    showToast('Error loading sessions: ' + error.message, true);
+    
+    // Fallback: Get all sessions and filter client-side
+    console.log('Trying fallback - loading all sessions');
+    const allSessionsSnapshot = await getDocs(sessionsRef);
+    const allSessions = [];
+    allSessionsSnapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.ownerTeacherId === (currentTeacher.firestoreId || currentTeacher.uid)) {
+        allSessions.push({ id: doc.id, ...data });
+      }
+    });
+    renderSessionList(allSessions);
+  }
 }
 
 function renderSessionList(sessions) {
@@ -636,19 +659,26 @@ window.createNewSession = async function() {
     endTime: '',
     instructions: '',
     active: false,
-    createdAt: serverTimestamp(),
+    createdAt: new Date().toISOString(), // Use string instead of serverTimestamp for now
     ownerTeacherId: currentTeacher.firestoreId || currentTeacher.uid,
     ownerTeacherName: currentTeacher.name || '',
     createdBy: currentTeacher.uid,
-    createdByRole: 'teacher',
-    questions: {},
-    students: {}
+    createdByRole: 'teacher'
   };
   
-  const docRef = await addDoc(collection(db, 'sessions'), sessionData);
-  await activateSession(docRef.id);
-  showToast('Session created!');
-  switchTab('session', document.querySelectorAll('.nav-btn')[1]);
+  console.log('Creating session with data:', sessionData);
+  
+  try {
+    const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+    console.log('Session created with ID:', docRef.id);
+    await activateSession(docRef.id);
+    showToast('Session created!');
+    await loadSessions(); // Refresh the list
+    switchTab('session', document.querySelectorAll('.nav-btn')[1]);
+  } catch (error) {
+    console.error('Error creating session:', error);
+    showToast('Error creating session: ' + error.message, true);
+  }
 };
 
 window.activateSession = async function(id) {
