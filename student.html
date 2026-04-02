@@ -278,12 +278,12 @@ const MAX_RETRIES = 3;
 // ============================================
 
 // Detect if WebSockets are blocked (ad blocker issue)
+// Detect if WebSockets are blocked (ad blocker issue)
 function detectWebSocketBlock() {
     console.log('Checking connection...');
     const warning = document.getElementById('adblockWarning');
     if (!warning) return;
     
-    // Test with a timeout - if Firebase operations are slow, show warning
     let connectionTestTimeout = setTimeout(() => {
         console.log('Connection test timeout - possible ad blocker');
         warning.style.display = 'block';
@@ -291,18 +291,20 @@ function detectWebSocketBlock() {
     
     // Try a simple Firebase operation to test connection
     const testRef = ref(rtDB, '.info/connected');
-    const unsubscribe = onValue(testRef, (snap) => {
+    let unsubscribe = null;  // Declare outside
+    
+    unsubscribe = onValue(testRef, (snap) => {
         if (snap.val() === true) {
             console.log('Firebase connected successfully');
             clearTimeout(connectionTestTimeout);
             warning.style.display = 'none';
-            unsubscribe();
+            if (unsubscribe) unsubscribe();
         }
     }, (error) => {
         console.error('Connection error:', error);
         clearTimeout(connectionTestTimeout);
         warning.style.display = 'block';
-        unsubscribe();
+        if (unsubscribe) unsubscribe();
     });
     
     // Also detect if WebSocket is blocked via direct test
