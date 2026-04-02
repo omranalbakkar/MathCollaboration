@@ -192,7 +192,7 @@ tr:hover td{background:var(--surface2);}
 .s-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
 .s-group input{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;}
 .s-group input:focus{border-color:var(--amber);}
-.danger-zone{border-color:rgba(248,113,113,0.3);}
+.danger-zone{border-color:rgba(248,113,113,0.3); display: none; /* HIDDEN BY DEFAULT */ }
 .teacher-info-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;}
 .teacher-info-card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--amber);}
 .info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
@@ -403,8 +403,9 @@ tr:hover td{background:var(--surface2);}
         </div>
         <div class="teacher-info-card">
           <h3>My Profile</h3>
-          <div id="teacherProfileInfo"></div>
+          <div id="teacherProfileInfo">Loading profile...</div>
         </div>
+        <!-- DANGER ZONE IS NOW HIDDEN VIA CSS -->
         <div class="settings-card danger-zone">
           <h3 style="color:var(--red)">⚠ Danger Zone</h3>
           <p style="font-size:13px;color:var(--muted);margin-bottom:12px">These actions affect the current session only.</p>
@@ -530,7 +531,7 @@ window.doLogout = async function() {
 
 async function loadTeacherData() {
   await populateAssignedDropdowns();
-  populateTeacherProfile();
+  await populateTeacherProfile(); // Made async to wait for data resolution
   await loadSessions();
   setupRealtimeListeners();
   
@@ -580,15 +581,50 @@ async function populateAssignedDropdowns() {
   document.getElementById('cfTeacher').value = currentTeacher.name || '';
 }
 
-function populateTeacherProfile() {
-  const assignedGradeNames = (currentTeacher.assignedGrades || []).join(', ') || '—';
-  const assignedSubjectNames = (currentTeacher.assignedSubjects || []).join(', ') || '—';
+// UPDATED: Fixed My Profile Data to resolve IDs to Names
+async function populateTeacherProfile() {
+  const assignedGradeIds = currentTeacher.assignedGrades || [];
+  const assignedSubjectIds = currentTeacher.assignedSubjects || [];
+  
+  let gradeNames = [];
+  let subjectNames = [];
+
+  // Resolve Grade Names
+  if (assignedGradeIds.length > 0) {
+    for (const gradeId of assignedGradeIds) {
+      try {
+        const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
+        if (gradeDoc.exists()) {
+          gradeNames.push(gradeDoc.data().nameEn);
+        }
+      } catch (e) {
+        console.warn(`Could not fetch grade ${gradeId}`, e);
+      }
+    }
+  }
+  
+  // Resolve Subject Names
+  if (assignedSubjectIds.length > 0) {
+    for (const subjectId of assignedSubjectIds) {
+      try {
+        const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
+        if (subjectDoc.exists()) {
+          subjectNames.push(subjectDoc.data().nameEn);
+        }
+      } catch (e) {
+        console.warn(`Could not fetch subject ${subjectId}`, e);
+      }
+    }
+  }
+
+  const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
+  const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
   
   document.getElementById('teacherProfileInfo').innerHTML = `
     <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(currentTeacher.name || '')}</span></div>
     <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
-    <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNames)}</span></div>
-    <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNames)}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
   `;
 }
 
