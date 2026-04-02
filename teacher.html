@@ -1416,7 +1416,137 @@ window.importFromHTML = async function(event) {
   reader.readAsText(file);
 };
 window.renderResults = async function() {
-  showToast('Results feature coming soon');
+  if (!activeSessionId || !currentStudents.length) {
+    document.getElementById('resultsBody').innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No submissions yet</td></tr>`;
+    return;
+  }
+  
+  const filterStudent = document.getElementById('filterStudent').value;
+  const filterQuestion = document.getElementById('filterQuestion').value;
+  
+  // Populate filter dropdowns if empty
+  const studentSelect = document.getElementById('filterStudent');
+  const questionSelect = document.getElementById('filterQuestion');
+  
+  if (studentSelect.options.length === 1) {
+    currentStudents.forEach(student => {
+      const option = document.createElement('option');
+      option.value = student.id;
+      option.textContent = student.name || student.id;
+      studentSelect.appendChild(option);
+    });
+  }
+  
+  if (questionSelect.options.length === 1) {
+    currentQuestions.forEach((q, i) => {
+      const option = document.createElement('option');
+      option.value = q.id;
+      option.textContent = `Q${i + 1}: ${q.text.substring(0, 40)}...`;
+      questionSelect.appendChild(option);
+    });
+  }
+  
+  // Build results table
+  const rows = [];
+  
+  for (const student of currentStudents) {
+    if (filterStudent && student.id !== filterStudent) continue;
+    if (!student.answers) continue;
+    
+    for (const [qId, answer] of Object.entries(student.answers)) {
+      if (filterQuestion && qId !== filterQuestion) continue;
+      
+      const question = currentQuestions.find(q => q.id === qId);
+      if (!question) continue;
+      
+      const qIndex = currentQuestions.findIndex(q => q.id === qId) + 1;
+      const grade = student.grades?.[qId] || '';
+      const feedback = student.feedback?.[qId] || '';
+      const maxPoints = question.points || 10;
+      
+      rows.push(`
+        <tr>
+          <td>${escapeHtml(student.name || student.id)}</td>
+          <td>Q${qIndex}: ${escapeHtml(question.text.substring(0, 50))}${question.text.length > 50 ? '...' : ''}</td>
+          <td class="math-content">${answer ? escapeHtml(answer) : '<span class="no-answer">No answer</span>'}</td>
+          <td>
+            <input type="number" class="grade-input" value="${grade}" min="0" max="${maxPoints}" 
+                   onchange="updateGrade('${student.id}', '${qId}', this.value)" 
+                   placeholder="/${maxPoints}">
+          </td>
+          <td>
+            <input type="text" class="feedback-input" value="${escapeHtml(feedback)}" 
+                   onchange="updateFeedback('${student.id}', '${qId}', this.value)" 
+                   placeholder="Optional feedback">
+          </td>
+          <td>
+            <button class="btn btn-sm btn-save" onclick="saveGradeAndFeedback('${student.id}', '${qId}')">Save</button>
+          </td>
+        </tr>
+      `);
+    }
+  }
+  
+  const tbody = document.getElementById('resultsBody');
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">No results match the current filters</td></tr>`;
+  } else {
+    tbody.innerHTML = rows.join('');
+  }
+  
+  // Typeset math if available
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+  }
+};
+
+window.updateGrade = function(studentId, questionId, value) {
+  // Store temporarily - will be saved on "Save" button click
+  const input = event.target;
+  input.dataset.modified = 'true';
+};
+
+window.updateFeedback = function(studentId, questionId, value) {
+  // Store temporarily - will be saved on "Save" button click
+  const input = event.target;
+  input.dataset.modified = 'true';
+};
+
+window.saveGradeAndFeedback = async function(studentId, questionId) {
+  if (!activeSessionId) return;
+  
+  const row = event.target.closest('tr');
+  const gradeInput = row.querySelector('.grade-input');
+  const feedbackInput = row.querySelector('.feedback-input');
+  
+  const grade = parseFloat(gradeInput.value) || 0;
+  const feedback = feedbackInput.value.trim();
+  
+  try {
+    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentId);
+    const studentDoc = await getDoc(studentRef);
+    
+    if (studentDoc.exists()) {
+      const updateData = {
+        [`grades.${questionId}`]: grade,
+        [`feedback.${questionId}`]: feedback
+      };
+      
+      await updateDoc(studentRef, updateData);
+      
+      gradeInput.dataset.modified = 'false';
+      feedbackInput.dataset.modified = 'false';
+      
+      showToast('Grade and feedback saved!');
+      
+      // Refresh to update stats
+      await loadStudents();
+      updateStats();
+    }
+  } catch(e) {
+    console.error('Error saving:', e);
+    showToast('Error saving: ' + e.message, true);
+  }
 };
 
 window.exportReports = async function() {
