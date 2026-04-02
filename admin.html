@@ -611,35 +611,78 @@ window.renderStudents = function() {
 };
 
 // ── ADMIN SESSIONS ──
-async function loadAdminSessions() {
-  const snap = await get(ref(rtDB, 'sessions'));
-  const sessionsObj = snap.val() || {};
-  allSessions = Object.entries(sessionsObj).map(([id, s]) => ({id, ...s.config}));
-  
-  const tbody = document.getElementById('adminSessionsBody');
-  const rows = allSessions.map(s => {
-    const teacher = allTeachers.find(t => t.id === s.ownerTeacherId);
-    return `<tr>
-      <td><strong>${esc(s.title||'Untitled')}</strong></td>
-      <td>${teacher?esc(teacher.name):`<span style="color:var(--muted)">${esc(s.ownerTeacherId||'—')}</span>`}</td>
-      <td>${esc(s.grade||'—')}</td>
-      <td>${esc(s.subject||'—')}</td>
-      <td>${esc(s.date||'—')}</td>
-      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Open':'Closed'}</span></td>
-      <td><div class="actions-cell">
-        <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${s.id}')">Delete</button>
-      </div></td>
-    </tr>`;
-  });
-  tbody.innerHTML = rows.length ? rows.join('') : `<tr><td colspan="7" class="empty-state">No sessions found</td></tr>`;
-}
 
+  // REPLACE the existing loadAdminSessions in admin.html with this:
+async function loadAdminSessions() {
+  const tbody = document.getElementById('adminSessionsBody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading sessions...</td></tr>';
+
+  try {
+    // Query Firestore instead of RTDB
+    const q = query(collection(db, 'sessions'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    const sessions = [];
+    snapshot.forEach(doc => {
+      sessions.push({ id: doc.id, ...doc.data() });
+    });
+
+    if (sessions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No sessions found</td></tr>';
+      return;
+    }
+
+    const rows = sessions.map(s => {
+      // Find teacher name from local cache or use stored name
+      const teacher = allTeachers.find(t => t.id === s.ownerTeacherId);
+      const teacherName = teacher ? teacher.name : (s.ownerTeacherName || 'Unknown');
+      
+      // Determine status color
+      const isActive = s.active === true;
+      const statusClass = isActive ? 'badge-active' : 'badge-inactive';
+      const statusText = isActive ? 'Open' : 'Closed';
+
+      return `<tr>
+        <td><strong>${esc(s.title || 'Untitled')}</strong></td>
+        <td>${esc(teacherName)}</td>
+        <td>${esc(s.grade || '—')}</td>
+        <td>${esc(s.subject || '—')}</td>
+        <td>${esc(s.date || '—')}</td>
+        <td><span class="${statusClass}">${statusText}</span></td>
+        <td><div class="actions-cell">
+          <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${s.id}')">Delete</button>
+        </div></td>
+      </tr>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+  } catch (error) {
+    console.error("Error loading sessions:", error);
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="color:var(--red)">Error loading data.</td></tr>';
+  }
+}
+  
+
+// REPLACE the existing deleteAdminSession in admin.html with this:
 window.deleteAdminSession = async function(id) {
   if (!confirm('Delete this session and all its data? This cannot be undone.')) return;
-  await remove(ref(rtDB, `sessions/${id}`));
-  showToast('Session deleted');
-  loadAdminSessions();
+  
+  try {
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'sessions', id));
+    
+    // Note: If you have sub-collections like questions/students in Firestore, 
+    // you might need to delete those too, or use a Cloud Function.
+    // For now, this deletes the main session document.
+    
+    showToast('Session deleted');
+    loadAdminSessions();
+  } catch (e) {
+    console.error(e);
+    showToast('Error deleting session', true);
+  }
 };
+  
 
 // ── DASHBOARD STATS ──
 function loadDashboardStats() {
@@ -992,11 +1035,17 @@ window.saveStudent = async function() {
   renderStudents();
 };
 
+// REPLACE the existing saveAdminSession in admin.html with this:
 window.saveAdminSession = async function() {
   const title     = document.getElementById('f_title')?.value.trim();
   const teacherId = document.getElementById('f_teacherId')?.value;
-  const gradeId   = document.getElementById('f_gradeId')?.value;
-  const subjectId = document.getElementById('f_subjectId')?.value;
+  const gradeId   = document.getElementById('f_gradeId')?.value; // Assuming you implemented the dropdowns from previous step
+  const subjectId = document.getElementById('f_subjectId')?.value; // Assuming you implemented the dropdowns
+  
+  // Fallback to text inputs if dropdowns aren't fully implemented yet
+  const gradeNameInput = document.getElementById('f_grade')?.value.trim(); 
+  const subjectNameInput = document.getElementById('f_subject')?.value.trim();
+
   const className = document.getElementById('f_className')?.value.trim();
   const date      = document.getElementById('f_date')?.value;
   const startTime = document.getElementById('f_start')?.value;
@@ -1004,44 +1053,50 @@ window.saveAdminSession = async function() {
 
   if (!title || !teacherId) { showFormError('Title and teacher are required.'); return; }
   
-  // Resolve Names from IDs
-  const gradeObj = allGrades.find(g => g.id === gradeId);
-  const subjectObj = allSubjects.find(s => s.id === subjectId);
-  const teacherObj = allTeachers.find(t => t.id === teacherId);
-
-  if (!gradeObj) { showFormError('Please select a valid Grade.'); return; }
-  if (!subjectObj) { showFormError('Please select a valid Subject.'); return; }
-
-  const id = 'sess_' + Date.now();
+  const teacher = allTeachers.find(t => t.id === teacherId);
   
-  await set(ref(rtDB, `sessions/${id}`), {
-    config: {
-      title, 
-      grade: gradeObj.nameEn,       // Save the Name for display purposes
-      gradeId: gradeObj.id,         // Save ID for reference
-      subject: subjectObj.nameEn,   // Save the Name for display purposes
-      subjectId: subjectObj.id,     // Save ID for reference
-      className, 
-      date, 
-      startTime, 
-      endTime,
-      active: false, 
-      createdAt: Date.now(),
+  // Resolve Names from IDs (if using dropdowns) or use Inputs
+  let finalGrade = gradeNameInput;
+  let finalSubject = subjectNameInput;
+  
+  if (gradeId) {
+    const g = allGrades.find(x => x.id === gradeId);
+    if(g) finalGrade = g.nameEn;
+  }
+  
+  if (subjectId) {
+    const s = allSubjects.find(x => x.id === subjectId);
+    if(s) finalSubject = s.nameEn;
+  }
+
+  // SAVE TO FIRESTORE (Not RTDB)
+  try {
+    await addDoc(collection(db, 'sessions'), {
+      title: title,
+      grade: finalGrade || '',
+      subject: finalSubject || '',
+      className: className || '',
+      date: date || '',
+      startTime: startTime || '',
+      endTime: endTime || '',
+      active: false, // Default to closed
+      createdAt: serverTimestamp(),
       ownerTeacherId: teacherId,
-      ownerTeacherName: teacherObj?.name || '',
+      ownerTeacherName: teacher?.name || '',
       createdBy: currentAdmin.uid,
       createdByRole: 'superadmin',
       instructions: ''
-    },
-    questions: {},
-    students: {}
-  });
-  
-  closeModal(); 
-  showToast('Session created'); 
-  loadAdminSessions();
+    });
+    
+    closeModal(); 
+    showToast('Session created in Firestore'); 
+    loadAdminSessions(); // Make sure this function also reads from Firestore now
+  } catch (e) {
+    console.error(e);
+    showToast('Error creating session: ' + e.message, true);
+  }
 };
-
+  
 
 // ──────────────────────────────────────────────
 // ── BULK OPERATIONS LOGIC (NEW) ──
