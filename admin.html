@@ -802,32 +802,102 @@ if (currentEditId) {
 };
 
 // ── SAVE STUDENT ──
+// ── SAVE STUDENT (FIXED) ──
 window.saveStudent = async function() {
-  const name    = document.getElementById('f_name')?.value.trim();
-  const email   = document.getElementById('f_email')?.value.trim();
+  const name     = document.getElementById('f_name')?.value.trim();
+  const email    = document.getElementById('f_email')?.value.trim();
   const password = document.getElementById('f_password')?.value;
-  const gradeId = document.getElementById('f_gradeId')?.value;
-  const active  = document.getElementById('f_active')?.value === 'true';
+  const gradeId  = document.getElementById('f_gradeId')?.value;
+  const active   = document.getElementById('f_active')?.value === 'true';
+  
   if (!name || !email) { showFormError('Name and email are required.'); return; }
-  const data = { name, email, gradeId: gradeId||'', active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
-
-if (currentEditId) {
-    if (password && password.length >= 6) data.pendingPassword = password; // ← ADD THIS
-    await updateDoc(doc(db,'students',currentEditId), data);
-    const s = allStudents.find(x=>x.id===currentEditId);
-    if (s?.uid) await updateDoc(doc(db,'users',s.uid), { name, active, gradeId, updatedAt: serverTimestamp() });
-    allStudents = allStudents.map(s=>s.id===currentEditId?{...s,...data}:s);
+  
+  // --- NEW USER CREATION LOGIC ---
+  if (!currentEditId) {
+    if (!password || password.length < 6) { 
+      showFormError('Password must be at least 6 characters.'); 
+      return; 
+    }
+    
+    try {
+      // 1. Create Auth User First to get the UID
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUid = userCredential.user.uid;
+      
+      // 2. Prepare Data
+      const data = { 
+        name, 
+        email, 
+        gradeId: gradeId||'', 
+        active, 
+        uid: newUid, // Store the UID inside the doc too for reference
+        createdAt: serverTimestamp(), 
+        createdBy: currentAdmin.uid 
+      };
+      
+      // 3. Save to 'students' collection USING THE AUTH UID AS DOCUMENT ID
+      await setDoc(doc(db, 'students', newUid), data);
+      
+      // 4. Save to 'users' collection USING THE SAME UID
+      await setDoc(doc(db, 'users', newUid), { 
+        role: 'student', 
+        name, 
+        email, 
+        active, 
+        gradeId, 
+        studentDocId: newUid, 
+        createdAt: serverTimestamp(), 
+        createdBy: currentAdmin.uid 
+      });
+      
+      // Update local list
+      allStudents.unshift({ id: newUid, ...data });
+      showToast('Student created successfully!');
+      
+    } catch (error) {
+      console.error("Auth creation error:", error);
+      if (error.code === 'auth/email-already-in-use') {
+        showFormError('This email is already registered.');
+      } else {
+        showFormError('Error creating account: ' + error.message);
+      }
+      return;
+    }
+  } 
+  // --- EDITING EXISTING USER LOGIC ---
+  else {
+    const data = { 
+      name, 
+      email, 
+      gradeId: gradeId||'', 
+      active, 
+      updatedAt: serverTimestamp(), 
+      updatedBy: currentAdmin.uid 
+    };
+    
+    if (password && password.length >= 6) {
+      data.pendingPassword = password; // Flag for backend or handle password change here if needed
+    }
+    
+    await updateDoc(doc(db, 'students', currentEditId), data);
+    
+    // Update users collection
+    const s = allStudents.find(x => x.id === currentEditId);
+    if (s?.uid) {
+      await updateDoc(doc(db, 'users', s.uid), { 
+        name, 
+        active, 
+        gradeId, 
+        updatedAt: serverTimestamp() 
+      });
+    }
+    
+    allStudents = allStudents.map(s => s.id === currentEditId ? {...s, ...data} : s);
     showToast('Student updated');
-  } else {
-    if (!password || password.length < 6) { showFormError('Password must be at least 6 characters.'); return; }
-    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
-    data.pendingPassword = password;
-    const ref_ = await addDoc(collection(db,'students'), data);
-    await setDoc(doc(db,'users', ref_.id), { role:'student', name, email, active, gradeId, studentDocId: ref_.id, createdAt: serverTimestamp(), createdBy: currentAdmin.uid });
-    allStudents.unshift({ id: ref_.id, ...data });
-    showToast('Student profile created.');
   }
-  closeModal(); renderStudents();
+  
+  closeModal(); 
+  renderStudents();
 };
 
 // ── SAVE ADMIN SESSION ──
