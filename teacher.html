@@ -1151,12 +1151,13 @@ window.importFromJSON = async function(event) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     try {
-      const data = JSON.parse(e.target.result);
+      const jsonData = JSON.parse(e.target.result);
       let imported = 0;
       let skipped = 0;
       
-      if (data.type === 'question' && data.question) {
-        const q = data.question;
+      // Handle single question format
+      if (jsonData.type === 'question' && jsonData.question) {
+        const q = jsonData.question;
         const questionData = {
           text: q.text || '',
           type: q.type || 'text',
@@ -1177,9 +1178,11 @@ window.importFromJSON = async function(event) {
         await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
         imported = 1;
       }
-      else if (data.type === 'questions_batch' && Array.isArray(data.questions)) {
-        for (let i = 0; i < data.questions.length; i++) {
-          const q = data.questions[i];
+      // Handle batch questions format
+      else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
+        for (let i = 0; i < jsonData.questions.length; i++) {
+          const q = jsonData.questions[i];
+          
           if (!q.text || !q.text.trim()) {
             skipped++;
             continue;
@@ -1190,7 +1193,7 @@ window.importFromJSON = async function(event) {
             type: q.type || 'text',
             points: q.points || 10,
             correct: q.correct || '',
-            tag: q.tag || data.sessionTitle || 'Imported',
+            tag: q.tag || jsonData.sessionTitle || 'Imported',
             options: q.options || null,
             createdAt: Date.now() + i,
             importedFrom: 'JSON'
@@ -1199,12 +1202,16 @@ window.importFromJSON = async function(event) {
           const qId = q.id || `q_${Date.now()}_${i}`;
           await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
           imported++;
+          
+          // Small delay
           await new Promise(r => setTimeout(r, 50));
         }
       }
-      else if (Array.isArray(data)) {
-        for (let i = 0; i < data.length; i++) {
-          const q = data[i];
+      // Handle simple array of questions
+      else if (Array.isArray(jsonData)) {
+        for (let i = 0; i < jsonData.length; i++) {
+          const q = jsonData[i];
+          
           if (!q.text || !q.text.trim()) {
             skipped++;
             continue;
@@ -1232,6 +1239,7 @@ window.importFromJSON = async function(event) {
         return;
       }
       
+      // Refresh questions
       await loadQuestions();
       updateStats();
       
@@ -1266,12 +1274,15 @@ window.importFromHTML = async function(event) {
   reader.onload = async function(e) {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(e.target.result, 'text/html');
+      // Rename this variable to avoid conflict with Firestore's doc function
+      const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
       
-      let questionCards = doc.querySelectorAll('.question-card');
+      // Look for question cards in the imported HTML
+      let questionCards = htmlDoc.querySelectorAll('.question-card');
       
       if (!questionCards.length) {
-        questionCards = doc.querySelectorAll('.standalone-q, .master-q');
+        // Alternative: look for questions in different structure
+        questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
       }
       
       if (!questionCards.length) {
@@ -1284,6 +1295,7 @@ window.importFromHTML = async function(event) {
       
       for (const card of questionCards) {
         try {
+          // Extract question text
           let questionText = '';
           const mainInput = card.querySelector('.main-q-input');
           if (mainInput) {
@@ -1291,6 +1303,7 @@ window.importFromHTML = async function(event) {
           }
           
           if (!questionText.trim()) {
+            // Try to get from other elements
             const qTextDiv = card.querySelector('.q-text');
             if (qTextDiv) questionText = qTextDiv.innerText;
           }
@@ -1300,6 +1313,7 @@ window.importFromHTML = async function(event) {
             continue;
           }
           
+          // Determine question type
           let questionType = 'text';
           const typeSelector = card.querySelector('.q-type-selector');
           if (typeSelector) {
@@ -1314,6 +1328,7 @@ window.importFromHTML = async function(event) {
             }
           }
           
+          // Extract points/marks
           let points = 10;
           const marksInput = card.querySelector('.mark-input-field, .marks-input');
           if (marksInput) {
@@ -1321,6 +1336,7 @@ window.importFromHTML = async function(event) {
             if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
           }
           
+          // Extract options for MCQ
           let options = null;
           let correctAnswer = '';
           
@@ -1330,6 +1346,7 @@ window.importFromHTML = async function(event) {
               options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
             }
             
+            // Try to detect correct answer from highlighted or checked option
             const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
             if (checkedOption) {
               const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
@@ -1340,12 +1357,14 @@ window.importFromHTML = async function(event) {
             if (correctTF) correctAnswer = correctTF.value;
           }
           
+          // Extract subject/tag from context or header
           let tag = 'Imported';
-          const headerTitle = doc.querySelector('#hdr-title, .header-title-input');
+          const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
           if (headerTitle) {
             tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
           }
           
+          // Create question object
           const questionData = {
             text: questionText.trim(),
             type: questionType,
@@ -1357,10 +1376,14 @@ window.importFromHTML = async function(event) {
             importedFrom: 'HTML'
           };
           
+          // Save to Firestore - use setDoc with the imported firestore function
           const qId = 'q_' + Date.now() + '_' + imported;
+          // The doc function is imported from firebase-config.js, so we use it directly
           await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
           
           imported++;
+          
+          // Small delay to avoid overwhelming the database
           await new Promise(r => setTimeout(r, 50));
           
         } catch(err) {
@@ -1369,6 +1392,7 @@ window.importFromHTML = async function(event) {
         }
       }
       
+      // Refresh questions display
       await loadQuestions();
       updateStats();
       
@@ -1378,6 +1402,7 @@ window.importFromHTML = async function(event) {
         showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
       }
       
+      // Log errors for debugging
       if (errors.length) {
         console.warn('Import errors:', errors);
       }
@@ -1390,7 +1415,6 @@ window.importFromHTML = async function(event) {
   
   reader.readAsText(file);
 };
-
 window.renderResults = async function() {
   showToast('Results feature coming soon');
 };
