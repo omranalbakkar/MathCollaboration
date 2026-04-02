@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EduBoard — Teacher Portal</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+<link rel="icon" href="image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
 <script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -150,6 +150,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .progress-text{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;}
 .btn-review{width:100%;margin-top:14px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
 .btn-review:hover{background:var(--amber-dim);color:var(--amber);border-color:rgba(245,166,35,0.3);}
+/* New Style for Delete Button in Card */
+.btn-delete-student {
+    width:100%; margin-top:6px; background:var(--red-dim); color:var(--red); border:1px solid rgba(248,113,113,0.3); border-radius:8px; padding:8px; font-size:13px; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.15s;
+}
+.btn-delete-student:hover { background:var(--red); color:#fff; }
+
 #reviewPanel{position:fixed;top:0;right:-540px;width:520px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:200;transition:right 0.3s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;padding:28px;}
 #reviewPanel.open{right:0;}
 .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
@@ -1021,8 +1027,9 @@ function renderStudentCards() {
       <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
       <div style="display:flex;gap:6px;margin-top:10px">
         <button class="btn-review" onclick="openReview('${student.id}')">Review →</button>
-        <button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear</button>
+        <button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear Ans</button>
       </div>
+      <button class="btn-delete-student" onclick="deleteStudentRecord('${student.id}')">🗑 Delete Record</button>
     </div>`;
   }).join('');
 }
@@ -1042,10 +1049,11 @@ window.openReview = async function(studentId) {
   let html = `
     <div class="panel-student-info">
       <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
-      <div>
+      <div style="flex:1">
         <div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
         <div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
       </div>
+      <button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
     </div>
   `;
 
@@ -1147,6 +1155,22 @@ window.saveGrade = async function(studentId, questionId, maxPoints) {
   }
 };
 
+// --- DELETE STUDENT RECORD LOGIC ---
+
+window.deleteStudentRecord = async function(studentId) {
+  if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
+  
+  try {
+    await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
+    showToast('Student record deleted. They can rejoin now.');
+    await loadStudents(); // Refresh list
+    updateStats();
+  } catch (err) {
+    console.error(err);
+    showToast('Error deleting student record', true);
+  }
+};
+
 // --- RESULTS & EXPORT LOGIC ---
 
 window.renderResults = async function() {
@@ -1196,10 +1220,6 @@ window.renderResults = async function() {
       const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
       const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
       
-      // Skip if no answer and we are filtering strictly? No, show all rows for completeness unless filtered.
-      // If you want to hide unanswered, uncomment below:
-      // if (!answer && !filterQuestion) continue; 
-
       hasData = true;
       
       let scoreClass = '';
