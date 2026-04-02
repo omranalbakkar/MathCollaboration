@@ -1611,13 +1611,300 @@ window.saveGradeAndFeedback = async function(studentId, questionId) {
   }
 };
 
-window.exportReports = async function() {
-  showToast('Export feature coming soon');
+window.exportData = async function() {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  if (!currentStudents.length) {
+    showToast('No student data to export', true);
+    return;
+  }
+  
+  // Prepare export data structure
+  const exportObj = {
+    version: "1.0",
+    type: "session_results",
+    exportedAt: new Date().toISOString(),
+    session: {
+      id: activeSessionId,
+      title: currentSessionData?.title || "Untitled Session",
+      grade: currentSessionData?.grade || "",
+      className: currentSessionData?.className || "",
+      subject: currentSessionData?.subject || "",
+      teacher: currentSessionData?.teacher || "",
+      date: currentSessionData?.date || "",
+      totalQuestions: currentQuestions.length
+    },
+    questions: currentQuestions.map((q, i) => ({
+      id: q.id,
+      number: i + 1,
+      text: q.text,
+      type: q.type,
+      points: q.points,
+      correct: q.correct || "",
+      tag: q.tag || "",
+      options: q.options || null
+    })),
+    students: currentStudents.map(student => {
+      const answers = student.answers || {};
+      const grades = student.grades || {};
+      const feedback = student.feedback || {};
+      
+      const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+      const earnedPoints = Object.entries(grades).reduce((sum, [qId, grade]) => sum + (parseFloat(grade) || 0), 0);
+      const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+      
+      return {
+        id: student.id,
+        name: student.name || student.id,
+        email: student.email || "",
+        loginTime: student.loginTime || "",
+        submitted: student.submitted || false,
+        online: student.online || false,
+        totalAnswered: Object.keys(answers).length,
+        totalGraded: Object.keys(grades).length,
+        earnedPoints: earnedPoints,
+        totalPoints: totalPoints,
+        percentage: percentage,
+        answers: Object.entries(answers).map(([qId, answer]) => {
+          const question = currentQuestions.find(q => q.id === qId);
+          const qIndex = currentQuestions.findIndex(q => q.id === qId) + 1;
+          return {
+            questionId: qId,
+            questionNumber: qIndex,
+            questionText: question?.text || "",
+            answer: answer,
+            grade: grades[qId] !== undefined ? grades[qId] : null,
+            maxPoints: question?.points || 0,
+            feedback: feedback[qId] || ""
+          };
+        })
+      };
+    }),
+    summary: {
+      totalStudents: currentStudents.length,
+      studentsSubmitted: currentStudents.filter(s => s.submitted).length,
+      studentsOnline: currentStudents.filter(s => s.online).length,
+      totalQuestions: currentQuestions.length,
+      totalPossiblePoints: currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0),
+      averageScore: calculateAverageScore()
+    }
+  };
+  
+  // Create and download JSON file
+  const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `results_${currentSessionData?.title?.replace(/\s+/g, '_') || 'session'}_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showToast(`Exported data for ${currentStudents.length} students!`);
 };
 
-window.exportData = async function() {
-  showToast('Export feature coming soon');
+window.exportReports = async function() {
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+  
+  if (!currentStudents.length) {
+    showToast('No student data to export', true);
+    return;
+  }
+  
+  showToast('Generating reports... Please wait');
+  
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+    
+    let pageNumber = 0;
+    
+    // Filter students who have submitted
+    const studentsToExport = currentStudents.filter(s => s.submitted || (s.answers && Object.keys(s.answers).length > 0));
+    
+    if (!studentsToExport.length) {
+      showToast('No submitted work to export', true);
+      return;
+    }
+    
+    for (let i = 0; i < studentsToExport.length; i++) {
+      const student = studentsToExport[i];
+      
+      if (i > 0) {
+        pdf.addPage();
+      }
+      pageNumber++;
+      
+      let yPos = margin;
+      
+      // Header
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(currentSessionData?.title || 'Assessment Report', margin, yPos);
+      yPos += 10;
+      
+      // Student info box
+      pdf.setFillColor(245, 246, 250);
+      pdf.rect(margin, yPos, contentWidth, 25, 'F');
+      
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Student: ' + (student.name || student.id), margin + 5, yPos + 8);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Date: ' + (currentSessionData?.date || new Date().toLocaleDateString()), margin + 5, yPos + 15);
+      pdf.text('Subject: ' + (currentSessionData?.subject || '—'), margin + 5, yPos + 21);
+      
+      // Calculate score
+      const answers = student.answers || {};
+      const grades = student.grades || {};
+      const feedback = student.feedback || {};
+      
+      const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+      const earnedPoints = Object.entries(grades).reduce((sum, [qId, grade]) => sum + (parseFloat(grade) || 0), 0);
+      const percentage = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+      
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(`Score: ${earnedPoints}/${totalPoints} (${percentage}%)`, pageWidth - margin - 50, yPos + 15);
+      
+      yPos += 35;
+      
+      // Questions and answers
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Responses', margin, yPos);
+      yPos += 8;
+      
+      for (let qIdx = 0; qIdx < currentQuestions.length; qIdx++) {
+        const question = currentQuestions[qIdx];
+        const answer = answers[question.id];
+        const grade = grades[question.id];
+        const fb = feedback[question.id];
+        
+        // Check if we need a new page
+        if (yPos > pageHeight - 50) {
+          pdf.addPage();
+          yPos = margin;
+        }
+        
+        // Question number and text
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        const qText = `Q${qIdx + 1}: ${stripMathForPDF(question.text)}`;
+        const qLines = pdf.splitTextToSize(qText, contentWidth);
+        pdf.text(qLines, margin, yPos);
+        yPos += qLines.length * 6;
+        
+        // Answer
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        if (answer) {
+          const answerText = 'Answer: ' + stripMathForPDF(answer);
+          const aLines = pdf.splitTextToSize(answerText, contentWidth - 10);
+          pdf.text(aLines, margin + 5, yPos);
+          yPos += aLines.length * 5 + 2;
+        } else {
+          pdf.setTextColor(150, 150, 150);
+          pdf.text('Answer: Not answered', margin + 5, yPos);
+          pdf.setTextColor(0, 0, 0);
+          yPos += 7;
+        }
+        
+        // Score and feedback
+        if (grade !== undefined) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(`Score: ${grade}/${question.points}`, margin + 5, yPos);
+          yPos += 6;
+          
+          if (fb) {
+            pdf.setFont('helvetica', 'italic');
+            pdf.setTextColor(70, 70, 70);
+            const fbLines = pdf.splitTextToSize('Feedback: ' + fb, contentWidth - 10);
+            pdf.text(fbLines, margin + 5, yPos);
+            pdf.setTextColor(0, 0, 0);
+            yPos += fbLines.length * 5;
+          }
+        }
+        
+        yPos += 8;
+      }
+      
+      // Page number at bottom
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Page ${pageNumber} of ${studentsToExport.length}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      pdf.setTextColor(0, 0, 0);
+    }
+    
+    // Save the PDF
+    const fileName = `reports_${currentSessionData?.title?.replace(/\s+/g, '_') || 'session'}_${Date.now()}.pdf`;
+    pdf.save(fileName);
+    
+    showToast(`✅ Exported ${studentsToExport.length} student report(s)!`);
+    
+  } catch (error) {
+    console.error('PDF export error:', error);
+    showToast('Error generating PDF: ' + error.message, true);
+  }
 };
+
+// Helper function to calculate average score
+function calculateAverageScore() {
+  const studentsWithGrades = currentStudents.filter(s => s.grades && Object.keys(s.grades).length > 0);
+  
+  if (!studentsWithGrades.length) return 0;
+  
+  const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+  
+  if (totalPoints === 0) return 0;
+  
+  const totalPercentages = studentsWithGrades.reduce((sum, student) => {
+    const earnedPoints = Object.entries(student.grades || {}).reduce((pts, [qId, grade]) => pts + (parseFloat(grade) || 0), 0);
+    const percentage = (earnedPoints / totalPoints) * 100;
+    return sum + percentage;
+  }, 0);
+  
+  return Math.round(totalPercentages / studentsWithGrades.length);
+}
+
+// Helper function to strip math notation for PDF
+function stripMathForPDF(text) {
+  if (!text) return '';
+  
+  // Remove display math $$...$$
+  let result = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+    return `[Math: ${math.trim()}]`;
+  });
+  
+  // Remove inline math $...$
+  result = result.replace(/\$([^$]+)\$/g, (match, math) => {
+    return `[${math.trim()}]`;
+  });
+  
+  // Remove \(...\)
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+    return `[${math.trim()}]`;
+  });
+  
+  // Remove \[...\]
+  result = result.replace(/\\\[([\s\S]*?)\\\]/g, (match, math) => {
+    return `[Math: ${math.trim()}]`;
+  });
+  
+  return result;
+}
 
 window.changePassword = async function() {
   const currentPass = document.getElementById('currentPass').value;
