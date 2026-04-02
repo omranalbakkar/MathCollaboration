@@ -1,14 +1,25 @@
 // ============================================================
 //  EDUBOARD — FIREBASE CONFIGURATION
-//  Replace the values below with your own Firebase project.
+//  Enhanced for multi-role platform with Auth + Firestore + RTDB
 //
-//  HOW TO GET YOUR CONFIG:
+//  HOW TO SET UP:
 //  1. Go to https://console.firebase.google.com/
-//  2. Create a project (free)
-//  3. Click "Add app" → Web (</>)
-//  4. Copy the firebaseConfig object values here
-//  5. In Firebase console → Realtime Database → Create database
-//     → Start in TEST MODE (for development)
+//  2. Open your project (or create one)
+//  3. Enable Authentication → Sign-in method → Email/Password
+//  4. Enable Firestore Database → Create database (production mode)
+//  5. Enable Realtime Database → Create database
+//  6. Replace the values below with your project config
+//
+//  FIRESTORE SECURITY RULES (paste in Firebase Console):
+//  See firestore.rules file or the README for full rules.
+//
+//  INITIAL SUPER ADMIN SETUP:
+//  1. Create a user in Firebase Auth Console (Authentication → Users → Add)
+//  2. Note the UID
+//  3. In Firestore → users collection → create document with that UID
+//     Fields: { role: "superadmin", name: "Super Admin",
+//               email: "your@email.com", active: true,
+//               createdAt: <timestamp> }
 // ============================================================
 
 const FIREBASE_CONFIG = {
@@ -21,6 +32,3 @@ const FIREBASE_CONFIG = {
     appId: "1:651012797078:web:16647c0adb49b27d3ac8b7",
     measurementId: "G-LBCLK24BX9"
 };
-
-// Set to false once you have configured Firebase above
-const FIREBASE_DEMO_MODE = false;
