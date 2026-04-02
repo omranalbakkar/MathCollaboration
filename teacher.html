@@ -833,23 +833,33 @@ async function loadStudents() {
   renderStudentCards();
 }
 
-// --- NEW FUNCTION FOR CLASS STATUS TAB ---
+// --- UPDATED FUNCTION FOR CLASS STATUS TAB ---
 async function loadClassStatus() {
   if (!activeSessionId || !currentSessionData) return;
 
-  const gradeName = currentSessionData.grade;
+  const gradeName = currentSessionData.grade; // This comes from the Session Config
   document.getElementById('csGradeName').textContent = gradeName || 'Unknown Grade';
   
   const grid = document.getElementById('classStatusGrid');
   grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
 
-  // 1. Fetch all students assigned to this Grade
   let assignedStudents = [];
+  
   if (gradeName) {
     try {
       const studentsRef = collection(db, 'students');
-      const q = query(studentsRef, where('grade', '==', gradeName));
-      const snap = await getDocs(q);
+      
+      // FIX: Try querying by 'grade' first, then 'gradeLevel' if that fails or is empty
+      // Note: Firestore queries are exact matches. Ensure the Session Grade Name matches the Student Grade Name exactly.
+      let q = query(studentsRef, where('grade', '==', gradeName));
+      let snap = await getDocs(q);
+      
+      // If no results found with 'grade', try 'gradeLevel' (common in Admin panels)
+      if (snap.empty) {
+         q = query(studentsRef, where('gradeLevel', '==', gradeName));
+         snap = await getDocs(q);
+      }
+
       snap.forEach(doc => {
         assignedStudents.push({ id: doc.id, ...doc.data() });
       });
@@ -873,7 +883,7 @@ async function loadClassStatus() {
 
   // If no students assigned to grade, show empty
   if (totalAssigned === 0) {
-    grid.innerHTML = `<div class="empty-state">No students assigned to "${gradeName}".</div>`;
+    grid.innerHTML = `<div class="empty-state">No students assigned to "${gradeName}".<br><small style="color:var(--muted)">Check if Student 'grade' or 'gradeLevel' matches Session 'grade'.</small></div>`;
     document.getElementById('csTotalPresent').textContent = 0;
     document.getElementById('csTotalAbsent').textContent = 0;
     document.getElementById('csTotalStudents').textContent = 0;
