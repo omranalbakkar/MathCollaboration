@@ -259,11 +259,11 @@ mjx-container{vertical-align:middle;}
 <script type="module">
 // Import from firebase-config.js (Ensure this file exports Firestore functions)
 import { 
-  auth, db, // Make sure 'db' is Firestore, not RTDB
+  auth, db,
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
-  getDoc, doc, 
+  getDoc, setDoc, doc, 
   collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
-  onSnapshot // For real-time updates in Firestore
+  onSnapshot
 } from './firebase-config.js';
 
 let currentStudent = null;
