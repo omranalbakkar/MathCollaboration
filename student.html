@@ -201,7 +201,10 @@ mjx-container{vertical-align:middle;}
         </ul>
     </div>
     
-    <div id="sessionInfoBox"></div>
+<!-- Inside #loginScreen, inside .login-card -->
+<div id="sessionInfoBox">
+    <div class="session-loading">🔒 Sign in to view available sessions</div>
+</div>
     <div class="input-wrap">
       <label>Email Address</label>
       <input type="email" id="loginEmail" autocomplete="email">
@@ -272,38 +275,73 @@ let activeSessionId = null;
 let unsubSession = null;
 
 // ── ROUTE GUARD ──
+// ── ROUTE GUARD ──
 onAuthStateChanged(auth, async (user) => {
+  // Hide loading spinner immediately
   document.getElementById('loadingScreen').style.display = 'none';
+
   if (!user) {
-    await loadLoginSessionInfo();
+    // ✅ FIX: Do NOT try to load sessions here. 
+    // The user is not logged in, so Firestore rules will block the read.
+    // Instead, just show a static message or leave it blank.
+    
+    const box = document.getElementById('sessionInfoBox');
+    if (box) {
+      box.innerHTML = `
+        <div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">
+          🔒 Sign in to view available sessions
+        </div>`;
+    }
+
+    // Show login screen
     document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
     return;
   }
+
+  // --- USER IS LOGGED IN ---
   try {
-    // Check user role in Firestore
+    // 1. Verify User Role in Firestore
     const snap = await getDoc(doc(db, 'users', user.uid));
-    if (!snap.exists() || snap.data().role !== 'student') {
+    
+    if (!snap.exists()) {
       await signOut(auth);
-      document.getElementById('loginScreen').style.display = 'flex';
+      showErr('User profile not found. Contact administrator.');
+      return;
+    }
+
+    const userData = snap.data();
+
+    if (userData.role !== 'student') {
+      await signOut(auth);
       showErr('Access denied. This portal is for students only.');
       return;
     }
-    if (snap.data().active === false) {
+
+    if (userData.active === false) {
       await signOut(auth);
-      document.getElementById('loginScreen').style.display = 'flex';
       showErr('Your account has been deactivated.');
       return;
     }
+
+    // 2. Set Global Variables
     currentStudent = user;
-    studentProfile = snap.data();
+    studentProfile = userData;
+
+    // 3. Update UI Header
     document.getElementById('headerName').textContent = studentProfile.name || user.email;
+
+    // 4. Switch Screens
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+
+    // 5. NOW load the session (User is authenticated, so rules allow read)
     await findAndJoinOpenSession();
-  } catch(e) {
-    console.error('Auth error:', e);
+
+  } catch (e) {
+    console.error('Auth verification error:', e);
     document.getElementById('loginScreen').style.display = 'flex';
-    showErr('Error: ' + e.message);
+    showErr('Error verifying access: ' + e.message);
   }
 });
 
