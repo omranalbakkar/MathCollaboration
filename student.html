@@ -9,18 +9,15 @@
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
+/* Your existing CSS styles remain exactly the same */
 :root{--bg:#f7f5f0;--surface:#ffffff;--surface2:#f0ede6;--border:#e0d9cf;--sage:#5a7a5e;--sage-l:rgba(90,122,94,0.1);--sage-m:rgba(90,122,94,0.2);--clay:#c4654a;--clay-l:rgba(196,101,74,0.1);--sky:#4a7aaa;--sky-l:rgba(74,122,170,0.1);--text:#2a2520;--muted:#8a7f72;--faint:#d4cdc3;--shadow:0 4px 24px rgba(42,37,32,0.08);--shadow-lg:0 12px 48px rgba(42,37,32,0.14);}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 80% 10%,rgba(90,122,94,0.06) 0%,transparent 50%),radial-gradient(ellipse at 10% 90%,rgba(196,101,74,0.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
-
-/* ── LOADING ── */
 .spinner-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:var(--bg);z-index:999;}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--sage);border-radius:50%;animation:spin 0.8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner-text{font-size:13px;color:var(--muted);font-weight:600;}
-
-/* ── LOGIN ── */
 #loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;position:relative;z-index:1;}
 .login-card{background:var(--surface);border-radius:24px;padding:48px 44px;width:440px;max-width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);text-align:center;}
 .school-icon{width:64px;height:64px;background:var(--sage-l);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:30px;}
@@ -44,8 +41,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .back-link{display:block;margin-top:18px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;}
 .back-link:hover{color:var(--sage);}
 .error-msg{background:var(--clay-l);border:1.5px solid var(--clay);color:var(--clay);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;font-weight:600;text-align:left;}
-
-/* ── APP ─ */
 #app{display:none;position:relative;z-index:1;}
 .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(42,37,32,0.06);}
 .header-brand{font-family:'Lora',serif;font-size:20px;font-weight:600;}
@@ -58,8 +53,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-exit{background:none;border:1.5px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Nunito',sans-serif;transition:all 0.15s;}
 .btn-exit:hover{border-color:var(--clay);color:var(--clay);}
 .main{max-width:720px;margin:0 auto;padding:32px 20px 80px;}
-
-/* WELCOME */
 #welcomeScreen{text-align:center;padding:20px 0;}
 .welcome-icon{font-size:56px;margin-bottom:16px;}
 .welcome-title{font-family:'Lora',serif;font-size:28px;font-weight:600;margin-bottom:8px;}
@@ -79,8 +72,6 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .btn-start{background:var(--sage);color:#fff;border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s;letter-spacing:0.02em;box-shadow:0 6px 20px rgba(90,122,94,0.25);}
 .btn-start:hover{background:#4a6a4e;transform:translateY(-2px);}
 .no-questions{background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:48px 24px;text-align:center;color:var(--muted);font-size:15px;font-weight:600;}
-
-/* QUIZ */
 #quizScreen{display:none;}
 .progress-header{background:var(--surface);border-radius:16px;padding:18px 22px;margin-bottom:24px;border:1px solid var(--border);box-shadow:var(--shadow);}
 .progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
@@ -119,8 +110,6 @@ mjx-container{vertical-align:middle;}
 .btn-submit-answer.saved{background:#4a6a4e;cursor:default;}
 .btn-finish{background:var(--clay);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;}
 .btn-finish:hover{background:#b05a40;}
-
-/* COMPLETION */
 #completionScreen{display:none;text-align:center;padding:40px 0;}
 .completion-icon{font-size:72px;margin-bottom:20px;animation:pop 0.5s ease;}
 @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
@@ -141,9 +130,9 @@ mjx-container{vertical-align:middle;}
 .feedback-display{margin-top:6px;font-size:13px;color:var(--sky);background:var(--sky-l);padding:6px 10px;border-radius:8px;border-left:3px solid var(--sky);font-weight:600;}
 .btn-retry{background:var(--surface);border:2px solid var(--border);color:var(--text);border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;}
 .btn-retry:hover{border-color:var(--sage);color:var(--sage);}
-
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 22px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:all 0.3s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.connection-warning{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--clay);color:white;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;display:none;white-space:nowrap;}
 @media(max-width:500px){.q-card{padding:22px 18px;}.q-text{font-size:17px;}.login-card{padding:36px 24px;}.sc-meta-grid{grid-template-columns:1fr;}}
 </style>
 </head>
@@ -190,6 +179,10 @@ mjx-container{vertical-align:middle;}
   </div>
 </div>
 
+<div class="connection-warning" id="connectionWarning">
+  ⚠️ Connection issue detected. Please disable ad blockers and refresh.
+</div>
+
 <div class="nav-footer" id="navFooter" style="display:none">
   <button class="btn-nav" id="btnPrev" onclick="prevQ()">← Prev</button>
   <button class="btn-submit-answer" id="btnSubmit" onclick="submitAnswer()">Save Answer</button>
@@ -198,40 +191,68 @@ mjx-container{vertical-align:middle;}
 </div>
 <div class="toast" id="toast"></div>
 
-<!-- 1. Load Config First (Standard Script) -->
-<script type="module" src="firebase-config.js"></script>
-
-<!-- 2. Main App Logic (Module) -->
 <script type="module">
-// Import ready-made variables from our local config file
+// Import from firebase-config.js
 import { 
   auth, db, rtDB, 
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
   getDoc, doc, 
-  ref, set, get, update, onValue 
+  ref, set, get, update, onValue, connectDatabaseEmulator
 } from './firebase-config.js';
 
-let currentStudent  = null; // Firebase Auth user
-let studentProfile  = null; // Firestore profile
-let currentQIndex   = 0;
-let questions       = [];
-let sessionData     = {};
+let currentStudent = null;
+let studentProfile = null;
+let currentQIndex = 0;
+let questions = [];
+let sessionData = {};
 let activeSessionId = null;
-let unsubGrades     = null;
+let unsubGrades = null;
 let keepAliveInterval = null;
+let connectionRetries = 0;
+const MAX_RETRIES = 3;
+
+// Helper function to show connection warning
+function showConnectionWarning(show = true) {
+  const warning = document.getElementById('connectionWarning');
+  if (warning) {
+    warning.style.display = show ? 'block' : 'none';
+    if (show) {
+      setTimeout(() => {
+        warning.style.display = 'none';
+      }, 8000);
+    }
+  }
+}
+
+// Wrapper for RTDB operations with retry
+async function safeRTDBOperation(operation, ...args) {
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      return await operation(...args);
+    } catch (error) {
+      console.error(`RTDB operation failed (attempt ${i + 1}):`, error);
+      if (error.message?.includes('BLOCKED_BY_CLIENT')) {
+        showConnectionWarning(true);
+        if (i === MAX_RETRIES - 1) {
+          showToast('Connection issue. Please disable ad blockers and refresh.', true);
+        }
+      }
+      if (i === MAX_RETRIES - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+    }
+  }
+}
 
 // ── ROUTE GUARD ──
 onAuthStateChanged(auth, async (user) => {
   document.getElementById('loadingScreen').style.display = 'none';
   if (!user) {
-    // Not logged in — show login + session info
     await loadLoginSessionInfo();
     document.getElementById('loginScreen').style.display = 'flex';
     return;
   }
-  // Logged in — verify role
   try {
-    const snap = await getDoc(doc(db,'users',user.uid));
+    const snap = await getDoc(doc(db, 'users', user.uid));
     if (!snap.exists() || snap.data().role !== 'student') {
       await signOut(auth);
       document.getElementById('loginScreen').style.display = 'flex';
@@ -251,6 +272,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app').style.display = 'block';
     await findAndJoinOpenSession();
   } catch(e) {
+    console.error('Auth error:', e);
     document.getElementById('loginScreen').style.display = 'flex';
     showErr('Error: ' + e.message);
   }
@@ -262,15 +284,14 @@ async function loadLoginSessionInfo() {
   const btn = document.getElementById('joinBtn');
   box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
   try {
-    const snap = await get(ref(rtDB,'sessions'));
+    const snap = await safeRTDBOperation(get, ref(rtDB, 'sessions'));
     const sessions = snap.val() || {};
-    const openSessions = Object.entries(sessions).filter(([id,s])=>s.config&&s.config.active);
+    const openSessions = Object.entries(sessions).filter(([id,s]) => s.config && s.config.active);
     if (!openSessions.length) {
       box.innerHTML = '<div class="session-closed-box">🔒 No sessions are currently open.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open a session.</span></div>';
-      btn.disabled = false; // allow login attempt anyway
+      btn.disabled = false;
       return;
     }
-    // Show first open session info
     const [id, s] = openSessions[0];
     const cfg = s.config;
     activeSessionId = id;
@@ -289,7 +310,8 @@ async function loadLoginSessionInfo() {
     </div>`;
     btn.disabled = false;
   } catch(e) {
-    box.innerHTML = '';
+    console.error('Session info error:', e);
+    box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please disable ad blockers and refresh.</div>';
     btn.disabled = false;
   }
 }
@@ -297,75 +319,94 @@ async function loadLoginSessionInfo() {
 // ── STUDENT LOGIN ──
 window.doStudentLogin = async function() {
   const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
-  const btn   = document.getElementById('joinBtn');
-  const err   = document.getElementById('loginErr');
+  const pass = document.getElementById('loginPass').value;
+  const btn = document.getElementById('joinBtn');
+  const err = document.getElementById('loginErr');
   err.style.display = 'none';
   if (!email || !pass) { showErr('Email and password are required.'); return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-    // onAuthStateChanged will handle the rest
   } catch(e) {
+    console.error('Login error:', e);
     showErr('Invalid email or password.');
     btn.disabled = false; btn.textContent = 'Sign In & Join Session →';
   }
 };
+
 document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doStudentLogin(); });
 
 // ── FIND AND JOIN OPEN SESSION ──
 async function findAndJoinOpenSession() {
-  const snap = await get(ref(rtDB,'sessions'));
-  const sessions = snap.val() || {};
-  const openSessions = Object.entries(sessions).filter(([id,s])=>s.config&&s.config.active);
-  if (!openSessions.length) {
-    // No open session — show waiting screen
-    document.getElementById('app').style.display = 'block';
+  try {
+    const snap = await safeRTDBOperation(get, ref(rtDB, 'sessions'));
+    const sessions = snap.val() || {};
+    const openSessions = Object.entries(sessions).filter(([id,s]) => s.config && s.config.active);
+    if (!openSessions.length) {
+      document.getElementById('app').style.display = 'block';
+      document.getElementById('welcomeScreen').innerHTML = `
+        <div style="text-align:center;padding:60px 0">
+          <div style="font-size:56px;margin-bottom:16px">⏳</div>
+          <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
+          <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet. Please wait.</div>
+          <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
+          <div style="margin-top:16px"><button class="btn-retry" onclick="checkConnectionAgain()">Check Connection</button></div>
+        </div>`;
+      document.getElementById('welcomeScreen').style.display = 'block';
+      return;
+    }
+    const [id, s] = openSessions[0];
+    activeSessionId = id;
+    sessionData = s.config;
+    const studentKey = currentStudent.uid;
+    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${studentKey}`), {
+      name: studentProfile.name || currentStudent.email,
+      uid: currentStudent.uid,
+      online: true,
+      loginTime: Date.now()
+    });
+    document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
+    document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
+    
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    keepAliveInterval = setInterval(keepAlive, 10000);
+    window.addEventListener('beforeunload', markOffline);
+    
+    if (unsubGrades) unsubGrades();
+    unsubGrades = onValue(ref(rtDB, `sessions/${activeSessionId}/students/${studentKey}`), sd => {
+      if (sd.val() && document.getElementById('completionScreen').style.display !== 'none') refreshCompletion(sd.val());
+    });
+    await loadAndShowWelcome();
+  } catch(e) {
+    console.error('Join session error:', e);
+    showConnectionWarning(true);
     document.getElementById('welcomeScreen').innerHTML = `
       <div style="text-align:center;padding:60px 0">
-        <div style="font-size:56px;margin-bottom:16px">⏳</div>
-        <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
-        <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet. Please wait.</div>
+        <div style="font-size:56px;margin-bottom:16px">⚠️</div>
+        <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
+        <div style="color:var(--muted);font-size:15px">Unable to connect. Please disable ad blockers and refresh.</div>
         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
       </div>`;
-    document.getElementById('welcomeScreen').style.display = 'block';
-    return;
   }
-  const [id, s] = openSessions[0];
-  activeSessionId = id;
-  sessionData = s.config;
-  const studentKey = currentStudent.uid;
-  // Register student presence in RTDB
-  await update(ref(rtDB,`sessions/${activeSessionId}/students/${studentKey}`), {
-    name: studentProfile.name || currentStudent.email,
-    uid: currentStudent.uid,
-    online: true,
-    loginTime: Date.now()
-  });
-  document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
-  document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
-  keepAliveInterval = setInterval(keepAlive, 10000);
-  window.addEventListener('beforeunload', markOffline);
-  // Listen for grade/feedback updates
-  if (unsubGrades) unsubGrades();
-  unsubGrades = onValue(ref(rtDB,`sessions/${activeSessionId}/students/${studentKey}`), sd => {
-    if (sd.val() && document.getElementById('completionScreen').style.display !== 'none') refreshCompletion(sd.val());
-  });
-  await loadAndShowWelcome();
 }
+
+window.checkConnectionAgain = function() {
+  location.reload();
+};
 
 function keepAlive() {
   if (!currentStudent || !activeSessionId) return;
-  update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:true});
+  update(ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {online: true}).catch(e => console.warn('KeepAlive failed:', e));
 }
+
 function markOffline() {
   if (!currentStudent || !activeSessionId) return;
-  update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`), {online:false});
+  update(ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {online: false}).catch(e => console.warn('Offline mark failed:', e));
 }
 
 window.exitSession = async function() {
   markOffline();
-  clearInterval(keepAliveInterval);
+  if (keepAliveInterval) clearInterval(keepAliveInterval);
   if (unsubGrades) unsubGrades();
   await signOut(auth);
   window.location.href = 'index.html';
@@ -373,12 +414,17 @@ window.exitSession = async function() {
 
 // ── WELCOME ──
 async function loadAndShowWelcome() {
-  const qsSnap = await get(ref(rtDB,`sessions/${activeSessionId}/questions`));
-  questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  const sSnap = await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-  const s = sSnap.val()||{};
-  if (s.submitted) { showCompletion(); return; }
-  showWelcome();
+  try {
+    const qsSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/questions`));
+    questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    const sSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    const s = sSnap.val()||{};
+    if (s.submitted) { showCompletion(); return; }
+    showWelcome();
+  } catch(e) {
+    console.error('Load welcome error:', e);
+    showConnectionWarning(true);
+  }
 }
 
 function showWelcome() {
@@ -419,58 +465,69 @@ function showWelcome() {
     <div style="text-align:center">
       <button class="btn-start" onclick="startQuiz()">${answered>0?'Continue Quiz →':'Start Quiz →'}</button>
     </div>`;
-  });
+  }).catch(e=>console.warn('Welcome error:',e));
 }
 
 // ── QUIZ ──
 window.startQuiz = async function() {
   if (!questions.length) return;
-  const sSnap = await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-  const s = sSnap.val()||{};
-  let start=0;
-  for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
-  currentQIndex=start;
-  document.getElementById('welcomeScreen').style.display='none';
-  document.getElementById('quizScreen').style.display='block';
-  document.getElementById('navFooter').style.display='flex';
-  renderQuestion();
+  try {
+    const sSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    const s = sSnap.val()||{};
+    let start=0;
+    for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
+    currentQIndex=start;
+    document.getElementById('welcomeScreen').style.display='none';
+    document.getElementById('quizScreen').style.display='block';
+    document.getElementById('navFooter').style.display='flex';
+    renderQuestion();
+  } catch(e) {
+    console.error('Start quiz error:', e);
+    showToast('Error loading quiz. Please refresh.', true);
+  }
 };
 
 async function renderQuestion() {
-  const qsSnap=await get(ref(rtDB,`sessions/${activeSessionId}/questions`));
-  questions=Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
-  if(!questions.length)return;
-  const q=questions[currentQIndex];
-  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-  const s=sSnap.val()||{};
-  const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
-  const total=questions.length;
-  const pct=Math.round((currentQIndex+1)/total*100);
-  const btnSubmit=document.getElementById('btnSubmit');
-  btnSubmit.textContent='Save Answer';btnSubmit.classList.remove('saved');btnSubmit.disabled=false;
-  function mathSafe(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  const qscreen=document.getElementById('quizScreen');
-  qscreen.innerHTML=`
-    <div class="progress-header">
-      <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex+1} / ${total}</span></div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-    </div>
-    <div class="q-card">
-      <div class="q-header"><span class="q-badge">Question ${currentQIndex+1} of ${total}</span><span class="q-points">${q.points} pts${q.tag?' · '+esc(q.tag):''}</span></div>
-      <div class="q-text">${mathSafe(q.text)}</div>
-      ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
-      ${buildInput(q,existing)}
-    </div>`;
-  document.getElementById('btnPrev').disabled=currentQIndex===0;
-  document.getElementById('btnNext').style.display=currentQIndex<total-1?'inline-flex':'none';
-  document.getElementById('btnFinish').style.display=currentQIndex===total-1?'inline-flex':'none';
-  renderMath(qscreen);
+  try {
+    const qsSnap = await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/questions`));
+    questions = Object.values(qsSnap.val()||{}).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+    if(!questions.length)return;
+    const q=questions[currentQIndex];
+    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    const s=sSnap.val()||{};
+    const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
+    const total=questions.length;
+    const pct=Math.round((currentQIndex+1)/total*100);
+    const btnSubmit=document.getElementById('btnSubmit');
+    btnSubmit.textContent='Save Answer';btnSubmit.classList.remove('saved');btnSubmit.disabled=false;
+    function mathSafe(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    const qscreen=document.getElementById('quizScreen');
+    qscreen.innerHTML=`
+      <div class="progress-header">
+        <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex+1} / ${total}</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="q-card">
+        <div class="q-header"><span class="q-badge">Question ${currentQIndex+1} of ${total}</span><span class="q-points">${q.points} pts${q.tag?' · '+esc(q.tag):''}</span></div>
+        <div class="q-text">${mathSafe(q.text)}</div>
+        ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
+        ${buildInput(q,existing)}
+      </div>`;
+    document.getElementById('btnPrev').disabled=currentQIndex===0;
+    document.getElementById('btnNext').style.display=currentQIndex<total-1?'inline-flex':'none';
+    document.getElementById('btnFinish').style.display=currentQIndex===total-1?'inline-flex':'none';
+    renderMath(qscreen);
+  } catch(e) {
+    console.error('Render question error:', e);
+    showToast('Error loading question. Please refresh.', true);
+  }
 }
 
 function renderMath(el){if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise(el?[el]:[document.body]).catch(err=>console.warn('MathJax error:',err));}
 
 function buildInput(q,existing){
   function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function escA(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
   if(q.type==='mcq'&&q.options&&q.options.length){
     const L='ABCDEFGHIJ';
     return`<div class="options-list">${q.options.map((o,i)=>`<button class="option-btn ${existing===o?'selected':''}" onclick="selectOption(this)" data-val="${escA(o)}"><span class="option-letter">${L[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
@@ -496,18 +553,28 @@ window.submitAnswer = async function() {
   const btn=document.getElementById('btnSubmit');
   btn.textContent='Saving…';btn.disabled=true;
   const q=questions[currentQIndex];
-  await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});
-  showToast('Answer saved ✓');
-  btn.textContent='Saved ✓';btn.classList.add('saved');
-  renderQuestion();
+  try {
+    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}/answers`), {[q.id]:ans});
+    showToast('Answer saved ✓');
+    btn.textContent='Saved ✓';btn.classList.add('saved');
+    renderQuestion();
+  } catch(e) {
+    console.error('Submit error:', e);
+    showToast('Failed to save. Please try again.', true);
+    btn.textContent='Save Answer';btn.disabled=false;
+  }
 };
 
 async function canNavigate(){
   const ans=getCurrentAnswer();
   if(ans===null){
     const q=questions[currentQIndex];
-    const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-    if(sSnap.val()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
+    try {
+      const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+      if(sSnap.val()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
+    } catch(e) {
+      return true;
+    }
   }
   return true;
 }
@@ -518,16 +585,21 @@ window.nextQ=async function(){if(await canNavigate()&&currentQIndex<questions.le
 window.finishSession = async function() {
   const ans=getCurrentAnswer();
   if(ans!==null){const q=questions[currentQIndex];await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}/answers`),{[q.id]:ans});}
-  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-  const savedAnswers=sSnap.val()?.answers||{};
-  for(let i=0;i<questions.length;i++){
-    if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
-      showToast(`Question ${i+1} is missing an answer!`);
-      currentQIndex=i;renderQuestion();return;
+  try {
+    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    const savedAnswers=sSnap.val()?.answers||{};
+    for(let i=0;i<questions.length;i++){
+      if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
+        showToast(`Question ${i+1} is missing an answer!`);
+        currentQIndex=i;renderQuestion();return;
+      }
     }
+    await safeRTDBOperation(update, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`), {submitted:true});
+    showCompletion();
+  } catch(e) {
+    console.error('Finish error:', e);
+    showToast('Error submitting. Please try again.', true);
   }
-  await update(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`),{submitted:true});
-  showCompletion();
 };
 
 // ── COMPLETION ──
@@ -536,8 +608,12 @@ async function showCompletion(){
   document.getElementById('welcomeScreen').style.display='none';
   document.getElementById('navFooter').style.display='none';
   document.getElementById('completionScreen').style.display='block';
-  const sSnap=await get(ref(rtDB,`sessions/${activeSessionId}/students/${currentStudent.uid}`));
-  renderCompletionScreen(sSnap.val()||{});
+  try {
+    const sSnap=await safeRTDBOperation(get, ref(rtDB, `sessions/${activeSessionId}/students/${currentStudent.uid}`));
+    renderCompletionScreen(sSnap.val()||{});
+  } catch(e) {
+    console.error('Completion error:', e);
+  }
 }
 async function refreshCompletion(s){renderCompletionScreen(s);}
 
@@ -579,9 +655,8 @@ function renderCompletionScreen(s){
 
 // ── UTILS ──
 function showErr(msg){const e=document.getElementById('loginErr');e.textContent=msg;e.style.display='block';}
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function showToast(msg, isError = false){const t=document.getElementById('toast');t.textContent=msg;t.style.background = isError ? 'var(--clay)' : 'var(--text)';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function escA(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 </script>
 </body>
 </html>
