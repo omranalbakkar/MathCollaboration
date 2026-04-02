@@ -449,6 +449,59 @@ window.renderGrades = function() {
     </tr>`).join('');
 };
 
+  // Helper to update Grade/Subject dropdowns based on selected Teacher
+window.updateSessionDropdowns = function() {
+  const teacherId = document.getElementById('f_teacherId').value;
+  const gradeSelect = document.getElementById('f_gradeId');
+  const subjectSelect = document.getElementById('f_subjectId');
+  
+  // Reset dropdowns
+  gradeSelect.innerHTML = '<option value="">Select Grade…</option>';
+  subjectSelect.innerHTML = '<option value="">Select Subject…</option>';
+  gradeSelect.disabled = true;
+  subjectSelect.disabled = true;
+
+  if (!teacherId) return;
+
+  // Find the selected teacher object
+  const teacher = allTeachers.find(t => t.id === teacherId);
+  if (!teacher) return;
+
+  // Enable dropdowns
+  gradeSelect.disabled = false;
+  subjectSelect.disabled = false;
+
+  // Populate Grades
+  if (teacher.assignedGrades && teacher.assignedGrades.length > 0) {
+    teacher.assignedGrades.forEach(gId => {
+      const grade = allGrades.find(g => g.id === gId);
+      if (grade) {
+        const option = document.createElement('option');
+        option.value = grade.id; // Or grade.nameEn if you prefer storing name directly
+        option.textContent = grade.nameEn;
+        gradeSelect.appendChild(option);
+      }
+    });
+  } else {
+    gradeSelect.innerHTML = '<option value="">No Grades Assigned</option>';
+  }
+
+  // Populate Subjects
+  if (teacher.assignedSubjects && teacher.assignedSubjects.length > 0) {
+    teacher.assignedSubjects.forEach(sId => {
+      const subject = allSubjects.find(s => s.id === sId);
+      if (subject) {
+        const option = document.createElement('option');
+        option.value = subject.id; // Or subject.nameEn
+        option.textContent = subject.nameEn;
+        subjectSelect.appendChild(option);
+      }
+    });
+  } else {
+    subjectSelect.innerHTML = '<option value="">No Subjects Assigned</option>';
+  }
+}; 
+  
 // ── SUBJECTS ──
 async function loadSubjects() {
   const snap = await getDocs(query(collection(db,'subjects'), orderBy('createdAt','desc')));
@@ -727,17 +780,33 @@ window.openModal = function(type, editId = null) {
   }
   else if (type === 'session-admin') {
     modalTitle.textContent = 'Create Session (as Admin)';
+    
+    // Get active teachers for the dropdown
+    const activeTeachers = allTeachers.filter(t => t.active);
+    
     modalBody.innerHTML = `
       <div class="form-grid">
         <div class="form-group full"><label>Session Title</label><input id="f_title" placeholder="e.g. Chapter 5 Quiz"></div>
+        
         <div class="form-group"><label>Owner Teacher</label>
-          <select id="f_teacherId">
+          <select id="f_teacherId" onchange="updateSessionDropdowns()">
             <option value="">Select Teacher…</option>
-            ${allTeachers.filter(t=>t.active).map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+            ${activeTeachers.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
           </select>
         </div>
-        <div class="form-group"><label>Grade</label><input id="f_grade" placeholder="e.g. Grade 10"></div>
-        <div class="form-group"><label>Subject</label><input id="f_subject" placeholder="e.g. Mathematics"></div>
+        
+        <div class="form-group"><label>Grade</label>
+          <select id="f_gradeId" disabled>
+            <option value="">Select Teacher First</option>
+          </select>
+        </div>
+        
+        <div class="form-group"><label>Subject</label>
+          <select id="f_subjectId" disabled>
+            <option value="">Select Teacher First</option>
+          </select>
+        </div>
+        
         <div class="form-group"><label>Class / Section</label><input id="f_className" placeholder="e.g. Class A"></div>
         <div class="form-group"><label>Date</label><input type="date" id="f_date"></div>
         <div class="form-group"><label>Start Time</label><input type="time" id="f_start"></div>
@@ -926,21 +995,40 @@ window.saveStudent = async function() {
 window.saveAdminSession = async function() {
   const title     = document.getElementById('f_title')?.value.trim();
   const teacherId = document.getElementById('f_teacherId')?.value;
-  const grade     = document.getElementById('f_grade')?.value.trim();
-  const subject   = document.getElementById('f_subject')?.value.trim();
+  const gradeId   = document.getElementById('f_gradeId')?.value;
+  const subjectId = document.getElementById('f_subjectId')?.value;
   const className = document.getElementById('f_className')?.value.trim();
   const date      = document.getElementById('f_date')?.value;
   const startTime = document.getElementById('f_start')?.value;
   const endTime   = document.getElementById('f_end')?.value;
+
   if (!title || !teacherId) { showFormError('Title and teacher are required.'); return; }
-  const teacher = allTeachers.find(t=>t.id===teacherId);
+  
+  // Resolve Names from IDs
+  const gradeObj = allGrades.find(g => g.id === gradeId);
+  const subjectObj = allSubjects.find(s => s.id === subjectId);
+  const teacherObj = allTeachers.find(t => t.id === teacherId);
+
+  if (!gradeObj) { showFormError('Please select a valid Grade.'); return; }
+  if (!subjectObj) { showFormError('Please select a valid Subject.'); return; }
+
   const id = 'sess_' + Date.now();
+  
   await set(ref(rtDB, `sessions/${id}`), {
     config: {
-      title, grade, subject, className, date, startTime, endTime,
-      active: false, createdAt: Date.now(),
+      title, 
+      grade: gradeObj.nameEn,       // Save the Name for display purposes
+      gradeId: gradeObj.id,         // Save ID for reference
+      subject: subjectObj.nameEn,   // Save the Name for display purposes
+      subjectId: subjectObj.id,     // Save ID for reference
+      className, 
+      date, 
+      startTime, 
+      endTime,
+      active: false, 
+      createdAt: Date.now(),
       ownerTeacherId: teacherId,
-      ownerTeacherName: teacher?.name || '',
+      ownerTeacherName: teacherObj?.name || '',
       createdBy: currentAdmin.uid,
       createdByRole: 'superadmin',
       instructions: ''
@@ -948,7 +1036,10 @@ window.saveAdminSession = async function() {
     questions: {},
     students: {}
   });
-  closeModal(); showToast('Session created'); loadAdminSessions();
+  
+  closeModal(); 
+  showToast('Session created'); 
+  loadAdminSessions();
 };
 
 
