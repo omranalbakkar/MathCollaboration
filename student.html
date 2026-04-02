@@ -406,6 +406,7 @@ async function findAndJoinOpenSession() {
       const sessionsRef = collection(db, 'sessions');
       const q = query(sessionsRef, where('active', '==', true));
       const snapshot = await getDocs(q);
+      
       if (snapshot.empty) {
         showNoSessions();
         return;
@@ -425,21 +426,19 @@ async function findAndJoinOpenSession() {
     const studentKey = currentStudent.uid;
     const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
     
-    // Create or Update student record in Firestore Sub-collection
-    await updateDoc(studentRef, {
+    // ✅ CRITICAL FIX: Use setDoc with { merge: true }
+    // This CREATES the document if it doesn't exist, or UPDATES it if it does.
+    // This ensures the document exists before submitAnswer tries to update it.
+    await setDoc(studentRef, {
       name: studentProfile.name || currentStudent.email,
       uid: currentStudent.uid,
       online: true,
-      loginTime: Date.now()
-    }).catch(async () => {
-      // If update fails (doc doesn't exist), create it
-      await addDoc(collection(db, 'sessions', activeSessionId, 'students'), {
-        name: studentProfile.name || currentStudent.email,
-        uid: currentStudent.uid,
-        online: true,
-        loginTime: Date.now()
-      });
-    });
+      loginTime: Date.now(),
+      submitted: false, 
+      answers: {},      
+      grades: {},       
+      feedback: {}      
+    }, { merge: true });
 
     document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
     document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
@@ -463,9 +462,11 @@ async function findAndJoinOpenSession() {
         <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
       </div>`;
+    document.getElementById('welcomeScreen').style.display = 'block';
   }
 }
 
+    
 function showNoSessions() {
   document.getElementById('app').style.display = 'block';
   document.getElementById('welcomeScreen').innerHTML = `
@@ -645,31 +646,39 @@ function getCurrentAnswer(){
 }
 
 window.submitAnswer = async function() {
-  const ans=getCurrentAnswer();
-  if(ans===null){showToast('Please provide an answer first');return;}
-  const btn=document.getElementById('btnSubmit');
-  btn.textContent='Saving…';btn.disabled=true;
-  const q=questions[currentQIndex];
+  const ans = getCurrentAnswer();
+  if (ans === null) {
+    showToast('Please provide an answer first');
+    return;
+  }
+  
+  const btn = document.getElementById('btnSubmit');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  
+  const q = questions[currentQIndex];
+  
   try {
     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
-    // Use updateDoc with dot notation for nested fields
+    
+    // ✅ Update the specific answer field using dot notation
+    // This works now because findAndJoinOpenSession guaranteed the parent doc exists
     await updateDoc(studentRef, {
       [`answers.${q.id}`]: ans
     });
+    
     showToast('Answer saved ✓');
-    btn.textContent='Saved ✓';btn.classList.add('saved');
+    btn.textContent = 'Saved ✓';
+    btn.classList.add('saved');
+    
+    // Re-render to show the "Answered" badge
     renderQuestion();
-  } catch(e) {
+    
+  } catch (e) {
     console.error('Submit error:', e);
-    // Fallback: try to ensure doc exists
-    try {
-       // If update fails because doc missing, we might need to create it, 
-       // but usually in this flow the doc exists from join.
-       throw e; 
-    } catch (e2) {
-        showToast('Failed to save. Please try again.', true);
-        btn.textContent='Save Answer';btn.disabled=false;
-    }
+    showToast('Failed to save. Please try again.', true);
+    btn.textContent = 'Save Answer';
+    btn.disabled = false;
   }
 };
 
