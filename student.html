@@ -49,7 +49,7 @@
         *::after {
             box-sizing: border-box;
             margin: 0;
-            padding: 0
+            padding: 0;
         }
 
         body {
@@ -63,7 +63,8 @@
             content: '';
             position: fixed;
             inset: 0;
-            background: radial-gradient(ellipse at 80% 10%, rgba(90, 122, 94, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 10% 90%, rgba(196, 101, 74, 0.05) 0%, transparent 50%);
+            background: radial-gradient(ellipse at 80% 10%, rgba(90, 122, 94, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 10% 90%, rgba(196, 101, 74, 0.05) 0%, transparent 50%);
             pointer-events: none;
             z-index: 0;
         }
@@ -91,7 +92,7 @@
 
         @keyframes spin {
             to {
-                transform: rotate(360deg)
+                transform: rotate(360deg);
             }
         }
 
@@ -243,7 +244,7 @@
             transition: border-color 0.2s, background 0.2s;
         }
 
-        .input-wrap input[type=password] {
+        .input-wrap input[type="password"] {
             font-family: 'Courier New', monospace;
         }
 
@@ -373,11 +374,11 @@
 
             0%,
             100% {
-                opacity: 1
+                opacity: 1;
             }
 
             50% {
-                opacity: 0.4
+                opacity: 0.4;
             }
         }
 
@@ -624,12 +625,12 @@
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(12px)
+                transform: translateY(12px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0)
+                transform: translateY(0);
             }
         }
 
@@ -910,15 +911,15 @@
 
         @keyframes pop {
             0% {
-                transform: scale(0)
+                transform: scale(0);
             }
 
             70% {
-                transform: scale(1.15)
+                transform: scale(1.15);
             }
 
             100% {
-                transform: scale(1)
+                transform: scale(1);
             }
         }
 
@@ -1099,25 +1100,6 @@
             white-space: nowrap;
         }
 
-        @media(max-width:500px) {
-            .q-card {
-                padding: 22px 18px;
-            }
-
-            .q-text {
-                font-size: 17px;
-            }
-
-            .login-card {
-                padding: 36px 24px;
-            }
-
-            .sc-meta-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Add this to your existing CSS */
         .adblock-warning {
             background: #fff3cd;
             border: 1px solid #ffc107;
@@ -1161,6 +1143,25 @@
             display: block;
             margin-bottom: 8px;
         }
+
+        /* Responsive */
+        @media (max-width: 500px) {
+            .q-card {
+                padding: 22px 18px;
+            }
+
+            .q-text {
+                font-size: 17px;
+            }
+
+            .login-card {
+                padding: 36px 24px;
+            }
+
+            .sc-meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -1177,7 +1178,6 @@
             <div class="login-brand">EduBoard</div>
             <div class="login-tagline">Student Portal — Sign in to join your session</div>
 
-            <!-- Ad Blocker Warning Banner -->
             <div class="adblock-warning" id="adblockWarning">
                 <strong>⚠️ Connection Issue Detected!</strong>
                 If you're having trouble connecting or logging in, please try one of these fixes:
@@ -1189,10 +1189,10 @@
                 </ul>
             </div>
 
-            <!-- Inside #loginScreen, inside .login-card -->
             <div id="sessionInfoBox">
                 <div class="session-loading">🔒 Sign in to view available sessions</div>
             </div>
+
             <div class="input-wrap">
                 <label>Email Address</label>
                 <input type="email" id="loginEmail" autocomplete="email">
@@ -1248,7 +1248,6 @@
     <div class="toast" id="toast"></div>
 
     <script type="module">
-        // Import from firebase-config.js
         import {
             auth,
             db,
@@ -1264,8 +1263,6 @@
             where,
             getDocs,
             updateDoc,
-            addDoc,
-            serverTimestamp,
             onSnapshot,
             ref,
             set,
@@ -1273,14 +1270,12 @@
             update as rtdbUpdate
         } from './firebase-config.js';
 
-        // 🟢 RTDB: Clean up when student leaves/refreshes
-        window.addEventListener('beforeunload', async (event) => {
+        window.addEventListener('beforeunload', async () => {
             if (activeSessionId && currentStudent) {
                 try {
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                    console.log('✅ Cleaned up RTDB on page exit');
                 } catch (e) {
-                    console.warn('⚠️ Could not remove from RTDB on exit:', e);
+                    console.warn('Could not remove from RTDB on exit:', e);
                 }
             }
         });
@@ -1293,14 +1288,13 @@
         let activeSessionId = null;
         let unsubSession = null;
 
-        // ── ROUTE GUARD ──
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingScreen').style.display = 'none';
 
             if (!user) {
                 const box = document.getElementById('sessionInfoBox');
                 if (box) {
-                    box.innerHTML = `<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>`;
+                    box.innerHTML = '<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>';
                 }
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
@@ -1308,27 +1302,23 @@
             }
 
             try {
-                // ✅ FIX: First try to find student by uid field, then by document ID
                 let studentData = null;
                 let studentDocId = null;
 
-                // Method 1: Try to find by uid field in students collection
                 const studentsRef = collection(db, 'students');
                 const q = query(studentsRef, where('uid', '==', user.uid));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
-                    // Found by uid field
                     studentDocId = querySnapshot.docs[0].id;
                     studentData = querySnapshot.docs[0].data();
-                    console.log('✅ Found student by uid field:', studentData);
+                    console.log('Found student by uid field:', studentData);
                 } else {
-                    // Method 2: Try to find by document ID (if it matches auth UID)
                     const docSnap = await getDoc(doc(db, 'students', user.uid));
                     if (docSnap.exists()) {
                         studentData = docSnap.data();
                         studentDocId = user.uid;
-                        console.log('✅ Found student by document ID:', studentData);
+                        console.log('Found student by document ID:', studentData);
                     }
                 }
 
@@ -1339,26 +1329,20 @@
                     return;
                 }
 
-                // Check if account is active
                 if (studentData.status === 'inactive' || studentData.active === false) {
                     await signOut(auth);
                     showErr('Your account has been deactivated. Contact your teacher.');
                     return;
                 }
 
-                // Set Global Variables
                 currentStudent = user;
                 studentProfile = studentData;
-
-                // Store the student document ID for future operations
                 currentStudent.docId = studentDocId;
 
-                // Update UI
                 document.getElementById('headerName').textContent = studentProfile.name || user.email;
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
 
-                // Load Session
                 await findAndJoinOpenSession();
 
             } catch (e) {
@@ -1368,58 +1352,6 @@
             }
         });
 
-        // ── SESSION INFO ON LOGIN (FIRESTORE VERSION) ──
-        async function loadLoginSessionInfo() {
-            const box = document.getElementById('sessionInfoBox');
-            const btn = document.getElementById('joinBtn');
-            box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
-
-            try {
-                // Query Firestore for active sessions
-                const sessionsRef = collection(db, 'sessions');
-                const q = query(sessionsRef, where('active', '==', true));
-                const snapshot = await getDocs(q);
-
-                if (snapshot.empty) {
-                    box.innerHTML = '<div class="session-closed-box">🔒 No sessions are currently open.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open a session.</span></div>';
-                    btn.disabled = false;
-                    return;
-                }
-
-                // Take the first active session
-                const firstDoc = snapshot.docs[0];
-                activeSessionId = firstDoc.id;
-                sessionData = firstDoc.data();
-
-                displaySessionInfo(sessionData, btn);
-            } catch (e) {
-                console.error('Session info error:', e);
-                box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please refresh.</div>';
-                btn.disabled = false;
-                const warning = document.getElementById('adblockWarning');
-                if (warning) warning.style.display = 'block';
-            }
-        }
-
-        function displaySessionInfo(cfg, btn) {
-            const box = document.getElementById('sessionInfoBox');
-            const parts = [cfg.grade, cfg.className, cfg.subject].filter(Boolean);
-            const timeStr = cfg.startTime && cfg.endTime ? `${cfg.startTime} – ${cfg.endTime}` : (cfg.startTime || '');
-
-            box.innerHTML = `<div class="session-info-box">
-    <div class="sib-label">Open Session</div>
-    <div class="sib-title">${esc(cfg.title||'Quiz Session')}</div>
-    <div class="sib-meta">
-      ${parts.map(p=>`<span class="sib-tag">${esc(p)}</span>`).join('')}
-      ${cfg.date?`<span class="sib-tag">📅 ${esc(cfg.date)}</span>`:''}
-      ${timeStr?`<span class="sib-tag">⏰ ${esc(timeStr)}</span>`:''}
-      ${cfg.ownerTeacherName?`<span class="sib-tag">👩‍ ${esc(cfg.ownerTeacherName)}</span>`:''}
-    </div>
-  </div>`;
-            btn.disabled = false;
-        }
-
-        // ── STUDENT LOGIN ──
         window.doStudentLogin = async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
@@ -1446,10 +1378,8 @@
             if (e.key === 'Enter') doStudentLogin();
         });
 
-        // ── FIND AND JOIN OPEN SESSION (FIRESTORE VERSION) ──
         async function findAndJoinOpenSession() {
             try {
-                // If we already have an ID from login screen, use it. Otherwise query.
                 if (!activeSessionId) {
                     const sessionsRef = collection(db, 'sessions');
                     const q = query(sessionsRef, where('active', '==', true));
@@ -1462,7 +1392,6 @@
                     activeSessionId = snapshot.docs[0].id;
                     sessionData = snapshot.docs[0].data();
                 } else {
-                    // Re-fetch latest data for the known session ID
                     const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
                     if (!sessDoc.exists() || !sessDoc.data().active) {
                         showNoSessions();
@@ -1471,7 +1400,6 @@
                     sessionData = sessDoc.data();
                 }
 
-                // ✅ Use the correct student ID (from the students collection)
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
@@ -1489,7 +1417,6 @@
                     merge: true
                 });
 
-                // 🟢 RTDB: Mark student as present in live session
                 try {
                     await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
                         name: studentProfile.name || currentStudent.email,
@@ -1498,15 +1425,13 @@
                         joinedAt: new Date().toISOString(),
                         status: 'active'
                     });
-                    console.log('✅ Student marked present in RTDB');
                 } catch (e) {
-                    console.warn('⚠️ Could not mark present in RTDB:', e);
+                    console.warn('Could not mark present in RTDB:', e);
                 }
 
                 document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
                 document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
 
-                // Listen for real-time updates on this student's grade/feedback
                 if (unsubSession) unsubSession();
                 unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
                     if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
@@ -1548,7 +1473,6 @@
                     await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey), {
                         online: false
                     });
-                    // 🟢 RTDB: Remove from live tracking
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
                 } catch (e) {}
             }
@@ -1557,10 +1481,8 @@
             window.location.href = 'index.html';
         };
 
-        // ── WELCOME ──
         async function loadAndShowWelcome() {
             try {
-                // Load Questions from Firestore Sub-collection
                 const qRef = collection(db, 'sessions', activeSessionId, 'questions');
                 const qSnap = await getDocs(qRef);
                 questions = [];
@@ -1570,7 +1492,6 @@
                 }));
                 questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
 
-                // Load Student Data
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
                 const sSnap = await getDoc(sRef);
@@ -1595,44 +1516,42 @@
             ws.style.display = 'block';
 
             if (!questions.length) {
-                ws.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet.</div></div>`;
+                ws.innerHTML = '<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:"Lora",serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn\'t added questions yet.</div></div>';
                 return;
             }
 
-            // Fetch fresh student data for stats
             const studentKey = currentStudent.docId || currentStudent.uid;
             getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
                 const s = sSnap.exists() ? sSnap.data() : {};
                 const answered = s.answers ? Object.keys(s.answers).length : 0;
-                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>` : '';
+                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
                 ws.innerHTML = `<div style="text-align:center;padding:20px 0">
       <div class="welcome-icon">🎓</div>
-      <div class="welcome-title">Welcome, ${esc((studentProfile.name||'').split(' ')[0]||'Student')}!</div>
+      <div class="welcome-title">Welcome, ${escapeHtml((studentProfile.name || '').split(' ')[0] || 'Student')}!</div>
       <div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
     </div>
     <div class="session-card">
       <div class="sc-label">Session</div>
-      <div class="sc-title">${esc(sessionData.title||'Quiz Session')}</div>
+      <div class="sc-title">${escapeHtml(sessionData.title || 'Quiz Session')}</div>
       <div class="sc-meta-grid">
-        ${sessionData.grade?`<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${esc(sessionData.grade)}</div></div>`:''}
-        ${sessionData.className?`<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${esc(sessionData.className)}</div></div>`:''}
-        ${sessionData.date?`<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${esc(sessionData.date)}</div></div>`:''}
-        ${sessionData.startTime?`<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${esc(sessionData.startTime)}${sessionData.endTime?' – '+esc(sessionData.endTime):''}</div></div>`:''}
+        ${sessionData.grade ? `<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${escapeHtml(sessionData.grade)}</div></div>` : ''}
+        ${sessionData.className ? `<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${escapeHtml(sessionData.className)}</div></div>` : ''}
+        ${sessionData.date ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(sessionData.date)}</div></div>` : ''}
+        ${sessionData.startTime ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(sessionData.startTime)}${sessionData.endTime ? ' – ' + escapeHtml(sessionData.endTime) : ''}</div></div>` : ''}
       </div>
       <div class="sc-stats">
         <div class="sc-stat"><span class="dot" style="background:var(--sage)"></span>${questions.length} Questions</div>
-        <div class="sc-stat"><span class="dot" style="background:var(--clay)"></span>${questions.reduce((n,q)=>n+q.points,0)} Points</div>
+        <div class="sc-stat"><span class="dot" style="background:var(--clay)"></span>${questions.reduce((n, q) => n + q.points, 0)} Points</div>
         <div class="sc-stat"><span class="dot" style="background:var(--sky)"></span>${answered} Answered</div>
       </div>
     </div>
     ${instrHtml}
     <div style="text-align:center">
-      <button class="btn-start" onclick="startQuiz()">${answered>0?'Continue Quiz →':'Start Quiz →'}</button>
+      <button class="btn-start" onclick="startQuiz()">${answered > 0 ? 'Continue Quiz →' : 'Start Quiz →'}</button>
     </div>`;
             }).catch(e => console.warn('Welcome error:', e));
         }
 
-        // ── QUIZ ──
         window.startQuiz = async function() {
             if (!questions.length) return;
             try {
@@ -1659,7 +1578,6 @@
 
         async function renderQuestion() {
             try {
-                // Re-fetch questions to ensure sync
                 const qRef = collection(db, 'sessions', activeSessionId, 'questions');
                 const qsSnap = await getDocs(qRef);
                 questions = [];
@@ -1690,14 +1608,14 @@
                 const qscreen = document.getElementById('quizScreen');
                 qscreen.innerHTML = `
       <div class="progress-header">
-        <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex+1} / ${total}</span></div>
+        <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
       </div>
       <div class="q-card">
-        <div class="q-header"><span class="q-badge">Question ${currentQIndex+1} of ${total}</span><span class="q-points">${q.points} pts${q.tag?' · '+esc(q.tag):''}</span></div>
+        <div class="q-header"><span class="q-badge">Question ${currentQIndex + 1} of ${total}</span><span class="q-points">${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span></div>
         <div class="q-text">${mathSafe(q.text)}</div>
-        ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
-        ${buildInput(q,existing)}
+        ${existing !== null ? '<div class="answered-badge">✓ Answer Saved</div>' : ''}
+        ${buildInput(q, existing)}
       </div>`;
 
                 document.getElementById('btnPrev').disabled = currentQIndex === 0;
@@ -1711,7 +1629,9 @@
         }
 
         function renderMath(el) {
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
+            }
         }
 
         function buildInput(q, existing) {
@@ -1719,22 +1639,36 @@
                 return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             }
 
-            function escA(s) {
+            function escapeAttr(s) {
                 return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             }
             if (q.type === 'mcq' && q.options && q.options.length) {
-                const L = 'ABCDEFGHIJ';
-                return `<div class="options-list">${q.options.map((o,i)=>`<button class="option-btn ${existing===o?'selected':''}" onclick="selectOption(this)" data-val="${escA(o)}"><span class="option-letter">${L[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
+                const letters = 'ABCDEFGHIJ';
+                return `<div class="options-list">${q.options.map((o, i) => `<button class="option-btn ${existing === o ? 'selected' : ''}" onclick="selectOption(this)" data-val="${escapeAttr(o)}"><span class="option-letter">${letters[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
             }
-            if (q.type === 'truefalse') return `<div class="tf-row"><button class="tf-btn ${existing==='True'?'selected':''}" onclick="selectTF(this,'True')"><span class="tf-icon">✅</span>True</button><button class="tf-btn ${existing==='False'?'selected':''}" onclick="selectTF(this,'False')"><span class="tf-icon">❌</span>False</button></div>`;
-            if (q.type === 'number') return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing!==null?esc(String(existing)):''}">`;
-            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing!==null?esc(String(existing)):''}</textarea>`;
+            if (q.type === 'truefalse') {
+                // Fixed: Added data-val attributes to ensure clean data retrieval
+                return `<div class="tf-row">
+                    <button class="tf-btn ${existing === 'True' ? 'selected' : ''}" onclick="selectTF(this, 'True')" data-val="True">
+                        <span class="tf-icon">✅</span>True
+                    </button>
+                    <button class="tf-btn ${existing === 'False' ? 'selected' : ''}" onclick="selectTF(this, 'False')" data-val="False">
+                        <span class="tf-icon">❌</span>False
+                    </button>
+                </div>`;
+            }
+            if (q.type === 'number') {
+                return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing !== null ? escapeHtml(String(existing)) : ''}">`;
+            }
+            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
         }
 
         window.selectOption = function(btn) {
             document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
         };
+
+        // Fixed: Added val parameter to handle selection logic cleanly
         window.selectTF = function(btn, val) {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
@@ -1743,20 +1677,21 @@
         function getCurrentAnswer() {
             const q = questions[currentQIndex];
             if (q.type === 'mcq') {
-                const s = document.querySelector('.option-btn.selected');
-                return s ? s.getAttribute('data-val') : null;
+                const selected = document.querySelector('.option-btn.selected');
+                return selected ? selected.getAttribute('data-val') : null;
             }
             if (q.type === 'truefalse') {
-                const s = document.querySelector('.tf-btn.selected');
-                return s ? s.textContent.trim() : null;
+                // Fixed: Retrieve from data-val instead of textContent
+                const selected = document.querySelector('.tf-btn.selected');
+                return selected ? selected.getAttribute('data-val') : null;
             }
             const el = document.getElementById('answerInput');
             return el && el.value.trim() ? el.value.trim() : null;
         }
 
         window.submitAnswer = async function() {
-            const ans = getCurrentAnswer();
-            if (ans === null) {
+            const answer = getCurrentAnswer();
+            if (answer === null) {
                 showToast('Please provide an answer first');
                 return;
             }
@@ -1771,19 +1706,17 @@
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
-                // 📝 Firestore: Save answer
                 await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: ans
+                    [`answers.${q.id}`]: answer
                 });
 
-                // 🟢 RTDB: Update activity timestamp (optional - for metrics)
                 try {
                     await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
                         lastActivity: Date.now(),
                         questionsAnswered: currentQIndex + 1
                     });
                 } catch (e) {
-                    console.warn('⚠️ Could not update RTDB activity:', e);
+                    console.warn('Could not update RTDB activity:', e);
                 }
 
                 showToast('Answer saved ✓');
@@ -1801,8 +1734,8 @@
         };
 
         async function canNavigate() {
-            const ans = getCurrentAnswer();
-            if (ans === null) {
+            const answer = getCurrentAnswer();
+            if (answer === null) {
                 const q = questions[currentQIndex];
                 try {
                     const studentKey = currentStudent.docId || currentStudent.uid;
@@ -1824,6 +1757,7 @@
                 renderQuestion();
             }
         };
+
         window.nextQ = async function() {
             if (await canNavigate() && currentQIndex < questions.length - 1) {
                 currentQIndex++;
@@ -1832,13 +1766,13 @@
         };
 
         window.finishSession = async function() {
-            const ans = getCurrentAnswer();
-            if (ans !== null) {
+            const answer = getCurrentAnswer();
+            if (answer !== null) {
                 const q = questions[currentQIndex];
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
                 await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: ans
+                    [`answers.${q.id}`]: answer
                 });
             }
             try {
@@ -1847,7 +1781,7 @@
                 const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
                 for (let i = 0; i < questions.length; i++) {
                     if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
-                        showToast(`Question ${i+1} is missing an answer!`);
+                        showToast(`Question ${i + 1} is missing an answer!`);
                         currentQIndex = i;
                         renderQuestion();
                         return;
@@ -1855,17 +1789,14 @@
                 }
                 const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
-                // 📝 Firestore: Mark as submitted
                 await updateDoc(studentRef, {
                     submitted: true
                 });
 
-                // 🟢 RTDB: Remove from live tracking (cleanup)
                 try {
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                    console.log('✅ Student removed from RTDB live tracking');
                 } catch (e) {
-                    console.warn('⚠️ Could not remove from RTDB:', e);
+                    console.warn('Could not remove from RTDB:', e);
                 }
 
                 showCompletion();
@@ -1875,7 +1806,6 @@
             }
         };
 
-        // ── COMPLETION ──
         async function showCompletion() {
             document.getElementById('quizScreen').style.display = 'none';
             document.getElementById('welcomeScreen').style.display = 'none';
@@ -1889,60 +1819,63 @@
                 console.error('Completion error:', e);
             }
         }
+
         async function refreshCompletion(s) {
             renderCompletionScreen(s);
         }
 
+        // FIXED: Completely rewritten to fix syntax errors in template literal
         function renderCompletionScreen(s) {
             const answered = s.answers ? Object.keys(s.answers).length : 0;
             const graded = s.grades ? Object.keys(s.grades).length : 0;
             const score = s.grades ? Object.values(s.grades).reduce((n, v) => n + (parseFloat(v) || 0), 0) : 0;
             const maxScore = questions.reduce((n, q) => n + q.points, 0);
             const cs = document.getElementById('completionScreen');
-            cs.innerHTML = `
-    <div class="completion-icon">🌟</div>
-    <div class="completion-title">All Done!</div>
-    <div class="submitted-lock-banner">
-      <span style="font-size:18px">🔒</span>
-      <span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
-    </div>
-    <div class="summary-grid">
-      <div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
-      <div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
-      <div class="summary-item"><div class="summary-val" style="color:var(--clay)">${score}/${maxScore}</div><div class="summary-label">Score</div></div>
-    </div>
-    <div class="answers-review"><h3 style="font-family:'Lora',serif;font-size:18px;margin-bottom:16px;font-weight:600">Your Answers</h3>
-    ${questions.map((q,i)=>{
-      const ans=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
-      const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:null;
-      const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:null;
-      function mh(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-      return` < div class = "answer-review-item" >
-                <
-                div class = "ar-q math-content" > < strong > Q$ {
-                    i + 1
-                }. < /strong> ${mh(q.text)}</div >
-                <
-                div class = "ar-a" > Your answer: < span class = "math-content" > $ {
-                    ans !== null ? mh(String(ans)) : '<em>Not answered</em>'
-                } < /span></div >
-                $ {
-                    grade !== null ? `<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>` : ''
+
+            // Generate the list items first to keep the main template clean
+            const answersHtml = questions.map((q, i) => {
+                const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
+                const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : null;
+                const fb = s.feedback && s.feedback[q.id] ? s.feedback[q.id] : null;
+
+                function mathSafe(t) {
+                    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 }
-            $ {
-                fb ? `<div class="feedback-display">💬 ${esc(fb)}</div>` : ''
-            } <
-            /div>`;
-        }).join('')
-        } <
-        /div> <
-        button class = "btn-retry"
-        onclick = "exitSession()"
-        style = "margin-top:24px" > ←Sign Out < /button>`;
-        renderMath(cs);
+
+                return `
+                <div class="answer-review-item">
+                    <div class="ar-q math-content">
+                        <strong>Q${i + 1}.</strong> ${mathSafe(q.text)}
+                    </div>
+                    <div class="ar-a">
+                        Your answer: <span class="math-content">${ans !== null ? mathSafe(String(ans)) : '<em>Not answered</em>'}</span>
+                    </div>
+                    ${grade !== null ? `<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>` : ''}
+                    ${fb ? `<div class="feedback-display">💬 ${escapeHtml(fb)}</div>` : ''}
+                </div>`;
+            }).join('');
+
+            cs.innerHTML = `
+            <div class="completion-icon">🌟</div>
+            <div class="completion-title">All Done!</div>
+            <div class="submitted-lock-banner">
+                <span style="font-size:18px">🔒</span>
+                <span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
+            </div>
+            <div class="summary-grid">
+                <div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
+                <div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
+                <div class="summary-item"><div class="summary-val" style="color:var(--clay)">${score}/${maxScore}</div><div class="summary-label">Score</div></div>
+            </div>
+            <div class="answers-review">
+                <h3 style="font-family:'Lora',serif;font-size:18px;margin-bottom:16px;font-weight:600">Your Answers</h3>
+                ${answersHtml}
+            </div>
+            <button class="btn-retry" onclick="exitSession()" style="margin-top:24px">← Sign Out</button>`;
+
+            renderMath(cs);
         }
 
-        // ── UTILS ──
         function showErr(msg) {
             const e = document.getElementById('loginErr');
             e.textContent = msg;
@@ -1966,7 +1899,7 @@
             setTimeout(() => t.classList.remove('show'), 2200);
         }
 
-        function esc(s) {
+        function escapeHtml(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
     </script>
