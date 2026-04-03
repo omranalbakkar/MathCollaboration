@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <style>
         :root {
             --bg: #f1f5f9;
@@ -920,8 +922,8 @@
                     <tr>
                         <td>${getDisplayName(d)}</td><td>${d.email}</td>
                         <td style="font-size:0.85rem">${gNames}</td><td style="font-size:0.85rem">${sNames}</td>
-<td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
-<td class="action-btns">
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
                             <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
                             <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
                             <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
@@ -953,8 +955,8 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${d.name||'Unnamed'}</td><td>${d.email}</td><td>${gName}</td>
-<td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
-<td class="action-btns">
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
                             <button class="icon-btn" onclick="editItem('student','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
                             <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
                             <button class="icon-btn delete" onclick="deleteStudent('${doc.id}')"><i class="fas fa-trash"></i></button>
@@ -1129,7 +1131,7 @@
                         if ((type === 'teachers' || type === 'students') && !row.email) continue;
 
                         let docData = {};
-                        let targetId = row.id || null;
+                        let targetId = null; // 👈 START WITH NULL, NOT row.id
 
                         // Construct Data based on Type
                         if (type === 'grades' || type === 'subjects') {
@@ -1142,34 +1144,29 @@
                         } else if (type === 'teachers') {
                             const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
                             const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
-                            // NEW (Teachers)
                             docData = {
                                 name: row.name,
                                 email: row.email,
                                 role: 'teacher',
-                                status: row.status || 'Active', // ✅ String
+                                status: row.status || 'Active',
                                 assignedGrades: gradeIds,
                                 assignedSubjects: subjectIds
                             };
-                            targetId = row.id;
                         } else if (type === 'students') {
                             const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
-                            // NEW (Students)
                             docData = {
                                 name: row.name,
                                 email: row.email,
                                 gradeLevel: gradeId,
-                                status: row.status || 'Active' // ✅ String
+                                status: row.status || 'Active'
                             };
-                            targetId = row.id;
                         } else if (type === 'sessions') {
                             let teacherId = row['ownerTeacherId (Email or ID)'];
                             if (teacherId && teacherId.includes('@')) {
                                 const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
                                 if (!tSnap.empty) teacherId = tSnap.docs[0].id;
                             }
-                            let startSecs = null,
-                                endSecs = null;
+                            let startSecs = null, endSecs = null;
                             if (row['startTime (YYYY-MM-DD HH:MM)']) startSecs = Math.floor(new Date(row['startTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
 
@@ -1178,15 +1175,10 @@
                                 ownerTeacherId: teacherId,
                                 gradeLevel: row.gradeLevel,
                                 subject: row.subject,
-                                startTime: startSecs ? {
-                                    seconds: startSecs
-                                } : null,
-                                endTime: endSecs ? {
-                                    seconds: endSecs
-                                } : null,
+                                startTime: startSecs ? { seconds: startSecs } : null,
+                                endTime: endSecs ? { seconds: endSecs } : null,
                                 isActive: String(row.isActive).toLowerCase() === 'true'
                             };
-                            targetId = row.id;
                         }
 
                         // Add Audit Fields
@@ -1196,13 +1188,15 @@
                         const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
 
                         // Logic to Find Existing Document if ID is missing
-                        if (!targetId) {
+                        // ONLY use row.id if it's explicitly provided and looks like a Firestore ID
+                        if (row.id && typeof row.id === 'string' && row.id.length > 10) {
+                            targetId = row.id;
+                        } else {
+                            // Otherwise, search by unique key
                             let q;
                             if (type === 'grades' || type === 'subjects') {
-                                // Match by Code
                                 q = query(collection(db, colName), where("code", "==", row.code));
                             } else if (type === 'teachers' || type === 'students') {
-                                // Match by Email
                                 q = query(collection(db, colName), where("email", "==", row.email));
                             } else {
                                 q = null;
@@ -1304,7 +1298,7 @@
         };
 
         // --- MODAL ---
-              window.openModal = (type, id = null, data = null) => {
+        window.openModal = (type, id = null, data = null) => {
             const m = document.getElementById('generic-modal');
             const f = document.getElementById('modal-fields');
             document.getElementById('modal-type').value = type;
@@ -1358,7 +1352,6 @@
             const type = document.getElementById('modal-type').value;
             const id = document.getElementById('modal-id').value;
             const data = Object.fromEntries(new FormData(e.target));
-           // data.active = (data.active === 'true');
             
             // Add Audit Fields for manual edits too
             data.updatedAt = serverTimestamp();
