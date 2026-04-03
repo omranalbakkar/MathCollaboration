@@ -343,7 +343,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -364,6 +364,7 @@
         let currentUser = null;
         let allGrades = [];
         let allSubjects = [];
+        let currentSection = 'dashboard'; // Track current section for refresh
 
         // --- AUTH ---
         window.handleAdminLogin = async () => {
@@ -372,10 +373,10 @@
             try { await signInWithEmailAndPassword(auth, email, password); } 
             catch (error) { alert("Login Failed: " + error.message); }
         };
-                window.handleLogout = async () => {
+        
+        window.handleLogout = async () => {
             try {
                 await signOut(auth);
-                // Redirect to index.html immediately after successful logout
                 window.location.href = 'index.html';
             } catch (error) {
                 console.error("Error signing out:", error);
@@ -383,7 +384,6 @@
             }
         };
 
-        
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -399,6 +399,7 @@
 
         // --- NAVIGATION ---
         window.showSection = (sectionId) => {
+            currentSection = sectionId; // Update tracker
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
@@ -411,6 +412,16 @@
             if (sectionId === 'teachers') loadTeachers();
             if (sectionId === 'students') loadStudents();
             if (sectionId === 'sessions') loadSessions();
+        };
+
+        // Helper to refresh only the current view without full reload
+        window.refreshCurrentSection = () => {
+            if(currentSection === 'grades') loadGrades();
+            else if(currentSection === 'subjects') loadSubjects();
+            else if(currentSection === 'teachers') loadTeachers();
+            else if(currentSection === 'students') loadStudents();
+            else if(currentSection === 'sessions') loadSessions();
+            else if(currentSection === 'dashboard') initDashboard();
         };
 
         // --- DASHBOARD ---
@@ -629,6 +640,7 @@
             rawData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             const cleanData = rawData.map(row => {
+                // Remove audit fields for export cleanliness
                 const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
                 
                 if (type === 'teachers') {
@@ -686,6 +698,10 @@
 
                     const batch = writeBatch(db);
                     let countInsert = 0, countUpdate = 0;
+                    
+                    // Audit Info
+                    const now = serverTimestamp();
+                    const adminUid = currentUser.uid;
 
                     for (const row of jsonData) {
                         if ((type === 'teachers' || type === 'students') && !row.email) continue;
@@ -693,16 +709,34 @@
                         let docData = {};
                         let targetId = row.id || null;
 
+                        // Construct Data based on Type
                         if (type === 'grades' || type === 'subjects') {
-                            docData = { nameEn: row.nameEn, nameAr: row.nameAr, code: row.code, status: row.status || 'Active' };
+                            docData = { 
+                                nameEn: row.nameEn, 
+                                nameAr: row.nameAr, 
+                                code: row.code, 
+                                status: row.status || 'Active' 
+                            };
                         } else if (type === 'teachers') {
                             const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
                             const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
-                            docData = { name: row.name, email: row.email, role: 'teacher', active: String(row.active).toLowerCase() === 'true', assignedGrades: gradeIds, assignedSubjects: subjectIds };
+                            docData = { 
+                                name: row.name, 
+                                email: row.email, 
+                                role: 'teacher', 
+                                active: String(row.active).toLowerCase() === 'true', 
+                                assignedGrades: gradeIds, 
+                                assignedSubjects: subjectIds 
+                            };
                             targetId = row.id;
                         } else if (type === 'students') {
                             const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
-                            docData = { name: row.name, email: row.email, gradeLevel: gradeId, active: String(row.active).toLowerCase() === 'true' };
+                            docData = { 
+                                name: row.name, 
+                                email: row.email, 
+                                gradeLevel: gradeId, 
+                                active: String(row.active).toLowerCase() === 'true' 
+                            };
                             targetId = row.id;
                         } else if (type === 'sessions') {
                             let teacherId = row['ownerTeacherId (Email or ID)'];
@@ -714,29 +748,81 @@
                             if (row['startTime (YYYY-MM-DD HH:MM)']) startSecs = Math.floor(new Date(row['startTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             
-                            docData = { title: row.title, ownerTeacherId: teacherId, gradeLevel: row.gradeLevel, subject: row.subject, startTime: startSecs ? { seconds: startSecs } : null, endTime: endSecs ? { seconds: endSecs } : null, isActive: String(row.isActive).toLowerCase() === 'true' };
+                            docData = { 
+                                title: row.title, 
+                                ownerTeacherId: teacherId, 
+                                gradeLevel: row.gradeLevel, 
+                                subject: row.subject, 
+                                startTime: startSecs ? { seconds: startSecs } : null, 
+                                endTime: endSecs ? { seconds: endSecs } : null, 
+                                isActive: String(row.isActive).toLowerCase() === 'true' 
+                            };
                             targetId = row.id;
                         }
 
+                        // Add Audit Fields
+                        docData.updatedAt = now;
+                        docData.updatedBy = adminUid;
+
                         const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
                         
+                        // Logic to Find Existing Document if ID is missing
+                        if (!targetId) {
+                            let q;
+                            if (type === 'grades' || type === 'subjects') {
+                                // Match by Code
+                                q = query(collection(db, colName), where("code", "==", row.code));
+                            } else if (type === 'teachers' || type === 'students') {
+                                // Match by Email
+                                q = query(collection(db, colName), where("email", "==", row.email));
+                            } else {
+                                q = null; // Sessions usually need explicit ID or create new
+                            }
+
+                            if (q) {
+                                const existingSnap = await getDocs(q);
+                                if (!existingSnap.empty) {
+                                    targetId = existingSnap.docs[0].id;
+                                }
+                            }
+                        }
+
                         if (targetId) {
+                            // UPDATE
+                            // For Updates, we don't want to overwrite createdAt if it exists, 
+                            // but we ensure updatedBy is set.
                             batch.update(doc(db, colName, targetId), docData);
                             countUpdate++;
                         } else {
+                            // CREATE
+                            // Add creation audit fields
+                            docData.createdAt = now;
+                            docData.createdBy = adminUid;
+
                             if (type === 'teachers' || type === 'students') {
+                                // Double check duplicate just in case
                                 const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
-                                if (!existing.empty) { console.warn(`Skip duplicate: ${row.email}`); continue; }
+                                if (!existing.empty) { 
+                                    console.warn(`Skip duplicate: ${row.email}`); 
+                                    continue; 
+                                }
                             }
                             const newRef = doc(collection(db, colName));
                             batch.set(newRef, docData);
                             countInsert++;
                         }
                     }
+                    
                     await batch.commit();
                     alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
-                    location.reload();
-                } catch (err) { alert("Import Failed: " + err.message); console.error(err); }
+                    
+                    // Refresh View instead of Reload
+                    refreshCurrentSection();
+                    
+                } catch (err) { 
+                    alert("Import Failed: " + err.message); 
+                    console.error(err); 
+                }
             };
             reader.readAsArrayBuffer(file);
         };
@@ -748,7 +834,7 @@
             items.forEach(item => {
                 const found = list.find(l => l.nameEn.toLowerCase() === item.toLowerCase() || l.nameAr === item);
                 if (found) ids.push(found.id);
-                else if (item.length > 10) ids.push(item);
+                else if (item.length > 10) ids.push(item); // Assume it's already an ID
             });
             return ids;
         }
@@ -821,24 +907,38 @@
             const id = document.getElementById('modal-id').value;
             const data = Object.fromEntries(new FormData(e.target));
             data.active = (data.active === 'true');
+            
+            // Add Audit Fields for manual edits too
+            data.updatedAt = serverTimestamp();
+            data.updatedBy = currentUser.uid;
+
             try {
                 if(type === 'grade' || type === 'subject') {
                     const col = type + 's';
                     if(id) await updateDoc(doc(db, col, id), data);
-                    else await addDoc(collection(db, col), data);
+                    else {
+                        data.createdAt = serverTimestamp();
+                        data.createdBy = currentUser.uid;
+                        await addDoc(collection(db, col), data);
+                    }
                 } else if (type === 'teacher') {
                     const uData = {...data, role:'teacher'};
                     if(id) { delete uData.role; await updateDoc(doc(db, "users", id), uData); }
-                    else await addDoc(collection(db, "users"), uData);
+                    else {
+                        uData.createdAt = serverTimestamp();
+                        uData.createdBy = currentUser.uid;
+                        await addDoc(collection(db, "users"), uData);
+                    }
                 } else if (type === 'student') {
                     if(id) await updateDoc(doc(db, "students", id), data);
-                    else await addDoc(collection(db, "students"), data);
+                    else {
+                        data.createdAt = serverTimestamp();
+                        data.createdBy = currentUser.uid;
+                        await addDoc(collection(db, "students"), data);
+                    }
                 }
                 closeModal();
-                if(type==='grade') loadGrades();
-                if(type==='subject') loadSubjects();
-                if(type==='teacher') loadTeachers();
-                if(type==='student') loadStudents();
+                refreshCurrentSection();
             } catch(err) { alert("Error: " + err.message); }
         };
 
