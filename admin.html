@@ -1390,6 +1390,47 @@
             const rows = document.getElementById(id).getElementsByTagName("tr");
             for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].textContent.toUpperCase().indexOf(f) > -1 ? "" : "none";
         };
+
+        // --- REFRESH CURRENT SECTION ---
+        window.refreshCurrentSection = async () => {
+            // Get currently active section
+            const activeSection = document.querySelector('.section.active');
+            if (!activeSection) return;
+            
+            const sectionName = activeSection.id;
+            
+            if (sectionName === 'grades') {
+                await loadGrades();
+            } else if (sectionName === 'subjects') {
+                await loadSubjects();
+            } else if (sectionName === 'teachers') {
+                await loadTeachers();
+            } else if (sectionName === 'students') {
+                await loadStudents();
+            } else if (sectionName === 'sessions') {
+                await loadSessions();
+            }
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        window.getDisplayName = (user) => {
+            return user?.name || user?.email || 'Unknown';
+        };
+
+        window.getNameById = (id, list) => {
+            const item = list.find(x => x.id === id);
+            return item ? item.nameEn : id;
+        };
+
+        window.loadAll = async () => {
+            await Promise.all([
+                loadGrades(),
+                loadSubjects(),
+                loadTeachers(),
+                loadStudents(),
+                loadSessions()
+            ]);
+        };
     </script>
 </body>
 
