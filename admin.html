@@ -1095,73 +1095,86 @@
                 try {
                     const workbook = XLSX.read(e.target.result, { type: 'array' });
                     
-                    // FIX: Find the first sheet that actually contains data
+                    // 1. Find the first sheet with data
                     let sheetName = workbook.SheetNames[0];
+                    let jsonData = [];
+                    
                     for (let name of workbook.SheetNames) {
-                        const worksheet = workbook.Sheets[name];
-                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                        if (jsonData && jsonData.length > 0) {
+                        const rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
+                        if (rawJson && rawJson.length > 0) {
                             sheetName = name;
+                            jsonData = rawJson;
                             break;
                         }
                     }
 
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
                     if (jsonData.length === 0) { 
-                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows."); 
+                        alert("No data found in the Excel file."); 
                         return; 
                     }
 
+                    // 2. Normalize Headers (Trim spaces and lowercase keys for matching)
+                    // We create a new array where keys are trimmed
+                    const normalizedData = jsonData.map(row => {
+                        const newRow = {};
+                        Object.keys(row).forEach(key => {
+                            // Trim key and convert to lowercase for consistent access
+                            const cleanKey = key.trim(); 
+                            newRow[cleanKey] = row[key];
+                        });
+                        return newRow;
+                    });
+
                     const batch = writeBatch(db);
                     let countInsert = 0, countUpdate = 0;
-                    
-                    // Audit Info
                     const now = serverTimestamp();
                     const adminUid = currentUser.uid;
 
-                    for (const row of jsonData) {
-                        // Skip empty rows often created by Excel formatting
-                        if (!row.nameEn && !row.code && !row.email && !row.title) continue;
-
-                        if ((type === 'teachers' || type === 'students') && !row.email) continue;
+                    for (const row of normalizedData) {
+                        // Skip completely empty rows
+                        if (!row.nameEn && !row.code && !row.email && !row.title && !row.Name) continue;
 
                         let docData = {};
-                        let targetId = row.id || null;
+                        let targetId = null; // Start with null, force lookup
 
-                        // Construct Data based on Type
+                        // 3. Construct Data based on Type
                         if (type === 'grades' || type === 'subjects') {
+                            // Use exact header names from your template: nameEn, nameAr, code, status
                             docData = { 
-                                nameEn: row.nameEn, 
-                                nameAr: row.nameAr, 
-                                code: row.code, 
-                                status: row.status || 'Active' 
+                                nameEn: row.nameEn || row.NameEN || row.Name, // Fallbacks
+                                nameAr: row.nameAr || row.NameAR || '', 
+                                code: row.code || row.Code, 
+                                status: row.status || row.Status || 'Active' 
                             };
+                            if (!docData.nameEn || !docData.code) {
+                                console.warn("Skipping row due to missing nameEn or code:", row);
+                                continue;
+                            }
                         } else if (type === 'teachers') {
-                            const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
-                            const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
+                            const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'] || row.assignedGrades, allGrades);
+                            const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'] || row.assignedSubjects, allSubjects);
                             docData = { 
-                                name: row.name, 
-                                email: row.email, 
+                                name: row.name || row.Name, 
+                                email: (row.email || row.Email || '').toLowerCase().trim(), 
                                 role: 'teacher', 
-                                status: row.status || 'Active', // ✅ String
+                                status: row.status || row.Status || 'Active', 
                                 assignedGrades: gradeIds, 
                                 assignedSubjects: subjectIds 
                             };
-                            targetId = row.id;
+                            if (!docData.email) continue;
                         } else if (type === 'students') {
-                            const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
+                            const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'] || row.gradeLevel || row.Grade, allGrades);
                             docData = { 
-                                name: row.name, 
-                                email: row.email, 
+                                name: row.name || row.Name, 
+                                email: (row.email || row.Email || '').toLowerCase().trim(), 
                                 gradeLevel: gradeId, 
-                                status: row.status || 'Active' // ✅ String
+                                status: row.status || row.Status || 'Active' 
                             };
-                            targetId = row.id;
+                            if (!docData.email) continue;
                         } else if (type === 'sessions') {
-                            let teacherId = row['ownerTeacherId (Email or ID)'];
-                            if (teacherId && teacherId.includes('@')) {
+                            // Sessions logic remains same as before
+                            let teacherId = row['ownerTeacherId (Email or ID)'] || row.ownerTeacherId;
+                            if (teacherId && String(teacherId).includes('@')) {
                                 const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
                                 if (!tSnap.empty) teacherId = tSnap.docs[0].id;
                             }
@@ -1170,15 +1183,14 @@
                             if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             
                             docData = { 
-                                title: row.title, 
+                                title: row.title || row.Title, 
                                 ownerTeacherId: teacherId, 
-                                gradeLevel: row.gradeLevel, 
-                                subject: row.subject, 
+                                gradeLevel: row.gradeLevel || row.Grade, 
+                                subject: row.subject || row.Subject, 
                                 startTime: startSecs ? { seconds: startSecs } : null, 
                                 endTime: endSecs ? { seconds: endSecs } : null, 
-                                isActive: String(row.isActive).toLowerCase() === 'true' 
+                                isActive: String(row.isActive || row.Status).toLowerCase() === 'true' || String(row.isActive || row.Status).toLowerCase() === 'active'
                             };
-                            targetId = row.id;
                         }
 
                         // Add Audit Fields
@@ -1187,17 +1199,19 @@
 
                         const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
                         
-                        // Logic to Find Existing Document if ID is missing
-                        if (!targetId) {
+                        // 4. Find Existing Document Logic
+                        // ONLY use row.id if it looks like a Firestore ID (20+ chars alphanumeric)
+                        if (row.id && typeof row.id === 'string' && row.id.length > 15) {
+                            targetId = row.id;
+                        } else {
+                            // Otherwise, search by unique key
                             let q;
                             if (type === 'grades' || type === 'subjects') {
-                                // Match by Code
-                                q = query(collection(db, colName), where("code", "==", row.code));
+                                q = query(collection(db, colName), where("code", "==", docData.code));
                             } else if (type === 'teachers' || type === 'students') {
-                                // Match by Email
-                                q = query(collection(db, colName), where("email", "==", row.email));
+                                q = query(collection(db, colName), where("email", "==", docData.email));
                             } else {
-                                q = null; 
+                                q = null;
                             }
 
                             if (q) {
@@ -1217,10 +1231,11 @@
                             docData.createdAt = now;
                             docData.createdBy = adminUid;
 
+                            // Duplicate check for users/students
                             if (type === 'teachers' || type === 'students') {
-                                const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
+                                const existing = await getDocs(query(collection(db, colName), where("email", "==", docData.email)));
                                 if (!existing.empty) { 
-                                    console.warn(`Skip duplicate: ${row.email}`); 
+                                    console.warn(`Skip duplicate: ${docData.email}`); 
                                     continue; 
                                 }
                             }
@@ -1231,7 +1246,7 @@
                     }
                     
                     if (countInsert === 0 && countUpdate === 0) {
-                         alert("No valid records found to import. Check your column headers match the template.");
+                         alert("No valid records found. Check headers: nameEn, nameAr, code, status");
                     } else {
                         await batch.commit();
                         alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
@@ -1245,7 +1260,6 @@
             };
             reader.readAsArrayBuffer(file);
         };
-
 
         function resolveNamesToIds(inputString, list) {
             if (!inputString) return [];
@@ -1389,47 +1403,6 @@
             const f = q.toUpperCase();
             const rows = document.getElementById(id).getElementsByTagName("tr");
             for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].textContent.toUpperCase().indexOf(f) > -1 ? "" : "none";
-        };
-
-        // --- REFRESH CURRENT SECTION ---
-        window.refreshCurrentSection = async () => {
-            // Get currently active section
-            const activeSection = document.querySelector('.section.active');
-            if (!activeSection) return;
-            
-            const sectionName = activeSection.id;
-            
-            if (sectionName === 'grades') {
-                await loadGrades();
-            } else if (sectionName === 'subjects') {
-                await loadSubjects();
-            } else if (sectionName === 'teachers') {
-                await loadTeachers();
-            } else if (sectionName === 'students') {
-                await loadStudents();
-            } else if (sectionName === 'sessions') {
-                await loadSessions();
-            }
-        };
-
-        // --- UTILITY FUNCTIONS ---
-        window.getDisplayName = (user) => {
-            return user?.name || user?.email || 'Unknown';
-        };
-
-        window.getNameById = (id, list) => {
-            const item = list.find(x => x.id === id);
-            return item ? item.nameEn : id;
-        };
-
-        window.loadAll = async () => {
-            await Promise.all([
-                loadGrades(),
-                loadSubjects(),
-                loadTeachers(),
-                loadStudents(),
-                loadSessions()
-            ]);
         };
     </script>
 </body>
