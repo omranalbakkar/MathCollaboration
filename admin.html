@@ -1,34 +1,693 @@
-<script type="module">
-    import {
-        initializeApp
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import {
-        getAuth,
-        signInWithEmailAndPassword,
-        signOut,
-        onAuthStateChanged,
-        sendPasswordResetEmail
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import {
-        getFirestore,
-        collection,
-        getDocs,
-        doc,
-        setDoc,
-        deleteDoc,
-        query,
-        where,
-        updateDoc,
-        addDoc,
-        writeBatch,
-        serverTimestamp,
-        Timestamp
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import {
-        getDatabase,
-        ref,
-        onValue
-    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBoard — Super Admin Portal</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Login */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+            color: var(--text);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        /* Layout */
+        #app-container {
+            display: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            overflow-x: auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.25rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* Dashboard Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .stat-val {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-val.green {
+            color: var(--success);
+        }
+
+        .stat-val.blue {
+            color: var(--primary);
+        }
+
+        .stat-val.purple {
+            color: #8b5cf6;
+        }
+
+        .stat-val.amber {
+            color: var(--warning);
+        }
+
+        /* Tables */
+        .controls {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .table-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: white;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-light);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .icon-btn.delete:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .icon-btn.reset:hover {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2><i class="fas fa-shield-halved"></i> Super Admin</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-light);">EduBoard Secure Portal</p>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="admin-email" placeholder="admin@eduboard.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="admin-password" placeholder="••••••••">
+            </div>
+            <button class="btn" onclick="handleAdminLogin()">Sign In</button>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div id="app-container" style="display:none;">
+        <header>
+            <div class="brand"><i class="fas fa-graduation-cap"></i> EduBoard Admin</div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <span id="admin-user-display" style="font-weight:500; color:var(--text-light);">Admin</span>
+                <button class="btn btn-sm btn-secondary" onclick="handleLogout()" style="width:auto;"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+        </header>
+
+        <nav>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
+                <button class="nav-tab" onclick="showSection('grades')"><i class="fas fa-layer-group"></i> Grades</button>
+                <button class="nav-tab" onclick="showSection('subjects')"><i class="fas fa-book"></i> Subjects</button>
+                <button class="nav-tab" onclick="showSection('teachers')"><i class="fas fa-chalkboard-teacher"></i> Teachers</button>
+                <button class="nav-tab" onclick="showSection('students')"><i class="fas fa-user-graduate"></i> Students</button>
+                <button class="nav-tab" onclick="showSection('sessions')"><i class="fas fa-video"></i> Sessions</button>
+            </div>
+        </nav>
+
+        <main>
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="section active">
+                <h2>System Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card" onclick="showSection('grades')">
+                        <div class="stat-val amber" id="dashGrades">—</div>
+                        <div class="stat-label">Grades</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('subjects')">
+                        <div class="stat-val blue" id="dashSubjects">—</div>
+                        <div class="stat-label">Subjects</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('teachers')">
+                        <div class="stat-val green" id="dashTeachers">—</div>
+                        <div class="stat-label">Teachers</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('students')">
+                        <div class="stat-val purple" id="dashStudents">—</div>
+                        <div class="stat-label">Students</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid var(--success);">
+                        <div class="stat-val green" id="cardActive">—</div>
+                        <div class="stat-label">🟢 Live Students</div>
+                    </div>
+                    <div class="stat-card" style="border-top: 4px solid var(--warning);">
+                        <div class="stat-val orange" id="cardSessions">—</div>
+                        <div class="stat-label">⚡ Active Sessions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRADES -->
+            <div id="grades" class="section">
+                <h2>
+                    Grade Master
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('grades')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('grades')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-grades" hidden accept=".xlsx, .xls" onchange="processImport('grades', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('grades-table', this.value)">
+                </div>
+                <div class="table-container">
+                    <table id="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUBJECTS -->
+            <div id="subjects" class="section">
+                <h2>
+                    Subjects Master
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('subjects')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('subjects')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-subjects" hidden accept=".xlsx, .xls" onchange="processImport('subjects', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('subjects-table', this.value)">
+                </div>
+                <div class="table-container">
+                    <table id="subjects-table">
+                        <thead>
+                            <tr>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TEACHERS -->
+            <div id="teachers" class="section">
+                <h2>
+                    Teachers Master
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('teachers')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('teachers')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-teachers" hidden accept=".xlsx, .xls" onchange="processImport('teachers', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('teachers-table', this.value)">
+                </div>
+                <div class="table-container">
+                    <table id="teachers-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Assigned Grades</th>
+                                <th>Assigned Subjects</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- STUDENTS -->
+            <div id="students" class="section">
+                <h2>
+                    Students Master
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('students')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('students')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-students" hidden accept=".xlsx, .xls" onchange="processImport('students', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('students-table', this.value)">
+                    <select class="filter-select" id="student-grade-filter" onchange="loadStudents()" style="padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
+                        <option value="">All Grades</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table id="students-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Grade</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SESSIONS -->
+            <div id="sessions" class="section">
+                <h2>
+                    All Sessions
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('sessions')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('sessions')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-sessions').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-sessions" hidden accept=".xlsx, .xls" onchange="processImport('sessions', this)">
+                    </div>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('sessions-table', this.value)">
+                </div>
+                <div class="table-container">
+                    <table id="sessions-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Teacher</th>
+                                <th>Grade</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="generic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Item</h3>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <form id="modal-form" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="modal-type">
+                <input type="hidden" id="modal-id">
+                <div id="modal-fields"></div>
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="width:auto;">Cancel</button>
+                    <button type="submit" class="btn" style="width:auto;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
@@ -91,14 +750,7 @@
         document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
         const tabs = document.querySelectorAll('.nav-tab');
-        const map = {
-            'dashboard': 0,
-            'grades': 1,
-            'subjects': 2,
-            'teachers': 3,
-            'students': 4,
-            'sessions': 5
-        };
+        const map = {'dashboard': 0, 'grades': 1, 'subjects': 2, 'teachers': 3, 'students': 4, 'sessions': 5};
         if (tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
 
         if (sectionId === 'grades') loadGrades();
@@ -131,14 +783,8 @@
             document.getElementById('dashTeachers').textContent = teachersSnap.size;
             document.getElementById('dashStudents').textContent = studentsSnap.size;
 
-            allGrades = gradesSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
-            allSubjects = subjectsSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
+            allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
             populateGradeFilter();
         } catch (e) {
             console.error(e);
@@ -152,8 +798,7 @@
                 document.getElementById('cardActive').textContent = "0";
                 return;
             }
-            let sCount = 0,
-                stCount = 0;
+            let sCount = 0, stCount = 0;
             Object.values(data).forEach(s => {
                 sCount++;
                 if (s.students) stCount += Object.keys(s.students).length;
@@ -325,8 +970,7 @@
 
     window.downloadTemplate = (type) => {
         const wb = XLSX.utils.book_new();
-        let headers = [],
-            sampleRow = [];
+        let headers = [], sampleRow = [];
 
         if (type === 'grades') {
             headers = ["nameEn", "nameAr", "code", "status"];
@@ -356,22 +1000,15 @@
         // Ensure reference data is loaded
         if (allGrades.length === 0) {
             const gradesSnap = await getDocs(collection(db, "grades"));
-            allGrades = gradesSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
+            allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
         }
         if (allSubjects.length === 0) {
             const subjectsSnap = await getDocs(collection(db, "subjects"));
-            allSubjects = subjectsSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
+            allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
         }
 
         try {
-            let collectionRef = null,
-                queryRef = null;
+            let collectionRef = null, queryRef = null;
 
             if (type === 'grades') collectionRef = collection(db, "grades");
             else if (type === 'subjects') collectionRef = collection(db, "subjects");
@@ -383,20 +1020,11 @@
             if (queryRef) snap = await getDocs(queryRef);
             else if (collectionRef) snap = await getDocs(collectionRef);
 
-            const rawData = snap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const rawData = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
 
             const cleanData = rawData.map(row => {
                 // Remove audit fields
-                const {
-                    createdAt,
-                    updatedAt,
-                    createdBy,
-                    updatedBy,
-                    ...cleanRow
-                } = row;
+                const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
 
                 // Resolve IDs to Names for better readability
                 if (type === 'teachers') {
@@ -419,27 +1047,13 @@
                 }
                 if (type === 'sessions' && row.startTime?.seconds) {
                     const date = new Date(row.startTime.seconds * 1000);
-                    cleanRow.startTime = date.toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                    cleanRow.startTime = date.toLocaleString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
                 }
                 if (type === 'sessions' && row.endTime?.seconds) {
                     const date = new Date(row.endTime.seconds * 1000);
-                    cleanRow.endTime = date.toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: false
-                    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                    cleanRow.endTime = date.toLocaleString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
                 }
-
+                
                 return cleanRow;
             });
 
@@ -456,7 +1070,7 @@
     window.processImport = async (type, input) => {
         const file = input.files[0];
         if (!file) return;
-
+        
         // Reset input so same file can be selected again
         input.value = '';
 
@@ -469,24 +1083,20 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const workbook = XLSX.read(e.target.result, {
-                    type: 'array'
-                });
-
+                const workbook = XLSX.read(e.target.result, { type: 'array' });
+                
                 let jsonData = [];
                 for (let name of workbook.SheetNames) {
-                    const rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[name], {
-                        defval: ""
-                    });
+                    const rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[name], { defval: "" });
                     if (rawJson && rawJson.length > 0) {
                         jsonData = rawJson;
                         break;
                     }
                 }
 
-                if (jsonData.length === 0) {
-                    alert("No data found in the Excel file.");
-                    return;
+                if (jsonData.length === 0) { 
+                    alert("No data found in the Excel file."); 
+                    return; 
                 }
 
                 // Normalize headers (trim spaces, lowercase)
@@ -501,9 +1111,7 @@
 
                 // Process in smaller batches to avoid Firebase limits
                 const BATCH_SIZE = 400;
-                let totalInsert = 0,
-                    totalUpdate = 0,
-                    totalSkip = 0;
+                let totalInsert = 0, totalUpdate = 0, totalSkip = 0;
                 const now = serverTimestamp();
                 const adminUid = currentUser.uid;
                 const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type);
@@ -529,7 +1137,7 @@
 
                 for (let i = 0; i < normalizedData.length; i++) {
                     const row = normalizedData[i];
-
+                    
                     // Skip empty rows
                     if (!row || (!row.nameen && !row.code && !row.email && !row.title && !row.name)) {
                         continue;
@@ -540,7 +1148,7 @@
 
                     // Build document data based on type
                     if (type === 'grades' || type === 'subjects') {
-                        docData = {
+                        docData = { 
                             nameEn: row.nameen || row.name || '',
                             nameAr: row.namear || '',
                             code: String(row.code || '').toUpperCase(),
@@ -551,53 +1159,55 @@
                             totalSkip++;
                             continue;
                         }
-
+                        
                         // Lookup by code
                         targetId = existingMap.get(docData.code.toLowerCase());
-                    } else if (type === 'teachers') {
+                    } 
+                    else if (type === 'teachers') {
                         const email = (row.email || '').toLowerCase().trim();
                         if (!email || !email.includes('@')) {
                             totalSkip++;
                             continue;
                         }
-
+                        
                         const gradeIds = resolveNamesToIds(row.assignedgrades || '', allGrades);
                         const subjectIds = resolveNamesToIds(row.assignedsubjects || '', allSubjects);
-
-                        docData = {
+                        
+                        docData = { 
                             name: row.name || '',
                             email: email,
-                            role: 'teacher',
-                            status: row.status || 'Active',
-                            assignedGrades: gradeIds,
-                            assignedSubjects: subjectIds
+                            role: 'teacher', 
+                            status: row.status || 'Active', 
+                            assignedGrades: gradeIds, 
+                            assignedSubjects: subjectIds 
                         };
                         targetId = existingMap.get(email);
-                    } else if (type === 'students') {
+                    } 
+                    else if (type === 'students') {
                         const email = (row.email || '').toLowerCase().trim();
                         if (!email || !email.includes('@')) {
                             totalSkip++;
                             continue;
                         }
-
+                        
                         const gradeId = resolveNameToId(row.gradelevel || '', allGrades);
-                        docData = {
+                        docData = { 
                             name: row.name || '',
                             email: email,
-                            gradeLevel: gradeId,
-                            status: row.status || 'Active'
+                            gradeLevel: gradeId, 
+                            status: row.status || 'Active' 
                         };
                         targetId = existingMap.get(email);
-                    } else if (type === 'sessions') {
+                    } 
+                    else if (type === 'sessions') {
                         let teacherId = row.ownerteacherid || '';
                         if (teacherId && teacherId.includes('@')) {
                             const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
                             if (!tSnap.empty) teacherId = tSnap.docs[0].id;
                         }
-
+                        
                         // Parse dates properly
-                        let startTime = null,
-                            endTime = null;
+                        let startTime = null, endTime = null;
                         if (row.starttime) {
                             const d = new Date(row.starttime);
                             if (!isNaN(d.getTime())) startTime = Timestamp.fromDate(d);
@@ -606,10 +1216,10 @@
                             const d = new Date(row.endtime);
                             if (!isNaN(d.getTime())) endTime = Timestamp.fromDate(d);
                         }
-
-                        docData = {
+                        
+                        docData = { 
                             title: row.title || '',
-                            ownerTeacherId: teacherId,
+                            ownerTeacherId: teacherId, 
                             gradeLevel: row.gradelevel || '',
                             subject: row.subject || '',
                             startTime: startTime,
@@ -642,7 +1252,7 @@
                         batchCount = 0;
                     }
                 }
-
+                
                 // Commit final batch
                 if (batchCount > 0) {
                     await batch.commit();
@@ -650,10 +1260,10 @@
 
                 alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}`);
                 refreshCurrentSection();
-
-            } catch (err) {
-                alert("Import Failed: " + err.message);
-                console.error(err);
+                
+            } catch (err) { 
+                alert("Import Failed: " + err.message); 
+                console.error(err); 
             }
         };
         reader.readAsArrayBuffer(file);
@@ -664,8 +1274,8 @@
         const items = String(inputString).split(',').map(s => s.trim()).filter(s => s);
         const ids = [];
         items.forEach(item => {
-            const found = list.find(l =>
-                (l.nameEn && l.nameEn.toLowerCase() === item.toLowerCase()) ||
+            const found = list.find(l => 
+                (l.nameEn && l.nameEn.toLowerCase() === item.toLowerCase()) || 
                 (l.nameAr && l.nameAr === item) ||
                 (l.code && l.code.toLowerCase() === item.toLowerCase())
             );
@@ -678,8 +1288,8 @@
     function resolveNameToId(inputString, list) {
         if (!inputString || !list) return null;
         const str = String(inputString).trim();
-        const found = list.find(l =>
-            (l.nameEn && l.nameEn.toLowerCase() === str.toLowerCase()) ||
+        const found = list.find(l => 
+            (l.nameEn && l.nameEn.toLowerCase() === str.toLowerCase()) || 
             (l.nameAr && l.nameAr === str) ||
             (l.code && l.code.toLowerCase() === str.toLowerCase())
         );
@@ -697,7 +1307,7 @@
             }
         }
     };
-
+    
     window.deleteTeacher = async (uid) => {
         if (!confirm("Delete teacher? This cannot be undone.")) return;
         try {
@@ -707,7 +1317,7 @@
             alert("Error deleting: " + e.message);
         }
     };
-
+    
     window.deleteStudent = async (id) => {
         if (!confirm("Delete student? This cannot be undone.")) return;
         try {
@@ -717,7 +1327,7 @@
             alert("Error deleting: " + e.message);
         }
     };
-
+    
     window.deleteItem = async (col, id) => {
         if (confirm("Are you sure you want to delete this item?")) {
             try {
@@ -740,7 +1350,7 @@
         document.getElementById('modal-title').textContent = (id ? 'Edit ' : 'Add ') + type;
 
         let html = '';
-
+        
         if (type === 'grade' || type === 'subject') {
             html = `<div class="form-group"><label>Name (EN) *</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
                     <div class="form-group"><label>Name (AR) *</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
@@ -749,16 +1359,18 @@
                         <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
                         <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
                     </select></div>`;
-        } else if (type === 'teacher') {
+        } 
+        else if (type === 'teacher') {
             html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
                     <div class="form-group"><label>Name *</label><input name="name" required value="${getDisplayName(data)}"></div>
                     <div class="form-group"><label>Status</label><select name="status">
                         <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
                         <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
                     </select></div>`;
-        } else if (type === 'student') {
+        } 
+        else if (type === 'student') {
             const opts = allGrades.map(g => `<option value="${g.id}" ${data && data.gradeLevel === g.id ? 'selected' : ''}>${g.nameEn}</option>`).join('') || '<option value="">No grades available</option>';
-
+            
             html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
                     <div class="form-group"><label>Name *</label><input name="name" required value="${data?.name || ''}"></div>
                     <div class="form-group"><label>Grade *</label><select name="gradeLevel" required>${opts}</select></div>
@@ -771,7 +1383,7 @@
         f.innerHTML = html;
         m.classList.add('active');
     };
-
+    
     window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
     window.editItem = (t, id, data) => openModal(t, id, data);
 
@@ -781,14 +1393,14 @@
         const id = document.getElementById('modal-id').value;
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-
+        
         data.updatedAt = serverTimestamp();
         data.updatedBy = currentUser.uid;
 
         try {
-            if (type === 'grade' || type === 'subject') {
+            if(type === 'grade' || type === 'subject') {
                 const col = type + 's';
-                if (id) {
+                if(id) {
                     await updateDoc(doc(db, col, id), data);
                 } else {
                     data.createdAt = serverTimestamp();
@@ -796,20 +1408,17 @@
                     await addDoc(collection(db, col), data);
                 }
             } else if (type === 'teacher') {
-                const uData = {
-                    ...data,
-                    role: 'teacher'
-                };
-                if (id) {
+                const uData = {...data, role:'teacher'};
+                if(id) { 
                     delete uData.email; // Don't update email
-                    await updateDoc(doc(db, "users", id), uData);
+                    await updateDoc(doc(db, "users", id), uData); 
                 } else {
                     uData.createdAt = serverTimestamp();
                     uData.createdBy = currentUser.uid;
                     await addDoc(collection(db, "users"), uData);
                 }
             } else if (type === 'student') {
-                if (id) {
+                if(id) {
                     delete data.email; // Don't update email
                     await updateDoc(doc(db, "students", id), data);
                 } else {
@@ -821,8 +1430,8 @@
             closeModal();
             refreshCurrentSection();
             alert("Saved successfully!");
-        } catch (err) {
-            alert("Error saving: " + err.message);
+        } catch(err) { 
+            alert("Error saving: " + err.message); 
         }
     };
 
@@ -831,9 +1440,13 @@
         const table = document.getElementById(id);
         if (!table) return;
         const rows = table.getElementsByTagName("tr");
-        for (let i = 1; i < rows.length; i++) {
+        for(let i=1; i<rows.length; i++) {
             const txt = rows[i].textContent || rows[i].innerText;
             rows[i].style.display = txt.toUpperCase().indexOf(f) > -1 ? "" : "none";
         }
     };
 </script>
+    
+</body>
+
+</html>
