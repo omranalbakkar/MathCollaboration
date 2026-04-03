@@ -1550,16 +1550,283 @@
                 display: none;
             }
         }
+
+        /* --- KANBAN BOARD STYLES --- */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            height: calc(100vh - 250px);
+            /* Adjust based on header height */
+            overflow: hidden;
+        }
+
+        .kanban-col {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .kanban-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface2);
+        }
+
+        .kh-title {
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kh-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .kh-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .k-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .k-dot.online {
+            background: var(--green);
+        }
+
+        .k-dot.offline {
+            background: var(--muted);
+            border: 1px solid var(--faint);
+        }
+
+        .kanban-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .kanban-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .kanban-body::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        /* Column Specific Borders */
+        .col-absent {
+            border-top: 3px solid var(--red);
+        }
+
+        .col-absent .kh-title {
+            color: var(--red);
+        }
+
+        .col-not-started {
+            border-top: 3px solid var(--muted);
+        }
+
+        .col-not-started .kh-title {
+            color: var(--muted);
+        }
+
+        .col-in-progress {
+            border-top: 3px solid var(--amber);
+        }
+
+        .col-in-progress .kh-title {
+            color: var(--amber);
+        }
+
+        .col-completed {
+            border-top: 3px solid var(--green);
+        }
+
+        .col-completed .kh-title {
+            color: var(--green);
+        }
+
+        /* Kanban Card */
+        .k-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .k-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border-color: var(--faint);
+        }
+
+        .k-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .k-student-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .k-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--surface2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .k-name {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .k-status-badge {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-absent {
+            background: var(--red-dim);
+            color: var(--red);
+        }
+
+        .badge-not-started {
+            background: rgba(121, 134, 168, 0.1);
+            color: var(--muted);
+        }
+
+        .badge-in-progress {
+            background: var(--amber-dim);
+            color: var(--amber);
+        }
+
+        .badge-completed {
+            background: var(--green-dim);
+            color: var(--green);
+        }
+
+        .k-progress-wrap {
+            margin: 8px 0;
+        }
+
+        .k-progress-bar-bg {
+            height: 4px;
+            background: var(--surface2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .k-progress-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .k-progress-text {
+            font-size: 10px;
+            color: var(--muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .k-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .k-btn {
+            flex: 1;
+            padding: 4px;
+            font-size: 11px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+
+        .k-btn:hover {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .k-btn-primary {
+            background: var(--blue-dim);
+            color: var(--blue);
+            border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .k-btn-primary:hover {
+            background: var(--blue);
+            color: #fff;
+        }
+
+        @media (max-width: 1024px) {
+            .kanban-board {
+                grid-template-columns: repeat(2, 1fr);
+                height: auto;
+            }
+
+            .kanban-col {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
-
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
         <div class="loading-text">Verifying access…</div>
     </div>
-
     <div id="loginScreen">
         <div class="login-box">
             <div class="login-logo">EduBoard</div>
@@ -1571,7 +1838,6 @@
             <a href="index.html" class="back-link">← Back to Home</a>
         </div>
     </div>
-
     <div id="app">
         <div class="topbar">
             <div class="topbar-left">
@@ -1595,7 +1861,6 @@
                 <button class="btn-logout" onclick="doLogout()">Sign Out</button>
             </div>
         </div>
-
         <div class="content">
             <!-- MANAGE SESSIONS TAB -->
             <div class="tab-pane active" id="tab-manage">
@@ -1610,7 +1875,6 @@
                     <div class="empty-state" style="grid-column:1/-1;padding:40px;">Loading sessions…</div>
                 </div>
             </div>
-
             <!-- SESSION CONFIG TAB -->
             <div class="tab-pane" id="tab-session">
                 <div class="section-header">
@@ -1669,7 +1933,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- QUESTIONS TAB -->
             <div class="tab-pane" id="tab-questions">
                 <div class="section-header">
@@ -1718,7 +1981,6 @@
                 </div>
                 <div class="questions-list" id="questionsList"></div>
             </div>
-
             <!-- MONITOR TAB -->
             <div class="tab-pane" id="tab-monitor">
                 <div class="section-header">
@@ -1752,8 +2014,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- CLASS STATUS TAB (NEW) -->
+            <!-- CLASS STATUS TAB (NEW KANBAN STYLE) -->
             <div class="tab-pane" id="tab-class-status">
                 <div class="section-header">
                     <div>
@@ -1763,26 +2024,79 @@
                     <button class="btn btn-amber" onclick="exportClassStatusExcel()">📊 Export Excel (.xlsx)</button>
                 </div>
 
-                <div class="stats-row">
-                    <div class="stat-card">
-                        <div class="stat-val green" id="csTotalPresent">0</div>
-                        <div class="stat-label">Present (Online)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-val red" style="color:var(--red)" id="csTotalAbsent">0</div>
-                        <div class="stat-label">Absent (Offline)</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-val blue" id="csTotalStudents">0</div>
-                        <div class="stat-label">Total Assigned</div>
-                    </div>
-                </div>
+                <!-- Kanban Board Container -->
+                <div class="kanban-board">
 
-                <div class="students-grid" id="classStatusGrid">
-                    <div class="empty-state">Load a session to view class status.</div>
+                    <!-- Column 1: Absent -->
+                    <div class="kanban-col col-absent">
+                        <div class="kanban-header">
+                            <div class="kh-title">
+                                <span>🔴 Absent</span>
+                                <span id="count-absent">0</span>
+                            </div>
+                            <div class="kh-stats">
+                                <span class="kh-stat-item"><span class="k-dot online"></span> <span id="online-absent">0</span></span>
+                                <span class="kh-stat-item"><span class="k-dot offline"></span> <span id="offline-absent">0</span></span>
+                            </div>
+                        </div>
+                        <div class="kanban-body" id="list-absent">
+                            <!-- Cards injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Not Started -->
+                    <div class="kanban-col col-not-started">
+                        <div class="kanban-header">
+                            <div class="kh-title">
+                                <span>⚪ Not Started</span>
+                                <span id="count-not-started">0</span>
+                            </div>
+                            <div class="kh-stats">
+                                <span class="kh-stat-item"><span class="k-dot online"></span> <span id="online-not-started">0</span></span>
+                                <span class="kh-stat-item"><span class="k-dot offline"></span> <span id="offline-not-started">0</span></span>
+                            </div>
+                        </div>
+                        <div class="kanban-body" id="list-not-started">
+                            <!-- Cards injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Column 3: In Progress -->
+                    <div class="kanban-col col-in-progress">
+                        <div class="kanban-header">
+                            <div class="kh-title">
+                                <span>🟠 In Progress</span>
+                                <span id="count-in-progress">0</span>
+                            </div>
+                            <div class="kh-stats">
+                                <span class="kh-stat-item"><span class="k-dot online"></span> <span id="online-in-progress">0</span></span>
+                                <span class="kh-stat-item"><span class="k-dot offline"></span> <span id="offline-in-progress">0</span></span>
+                            </div>
+                        </div>
+                        <div class="kanban-body" id="list-in-progress">
+                            <!-- Cards injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Column 4: Completed -->
+                    <div class="kanban-col col-completed">
+                        <div class="kanban-header">
+                            <div class="kh-title">
+                                <span>🟢 Completed</span>
+                                <span id="count-completed">0</span>
+                            </div>
+                            <div class="kh-stats">
+                                <span class="kh-stat-item"><span class="k-dot online"></span> <span id="online-completed">0</span></span>
+                                <span class="kh-stat-item"><span class="k-dot offline"></span> <span id="offline-completed">0</span></span>
+                            </div>
+                        </div>
+                        <div class="kanban-body" id="list-completed">
+                            <!-- Cards injected via JS -->
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
             <!-- RESULTS TAB -->
             <div class="tab-pane" id="tab-results">
                 <div class="section-header">
@@ -1819,7 +2133,6 @@
                     </table>
                 </div>
             </div>
-
             <!-- SETTINGS TAB -->
             <div class="tab-pane" id="tab-settings">
                 <div class="section-header">
@@ -1849,7 +2162,6 @@
             </div>
         </div>
     </div>
-
     <div class="overlay" id="overlay" onclick="closeReview()"></div>
     <div id="reviewPanel">
         <div class="panel-header">
@@ -1858,10 +2170,8 @@
         </div>
         <div id="reviewContent"></div>
     </div>
-
     <div id="print-container"></div>
     <div class="toast" id="toast"></div>
-
     <script type="module">
         import {
             auth,
@@ -1893,7 +2203,6 @@
             child,
             get
         } from './firebase-config.js';
-
         let currentTeacher = null;
         let activeSessionId = null;
         let editingId = null;
@@ -1902,14 +2211,12 @@
         let currentQuestions = [];
         let currentStudents = [];
         let allAssignedStudents = [];
-
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingOverlay').style.display = 'none';
             if (!user) {
                 showLogin();
                 return;
             }
-
             try {
                 const userDoc = await getDoc(doc(db, 'users', user.uid));
                 if (!userDoc.exists() || userDoc.data().role !== 'teacher') {
@@ -1917,13 +2224,11 @@
                     showLogin('Access denied. This portal is for teachers only.');
                     return;
                 }
-
                 if (userDoc.data().active === false) {
                     await signOut(auth);
                     showLogin('Your account has been deactivated. Contact your administrator.');
                     return;
                 }
-
                 const teacherDocId = userDoc.data().teacherDocId || user.uid;
                 const teacherDoc = await getDoc(doc(db, 'teachers', teacherDocId));
                 currentTeacher = {
@@ -1931,11 +2236,9 @@
                     firestoreId: teacherDocId,
                     ...(teacherDoc.exists() ? teacherDoc.data() : userDoc.data())
                 };
-
                 document.getElementById('teacherDisplayName').textContent = currentTeacher.name || user.email;
                 showApp();
                 loadTeacherData();
-
             } catch (e) {
                 console.error('Auth error:', e);
                 showLogin('Error verifying access: ' + e.message);
@@ -1957,23 +2260,19 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
         }
-
         window.doLogin = async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
             const btn = document.getElementById('loginBtn');
             const err = document.getElementById('loginErr');
-
             err.style.display = 'none';
             if (!email || !pass) {
                 err.textContent = 'Email and password are required.';
                 err.style.display = 'block';
                 return;
             }
-
             btn.disabled = true;
             btn.textContent = 'Signing in…';
-
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
@@ -1983,31 +2282,26 @@
                 btn.textContent = 'Sign In →';
             }
         };
-
         window.doLogout = async function() {
             await signOut(auth);
             window.location.href = 'index.html';
         };
-
         async function loadTeacherData() {
             await populateAssignedDropdowns();
             await populateTeacherProfile();
             await loadSessions();
             setupRealtimeListeners();
-
             const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
             if (savedId) {
                 activeSessionId = savedId;
                 await loadActiveSession();
             }
         }
-
         async function populateAssignedDropdowns() {
             const gradeSelect = document.getElementById('cfGrade');
             const subjectSelect = document.getElementById('cfSubject');
             const assignedGrades = currentTeacher.assignedGrades || [];
             const assignedSubjects = currentTeacher.assignedSubjects || [];
-
             if (assignedGrades.length) {
                 gradeSelect.innerHTML = '<option value="">Select grade…</option>';
                 for (const gradeId of assignedGrades) {
@@ -2022,7 +2316,6 @@
             } else {
                 gradeSelect.innerHTML = '<option value="">Select grade…</option>';
             }
-
             if (assignedSubjects.length) {
                 subjectSelect.innerHTML = '<option value="">Select subject…</option>';
                 for (const subjectId of assignedSubjects) {
@@ -2037,17 +2330,13 @@
             } else {
                 subjectSelect.innerHTML = '<option value="">Select subject…</option>';
             }
-
             document.getElementById('cfTeacher').value = currentTeacher.name || '';
         }
-
         async function populateTeacherProfile() {
             const assignedGradeIds = currentTeacher.assignedGrades || [];
             const assignedSubjectIds = currentTeacher.assignedSubjects || [];
-
             let gradeNames = [];
             let subjectNames = [];
-
             if (assignedGradeIds.length > 0) {
                 for (const gradeId of assignedGradeIds) {
                     try {
@@ -2060,9 +2349,8 @@
                     }
                 }
             }
-
             if (assignedSubjectIds.length > 0) {
-                for (const subjectId of assignedSubjectIds) {
+                for (const subjectId of assignedSubjects) {
                     try {
                         const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
                         if (subjectDoc.exists()) {
@@ -2073,10 +2361,8 @@
                     }
                 }
             }
-
             const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
             const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
-
             let teacherDisplayName = currentTeacher.name || '';
             if (!teacherDisplayName && currentTeacher.firestoreId) {
                 try {
@@ -2088,26 +2374,21 @@
                     console.error('Error fetching teacher details:', err);
                 }
             }
-
             document.getElementById('teacherProfileInfo').innerHTML = `
-                <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
-                <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
-                <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
-                <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
-            `;
+<div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
+<div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
+<div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
+<div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
+`;
         }
-
         async function loadSessions() {
             console.log('Loading sessions for teacher:', currentTeacher);
             console.log('Teacher ID to match:', currentTeacher.firestoreId || currentTeacher.uid);
-
             const sessionsRef = collection(db, 'sessions');
             const q = query(sessionsRef, where('ownerTeacherId', '==', currentTeacher.firestoreId || currentTeacher.uid));
-
             try {
                 const querySnapshot = await getDocs(q);
                 console.log('Query found:', querySnapshot.size, 'sessions');
-
                 const sessions = [];
                 querySnapshot.forEach(doc => {
                     console.log('Session found:', doc.id, doc.data());
@@ -2116,12 +2397,10 @@
                         ...doc.data()
                     });
                 });
-
                 renderSessionList(sessions);
             } catch (error) {
                 console.error('Error loading sessions:', error);
                 showToast('Error loading sessions: ' + error.message, true);
-
                 console.log('Trying fallback - loading all sessions');
                 const allSessionsSnapshot = await getDocs(sessionsRef);
                 const allSessions = [];
@@ -2140,28 +2419,24 @@
 
         function renderSessionList(sessions) {
             const grid = document.getElementById('sessionListGrid');
-
             if (!sessions.length) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:40px;"><p>No sessions yet.</p><button class="btn btn-add" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
                 return;
             }
-
             grid.innerHTML = sessions.map(session => {
                 const isActive = session.id === activeSessionId;
                 return `<div class="session-card ${isActive ? 'active-context' : ''} ${session.active ? 'live-session' : ''}">
-      <div class="sc-header"><div class="sc-title">${escapeHtml(session.title || 'Untitled Session')}</div></div>
-      <div class="sc-meta">${escapeHtml(session.subject || '—')} • ${escapeHtml(session.className || 'No Class')}<br>${session.date ? new Date(session.date).toLocaleDateString() : 'No Date'}</div>
-      <div class="sc-actions">
-        <button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : 'activateSession(\'' + session.id + '\')'}">${isActive ? 'Viewing' : 'Load'}</button>
-        <button class="btn-load" style="color:var(--red)" onclick="deleteSession('${session.id}')">Delete</button>
-      </div>
-    </div>`;
+<div class="sc-header"><div class="sc-title">${escapeHtml(session.title || 'Untitled Session')}</div></div>
+<div class="sc-meta">${escapeHtml(session.subject || '—')} • ${escapeHtml(session.className || 'No Class')}<br>${session.date ? new Date(session.date).toLocaleDateString() : 'No Date'}</div>
+<div class="sc-actions">
+<button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : 'activateSession(\'' + session.id + '\')'}">${isActive ? 'Viewing' : 'Load'}</button>
+<button class="btn-load" style="color:var(--red)" onclick="deleteSession('${session.id}')">Delete</button>
+</div>
+</div>`;
             }).join('');
         }
-
         window.createNewSession = async function() {
             if (!currentTeacher) return;
-
             const sessionData = {
                 title: 'New Session',
                 grade: '',
@@ -2179,9 +2454,7 @@
                 createdBy: currentTeacher.uid,
                 createdByRole: 'teacher'
             };
-
             console.log('Creating session with ', sessionData);
-
             try {
                 const docRef = await addDoc(collection(db, 'sessions'), sessionData);
                 console.log('Session created with ID:', docRef.id);
@@ -2194,42 +2467,33 @@
                 showToast('Error creating session: ' + error.message, true);
             }
         };
-
         window.activateSession = async function(id) {
             activeSessionId = id;
             localStorage.setItem('teacher_active_session_' + currentTeacher.uid, id);
             await loadActiveSession();
         };
-
         window.deleteSession = async function(id) {
             if (!confirm('Delete this session and all its student data? This cannot be undone.')) return;
-
             const questionsRef = collection(db, 'sessions', id, 'questions');
             const questionsSnap = await getDocs(questionsRef);
             for (const doc of questionsSnap.docs) {
                 await deleteDoc(doc.ref);
             }
-
             const studentsRef = collection(db, 'sessions', id, 'students');
             const studentsSnap = await getDocs(studentsRef);
             for (const doc of studentsSnap.docs) {
                 await deleteDoc(doc.ref);
             }
-
             await deleteDoc(doc(db, 'sessions', id));
-
             if (activeSessionId === id) {
                 activeSessionId = null;
                 localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
             }
-
             await loadSessions();
             showToast('Session deleted');
         };
-
         async function loadActiveSession() {
             if (!activeSessionId) return;
-
             try {
                 const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
                 if (!sessionDoc.exists()) {
@@ -2238,16 +2502,13 @@
                     showToast('Session not found', true);
                     return;
                 }
-
                 currentSessionData = {
                     id: sessionDoc.id,
                     ...sessionDoc.data()
                 };
                 const config = currentSessionData;
-
                 console.log('Loading session config:', config);
                 console.log('Owner Teacher ID:', config.ownerTeacherId);
-
                 const formatTime = (timestamp) => {
                     if (!timestamp) return '';
                     if (typeof timestamp === 'string') return timestamp.slice(0, 5);
@@ -2261,7 +2522,6 @@
                     }
                     return '';
                 };
-
                 const formatDate = (timestamp) => {
                     if (!timestamp) return '';
                     if (typeof timestamp === 'string') return timestamp.slice(0, 10);
@@ -2275,14 +2535,11 @@
                     }
                     return '';
                 };
-
                 let teacherName = config.teacherName || config.teacher || '';
-
                 if (!teacherName && config.ownerTeacherId) {
                     try {
                         const teacherDocRef = doc(db, 'teachers', config.ownerTeacherId);
                         const teacherDoc = await getDoc(teacherDocRef);
-
                         if (teacherDoc.exists()) {
                             const teacherData = teacherDoc.data();
                             teacherName = teacherData.name || teacherData.displayName || teacherData.fullName || '';
@@ -2291,7 +2548,6 @@
                         console.error('Error fetching teacher:', err);
                     }
                 }
-
                 if (!teacherName && config.ownerTeacherId) {
                     try {
                         const teachersRef = collection(db, 'teachers');
@@ -2305,27 +2561,20 @@
                         console.error('Error querying teacher:', err);
                     }
                 }
-
                 if (!teacherName && currentTeacher) {
                     teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
                 }
-
                 if (!teacherName) {
                     teacherName = 'Teacher Name Not Found';
                 }
-
                 const titleField = document.getElementById('cfTitle');
                 if (titleField) titleField.value = config.title || '';
-
                 const gradeField = document.getElementById('cfGrade');
                 if (gradeField) gradeField.value = config.gradeLevel || config.grade || '';
-
                 const classField = document.getElementById('cfClass');
                 if (classField) classField.value = config.className || config.class || '';
-
                 const subjectField = document.getElementById('cfSubject');
                 if (subjectField) subjectField.value = config.subject || '';
-
                 const teacherField = document.getElementById('cfTeacher');
                 if (teacherField) {
                     teacherField.value = teacherName;
@@ -2333,45 +2582,36 @@
                         bubbles: true
                     }));
                 }
-
                 const dateField = document.getElementById('cfDate');
                 if (dateField) {
                     dateField.value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
                 }
-
                 const startField = document.getElementById('cfStart');
                 if (startField) {
                     startField.value = formatTime(config.startTime);
                 }
-
                 const endField = document.getElementById('cfEnd');
                 if (endField) {
                     endField.value = formatTime(config.endTime);
                 }
-
                 const instructionsField = document.getElementById('cfInstructions');
                 if (instructionsField) {
                     instructionsField.value = config.instructions || '';
                 }
-
                 const isSessionActive = !!(config.isActive || config.active);
                 setToggle(isSessionActive);
                 updateSessionChip(config);
-
                 await loadQuestions();
                 await loadStudents();
                 await loadClassStatus();
                 updateStats();
-
             } catch (error) {
                 console.error('Error loading session:', error);
                 showToast('Error loading session: ' + error.message, true);
             }
         }
-
         async function loadQuestions() {
             if (!activeSessionId) return;
-
             const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
             const querySnapshot = await getDocs(questionsRef);
             currentQuestions = [];
@@ -2384,19 +2624,15 @@
             currentQuestions.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             renderQuestions();
         }
-
         async function loadStudents() {
             if (!activeSessionId) {
                 console.log('No active session ID, cannot load students');
                 return;
             }
-
             try {
                 const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
                 const querySnapshot = await getDocs(studentsRef);
-
                 console.log(`Found ${querySnapshot.size} student records in Firestore for session: ${activeSessionId}`);
-
                 currentStudents = [];
                 querySnapshot.forEach(doc => {
                     const studentData = {
@@ -2406,11 +2642,9 @@
                     console.log('Student loaded:', studentData.id, studentData.name || 'Unnamed', 'Online:', studentData.online);
                     currentStudents.push(studentData);
                 });
-
                 try {
                     for (const student of currentStudents) {
                         const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
-
                         if (student.online === true) {
                             await set(rtdbRef, {
                                 name: student.name || 'Student',
@@ -2429,70 +2663,84 @@
                 } catch (e) {
                     console.warn('Error syncing to RTDB:', e);
                 }
-
                 renderStudentCards();
-
                 const onlineCount = currentStudents.filter(s => s.online === true).length;
                 const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
                 const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
-
                 document.getElementById('statOnline').textContent = onlineCount;
                 document.getElementById('statAnswers').textContent = answersCount;
                 document.getElementById('statGraded').textContent = gradedCount;
                 document.getElementById('liveCount').textContent = `● ${onlineCount} online`;
-
                 const activeTab = document.querySelector('.tab-pane.active')?.id;
                 if (activeTab === 'tab-class-status') {
                     await loadClassStatus();
                 }
-
                 if (activeTab === 'tab-results') {
                     await renderResults();
                 }
-
                 console.log(`Students loaded: ${currentStudents.length} total, ${onlineCount} online`);
-
             } catch (error) {
                 console.error('Error loading students:', error);
                 showToast('Error loading student data: ' + error.message, true);
-
                 const grid = document.getElementById('studentsGrid');
                 if (grid) {
                     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-                        <p style="font-size:15px;color:var(--red)">Error loading students</p>
-                        <span style="font-size:13px;display:block;margin-top:6px">${escapeHtml(error.message)}</span>
-                        <button class="btn btn-sm" onclick="loadStudents()" style="margin-top:10px">Retry ↻</button>
-                    </div>`;
+<p style="font-size:15px;color:var(--red)">Error loading students</p>
+<span style="font-size:13px;display:block;margin-top:6px">${escapeHtml(error.message)}</span>
+<button class="btn btn-sm" onclick="loadStudents()" style="margin-top:10px">Retry ↻</button>
+</div>`;
                 }
             }
         }
-
         async function loadClassStatus() {
             if (!activeSessionId || !currentSessionData) return;
-
             const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
-
             console.log('Session grade value:', sessionGradeName);
             console.log('Full session data:', currentSessionData);
-
             const gradeDisplayElement = document.getElementById('csGradeName');
             if (gradeDisplayElement) {
                 gradeDisplayElement.textContent = sessionGradeName || 'No Grade Assigned';
             }
 
-            const grid = document.getElementById('classStatusGrid');
-            if (!grid) return;
+            // Initialize Kanban Columns
+            const columns = {
+                absent: document.getElementById('list-absent'),
+                notStarted: document.getElementById('list-not-started'),
+                inProgress: document.getElementById('list-in-progress'),
+                completed: document.getElementById('list-completed')
+            };
+            const counts = {
+                absent: {
+                    total: 0,
+                    online: 0,
+                    offline: 0
+                },
+                notStarted: {
+                    total: 0,
+                    online: 0,
+                    offline: 0
+                },
+                inProgress: {
+                    total: 0,
+                    online: 0,
+                    offline: 0
+                },
+                completed: {
+                    total: 0,
+                    online: 0,
+                    offline: 0
+                }
+            };
 
-            grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
+            // Clear columns
+            Object.values(columns).forEach(col => col.innerHTML = '');
 
             let assignedStudents = [];
-
             if (sessionGradeName) {
                 try {
                     const gradesRef = collection(db, 'grades');
                     let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
                     let gradeSnap = await getDocs(q);
-
                     let targetGradeId = null;
                     if (!gradeSnap.empty) {
                         targetGradeId = gradeSnap.docs[0].id;
@@ -2512,27 +2760,22 @@
                             }
                         }
                     }
-
                     if (targetGradeId) {
                         const studentsRef = collection(db, 'students');
-
                         // FIXED: Try both 'gradeLevel' and 'gradeId' field names
                         let studentQuery = query(studentsRef, where('gradeLevel', '==', targetGradeId));
                         let studentSnap = await getDocs(studentQuery);
-
                         if (studentSnap.empty) {
                             console.log('No students found with gradeLevel, trying gradeId...');
                             studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
                             studentSnap = await getDocs(studentQuery);
                         }
-
                         // Also try matching by grade name directly
                         if (studentSnap.empty) {
                             console.log('No students found with gradeId, trying gradeLevel as name...');
                             studentQuery = query(studentsRef, where('gradeLevel', '==', sessionGradeName));
                             studentSnap = await getDocs(studentQuery);
                         }
-
                         studentSnap.forEach(doc => {
                             assignedStudents.push({
                                 id: doc.id,
@@ -2543,126 +2786,157 @@
                     } else {
                         console.warn(`Could not find Grade ID for name: ${sessionGradeName}`);
                     }
-
                 } catch (err) {
                     console.error("Error fetching class status:", err);
                 }
             } else {
                 console.warn('No grade name found in session data');
-                if (grid) {
-                    grid.innerHTML = `<div class="empty-state">
-                        <p style="font-size:15px">No grade assigned to this session</p>
-                        <span style="font-size:13px;display:block;margin-top:6px">Please edit the session configuration and select a grade level.</span>
-                        <button class="btn btn-amber" onclick="switchTab('session', document.querySelector('.nav-btn'))" style="margin-top:12px">Go to Session Config →</button>
-                    </div>`;
-                }
-                updateClassStats(0, 0, 0);
-                return;
             }
 
             allAssignedStudents = assignedStudents;
-
             const sessionStudentsMap = {};
             currentStudents.forEach(s => {
                 sessionStudentsMap[s.id] = s;
             });
 
-            let presentCount = 0;
-            let absentCount = 0;
-            const totalAssigned = assignedStudents.length;
-
-            if (totalAssigned === 0) {
-                if (grid) {
-                    grid.innerHTML = `<div class="empty-state">
-                        <p style="font-size:15px">No students found for "${escapeHtml(sessionGradeName)}"</p>
-                        <span style="font-size:13px;display:block;margin-top:6px">Make sure:</span>
-                        <ul style="text-align:left;margin-top:8px;color:var(--muted);font-size:12px">
-                            <li>✓ Students are assigned to this grade in the Admin panel</li>
-                            <li>✓ The grade name "${escapeHtml(sessionGradeName)}" matches exactly in the Grades collection</li>
-                            <li>✓ Students have accounts created for this grade</li>
-                        </ul>
-                        <button class="btn btn-sm" onclick="loadClassStatus()" style="margin-top:12px">Refresh ↻</button>
-                    </div>`;
-                }
-                updateClassStats(0, 0, 0);
-                return;
-            }
+            const totalQs = currentQuestions.length;
 
             assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-            if (grid) {
-                grid.innerHTML = assignedStudents.map(student => {
-                    const sessionData = sessionStudentsMap[student.id];
-                    const isOnline = !!sessionData && sessionData.online === true;
-                    const displayName = student.name || student.fullName || 'Unknown Student';
-                    const initial = displayName.charAt(0).toUpperCase();
+            assignedStudents.forEach(student => {
+                const sessionData = sessionStudentsMap[student.id];
+                const isOnline = !!sessionData && sessionData.online === true;
+                const answeredCount = sessionData && sessionData.answers ? Object.keys(sessionData.answers).length : 0;
+                const isSubmitted = sessionData && sessionData.submitted === true;
 
-                    let cardHtml = '';
+                // Determine Status
+                let status = '';
+                let badgeClass = '';
+                let badgeText = '';
+                let barColor = '';
+                let actionsHtml = '';
 
-                    if (isOnline) {
-                        presentCount++;
-                        const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
-                        const qcount = currentQuestions.length;
-                        const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-                        const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
+                if (answeredCount === 0 && !isOnline && !sessionData?.loginTime) {
+                    status = 'absent';
+                    badgeClass = 'badge-absent';
+                    badgeText = 'Absent';
+                    counts.absent.total++;
+                    if (isOnline) counts.absent.online++;
+                    else counts.absent.offline++;
+                } else if (answeredCount === 0 && isOnline) {
+                    status = 'notStarted';
+                    badgeClass = 'badge-not-started';
+                    badgeText = 'Not Started';
+                    counts.notStarted.total++;
+                    if (isOnline) counts.notStarted.online++;
+                    else counts.notStarted.offline++;
+                } else if ((answeredCount > 0 && answeredCount < totalQs && !isSubmitted) || (answeredCount > 0 && !isOnline && !isSubmitted)) {
+                    status = 'inProgress';
+                    badgeClass = 'badge-in-progress';
+                    badgeText = 'In Progress';
+                    barColor = 'var(--amber)';
+                    counts.inProgress.total++;
+                    if (isOnline) counts.inProgress.online++;
+                    else counts.inProgress.offline++;
+                } else if (answeredCount === totalQs || isSubmitted) {
+                    status = 'completed';
+                    badgeClass = 'badge-completed';
+                    badgeText = 'Completed';
+                    barColor = 'var(--green)';
+                    counts.completed.total++;
+                    if (isOnline) counts.completed.online++;
+                    else counts.completed.offline++;
+                } else {
+                    // Fallback to absent if unknown
+                    status = 'absent';
+                    badgeClass = 'badge-absent';
+                    badgeText = 'Absent';
+                    counts.absent.total++;
+                    if (isOnline) counts.absent.online++;
+                    else counts.absent.offline++;
+                }
 
-                        cardHtml = `
-                            <div class="student-card" style="border-left: 3px solid var(--green)">
-                                <div class="student-header">
-                                    <div class="avatar" style="background:var(--green-dim);color:var(--green)">${escapeHtml(initial)}</div>
-                                    <div>
-                                        <div class="student-name">${escapeHtml(displayName)}</div>
-                                        <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
-                                    </div>
-                                </div>
-                                <div class="progress-bar-wrap">
-                                    <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
-                                </div>
-                                <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-                                <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
-                            </div>
-                        `;
-                    } else {
-                        absentCount++;
-                        cardHtml = `
-                            <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
-                                <div class="student-header">
-                                    <div class="avatar" style="background:var(--surface2);color:var(--muted)">${escapeHtml(initial)}</div>
-                                    <div>
-                                        <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
-                                        <div class="student-time">Not Logged In</div>
-                                    </div>
-                                </div>
-                                <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
-                                    Absent / Offline
-                                </div>
-                            </div>
-                        `;
-                    }
-                    return cardHtml;
-                }).join('');
-            }
+                // Calculate Progress
+                const pct = totalQs ? Math.round((answeredCount / totalQs) * 100) : 0;
 
-            updateClassStats(presentCount, absentCount, totalAssigned);
-            console.log(`Class status: ${presentCount} present, ${absentCount} absent out of ${totalAssigned} total`);
+                // Actions
+                if (status === 'inProgress') {
+                    actionsHtml = `<button class="k-btn k-btn-primary" onclick="openReview('${student.id}')">Review</button>`;
+                } else if (status === 'completed') {
+                    actionsHtml = `<button class="k-btn" onclick="openReview('${student.id}')">View Results</button>`;
+                } else if (status === 'notStarted' && isOnline) {
+                    actionsHtml = `<button class="k-btn" style="color:var(--amber);border-color:rgba(245,166,35,0.3)" onclick="showToast('Nudge sent!')">Nudge</button>`;
+                } else if (status === 'absent') {
+                    actionsHtml = `<button class="k-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3)" onclick="showToast('Marked absent')">Mark Absent</button>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = 'k-card';
+                card.onclick = (e) => {
+                    if (!e.target.closest('button')) openReview(student.id);
+                };
+
+                card.innerHTML = `
+        <div class="k-card-top">
+            <div class="k-student-info">
+                <div class="k-avatar">${(student.name || 'S').charAt(0).toUpperCase()}</div>
+                <div class="k-name">
+                    ${escapeHtml(student.name || 'Unknown')}
+                    <span class="conn-dot ${isOnline ? 'online' : 'offline'}" style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${isOnline ? 'var(--green)' : 'var(--muted)'}"></span>
+                </div>
+            </div>
+            <span class="k-status-badge ${badgeClass}">${badgeText}</span>
+        </div>
+        <div class="k-progress-wrap">
+            <div class="k-progress-bar-bg">
+                <div class="k-progress-bar-fill" style="width:${pct}%;background:${barColor || 'var(--muted)'}"></div>
+            </div>
+            <div class="k-progress-text">
+                <span>${answeredCount}/${totalQs} Answered</span>
+                <span>${pct}%</span>
+            </div>
+        </div>
+        <div class="k-actions">
+            ${actionsHtml}
+        </div>
+    `;
+
+                if (columns[status]) {
+                    columns[status].appendChild(card);
+                }
+            });
+
+            // Update Headers
+            document.getElementById('count-absent').innerText = counts.absent.total;
+            document.getElementById('online-absent').innerText = counts.absent.online;
+            document.getElementById('offline-absent').innerText = counts.absent.offline;
+
+            document.getElementById('count-not-started').innerText = counts.notStarted.total;
+            document.getElementById('online-not-started').innerText = counts.notStarted.online;
+            document.getElementById('offline-not-started').innerText = counts.notStarted.offline;
+
+            document.getElementById('count-in-progress').innerText = counts.inProgress.total;
+            document.getElementById('online-in-progress').innerText = counts.inProgress.online;
+            document.getElementById('offline-in-progress').innerText = counts.inProgress.offline;
+
+            document.getElementById('count-completed').innerText = counts.completed.total;
+            document.getElementById('online-completed').innerText = counts.completed.online;
+            document.getElementById('offline-completed').innerText = counts.completed.offline;
+
+            console.log(`Class status: ${counts.absent.total} absent, ${counts.notStarted.total} not started, ${counts.inProgress.total} in progress, ${counts.completed.total} completed`);
         }
 
         function setupRealtimeStudentListener() {
             if (!activeSessionId) return;
-
             console.log('Setting up real-time student listener...');
-
             const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-
             onSnapshot(studentsRef, (snapshot) => {
                 console.log(`Real-time update: ${snapshot.docChanges().length} changes detected`);
-
                 snapshot.docChanges().forEach((change) => {
                     const studentData = {
                         id: change.doc.id,
                         ...change.doc.data()
                     };
-
                     if (change.type === 'added') {
                         console.log('Student joined:', studentData.name || studentData.id);
                         showToast(`${studentData.name || 'A student'} joined the session`, false);
@@ -2672,7 +2946,6 @@
                         console.log('Student left:', studentData.name || studentData.id);
                     }
                 });
-
                 loadStudents();
             }, (error) => {
                 console.error('Real-time listener error:', error);
@@ -2683,38 +2956,29 @@
             const presentEl = document.getElementById('csTotalPresent');
             const absentEl = document.getElementById('csTotalAbsent');
             const totalEl = document.getElementById('csTotalStudents');
-
             if (presentEl) presentEl.textContent = present;
             if (absentEl) absentEl.textContent = absent;
             if (totalEl) totalEl.textContent = total;
-
             console.log(`Stats updated: ${present} present, ${absent} absent, ${total} total`);
         }
 
         function setupRealtimeListeners() {
             if (!activeSessionId) return;
-
             console.log('Setting up RTDB real-time listeners...');
-
             const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
-
             try {
                 onValue(liveStudentsRef, (snapshot) => {
                     const students = snapshot.val();
                     const liveCount = students ? Object.keys(students).length : 0;
-
                     const liveChip = document.querySelector('.live-count');
                     if (liveChip) {
                         liveChip.textContent = `${liveCount} online`;
                     }
-
                     console.log(`Active students in RTDB: ${liveCount}`);
                 }, (error) => {
                     console.warn('RTDB listener error:', error);
                 });
-
                 setupRealtimeStudentListener();
-
             } catch (e) {
                 console.warn('Could not set up RTDB listener:', e);
             }
@@ -2722,44 +2986,39 @@
 
         function renderQuestions() {
             const list = document.getElementById('questionsList');
-
             if (!currentQuestions.length) {
                 list.innerHTML = `<div class="empty-state"><p style="font-size:15px">No questions yet</p><span style="font-size:13px;display:block;margin-top:6px">Click "Add Question" to get started or import from HTML/JSON</span></div>`;
                 return;
             }
-
             list.innerHTML = currentQuestions.map((q, i) => {
                 let displayText = q.text || '';
                 return `<div class="q-card">
-      <div class="q-num">Q${i + 1}</div>
-      <div class="q-body">
-        <div class="q-text math-content">${displayText}</div>
-        <div class="q-meta">
-          <span class="q-tag type">${q.type}</span>
-          <span class="q-tag pts">${q.points} pts</span>
-          ${q.tag ? `<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${escapeHtml(q.tag)}</span>` : ''}
-          ${q.correct ? `<span class="q-tag pts" style="color:var(--green)">✓ ${escapeHtml(q.correct)}</span>` : ''}
-        </div>
-        ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math-content">${escapeHtml(o)}</span>`).join('')}</div>` : ''}
-      </div>
-      <div class="q-actions">
-        <button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button>
-        <button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button>
-        <button class="btn btn-sm" style="background:var(--blue-dim);color:var(--blue);" onclick="exportQuestionToJSON('${q.id}')">📋 Export</button>
-      </div>
-    </div>`;
+<div class="q-num">Q${i + 1}</div>
+<div class="q-body">
+<div class="q-text math-content">${displayText}</div>
+<div class="q-meta">
+<span class="q-tag type">${q.type}</span>
+<span class="q-tag pts">${q.points} pts</span>
+${q.tag ? `<span class="q-tag type" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${escapeHtml(q.tag)}</span>` : ''}
+${q.correct ? `<span class="q-tag pts" style="color:var(--green)">✓ ${escapeHtml(q.correct)}</span>` : ''}
+</div>
+${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math-content">${escapeHtml(o)}</span>`).join('')}</div>` : ''}
+</div>
+<div class="q-actions">
+<button class="btn btn-sm btn-edit" onclick="openForm('${q.id}')">Edit</button>
+<button class="btn btn-sm btn-delete" onclick="deleteQuestion('${q.id}')">Delete</button>
+<button class="btn btn-sm" style="background:var(--blue-dim);color:var(--blue);" onclick="exportQuestionToJSON('${q.id}')">📋 Export</button>
+</div>
+</div>`;
             }).join('');
-
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([list]).catch(err => console.log('MathJax error:', err));
             }
         }
-
         window.openForm = function(id = null) {
             editingId = id;
             document.getElementById('questionForm').classList.add('open');
             document.getElementById('formTitle').textContent = id ? 'Edit Question' : 'New Question';
-
             if (id) {
                 const question = currentQuestions.find(q => q.id === id);
                 if (question) {
@@ -2782,21 +3041,17 @@
                 document.getElementById('optionsBuilder').innerHTML = '';
                 toggleOptionsBuilder();
             }
-
             document.getElementById('questionForm').scrollIntoView({
                 behavior: 'smooth'
             });
         };
-
         window.closeForm = function() {
             document.getElementById('questionForm').classList.remove('open');
             editingId = null;
         };
-
         window.toggleOptionsBuilder = function() {
             const type = document.getElementById('fType').value;
             const wrap = document.getElementById('optionsBuilderWrap');
-
             if (type === 'mcq') {
                 wrap.style.display = 'block';
                 if (!document.getElementById('optionsBuilder').children.length) {
@@ -2807,7 +3062,6 @@
                 wrap.style.display = 'none';
             }
         };
-
         window.addOption = function(val = '') {
             const builder = document.getElementById('optionsBuilder');
             const row = document.createElement('div');
@@ -2815,25 +3069,21 @@
             row.innerHTML = `<input type="text" placeholder="Option text" value="${escapeHtml(val)}"><button class="btn-rm-opt" onclick="this.parentElement.remove()">×</button>`;
             builder.appendChild(row);
         };
-
         window.saveQuestion = async function() {
             if (!activeSessionId) {
                 showToast('No active session', true);
                 return;
             }
-
             const text = document.getElementById('fText').value.trim();
             if (!text) {
                 showToast('Question text required', true);
                 return;
             }
-
             const type = document.getElementById('fType').value;
             let options = null;
             if (type === 'mcq') {
                 options = Array.from(document.getElementById('optionsBuilder').querySelectorAll('input')).map(i => i.value.trim()).filter(Boolean);
             }
-
             const questionData = {
                 text,
                 type,
@@ -2843,7 +3093,6 @@
                 options,
                 updatedAt: serverTimestamp()
             };
-
             if (editingId) {
                 await updateDoc(doc(db, 'sessions', activeSessionId, 'questions', editingId), questionData);
                 showToast('Question updated!');
@@ -2852,12 +3101,10 @@
                 await addDoc(collection(db, 'sessions', activeSessionId, 'questions'), questionData);
                 showToast('Question added!');
             }
-
             closeForm();
             await loadQuestions();
             updateStats();
         };
-
         window.deleteQuestion = async function(id) {
             if (!confirm('Delete this question?')) return;
             await deleteDoc(doc(db, 'sessions', activeSessionId, 'questions', id));
@@ -2865,19 +3112,15 @@
             updateStats();
             showToast('Deleted');
         };
-
         window.saveSessionConfig = async function() {
             if (!activeSessionId) {
                 showToast('No active session', true);
                 return;
             }
-
             let teacherName = document.getElementById('cfTeacher')?.value || '';
-
             if (!teacherName && currentTeacher) {
                 teacherName = currentTeacher.name || currentTeacher.displayName || '';
             }
-
             if (!teacherName && currentSessionData?.ownerTeacherId) {
                 try {
                     const teacherDoc = await getDoc(doc(db, 'teachers', currentSessionData.ownerTeacherId));
@@ -2888,10 +3131,8 @@
                     console.error('Error fetching teacher:', err);
                 }
             }
-
             const gradeValue = document.getElementById('cfGrade').value;
             const subjectValue = document.getElementById('cfSubject').value;
-
             const config = {
                 title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
                 grade: gradeValue,
@@ -2909,27 +3150,20 @@
                 updatedAt: serverTimestamp(),
                 updatedBy: currentTeacher?.uid || ''
             };
-
             await updateDoc(doc(db, 'sessions', activeSessionId), config);
             updateSessionChip(config);
             showToast('Configuration saved!');
-
             await loadActiveSession();
         };
-
         window.toggleSessionOpen = async function() {
             if (!activeSessionId || !currentSessionData) return;
-
             const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
             const newStatus = !currentStatus;
-
             try {
                 console.log(`Toggling session to ${newStatus}`);
-
                 await updateDoc(doc(db, 'sessions', activeSessionId), {
                     active: newStatus
                 });
-
                 if (newStatus) {
                     await set(ref(rtDB, `liveSessions/${activeSessionId}`), {
                         createdAt: Date.now(),
@@ -2937,21 +3171,15 @@
                         students: {}
                     });
                     console.log('Session opened - RTDB live tracking initialized');
-
                     setupRealtimeListeners();
-
                     showToast('Session is now OPEN to students');
                 } else {
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
                     console.log('Session closed - RTDB cleaned up');
-
                     showToast('Session is now CLOSED');
                 }
-
                 setToggle(newStatus);
-
                 if (currentSessionData) currentSessionData.active = newStatus;
-
             } catch (error) {
                 console.error('Error toggling session:', error);
                 showToast('Failed to update session', true);
@@ -2962,7 +3190,6 @@
             const track = document.getElementById('sessionToggle');
             const label = document.getElementById('sessionToggleLabel');
             const wrap = document.getElementById('toggleWrap');
-
             if (on) {
                 track.classList.add('on');
                 label.textContent = 'Session Open';
@@ -2984,34 +3211,24 @@
             const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
             const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
             const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
-
             const liveCountEl = document.getElementById('liveCount');
             if (liveCountEl) liveCountEl.textContent = `● ${onlineCount} online`;
-
             const prevQuestionsEl = document.getElementById('prevQuestions');
             if (prevQuestionsEl) prevQuestionsEl.textContent = currentQuestions.length;
-
             const prevStudentsEl = document.getElementById('prevStudents');
             if (prevStudentsEl) prevStudentsEl.textContent = onlineCount;
-
             const prevAnswersEl = document.getElementById('prevAnswers');
             if (prevAnswersEl) prevAnswersEl.textContent = answersCount;
-
             const prevTotalEl = document.getElementById('prevTotal');
             if (prevTotalEl) prevTotalEl.textContent = totalPoints;
-
             const statOnlineEl = document.getElementById('statOnline');
             if (statOnlineEl) statOnlineEl.textContent = onlineCount;
-
             const statAnswersEl = document.getElementById('statAnswers');
             if (statAnswersEl) statAnswersEl.textContent = answersCount;
-
             const statQuestionsEl = document.getElementById('statQuestions');
             if (statQuestionsEl) statQuestionsEl.textContent = currentQuestions.length;
-
             const statGradedEl = document.getElementById('statGraded');
             if (statGradedEl) statGradedEl.textContent = gradedCount;
-
             console.log(`Stats updated: ${onlineCount} online, ${answersCount} answers, ${gradedCount} graded`);
         }
 
@@ -3019,65 +3236,58 @@
             const online = currentStudents.filter(s => s.online === true);
             const grid = document.getElementById('studentsGrid');
             const qcount = currentQuestions.length;
-
             if (!currentStudents.length) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-                    <p style="font-size:15px">No students have joined this session yet</p>
-                    <span style="font-size:13px;display:block;margin-top:6px">Students need to enter the session code to join</span>
-                    <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;display:inline-block;">
-                        <span style="font-size:11px;color:var(--muted)">Session ID: </span>
-                        <code style="font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:4px">${activeSessionId}</code>
-                    </div>
-                </div>`;
+<p style="font-size:15px">No students have joined this session yet</p>
+<span style="font-size:13px;display:block;margin-top:6px">Students need to enter the session code to join</span>
+<div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;display:inline-block;">
+<span style="font-size:11px;color:var(--muted)">Session ID: </span>
+<code style="font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:4px">${activeSessionId}</code>
+</div>
+</div>`;
                 return;
             }
-
             if (!online.length) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-                    <p style="font-size:15px">All students are offline</p>
-                    <span style="font-size:13px;display:block;margin-top:6px">Make sure the session is OPEN for students to join</span>
-                    <div style="margin-top:12px">
-                        <button class="btn btn-amber" onclick="document.getElementById('sessionToggle').click()" style="font-size:12px">Open Session →</button>
-                    </div>
-                </div>`;
+<p style="font-size:15px">All students are offline</p>
+<span style="font-size:13px;display:block;margin-top:6px">Make sure the session is OPEN for students to join</span>
+<div style="margin-top:12px">
+<button class="btn btn-amber" onclick="document.getElementById('sessionToggle').click()" style="font-size:12px">Open Session →</button>
+</div>
+</div>`;
                 return;
             }
-
             const colors = ['#f5a623', '#60a5fa', '#4ade80', '#f87171', '#c084fc', '#fb923c', '#34d399', '#fbbf24'];
-
             grid.innerHTML = online.map((student, i) => {
                 const answered = student.answers ? Object.keys(student.answers).length : 0;
                 const pct = qcount ? Math.round(answered / qcount * 100) : 0;
                 const color = colors[i % colors.length];
                 const displayName = student.name || student.id || 'Student';
-
                 return `<div class="student-card">
-                    <div class="student-header">
-                        <div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
-                        <div>
-                            <div class="student-name">${escapeHtml(displayName)}${student.submitted ? '<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700">✓ SUBMITTED</span>' : ''}</div>
-                            <div class="student-time">${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
-                        </div>
-                    </div>
-                    <div class="progress-bar-wrap">
-                        <div class="progress-bar" style="width:${pct}%;background:${student.submitted ? 'var(--green)' : 'var(--amber)'}"></div>
-                    </div>
-                    <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-                    <div style="display:flex;gap:6px;margin-top:10px">
-                        <button class="btn-review" onclick="openReview('${student.id}')">Review →</button>
-                        <button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear Ans</button>
-                    </div>
-                    <button class="btn-delete-student" onclick="deleteStudentRecord('${student.id}')">🗑 Delete Record</button>
-                </div>`;
+<div class="student-header">
+<div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
+<div>
+<div class="student-name">${escapeHtml(displayName)}${student.submitted ? '<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700">✓ SUBMITTED</span>' : ''}</div>
+<div class="student-time">${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
+</div>
+</div>
+<div class="progress-bar-wrap">
+<div class="progress-bar" style="width:${pct}%;background:${student.submitted ? 'var(--green)' : 'var(--amber)'}"></div>
+</div>
+<div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+<div style="display:flex;gap:6px;margin-top:10px">
+<button class="btn-review" onclick="openReview('${student.id}')">Review →</button>
+<button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear Ans</button>
+</div>
+<button class="btn-delete-student" onclick="deleteStudentRecord('${student.id}')">🗑 Delete Record</button>
+</div>`;
             }).join('');
         }
-
         window.exportClassStatusExcel = function() {
             if (!currentSessionData) {
                 showToast('No active session loaded', true);
                 return;
             }
-
             const sessionInfo = [
                 ["Session Title", currentSessionData.title || ""],
                 ["Grade", currentSessionData.grade || ""],
@@ -3087,15 +3297,12 @@
                 ["Date", currentSessionData.date || ""],
                 ["Export Time", new Date().toLocaleString()]
             ];
-
             const headerRow = ["Student Name", "Status", "Login Time", "Progress (%)", "Answers Submitted", "Total Questions"];
-
             const sessionStudentsMap = {};
             currentStudents.forEach(s => {
                 sessionStudentsMap[s.id] = s;
             });
             const totalQs = currentQuestions.length;
-
             const dataRows = allAssignedStudents.map(student => {
                 const sData = sessionStudentsMap[student.id];
                 const isOnline = !!sData && sData.online;
@@ -3103,7 +3310,6 @@
                 const loginTime = isOnline && sData.loginTime ? new Date(sData.loginTime).toLocaleTimeString() : "N/A";
                 const answers = isOnline && sData.answers ? Object.keys(sData.answers).length : 0;
                 const pct = isOnline && totalQs ? Math.round((answers / totalQs) * 100) + "%" : "0%";
-
                 return [
                     student.name || student.id,
                     status,
@@ -3113,14 +3319,11 @@
                     totalQs
                 ];
             });
-
             const wb = XLSX.utils.book_new();
-
             const wsData = [...sessionInfo, [],
                 ["--- Student Attendance & Status ---"], headerRow, ...dataRows
             ];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
-
             ws['!cols'] = [{
                 wch: 25
             }, {
@@ -3134,39 +3337,31 @@
             }, {
                 wch: 15
             }];
-
             XLSX.utils.book_append_sheet(wb, ws, "Class Status");
-
             const fileName = `Class_Status_${(currentSessionData.title||'Session').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, fileName);
-
             showToast('Excel file downloaded!');
         };
-
         window.openReview = async function(studentId) {
             const student = currentStudents.find(s => s.id === studentId);
             if (!student) return;
-
             const panel = document.getElementById('reviewPanel');
             const overlay = document.getElementById('overlay');
             const content = document.getElementById('reviewContent');
-
             let html = `
-                <div class="panel-student-info">
-                    <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
-                    <div style="flex:1">
-                        <div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
-                        <div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
-                    </div>
-                    <button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
-                </div>
-            `;
-
+<div class="panel-student-info">
+<div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
+<div style="flex:1">
+<div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
+<div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
+</div>
+<button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
+</div>
+`;
             for (const q of currentQuestions) {
                 const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
                 const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '';
                 const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-
                 let statusColor = 'var(--muted)';
                 let statusIcon = '○';
                 if (score !== '') {
@@ -3182,53 +3377,41 @@
                         statusIcon = '✕';
                     }
                 }
-
                 html += `
-                    <div class="review-item">
-                        <div class="review-q">
-                            <strong>Q:</strong> <span class="math-content">${mathHtml(q.text)}</span>
-                            <span style="float:right;color:${statusColor}">${statusIcon} ${q.points} pts</span>
-                        </div>
-                        
-                        <div class="review-answer math-content">
-                            ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>'}
-                        </div>
-
-                        <div class="grade-row">
-                            <label>Grade:</label>
-                            <input type="number" class="grade-input" id="grade-${q.id}" value="${score}" placeholder="-" min="0" max="${q.points}">
-                            
-                            <label>Feedback:</label>
-                            <input type="text" class="feedback-input" id="feedback-${q.id}" value="${escapeHtml(feedback)}" placeholder="Optional comment...">
-                            
-                            <button class="btn-save-grade" onclick="saveGrade('${studentId}', '${q.id}', ${q.points})">Save</button>
-                        </div>
-                    </div>
-                `;
+<div class="review-item">
+<div class="review-q">
+<strong>Q:</strong> <span class="math-content">${mathHtml(q.text)}</span>
+<span style="float:right;color:${statusColor}">${statusIcon} ${q.points} pts</span>
+</div>
+<div class="review-answer math-content">
+${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>'}
+</div>
+<div class="grade-row">
+<label>Grade:</label>
+<input type="number" class="grade-input" id="grade-${q.id}" value="${score}" placeholder="-" min="0" max="${q.points}">
+<label>Feedback:</label>
+<input type="text" class="feedback-input" id="feedback-${q.id}" value="${escapeHtml(feedback)}" placeholder="Optional comment...">
+<button class="btn-save-grade" onclick="saveGrade('${studentId}', '${q.id}', ${q.points})">Save</button>
+</div>
+</div>
+`;
             }
-
             content.innerHTML = html;
-
             panel.classList.add('open');
             overlay.classList.add('show');
-
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([content]).catch(err => console.log('MathJax error:', err));
             }
         };
-
         window.closeReview = function() {
             document.getElementById('reviewPanel').classList.remove('open');
             document.getElementById('overlay').classList.remove('show');
         };
-
         window.saveGrade = async function(studentId, questionId, maxPoints) {
             const scoreInput = document.getElementById(`grade-${questionId}`);
             const feedbackInput = document.getElementById(`feedback-${questionId}`);
-
             let score = scoreInput.value;
             const feedback = feedbackInput.value;
-
             if (score !== '') {
                 score = parseFloat(score);
                 if (isNaN(score)) {
@@ -3237,749 +3420,620 @@
                 }
                 if (score < 0) score = 0;
             }
-
             try {
                 const updates = {};
                 updates[`grades.${questionId}`] = score === '' ? null : score;
                 updates[`feedback.${questionId}`] = feedback;
-
                 await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), updates);
-
                 scoreInput.style.borderColor = 'var(--green)';
                 setTimeout(() => scoreInput.style.borderColor = 'var(--border)', 1000);
-
                 showToast('Grade saved');
-
                 await loadStudents();
                 updateStats();
-
             } catch (err) {
                 console.error(err);
                 showToast('Failed to save grade', true);
             }
         };
-
         window.deleteStudentRecord = async function(studentId) {
-            if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
-
-            try {
-                await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
-
-                try {
-                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
-                    console.log(`Student ${studentId} removed from RTDB`);
-                } catch (e) {
-                    console.warn('Could not remove from RTDB:', e);
-                }
-
-                showToast('Student record deleted. They can rejoin now.');
-                await loadStudents();
-                updateStats();
-            } catch (err) {
-                console.error(err);
-                showToast('Error deleting student record', true);
-            }
-        };
-
-        window.renderResults = async function() {
-            if (!activeSessionId) return;
-
-            await loadStudents();
-
-            const tbody = document.getElementById('resultsBody');
-            const filterStudent = document.getElementById('filterStudent').value;
-            const filterQuestion = document.getElementById('filterQuestion').value;
-
-            const studentSelect = document.getElementById('filterStudent');
-            if (studentSelect.options.length <= 1) {
-                currentStudents.forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = s.name || s.id;
-                    studentSelect.appendChild(opt);
-                });
-            }
-
-            const questionSelect = document.getElementById('filterQuestion');
-            if (questionSelect.options.length <= 1) {
-                currentQuestions.forEach((q, i) => {
-                    const opt = document.createElement('option');
-                    opt.value = q.id;
-                    opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
-                    questionSelect.appendChild(opt);
-                });
-            }
-
-            tbody.innerHTML = '';
-
-            let hasData = false;
-
-            for (const student of currentStudents) {
-                if (filterStudent && student.id !== filterStudent) continue;
-
-                for (const q of currentQuestions) {
-                    if (filterQuestion && q.id !== filterQuestion) continue;
-
-                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
-                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
-                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-
-                    hasData = true;
-
-                    let scoreClass = '';
-                    if (score !== '-') {
-                        const num = parseFloat(score);
-                        if (num >= q.points) scoreClass = 'color:var(--green)';
-                        else if (num > 0) scoreClass = 'color:var(--amber)';
-                        else scoreClass = 'color:var(--red)';
-                    }
-
-                    const row = `
-                        <tr>
-                            <td>
-                                <div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
-                                <div style="font-size:11px;color:var(--muted)">${student.submitted ? 'Submitted' : 'Draft'}</div>
-                            </td>
-                            <td>
-                                <div style="font-size:11px;color:var(--muted)">Q${currentQuestions.indexOf(q)+1}</div>
-                                <div class="math-content" style="font-size:13px">${mathHtml(q.text)}</div>
-                            </td>
-                            <td>
-                                <div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span style="color:var(--muted);font-style:italic">-</span>'}</div>
-                            </td>
-                            <td>
-                                <span class="score-pill" style="${scoreClass};background:var(--surface2);border:1px solid var(--border)">
-                                    ${score === '-' ? '-' : `${score}/${q.points}`}
-                                </span>
-                            </td>
-                            <td>
-                                <div style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">
-                                    ${escapeHtml(feedback) || '-'}
-                                </div>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-edit" onclick="openReview('${student.id}')">View</button>
-                            </td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                }
-            }
-
-            if (!hasData) {
-                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
-            }
-
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
-            }
-        };
-
-        window.exportData = async function() {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
-
-            showToast('Preparing JSON export...');
-
-            const exportObj = {
-                version: "1.0",
-                exportedAt: new Date().toISOString(),
-                session: currentSessionData,
-                questions: currentQuestions,
-                students: currentStudents.map(s => ({
-                    id: s.id,
-                    name: s.name,
-                    submitted: s.submitted,
-                    loginTime: s.loginTime,
-                    answers: s.answers,
-                    grades: s.grades,
-                    feedback: s.feedback
-                }))
-            };
-
-            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            try {
-                const timestamp = Date.now();
-                await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
-                    exportedBy: currentTeacher.email,
-                    timestamp: new Date().toISOString(),
-                    studentsCount: currentStudents.length
-                });
-                console.log('Export logged to RTDB');
-            } catch (e) {
-                console.warn('Could not log export to RTDB:', e);
-            }
-
-            showToast('JSON Export Complete');
-        };
-
-        window.exportReports = async function() {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
-
-            if (!currentStudents.length) {
-                showToast('No students to export', true);
-                return;
-            }
-
-            showToast('Generating PDF reports... This may take a moment.');
-
-            const {
-                jsPDF
-            } = window.jspdf;
-            const printContainer = document.getElementById('print-container');
-
-            for (const student of currentStudents) {
-                let html = `
-                    <div class="print-page">
-                        <div class="print-header">
-                            <div>
-                                <h1 style="margin:0;font-size:20px;">${escapeHtml(currentSessionData?.title || 'Quiz Report')}</h1>
-                                <div style="font-size:12px;color:#555;">${escapeHtml(currentSessionData?.subject || '')} - ${escapeHtml(currentSessionData?.className || '')}</div>
-                            </div>
-                            <div style="text-align:right;">
-                                <div class="print-student-name">${escapeHtml(student.name || student.id)}</div>
-                                <div class="print-meta">Date: ${new Date().toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                `;
-
-                let totalScore = 0;
-                let maxTotal = 0;
-
-                currentQuestions.forEach((q, idx) => {
-                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : 'No Answer';
-                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : 0;
-                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-
-                    totalScore += parseFloat(score) || 0;
-                    maxTotal += q.points;
-
-                    html += `
-                        <div class="print-q-item">
-                            <div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
-                            <div class="print-a-label">Student Answer:</div>
-                            <div class="print-a-text math-content">${mathHtml(answer)}</div>
-                            ${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedback: ${escapeHtml(feedback)}</em></div>` : ''}
-                            <div class="print-score">${score} / ${q.points}</div>
-                            <div style="clear:both;"></div>
-                        </div>
-                    `;
-                });
-
-                html += `
-                        <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
-                            <span>Total Score:</span>
-                            <span>${totalScore} / ${maxTotal}</span>
-                        </div>
-                    </div>
-                `;
-
-                printContainer.innerHTML = html;
-
-                if (window.MathJax && MathJax.typesetPromise) {
-                    await MathJax.typesetPromise([printContainer]);
-                }
-
-                try {
-                    const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: true
-                    });
-
-                    const imgData = canvas.toDataURL('image/png');
-                    const pdf = new jsPDF('p', 'mm', 'a4');
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                    pdf.save(`${student.name || 'Student'}_Report.pdf`);
-
-                } catch (err) {
-                    console.error("PDF Generation Error:", err);
-                }
-
-                await new Promise(r => setTimeout(r, 500));
-            }
-
-            printContainer.innerHTML = '';
-            showToast('PDF Reports Generated');
-        };
-
-        window.clearStudentAnswers = async function(studentId) {
-            if (!confirm('Clear all answers for this student?')) return;
-            await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), {
-                answers: {},
-                submitted: false,
-                grades: {},
-                feedback: {}
-            });
-            await loadStudents();
-            showToast('Answers cleared');
-        };
-
-        window.clearSessionAnswers = async function() {
-            if (!confirm('Clear ALL student answers? This cannot be undone.')) return;
-
-            for (const student of currentStudents) {
-                await updateDoc(doc(db, 'sessions', activeSessionId, 'students', student.id), {
-                    answers: {},
-                    submitted: false,
-                    grades: {},
-                    feedback: {}
-                });
-            }
-
-            await loadStudents();
-            showToast('All answers cleared');
-        };
-
-        window.exportQuestionToJSON = async function(questionId) {
-            if (!activeSessionId) return;
-
-            const question = currentQuestions.find(q => q.id === questionId);
-            if (!question) {
-                showToast('Question not found', true);
-                return;
-            }
-
-            const exportObj = {
-                version: "1.0",
-                type: "question",
-                exportedAt: new Date().toISOString(),
-                question: {
-                    text: question.text,
-                    type: question.type,
-                    points: question.points,
-                    correct: question.correct || "",
-                    tag: question.tag || "",
-                    options: question.options || null
-                }
-            };
-
-            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `question_${question.id}_${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            showToast('Question exported to JSON!');
-        };
-
-        window.exportAllQuestionsToJSON = async function() {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
-
-            if (!currentQuestions.length) {
-                showToast('No questions to export', true);
-                return;
-            }
-
-            const exportObj = {
-                version: "1.0",
-                type: "questions_batch",
-                exportedAt: new Date().toISOString(),
-                sessionId: activeSessionId,
-                sessionTitle: currentSessionData?.title || "Untitled",
-                totalQuestions: currentQuestions.length,
-                questions: currentQuestions.map(q => ({
-                    id: q.id,
-                    text: q.text,
-                    type: q.type,
-                    points: q.points,
-                    correct: q.correct || "",
-                    tag: q.tag || "",
-                    options: q.options || null,
-                    createdAt: q.createdAt
-                }))
-            };
-
-            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `questions_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            showToast(`Exported ${currentQuestions.length} questions to JSON!`);
-        };
-
-        window.importFromJSON = async function(event) {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
-
-            const file = event.target.files[0];
-            if (!file) return;
-
-            event.target.value = '';
-            showToast('Processing JSON file...');
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const jsonData = JSON.parse(e.target.result);
-                    let imported = 0;
-                    let skipped = 0;
-
-                    if (jsonData.type === 'question' && jsonData.question) {
-                        const q = jsonData.question;
-                        const questionData = {
-                            text: q.text || '',
-                            type: q.type || 'text',
-                            points: q.points || 10,
-                            correct: q.correct || '',
-                            tag: q.tag || 'Imported',
-                            options: q.options || null,
-                            createdAt: Date.now(),
-                            importedFrom: 'JSON'
+                    if (!confirm('Are you sure you want to DELETE this student\'s record?
+                            This will remove them from the session completely.They will have to rejoin using their code / link.
+                            ')) return;
+                            try {
+                                await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
+                                try {
+                                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
+                                    console.log(`Student ${studentId} removed from RTDB`);
+                                } catch (e) {
+                                    console.warn('Could not remove from RTDB:', e);
+                                }
+                                showToast('Student record deleted. They can rejoin now.');
+                                await loadStudents();
+                                updateStats();
+                            } catch (err) {
+                                console.error(err);
+                                showToast('Error deleting student record', true);
+                            }
+                        }; window.renderResults = async function() {
+                            if (!activeSessionId) return;
+                            await loadStudents();
+                            const tbody = document.getElementById('resultsBody');
+                            const filterStudent = document.getElementById('filterStudent').value;
+                            const filterQuestion = document.getElementById('filterQuestion').value;
+                            const studentSelect = document.getElementById('filterStudent');
+                            if (studentSelect.options.length <= 1) {
+                                currentStudents.forEach(s => {
+                                    const opt = document.createElement('option');
+                                    opt.value = s.id;
+                                    opt.textContent = s.name || s.id;
+                                    studentSelect.appendChild(opt);
+                                });
+                            }
+                            const questionSelect = document.getElementById('filterQuestion');
+                            if (questionSelect.options.length <= 1) {
+                                currentQuestions.forEach((q, i) => {
+                                    const opt = document.createElement('option');
+                                    opt.value = q.id;
+                                    opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
+                                    questionSelect.appendChild(opt);
+                                });
+                            }
+                            tbody.innerHTML = '';
+                            let hasData = false;
+                            for (const student of currentStudents) {
+                                if (filterStudent && student.id !== filterStudent) continue;
+                                for (const q of currentQuestions) {
+                                    if (filterQuestion && q.id !== filterQuestion) continue;
+                                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
+                                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
+                                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+                                    hasData = true;
+                                    let scoreClass = '';
+                                    if (score !== '-') {
+                                        const num = parseFloat(score);
+                                        if (num >= q.points) scoreClass = 'color:var(--green)';
+                                        else if (num > 0) scoreClass = 'color:var(--amber)';
+                                        else scoreClass = 'color:var(--red)';
+                                    }
+                                    const row = `
+<tr>
+<td>
+<div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
+<div style="font-size:11px;color:var(--muted)">${student.submitted ? 'Submitted' : 'Draft'}</div>
+</td>
+<td>
+<div style="font-size:11px;color:var(--muted)">Q${currentQuestions.indexOf(q)+1}</div>
+<div class="math-content" style="font-size:13px">${mathHtml(q.text)}</div>
+</td>
+<td>
+<div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span style="color:var(--muted);font-style:italic">-</span>'}</div>
+</td>
+<td>
+<span class="score-pill" style="${scoreClass};background:var(--surface2);border:1px solid var(--border)">
+${score === '-' ? '-' : `${score}/${q.points}`}
+</span>
+</td>
+<td>
+<div style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">
+${escapeHtml(feedback) || '-'}
+</div>
+</td>
+<td>
+<button class="btn btn-sm btn-edit" onclick="openReview('${student.id}')">View</button>
+</td>
+</tr>
+`;
+                                    tbody.innerHTML += row;
+                                }
+                            }
+                            if (!hasData) {
+                                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
+                            }
+                            if (window.MathJax && MathJax.typesetPromise) {
+                                MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+                            }
+                        }; window.exportData = async function() {
+                            if (!activeSessionId) {
+                                showToast('No active session', true);
+                                return;
+                            }
+                            showToast('Preparing JSON export...');
+                            const exportObj = {
+                                version: "1.0",
+                                exportedAt: new Date().toISOString(),
+                                session: currentSessionData,
+                                questions: currentQuestions,
+                                students: currentStudents.map(s => ({
+                                    id: s.id,
+                                    name: s.name,
+                                    submitted: s.submitted,
+                                    loginTime: s.loginTime,
+                                    answers: s.answers,
+                                    grades: s.grades,
+                                    feedback: s.feedback
+                                }))
+                            };
+                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                                type: 'application/json'
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            try {
+                                const timestamp = Date.now();
+                                await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
+                                    exportedBy: currentTeacher.email,
+                                    timestamp: new Date().toISOString(),
+                                    studentsCount: currentStudents.length
+                                });
+                                console.log('Export logged to RTDB');
+                            } catch (e) {
+                                console.warn('Could not log export to RTDB:', e);
+                            }
+                            showToast('JSON Export Complete');
+                        }; window.exportReports = async function() {
+                            if (!activeSessionId) {
+                                showToast('No active session', true);
+                                return;
+                            }
+                            if (!currentStudents.length) {
+                                showToast('No students to export', true);
+                                return;
+                            }
+                            showToast('Generating PDF reports... This may take a moment.');
+                            const {
+                                jsPDF
+                            } = window.jspdf;
+                            const printContainer = document.getElementById('print-container');
+                            for (const student of currentStudents) {
+                                let html = `
+<div class="print-page">
+<div class="print-header">
+<div>
+<h1 style="margin:0;font-size:20px;">${escapeHtml(currentSessionData?.title || 'Quiz Report')}</h1>
+<div style="font-size:12px;color:#555;">${escapeHtml(currentSessionData?.subject || '')} - ${escapeHtml(currentSessionData?.className || '')}</div>
+</div>
+<div style="text-align:right;">
+<div class="print-student-name">${escapeHtml(student.name || student.id)}</div>
+<div class="print-meta">Date: ${new Date().toLocaleDateString()}</div>
+</div>
+</div>
+`;
+                                let totalScore = 0;
+                                let maxTotal = 0;
+                                currentQuestions.forEach((q, idx) => {
+                                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : 'No Answer';
+                                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : 0;
+                                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+                                    totalScore += parseFloat(score) || 0;
+                                    maxTotal += q.points;
+                                    html += `
+<div class="print-q-item">
+<div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
+<div class="print-a-label">Student Answer:</div>
+<div class="print-a-text math-content">${mathHtml(answer)}</div>
+${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedback: ${escapeHtml(feedback)}</em></div>` : ''}
+<div class="print-score">${score} / ${q.points}</div>
+<div style="clear:both;"></div>
+</div>
+`;
+                                });
+                                html += `
+<div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
+<span>Total Score:</span>
+<span>${totalScore} / ${maxTotal}</span>
+</div>
+</div>
+`;
+                                printContainer.innerHTML = html;
+                                if (window.MathJax && MathJax.typesetPromise) {
+                                    await MathJax.typesetPromise([printContainer]);
+                                }
+                                try {
+                                    const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
+                                        scale: 2,
+                                        useCORS: true,
+                                        allowTaint: true
+                                    });
+                                    const imgData = canvas.toDataURL('image/png');
+                                    const pdf = new jsPDF('p', 'mm', 'a4');
+                                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                                    pdf.save(`${student.name || 'Student'}_Report.pdf`);
+                                } catch (err) {
+                                    console.error("PDF Generation Error:", err);
+                                }
+                                await new Promise(r => setTimeout(r, 500));
+                            }
+                            printContainer.innerHTML = '';
+                            showToast('PDF Reports Generated');
+                        }; window.clearStudentAnswers = async function(studentId) {
+                            if (!confirm('Clear all answers for this student?')) return;
+                            await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), {
+                                answers: {},
+                                submitted: false,
+                                grades: {},
+                                feedback: {}
+                            });
+                            await loadStudents();
+                            showToast('Answers cleared');
+                        }; window.clearSessionAnswers = async function() {
+                            if (!confirm('Clear ALL student answers? This cannot be undone.')) return;
+                            for (const student of currentStudents) {
+                                await updateDoc(doc(db, 'sessions', activeSessionId, 'students', student.id), {
+                                    answers: {},
+                                    submitted: false,
+                                    grades: {},
+                                    feedback: {}
+                                });
+                            }
+                            await loadStudents();
+                            showToast('All answers cleared');
+                        }; window.exportQuestionToJSON = async function(questionId) {
+                            if (!activeSessionId) return;
+                            const question = currentQuestions.find(q => q.id === questionId);
+                            if (!question) {
+                                showToast('Question not found', true);
+                                return;
+                            }
+                            const exportObj = {
+                                version: "1.0",
+                                type: "question",
+                                exportedAt: new Date().toISOString(),
+                                question: {
+                                    text: question.text,
+                                    type: question.type,
+                                    points: question.points,
+                                    correct: question.correct || "",
+                                    tag: question.tag || "",
+                                    options: question.options || null
+                                }
+                            };
+                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                                type: 'application/json'
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `question_${question.id}_${Date.now()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            showToast('Question exported to JSON!');
+                        }; window.exportAllQuestionsToJSON = async function() {
+                            if (!activeSessionId) {
+                                showToast('No active session', true);
+                                return;
+                            }
+                            if (!currentQuestions.length) {
+                                showToast('No questions to export', true);
+                                return;
+                            }
+                            const exportObj = {
+                                version: "1.0",
+                                type: "questions_batch",
+                                exportedAt: new Date().toISOString(),
+                                sessionId: activeSessionId,
+                                sessionTitle: currentSessionData?.title || "Untitled",
+                                totalQuestions: currentQuestions.length,
+                                questions: currentQuestions.map(q => ({
+                                    id: q.id,
+                                    text: q.text,
+                                    type: q.type,
+                                    points: q.points,
+                                    correct: q.correct || "",
+                                    tag: q.tag || "",
+                                    options: q.options || null,
+                                    createdAt: q.createdAt
+                                }))
+                            };
+                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                                type: 'application/json'
+                            });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `questions_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            showToast(`Exported ${currentQuestions.length} questions to JSON!`);
+                        }; window.importFromJSON = async function(event) {
+                            if (!activeSessionId) {
+                                showToast('No active session', true);
+                                return;
+                            }
+                            const file = event.target.files[0];
+                            if (!file) return;
+                            event.target.value = '';
+                            showToast('Processing JSON file...');
+                            const reader = new FileReader();
+                            reader.onload = async function(e) {
+                                try {
+                                    const jsonData = JSON.parse(e.target.result);
+                                    let imported = 0;
+                                    let skipped = 0;
+                                    if (jsonData.type === 'question' && jsonData.question) {
+                                        const q = jsonData.question;
+                                        const questionData = {
+                                            text: q.text || '',
+                                            type: q.type || 'text',
+                                            points: q.points || 10,
+                                            correct: q.correct || '',
+                                            tag: q.tag || 'Imported',
+                                            options: q.options || null,
+                                            createdAt: Date.now(),
+                                            importedFrom: 'JSON'
+                                        };
+                                        if (!questionData.text) {
+                                            showToast('Question text is required', true);
+                                            return;
+                                        }
+                                        const qId = 'q_' + Date.now();
+                                        await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                                        imported = 1;
+                                    } else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
+                                        for (let i = 0; i < jsonData.questions.length; i++) {
+                                            const q = jsonData.questions[i];
+                                            if (!q.text || !q.text.trim()) {
+                                                skipped++;
+                                                continue;
+                                            }
+                                            const questionData = {
+                                                text: q.text.trim(),
+                                                type: q.type || 'text',
+                                                points: q.points || 10,
+                                                correct: q.correct || '',
+                                                tag: q.tag || jsonData.sessionTitle || 'Imported',
+                                                options: q.options || null,
+                                                createdAt: Date.now() + i,
+                                                importedFrom: 'JSON'
+                                            };
+                                            const qId = q.id || `q_${Date.now()}_${i}`;
+                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                                            imported++;
+                                            await new Promise(r => setTimeout(r, 50));
+                                        }
+                                    } else if (Array.isArray(jsonData)) {
+                                        for (let i = 0; i < jsonData.length; i++) {
+                                            const q = jsonData[i];
+                                            if (!q.text || !q.text.trim()) {
+                                                skipped++;
+                                                continue;
+                                            }
+                                            const questionData = {
+                                                text: q.text.trim(),
+                                                type: q.type || 'text',
+                                                points: q.points || 10,
+                                                correct: q.correct || '',
+                                                tag: q.tag || 'Imported',
+                                                options: q.options || null,
+                                                createdAt: Date.now() + i,
+                                                importedFrom: 'JSON'
+                                            };
+                                            const qId = `q_${Date.now()}_${i}`;
+                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                                            imported++;
+                                            await new Promise(r => setTimeout(r, 50));
+                                        }
+                                    } else {
+                                        showToast('Invalid JSON format. Expected question object or array.', true);
+                                        return;
+                                    }
+                                    await loadQuestions();
+                                    updateStats();
+                                    if (imported > 0) {
+                                        showToast(`✅ Imported ${imported} question(s) from JSON${skipped ? ` (${skipped} skipped)` : ''}`);
+                                    } else {
+                                        showToast('No valid questions found in JSON file', true);
+                                    }
+                                } catch (err) {
+                                    console.error('JSON import failed:', err);
+                                    showToast('Invalid JSON file: ' + err.message, true);
+                                }
+                            };
+                            reader.readAsText(file);
+                        }; window.importFromHTML = async function(event) {
+                            if (!activeSessionId) {
+                                showToast('No active session', true);
+                                return;
+                            }
+                            const file = event.target.files[0];
+                            if (!file) return;
+                            event.target.value = '';
+                            showToast('Processing HTML file...');
+                            const reader = new FileReader();
+                            reader.onload = async function(e) {
+                                try {
+                                    const parser = new DOMParser();
+                                    const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
+                                    let questionCards = htmlDoc.querySelectorAll('.question-card');
+                                    if (!questionCards.length) {
+                                        questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
+                                    }
+                                    if (!questionCards.length) {
+                                        showToast('No questions found in the HTML file. Make sure the file contains .question-card elements.', true);
+                                        return;
+                                    }
+                                    let imported = 0;
+                                    let errors = [];
+                                    for (const card of questionCards) {
+                                        try {
+                                            let questionText = '';
+                                            const mainInput = card.querySelector('.main-q-input');
+                                            if (mainInput) {
+                                                questionText = mainInput.value || mainInput.getAttribute('value') || '';
+                                            }
+                                            if (!questionText.trim()) {
+                                                const qTextDiv = card.querySelector('.q-text');
+                                                if (qTextDiv) questionText = qTextDiv.innerText;
+                                            }
+                                            if (!questionText.trim()) {
+                                                errors.push('Skipped a question with no text');
+                                                continue;
+                                            }
+                                            let questionType = 'text';
+                                            const typeSelector = card.querySelector('.q-type-selector');
+                                            if (typeSelector) {
+                                                const selectedOption = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
+                                                if (selectedOption) {
+                                                    const typeValue = selectedOption.value;
+                                                    if (typeValue === 'mcq') questionType = 'mcq';
+                                                    else if (typeValue === 'tf') questionType = 'truefalse';
+                                                    else if (typeValue === 'matching') questionType = 'matching';
+                                                    else if (typeValue === 'fill') questionType = 'fill';
+                                                    else if (typeValue === 'paragraph') questionType = 'paragraph';
+                                                }
+                                            }
+                                            let points = 10;
+                                            const marksInput = card.querySelector('.mark-input-field, .marks-input');
+                                            if (marksInput) {
+                                                const marksValue = parseFloat(marksInput.value);
+                                                if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
+                                            }
+                                            let options = null;
+                                            let correctAnswer = '';
+                                            if (questionType === 'mcq') {
+                                                const mcqOptions = card.querySelectorAll('.mcq-option input');
+                                                if (mcqOptions.length) {
+                                                    options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
+                                                }
+                                                const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
+                                                if (checkedOption) {
+                                                    const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
+                                                    if (optionText) correctAnswer = optionText;
+                                                }
+                                            } else if (questionType === 'truefalse') {
+                                                const correctTF = card.querySelector('input[value="true"]:checked, input[value="True"]:checked, input[value="صح"]:checked');
+                                                if (correctTF) correctAnswer = correctTF.value;
+                                            }
+                                            let tag = 'Imported';
+                                            const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
+                                            if (headerTitle) {
+                                                tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
+                                            }
+                                            const questionData = {
+                                                text: questionText.trim(),
+                                                type: questionType,
+                                                points: points,
+                                                correct: correctAnswer,
+                                                tag: tag,
+                                                options: options,
+                                                createdAt: Date.now() + imported,
+                                                importedFrom: 'HTML'
+                                            };
+                                            const qId = 'q_' + Date.now() + '_' + imported;
+                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                                            imported++;
+                                            await new Promise(r => setTimeout(r, 50));
+                                        } catch (err) {
+                                            console.error('Error importing question:', err);
+                                            errors.push(`Error: ${err.message}`);
+                                        }
+                                    }
+                                    await loadQuestions();
+                                    updateStats();
+                                    if (imported > 0) {
+                                        showToast(`✅ Successfully imported ${imported} question(s) from HTML!${errors.length ? ` (${errors.length} issues)` : ''}`);
+                                    } else {
+                                        showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
+                                    }
+                                    if (errors.length) {
+                                        console.warn('Import errors:', errors);
+                                    }
+                                } catch (err) {
+                                    console.error('Import failed:', err);
+                                    showToast('Import failed: ' + err.message, true);
+                                }
+                            };
+                            reader.readAsText(file);
+                        }; window.changePassword = async function() {
+                            const currentPass = document.getElementById('currentPass').value;
+                            const newPass = document.getElementById('newPass').value;
+                            const confirmPass = document.getElementById('confirmPass').value;
+                            if (!currentPass || !newPass) {
+                                showToast('All fields required', true);
+                                return;
+                            }
+                            if (newPass !== confirmPass) {
+                                showToast('Passwords do not match', true);
+                                return;
+                            }
+                            if (newPass.length < 6) {
+                                showToast('Password must be at least 6 characters', true);
+                                return;
+                            }
+                            try {
+                                const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+                                await reauthenticateWithCredential(auth.currentUser, credential);
+                                await updatePassword(auth.currentUser, newPass);
+                                showToast('Password updated successfully!');
+                                document.getElementById('currentPass').value = '';
+                                document.getElementById('newPass').value = '';
+                                document.getElementById('confirmPass').value = '';
+                            } catch (e) {
+                                showToast('Error: ' + e.message, true);
+                            }
+                        }; window.switchTab = function(id, btn) {
+                            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                            document.getElementById('tab-' + id).classList.add('active');
+                            btn.classList.add('active');
+                            if (!activeSessionId && !['manage', 'settings'].includes(id)) {
+                                showToast('Please select or create a session first', true);
+                                switchTab('manage', document.querySelector('.nav-btn'));
+                                return;
+                            }
+                            // FIXED: Ensure data is loaded before rendering results
+                            if (id === 'results') {
+                                loadStudents().then(() => renderResults());
+                            } else if (id === 'questions') {
+                                loadQuestions();
+                            } else if (id === 'monitor') {
+                                loadStudents();
+                            } else if (id === 'class-status') {
+                                loadClassStatus();
+                            }
                         };
 
-                        if (!questionData.text) {
-                            showToast('Question text is required', true);
-                            return;
+                        function showToast(msg, isError = false) {
+                            const toast = document.getElementById('toast');
+                            toast.textContent = msg;
+                            toast.style.background = isError ? 'var(--red)' : 'var(--green)';
+                            toast.style.color = isError ? '#fff' : '#0f1117';
+                            toast.classList.add('show');
+                            setTimeout(() => toast.classList.remove('show'), 2800);
                         }
 
-                        const qId = 'q_' + Date.now();
-                        await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                        imported = 1;
-                    } else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
-                        for (let i = 0; i < jsonData.questions.length; i++) {
-                            const q = jsonData.questions[i];
-
-                            if (!q.text || !q.text.trim()) {
-                                skipped++;
-                                continue;
-                            }
-
-                            const questionData = {
-                                text: q.text.trim(),
-                                type: q.type || 'text',
-                                points: q.points || 10,
-                                correct: q.correct || '',
-                                tag: q.tag || jsonData.sessionTitle || 'Imported',
-                                options: q.options || null,
-                                createdAt: Date.now() + i,
-                                importedFrom: 'JSON'
-                            };
-
-                            const qId = q.id || `q_${Date.now()}_${i}`;
-                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                            imported++;
-
-                            await new Promise(r => setTimeout(r, 50));
+                        function escapeHtml(str) {
+                            if (!str) return '';
+                            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                         }
-                    } else if (Array.isArray(jsonData)) {
-                        for (let i = 0; i < jsonData.length; i++) {
-                            const q = jsonData[i];
 
-                            if (!q.text || !q.text.trim()) {
-                                skipped++;
-                                continue;
-                            }
-
-                            const questionData = {
-                                text: q.text.trim(),
-                                type: q.type || 'text',
-                                points: q.points || 10,
-                                correct: q.correct || '',
-                                tag: q.tag || 'Imported',
-                                options: q.options || null,
-                                createdAt: Date.now() + i,
-                                importedFrom: 'JSON'
-                            };
-
-                            const qId = `q_${Date.now()}_${i}`;
-                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                            imported++;
-                            await new Promise(r => setTimeout(r, 50));
+                        function mathHtml(str) {
+                            if (!str) return '';
+                            let result = String(str);
+                            const mathBlocks = [];
+                            result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+                                mathBlocks.push(math);
+                                return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
+                            });
+                            result = result.replace(/\$([^$]+)\$/g, (match, math) => {
+                                mathBlocks.push(math);
+                                return `%%MATHINLINE${mathBlocks.length - 1}%%`;
+                            });
+                            result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+                                mathBlocks.push(math);
+                                return `%%MATHPAREN${mathBlocks.length - 1}%%`;
+                            });
+                            result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            result = result.replace(/%%MATHBLOCK(\d+)%%/g, (match, idx) => `$$${mathBlocks[parseInt(idx)]}$$`);
+                            result = result.replace(/%%MATHINLINE(\d+)%%/g, (match, idx) => `$${mathBlocks[parseInt(idx)]}$`);
+                            result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
+                            return result;
                         }
-                    } else {
-                        showToast('Invalid JSON format. Expected question object or array.', true);
-                        return;
-                    }
-
-                    await loadQuestions();
-                    updateStats();
-
-                    if (imported > 0) {
-                        showToast(`✅ Imported ${imported} question(s) from JSON${skipped ? ` (${skipped} skipped)` : ''}`);
-                    } else {
-                        showToast('No valid questions found in JSON file', true);
-                    }
-
-                } catch (err) {
-                    console.error('JSON import failed:', err);
-                    showToast('Invalid JSON file: ' + err.message, true);
-                }
-            };
-
-            reader.readAsText(file);
-        };
-
-        window.importFromHTML = async function(event) {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
-
-            const file = event.target.files[0];
-            if (!file) return;
-
-            event.target.value = '';
-            showToast('Processing HTML file...');
-
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const parser = new DOMParser();
-                    const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
-
-                    let questionCards = htmlDoc.querySelectorAll('.question-card');
-
-                    if (!questionCards.length) {
-                        questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
-                    }
-
-                    if (!questionCards.length) {
-                        showToast('No questions found in the HTML file. Make sure the file contains .question-card elements.', true);
-                        return;
-                    }
-
-                    let imported = 0;
-                    let errors = [];
-
-                    for (const card of questionCards) {
-                        try {
-                            let questionText = '';
-                            const mainInput = card.querySelector('.main-q-input');
-                            if (mainInput) {
-                                questionText = mainInput.value || mainInput.getAttribute('value') || '';
-                            }
-
-                            if (!questionText.trim()) {
-                                const qTextDiv = card.querySelector('.q-text');
-                                if (qTextDiv) questionText = qTextDiv.innerText;
-                            }
-
-                            if (!questionText.trim()) {
-                                errors.push('Skipped a question with no text');
-                                continue;
-                            }
-
-                            let questionType = 'text';
-                            const typeSelector = card.querySelector('.q-type-selector');
-                            if (typeSelector) {
-                                const selectedOption = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
-                                if (selectedOption) {
-                                    const typeValue = selectedOption.value;
-                                    if (typeValue === 'mcq') questionType = 'mcq';
-                                    else if (typeValue === 'tf') questionType = 'truefalse';
-                                    else if (typeValue === 'matching') questionType = 'matching';
-                                    else if (typeValue === 'fill') questionType = 'fill';
-                                    else if (typeValue === 'paragraph') questionType = 'paragraph';
-                                }
-                            }
-
-                            let points = 10;
-                            const marksInput = card.querySelector('.mark-input-field, .marks-input');
-                            if (marksInput) {
-                                const marksValue = parseFloat(marksInput.value);
-                                if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
-                            }
-
-                            let options = null;
-                            let correctAnswer = '';
-
-                            if (questionType === 'mcq') {
-                                const mcqOptions = card.querySelectorAll('.mcq-option input');
-                                if (mcqOptions.length) {
-                                    options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
-                                }
-
-                                const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
-                                if (checkedOption) {
-                                    const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
-                                    if (optionText) correctAnswer = optionText;
-                                }
-                            } else if (questionType === 'truefalse') {
-                                const correctTF = card.querySelector('input[value="true"]:checked, input[value="True"]:checked, input[value="صح"]:checked');
-                                if (correctTF) correctAnswer = correctTF.value;
-                            }
-
-                            let tag = 'Imported';
-                            const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
-                            if (headerTitle) {
-                                tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
-                            }
-
-                            const questionData = {
-                                text: questionText.trim(),
-                                type: questionType,
-                                points: points,
-                                correct: correctAnswer,
-                                tag: tag,
-                                options: options,
-                                createdAt: Date.now() + imported,
-                                importedFrom: 'HTML'
-                            };
-
-                            const qId = 'q_' + Date.now() + '_' + imported;
-                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-
-                            imported++;
-
-                            await new Promise(r => setTimeout(r, 50));
-
-                        } catch (err) {
-                            console.error('Error importing question:', err);
-                            errors.push(`Error: ${err.message}`);
-                        }
-                    }
-
-                    await loadQuestions();
-                    updateStats();
-
-                    if (imported > 0) {
-                        showToast(`✅ Successfully imported ${imported} question(s) from HTML!${errors.length ? ` (${errors.length} issues)` : ''}`);
-                    } else {
-                        showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
-                    }
-
-                    if (errors.length) {
-                        console.warn('Import errors:', errors);
-                    }
-
-                } catch (err) {
-                    console.error('Import failed:', err);
-                    showToast('Import failed: ' + err.message, true);
-                }
-            };
-
-            reader.readAsText(file);
-        };
-
-        window.changePassword = async function() {
-            const currentPass = document.getElementById('currentPass').value;
-            const newPass = document.getElementById('newPass').value;
-            const confirmPass = document.getElementById('confirmPass').value;
-
-            if (!currentPass || !newPass) {
-                showToast('All fields required', true);
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                showToast('Passwords do not match', true);
-                return;
-            }
-
-            if (newPass.length < 6) {
-                showToast('Password must be at least 6 characters', true);
-                return;
-            }
-
-            try {
-                const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
-                await reauthenticateWithCredential(auth.currentUser, credential);
-                await updatePassword(auth.currentUser, newPass);
-
-                showToast('Password updated successfully!');
-                document.getElementById('currentPass').value = '';
-                document.getElementById('newPass').value = '';
-                document.getElementById('confirmPass').value = '';
-            } catch (e) {
-                showToast('Error: ' + e.message, true);
-            }
-        };
-
-        window.switchTab = function(id, btn) {
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
-            btn.classList.add('active');
-
-            if (!activeSessionId && !['manage', 'settings'].includes(id)) {
-                showToast('Please select or create a session first', true);
-                switchTab('manage', document.querySelector('.nav-btn'));
-                return;
-            }
-
-            // FIXED: Ensure data is loaded before rendering results
-            if (id === 'results') {
-                loadStudents().then(() => renderResults());
-            } else if (id === 'questions') {
-                loadQuestions();
-            } else if (id === 'monitor') {
-                loadStudents();
-            } else if (id === 'class-status') {
-                loadClassStatus();
-            }
-        };
-
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.style.background = isError ? 'var(--red)' : 'var(--green)';
-            toast.style.color = isError ? '#fff' : '#0f1117';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2800);
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        function mathHtml(str) {
-            if (!str) return '';
-            let result = String(str);
-            const mathBlocks = [];
-            result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-                mathBlocks.push(math);
-                return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
-            });
-            result = result.replace(/\$([^$]+)\$/g, (match, math) => {
-                mathBlocks.push(math);
-                return `%%MATHINLINE${mathBlocks.length - 1}%%`;
-            });
-            result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
-                mathBlocks.push(math);
-                return `%%MATHPAREN${mathBlocks.length - 1}%%`;
-            });
-
-            result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-            result = result.replace(/%%MATHBLOCK(\d+)%%/g, (match, idx) => `$$${mathBlocks[parseInt(idx)]}$$`);
-            result = result.replace(/%%MATHINLINE(\d+)%%/g, (match, idx) => `$${mathBlocks[parseInt(idx)]}$`);
-            result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
-
-            return result;
-        }
     </script>
 </body>
 
