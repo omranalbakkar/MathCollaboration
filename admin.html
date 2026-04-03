@@ -1501,8 +1501,10 @@
             getAuth,
             signInWithEmailAndPassword,
             signOut,
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    onAuthStateChanged,
+    createUserWithEmailAndPassword,
+    writeBatch
+            } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import {
             getFirestore,
             collection,
@@ -2084,18 +2086,55 @@
             return data;
         }
 
-        async function createFirestoreOnlyUserRecord(collectionName, role, data) {
-            const payload = {
-                ...data,
-                role,
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid,
-                updatedAt: serverTimestamp(),
-                updatedBy: currentUser.uid,
-                authProvisioned: false
-            };
-            await addDoc(collection(db, collectionName), payload);
-        }
+async function createFirestoreOnlyUserRecord(collectionName, role, data) {
+    const payload = {
+        ...data,
+        role,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+        authProvisioned: false
+    };
+    await addDoc(collection(db, collectionName), payload);
+}
+
+async function createAuthTeacherUser(data) {
+    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
+
+    // 1. Create Auth user
+    const authResult = await createUserWithEmailAndPassword(auth, data.email, data.pendingPassword);
+    const uid = authResult.user.uid;
+
+    // 2. Create teachers doc
+    const teacherRef = doc(collection(db, 'teachers'));
+    await setDoc(teacherRef, {
+        name: data.name,
+        email: data.email,
+        role: 'teacher',
+        assignedGrades: data.assignedGrades || [],
+        assignedSubjects: data.assignedSubjects || [],
+        status: data.status || 'Active',
+        authProvisioned: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid
+    });
+
+    // 3. Create users/<uid> doc
+    await setDoc(doc(db, 'users', uid), {
+        uid: uid,
+        email: data.email,
+        name: data.name,
+        role: 'teacher',
+        teacherDocId: teacherRef.id,
+        active: true,
+        status: data.status || 'Active',
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid
+    });
+}
 
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
@@ -2131,7 +2170,7 @@
                         delete updatePayload.email;
                         await updateDoc(doc(db, 'teachers', id), updatePayload);
                     } else {
-                        await createFirestoreOnlyUserRecord('teachers', 'teacher', data);
+                        await createAuthTeacherUser(data);
                     }
                 } else if (type === 'student') {
                     if (!data.pendingPassword) throw new Error('Pending Password is required.');
