@@ -222,10 +222,10 @@
                 <h2>
                     Grade Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('grades')"><i class="fas fa-file-excel"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('grades')"><i class="fas fa-file-excel"></i> Download Update</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('grades')"><i class="fas fa-download"></i> Template</button>
                         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-grades" hidden accept=".xlsx, .xls" onchange="importFromExcel('grades', this)">
+                        <input type="file" id="import-file-grades" hidden accept=".xlsx, .xls" onchange="processImport('grades', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
@@ -242,10 +242,10 @@
                 <h2>
                     Subjects Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('subjects')"><i class="fas fa-file-excel"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('subjects')"><i class="fas fa-file-excel"></i> Download Update</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('subjects')"><i class="fas fa-download"></i> Template</button>
                         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-subjects" hidden accept=".xlsx, .xls" onchange="importFromExcel('subjects', this)">
+                        <input type="file" id="import-file-subjects" hidden accept=".xlsx, .xls" onchange="processImport('subjects', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
@@ -262,10 +262,10 @@
                 <h2>
                     Teachers Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('teachers')"><i class="fas fa-file-excel"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('teachers')"><i class="fas fa-file-excel"></i> Download Update</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('teachers')"><i class="fas fa-download"></i> Template</button>
                         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-teachers" hidden accept=".xlsx, .xls" onchange="importFromExcel('teachers', this)">
+                        <input type="file" id="import-file-teachers" hidden accept=".xlsx, .xls" onchange="processImport('teachers', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
@@ -282,10 +282,10 @@
                 <h2>
                     Students Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('students')"><i class="fas fa-file-excel"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('students')"><i class="fas fa-file-excel"></i> Download Update</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('students')"><i class="fas fa-download"></i> Template</button>
                         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-students" hidden accept=".xlsx, .xls" onchange="importFromExcel('students', this)">
+                        <input type="file" id="import-file-students" hidden accept=".xlsx, .xls" onchange="processImport('students', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
@@ -302,7 +302,15 @@
 
             <!-- SESSIONS -->
             <div id="sessions" class="section">
-                <h2>All Sessions</h2>
+                <h2>
+                    All Sessions
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportCurrentData('sessions')"><i class="fas fa-file-excel"></i> Download Update</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('sessions')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-sessions').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-sessions" hidden accept=".xlsx, .xls" onchange="processImport('sessions', this)">
+                    </div>
+                </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('sessions-table', this.value)">
                 </div>
@@ -357,19 +365,14 @@
         let allGrades = [];
         let allSubjects = [];
 
-        // --- AUTH FUNCTIONS (Attached to Window) ---
+        // --- AUTH ---
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
-            try { 
-                await signInWithEmailAndPassword(auth, email, password); 
-            } catch (error) { 
-                alert("Login Failed: " + error.message); 
-            }
+            try { await signInWithEmailAndPassword(auth, email, password); } 
+            catch (error) { alert("Login Failed: " + error.message); }
         };
-
         window.handleLogout = () => signOut(auth);
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -388,8 +391,6 @@
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
-            
-            // Highlight correct tab
             const tabs = document.querySelectorAll('.nav-tab');
             const map = {'dashboard':0, 'grades':1, 'subjects':2, 'teachers':3, 'students':4, 'sessions':5};
             if(tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
@@ -491,77 +492,49 @@
 
         async function loadTeachers() {
             const tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Loading...</td></tr>';
-            
-            try {
-                // Strictly query users with role 'teacher'
-                const q = query(collection(db, "users"), where("role", "==", "teacher"));
-                const snap = await getDocs(q);
+            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+            tbody.innerHTML = '';
+            const seenEmails = new Set();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const cleanEmail = (d.email || '').toLowerCase().trim();
+                if(!cleanEmail || seenEmails.has(cleanEmail)) return;
+                seenEmails.add(cleanEmail);
+
+                const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
+                const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
                 
-                tbody.innerHTML = '';
-                
-                // Use a Set to track LOWERCASE emails to prevent case-sensitive duplicates
-                const seenEmails = new Set();
-                let count = 0;
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    
-                    // Normalize email to lowercase for comparison
-                    const cleanEmail = (d.email || '').toLowerCase().trim();
-                    
-                    if (!cleanEmail) return; // Skip if no email
-                    if (seenEmails.has(cleanEmail)) {
-                        console.warn(`Duplicate teacher skipped: ${d.email} (ID: ${doc.id})`);
-                        return; 
-                    }
-                    
-                    seenEmails.add(cleanEmail);
-                    count++;
-
-                    const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
-                    const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
-                    
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${getDisplayName(d)}</td>
-                            <td>${d.email}</td>
-                            <td style="font-size:0.85rem; color:#666;">${gNames}</td>
-                            <td style="font-size:0.85rem; color:#666;">${sNames}</td>
-                            <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
-                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
-                                <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
-                });
-
-                if(count === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #999;">No teachers found.</td></tr>';
-                }
-
-            } catch (e) { 
-                console.error("Error loading teachers:", e);
-                tbody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`; 
-            }
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${getDisplayName(d)}</td><td>${d.email}</td>
+                        <td style="font-size:0.85rem">${gNames}</td><td style="font-size:0.85rem">${sNames}</td>
+                        <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
         }
+
         async function loadStudents() {
             const filter = document.getElementById('student-grade-filter').value;
             const tbody = document.querySelector('#students-table tbody');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             const snap = await getDocs(collection(db, "students"));
             tbody.innerHTML = '';
-
             const seenEmails = new Set();
             snap.forEach(doc => {
                 const d = doc.data();
-                if(seenEmails.has(d.email)) return;
-                seenEmails.add(d.email);
+                const cleanEmail = (d.email || '').toLowerCase().trim();
+                if(!cleanEmail || seenEmails.has(cleanEmail)) return;
+                seenEmails.add(cleanEmail);
 
                 let gName = "N/A";
-                if(d.gradeId) {
-                    const g = allGrades.find(x => x.id === d.gradeId);
+                if(d.gradeLevel) {
+                    const g = allGrades.find(x => x.id === d.gradeLevel);
                     if(g) gName = g.nameEn;
                 }
                 if(filter && gName !== filter) return;
@@ -596,103 +569,183 @@
             });
         }
 
-        // --- EXCEL FUNCTIONS ---
+        // ==========================================
+        // EXCEL IMPORT / EXPORT MANAGER
+        // ==========================================
+
         window.downloadTemplate = (type) => {
             const wb = XLSX.utils.book_new();
-            let headers = [], sampleData = [];
-            
-            if(type === 'grades') {
+            let headers = [], sampleRow = [];
+
+            if (type === 'grades') {
                 headers = ["nameEn", "nameAr", "code", "status"];
-                sampleData = [["Grade 10", "الصف العاشر", "G10", "Active"]];
+                sampleRow = ["Grade 10", "الصف العاشر", "G10", "Active"];
             } else if (type === 'subjects') {
                 headers = ["nameEn", "nameAr", "code", "status"];
-                sampleData = [["Math", "رياضيات", "MATH", "Active"]];
+                sampleRow = ["Mathematics", "الرياضيات", "MATH", "Active"];
             } else if (type === 'teachers') {
-                headers = ["name", "email", "active", "assignedGrades (IDs comma-sep)", "assignedSubjects (IDs comma-sep)"];
-                sampleData = [["John Doe", "john@school.com", "TRUE", "ID1,ID2", "ID3"]];
+                headers = ["name", "email", "active", "assignedGrades (Names or IDs)", "assignedSubjects (Names or IDs)"];
+                sampleRow = ["John Doe", "john@school.com", "TRUE", "Grade 9, Grade 10", "Math, Physics"];
             } else if (type === 'students') {
-                headers = ["name", "email", "gradeId", "active"];
-                sampleData = [["Jane Doe", "jane@school.com", "GRADE_ID_HERE", "TRUE"]];
+                headers = ["name", "email", "gradeLevel (Name or ID)", "active"];
+                sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "TRUE"];
+            } else if (type === 'sessions') {
+                headers = ["title", "ownerTeacherId (Email or ID)", "gradeLevel", "subject", "startTime (YYYY-MM-DD HH:MM)", "endTime (YYYY-MM-DD HH:MM)", "isActive"];
+                sampleRow = ["Mock Exam", "teacher@school.com", "Grade 9", "Math", "2023-10-25 09:00", "2023-10-25 10:30", "TRUE"];
             }
 
             const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
             XLSX.utils.book_append_sheet(wb, wsEmpty, "Empty_Template");
-            const wsSample = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+            const wsSample = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
             XLSX.utils.book_append_sheet(wb, wsSample, "Sample_Data");
             XLSX.writeFile(wb, `${type}_template.xlsx`);
         };
 
-        window.exportToExcel = async (type) => {
-            let data = [];
-            if(type === 'grades') data = (await getDocs(collection(db, "grades"))).docs.map(d => ({id:d.id, ...d.data()}));
-            if(type === 'subjects') data = (await getDocs(collection(db, "subjects"))).docs.map(d => ({id:d.id, ...d.data()}));
-            if(type === 'teachers') data = (await getDocs(query(collection(db, "users"), where("role","==","teacher")))).docs.map(d => ({id:d.id, ...d.data()}));
-            if(type === 'students') data = (await getDocs(collection(db, "students"))).docs.map(d => ({id:d.id, ...d.data()}));
-            
-            const ws = XLSX.utils.json_to_sheet(data);
+        window.exportCurrentData = async (type) => {
+            let rawData = [];
+            let collectionRef = null, queryRef = null;
+
+            if (type === 'grades') collectionRef = collection(db, "grades");
+            else if (type === 'subjects') collectionRef = collection(db, "subjects");
+            else if (type === 'teachers') queryRef = query(collection(db, "users"), where("role", "==", "teacher"));
+            else if (type === 'students') collectionRef = collection(db, "students");
+            else if (type === 'sessions') collectionRef = collection(db, "sessions");
+
+            let snap;
+            if (queryRef) snap = await getDocs(queryRef);
+            else if (collectionRef) snap = await getDocs(collectionRef);
+
+            rawData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            const cleanData = rawData.map(row => {
+                const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
+                
+                if (type === 'teachers') {
+                    if (row.assignedGrades) {
+                        cleanRow['assignedGrades (Names or IDs)'] = row.assignedGrades.map(id => {
+                            const g = allGrades.find(x => x.id === id); return g ? g.nameEn : id;
+                        }).join(', ');
+                        delete cleanRow.assignedGrades;
+                    }
+                    if (row.assignedSubjects) {
+                        cleanRow['assignedSubjects (Names or IDs)'] = row.assignedSubjects.map(id => {
+                            const s = allSubjects.find(x => x.id === id); return s ? s.nameEn : id;
+                        }).join(', ');
+                        delete cleanRow.assignedSubjects;
+                    }
+                }
+                if (type === 'students') {
+                    if (row.gradeLevel) {
+                        const g = allGrades.find(x => x.id === row.gradeLevel);
+                        cleanRow['gradeLevel (Name or ID)'] = g ? g.nameEn : row.gradeLevel;
+                        delete cleanRow.gradeLevel;
+                    }
+                }
+                if (type === 'sessions' && row.startTime) {
+                    const date = new Date(row.startTime.seconds * 1000);
+                    cleanRow['startTime (YYYY-MM-DD HH:MM)'] = date.toISOString().slice(0, 16).replace('T', ' ');
+                    delete cleanRow.startTime;
+                }
+                if (type === 'sessions' && row.endTime) {
+                    const date = new Date(row.endTime.seconds * 1000);
+                    cleanRow['endTime (YYYY-MM-DD HH:MM)'] = date.toISOString().slice(0, 16).replace('T', ' ');
+                    delete cleanRow.endTime;
+                }
+                return cleanRow;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(cleanData);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, `${type}_export.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, "Current_Data");
+            XLSX.writeFile(wb, `${type}_update_data.xlsx`);
         };
 
-        window.importFromExcel = async (type, input) => {
+        window.processImport = async (type, input) => {
             const file = input.files[0];
-            if(!file) return;
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const workbook = XLSX.read(e.target.result, {type: 'array'});
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    
-                    if(jsonData.length === 0) { alert("File is empty"); return; }
+
+                    if (jsonData.length === 0) { alert("File empty"); return; }
 
                     const batch = writeBatch(db);
-                    let count = 0;
+                    let countInsert = 0, countUpdate = 0;
 
-                    for(const row of jsonData) {
-                        if(!row.email && (type === 'teachers' || type === 'students')) continue;
+                    for (const row of jsonData) {
+                        if ((type === 'teachers' || type === 'students') && !row.email) continue;
 
                         let docData = {};
-                        if(type === 'grades' || type === 'subjects') {
+                        let targetId = row.id || null;
+
+                        if (type === 'grades' || type === 'subjects') {
                             docData = { nameEn: row.nameEn, nameAr: row.nameAr, code: row.code, status: row.status || 'Active' };
                         } else if (type === 'teachers') {
-                            const gIds = row['assignedGrades (IDs comma-sep)'] ? String(row['assignedGrades (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
-                            const sIds = row['assignedSubjects (IDs comma-sep)'] ? String(row['assignedSubjects (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
-                            docData = { name: row.name, email: row.email, role: 'teacher', active: String(row.active).toLowerCase() === 'true', assignedGrades: gIds, assignedSubjects: sIds };
+                            const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
+                            const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
+                            docData = { name: row.name, email: row.email, role: 'teacher', active: String(row.active).toLowerCase() === 'true', assignedGrades: gradeIds, assignedSubjects: subjectIds };
+                            targetId = row.id;
                         } else if (type === 'students') {
-                            docData = { name: row.name, email: row.email, gradeId: row.gradeId, active: String(row.active).toLowerCase() === 'true' };
+                            const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
+                            docData = { name: row.name, email: row.email, gradeLevel: gradeId, active: String(row.active).toLowerCase() === 'true' };
+                            targetId = row.id;
+                        } else if (type === 'sessions') {
+                            let teacherId = row['ownerTeacherId (Email or ID)'];
+                            if (teacherId && teacherId.includes('@')) {
+                                const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
+                                if (!tSnap.empty) teacherId = tSnap.docs[0].id;
+                            }
+                            let startSecs = null, endSecs = null;
+                            if (row['startTime (YYYY-MM-DD HH:MM)']) startSecs = Math.floor(new Date(row['startTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
+                            if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
+                            
+                            docData = { title: row.title, ownerTeacherId: teacherId, gradeLevel: row.gradeLevel, subject: row.subject, startTime: startSecs ? { seconds: startSecs } : null, endTime: endSecs ? { seconds: endSecs } : null, isActive: String(row.isActive).toLowerCase() === 'true' };
+                            targetId = row.id;
                         }
 
-                        if((type === 'teachers' || type === 'students') && row.email) {
-                            const qType = type === 'teachers' ? 'users' : 'students';
-                            if(row.id) {
-                                batch.update(doc(db, qType, row.id), docData);
-                            } else {
-                                const existing = await getDocs(query(collection(db, qType), where("email", "==", row.email)));
-                                if(existing.empty) {
-                                    const newRef = doc(collection(db, qType));
-                                    batch.set(newRef, docData);
-                                }
-                            }
+                        const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
+                        
+                        if (targetId) {
+                            batch.update(doc(db, colName, targetId), docData);
+                            countUpdate++;
                         } else {
-                            const newRef = doc(collection(db, type + 's'));
+                            if (type === 'teachers' || type === 'students') {
+                                const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
+                                if (!existing.empty) { console.warn(`Skip duplicate: ${row.email}`); continue; }
+                            }
+                            const newRef = doc(collection(db, colName));
                             batch.set(newRef, docData);
+                            countInsert++;
                         }
-                        count++;
                     }
-                    
                     await batch.commit();
-                    alert(`Successfully imported ${count} records.`);
+                    alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
                     location.reload();
-                } catch(err) {
-                    alert("Import Error: " + err.message);
-                    console.error(err);
-                }
+                } catch (err) { alert("Import Failed: " + err.message); console.error(err); }
             };
             reader.readAsArrayBuffer(file);
         };
+
+        function resolveNamesToIds(inputString, list) {
+            if (!inputString) return [];
+            const items = String(inputString).split(',').map(s => s.trim());
+            const ids = [];
+            items.forEach(item => {
+                const found = list.find(l => l.nameEn.toLowerCase() === item.toLowerCase() || l.nameAr === item);
+                if (found) ids.push(found.id);
+                else if (item.length > 10) ids.push(item);
+            });
+            return ids;
+        }
+        function resolveNameToId(inputString, list) {
+            if (!inputString) return null;
+            const found = list.find(l => l.nameEn.toLowerCase() === String(inputString).toLowerCase() || l.nameAr === inputString);
+            return found ? found.id : inputString;
+        }
 
         // --- CRUD ACTIONS ---
         window.resetPassword = async (email) => {
@@ -701,25 +754,18 @@
                 catch(e) { alert(e.message); }
             }
         };
-
         window.deleteTeacher = async (uid) => {
-            if(!confirm("Delete teacher? This will also remove their account from Users.")) return;
-            try {
-                await deleteDoc(doc(db, "users", uid));
-                loadTeachers();
-            } catch(e) { alert(e.message); }
+            if(!confirm("Delete teacher?")) return;
+            await deleteDoc(doc(db, "users", uid));
+            loadTeachers();
         };
-
         window.deleteStudent = async (id) => {
             if(!confirm("Delete student?")) return;
-            try {
-                await deleteDoc(doc(db, "students", id));
-                loadStudents();
-            } catch(e) { alert(e.message); }
+            await deleteDoc(doc(db, "students", id));
+            loadStudents();
         };
-
         window.deleteItem = async (col, id) => {
-            if(confirm("Delete this item?")) {
+            if(confirm("Delete?")) {
                 await deleteDoc(doc(db, col, id));
                 if(col==='grades') loadGrades();
                 if(col==='subjects') loadSubjects();
@@ -727,7 +773,7 @@
             }
         };
 
-        // --- MODAL LOGIC ---
+        // --- MODAL ---
         window.openModal = (type, id=null, data=null) => {
             const m = document.getElementById('generic-modal');
             const f = document.getElementById('modal-fields');
@@ -737,26 +783,20 @@
             
             let html = '';
             if(type === 'grade' || type === 'subject') {
-                html = `
-                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn||''}"></div>
-                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr||''}"></div>
-                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code||''}"></div>
-                    <div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>
-                `;
+                html = `<div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn||''}"></div>
+                        <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr||''}"></div>
+                        <div class="form-group"><label>Code</label><input name="code" required value="${data?.code||''}"></div>
+                        <div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>`;
             } else if (type === 'teacher') {
-                html = `
-                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
-                    <div class="form-group"><label>Name</label><input name="name" required value="${getDisplayName(data)}"></div>
-                    <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>
-                `;
+                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
+                        <div class="form-group"><label>Name</label><input name="name" required value="${getDisplayName(data)}"></div>
+                        <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>`;
             } else if (type === 'student') {
-                const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeId===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                html = `
-                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
-                    <div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div>
-                    <div class="form-group"><label>Grade</label><select name="gradeId">${opts}</select></div>
-                    <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>
-                `;
+                const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
+                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
+                        <div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div>
+                        <div class="form-group"><label>Grade</label><select name="gradeLevel">${opts}</select></div>
+                        <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>`;
             }
             f.innerHTML = html;
             m.classList.add('active');
@@ -770,7 +810,6 @@
             const id = document.getElementById('modal-id').value;
             const data = Object.fromEntries(new FormData(e.target));
             data.active = (data.active === 'true');
-
             try {
                 if(type === 'grade' || type === 'subject') {
                     const col = type + 's';
@@ -795,9 +834,7 @@
         window.filterTable = (id, q) => {
             const f = q.toUpperCase();
             const rows = document.getElementById(id).getElementsByTagName("tr");
-            for(let i=1; i<rows.length; i++) {
-                rows[i].style.display = rows[i].textContent.toUpperCase().indexOf(f) > -1 ? "" : "none";
-            }
+            for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].textContent.toUpperCase().indexOf(f) > -1 ? "" : "none";
         };
     </script>
 </body>
