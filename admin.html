@@ -183,8 +183,8 @@ tr:hover td{background:var(--surface2);}
   </div>
 
   <div class="content">
-    <!-- DASHBOARD TAB -->
-    <div class="tab-pane active" id="tab-dashboard">
+      <!-- 
+	  <div class="tab-pane active" id="tab-dashboard">
       <div class="section-header">
         <div><div class="section-title">System Overview</div><div class="section-sub">Platform-wide statistics</div></div>
       </div>
@@ -196,6 +196,34 @@ tr:hover td{background:var(--surface2);}
         <div class="stat-card"><div class="stat-val orange" id="dashSessions">—</div><div class="stat-label">Sessions</div></div>
       </div>
     </div>
+	-->
+	
+	<!-- DASHBOARD TAB -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="section-header">
+        <div><div class="section-title">System Overview</div><div class="section-sub">Platform-wide statistics</div></div>
+      </div>
+      <div class="stats-grid">
+        <!-- Existing Firestore Stats -->
+        <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
+        <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
+        <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
+        <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
+        
+        <!-- 🟢 NEW: RTDB Real-time Stats -->
+        <div class="stat-card" style="border-color:var(--green);">
+            <div class="stat-val green loading" id="cardActive">—</div>
+            <div class="stat-label">🟢 Active Students (Live)</div>
+        </div>
+        <div class="stat-card" style="border-color:var(--orange);">
+            <div class="stat-val orange loading" id="cardSessions">—</div>
+            <div class="stat-label">⚡ Live Sessions</div>
+        </div>
+      </div>
+    </div>
+	
+
+    
 
     <!-- GRADES TAB -->
     <div class="tab-pane" id="tab-grades">
@@ -372,10 +400,22 @@ function showLogin(msg) {
     el.textContent = msg; el.style.display = 'block';
   }
 }
+ // function showApp() {
+ //   document.getElementById('loginScreen').style.display = 'none';
+ //   document.getElementById('app').style.display = 'block';
+ //   loadAll();
+ // }
+
+
 function showApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  
+  // 1. Load static data from Firestore
   loadAll();
+  
+  // 2. 🟢 START RTDB Metrics Listener (This was missing!)
+  loadRTDBMetrics();
 }
 
 // ── LOGIN ──
@@ -705,6 +745,48 @@ async function loadDashboardStats() {
     document.getElementById('dashSessions').textContent = "Err";
   }
 }
+
+  // 🟢 NEW: RTDB Real-time Metrics Function
+function loadRTDBMetrics() {
+  try {
+    // Listen to the 'liveSessions' node in RTDB
+    onValue(ref(rtDB, 'liveSessions'), (snapshot) => {
+      const sessions = snapshot.val() || {};
+      
+      let totalActive = 0;
+      let totalSessions = 0;
+      
+      for (const sessionId in sessions) {
+        totalSessions++;
+        // Assuming structure: liveSessions/{sessionId}/students/{studentId}/...
+        const students = sessions[sessionId].students || {};
+        totalActive += Object.keys(students).length;
+      }
+      
+      // Update UI if elements exist
+      const activeCard = document.getElementById('cardActive');
+      if (activeCard) {
+        activeCard.textContent = totalActive;
+        activeCard.classList.remove('loading');
+      }
+      
+      const sessionsCard = document.getElementById('cardSessions');
+      if (sessionsCard) {
+        sessionsCard.textContent = totalSessions;
+        sessionsCard.classList.remove('loading');
+      }
+      
+      // Optional: Log for debugging
+      // console.log(`🟢 RTDB: ${totalActive} students active, ${totalSessions} sessions`);
+    }, (error) => {
+      console.warn('⚠️ RTDB metrics error:', error);
+    });
+  } catch (e) {
+    console.warn('⚠️ Could not load RTDB metrics:', e);
+  }
+}
+
+  
 
 // ── TOGGLE ACTIVE ──
 window.toggleActive = async function(collName, id, newState) {
@@ -1268,7 +1350,172 @@ function getVal(row, possibleKeys) {
   return null; // Return null if not found
 }
 
-  window.handleBulkImport = async function(input) {
+ //   window.handleBulkImport = async function(input) {
+ //   const file = input.files[0];
+ //   if (!file) return;
+ //   
+ //   const reader = new FileReader();
+ //   reader.onload = async (e) => {
+ //     const data = new Uint8Array(e.target.result);
+ //     const workbook = XLSX.read(data, {type: 'array'});
+ //     const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
+ //     const json = XLSX.utils.sheet_to_json(sheet);
+ //     
+ //     if(!json.length) { showToast('File is empty', true); return; }
+ //     
+ //     let successCount = 0;
+ //     let errorCount = 0;
+ // 
+ //     try {
+ //       for(const row of json) {
+ //         try {
+ //           if(bulkCurrentType === 'grade') {
+ //              const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
+ //              const code   = getVal(row, ['Code', 'code']);
+ //              
+ //              if(!nameEn || !code) { errorCount++; continue; }
+ // 
+ //              await addDoc(collection(db, 'grades'), {
+ //                nameEn: String(nameEn),
+ //                nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
+ //                code: String(code),
+ //                active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
+ //                createdAt: serverTimestamp(),
+ //                createdBy: currentAdmin.uid
+ //              });
+ //           }
+ //           else if(bulkCurrentType === 'subject') {
+ //              const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
+ //              const code   = getVal(row, ['Code', 'code']);
+ //              
+ //              if(!nameEn || !code) { errorCount++; continue; }
+ // 
+ //              await addDoc(collection(db, 'subjects'), {
+ //                nameEn: String(nameEn),
+ //                nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
+ //                code: String(code),
+ //                active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
+ //                createdAt: serverTimestamp(),
+ //                createdBy: currentAdmin.uid
+ //              });
+ //           }
+ //           else if(bulkCurrentType === 'teacher') {
+ //              const name = getVal(row, ['Name', 'name']);
+ //              const email = getVal(row, ['Email', 'email']);
+ //              const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
+ //              
+ //              if(!name || !email || !pass) { errorCount++; continue; }
+ //              
+ //              try {
+ //                const uCred = await createUserWithEmailAndPassword(auth, email, pass);
+ //                const uid = uCred.user.uid;
+ //                
+ //                // Resolve IDs
+ //                const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codescommasep)']) || '');
+ //                const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+ //                  const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
+ //                }).filter(Boolean);
+ //                
+ //                const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codescommasep)']) || '');
+ //                const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
+ //                  const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
+ //                }).filter(Boolean);
+ // 
+ //                const tRef = await addDoc(collection(db, 'teachers'), {
+ //                  name, email, 
+ //                  active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
+ //                  assignedGrades: gIds, 
+ //                  assignedSubjects: sIds,
+ //                  pendingPassword: pass,
+ //                  createdAt: serverTimestamp(), 
+ //                  createdBy: currentAdmin.uid
+ //                });
+ //                
+ //                await setDoc(doc(db, 'users', uid), {
+ //                  role:'teacher', name, email, active:true, 
+ //                  assignedGrades: gIds, assignedSubjects: sIds,
+ //                  teacherDocId: tRef.id, createdAt: serverTimestamp()
+ //                });
+ //                successCount++;
+ //              } catch(err) { console.error("Teacher Auth Error", err); errorCount++; }
+ //           }
+ //           else if(bulkCurrentType === 'student') {
+ //              const name = getVal(row, ['Name', 'name']);
+ //              const email = getVal(row, ['Email', 'email']);
+ //              const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
+ //              const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
+ //              
+ //              if(!name || !email || !pass) { errorCount++; continue; }
+ //              
+ //              try {
+ //                const uCred = await createUserWithEmailAndPassword(auth, email, pass);
+ //                const uid = uCred.user.uid;
+ //                const grade = allGrades.find(g => g.code === gradeCode);
+ //                
+ //                await setDoc(doc(db, 'students', uid), {
+ //                  name: String(name), 
+ //                  email: String(email),
+ //                  gradeId: grade ? grade.id : '',
+ //                  active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
+ //                  uid: uid, 
+ //                  createdAt: serverTimestamp(), 
+ //                  createdBy: currentAdmin.uid
+ //                });
+ //                
+ //                await setDoc(doc(db, 'users', uid), {
+ //                  role:'student', 
+ //                  name: String(name), 
+ //                  email: String(email), 
+ //                  active:true,
+ //                  gradeId: grade ? grade.id : '', 
+ //                  studentDocId: uid,
+ //                  createdAt: serverTimestamp(), 
+ //                  createdBy: currentAdmin.uid
+ //                });
+ //                successCount++;
+ //              } catch(err) { console.error("Student Auth Error", err); errorCount++; }
+ //           }
+ // else if(bulkCurrentType === 'session') {
+ //    const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
+ //    const teacher = allTeachers.find(t => t.email === tEmail);
+ //    if(!teacher) { errorCount++; continue; }
+ //    
+ //    // Add to Firestore Collection
+ //    await addDoc(collection(db, 'sessions'), {
+ //      title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
+ //      grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
+ //      subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
+ //      className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
+ //      date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
+ //      startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
+ //      endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
+ //      active: false,
+ //      createdAt: serverTimestamp(),
+ //      ownerTeacherId: teacher.id,
+ //      ownerTeacherName: teacher.name,
+ //      createdBy: currentAdmin.uid,
+ //      createdByRole: 'superadmin',
+ //      instructions: ''
+ //    });
+ //    successCount++;
+ // }
+ //         } catch(rowErr) {
+ //           console.error("Row processing error", rowErr);
+ //           errorCount++;
+ //         }
+ //       }
+ //       showToast(`Import Done. Success: ${successCount}, Errors/Skipped: ${errorCount}`);
+ //       closeModal();
+ //       loadAll(); 
+ //     } catch(e) {
+ //       console.error(e);
+ //       showToast('Bulk import failed: ' + e.message, true);
+ //     }
+ //   };
+ //   reader.readAsArrayBuffer(file);
+ // };
+ 
+   window.handleBulkImport = async function(input) {
   const file = input.files[0];
   if (!file) return;
   
@@ -1325,10 +1572,11 @@ function getVal(row, possibleKeys) {
              if(!name || !email || !pass) { errorCount++; continue; }
              
              try {
+               // 1. Create Auth User
                const uCred = await createUserWithEmailAndPassword(auth, email, pass);
                const uid = uCred.user.uid;
                
-               // Resolve IDs
+               // Resolve IDs for Grades/Subjects
                const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codescommasep)']) || '');
                const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
                  const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
@@ -1339,6 +1587,7 @@ function getVal(row, possibleKeys) {
                  const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
                }).filter(Boolean);
 
+               // 2. Create Firestore Teacher Document
                const tRef = await addDoc(collection(db, 'teachers'), {
                  name, email, 
                  active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
@@ -1349,13 +1598,29 @@ function getVal(row, possibleKeys) {
                  createdBy: currentAdmin.uid
                });
                
+               // 3. Create Firestore User Document
                await setDoc(doc(db, 'users', uid), {
                  role:'teacher', name, email, active:true, 
                  assignedGrades: gIds, assignedSubjects: sIds,
                  teacherDocId: tRef.id, createdAt: serverTimestamp()
                });
+
+               // 🟢 RTDB: Initialize RTDB path for Teacher (Sync)
+               try {
+                 await set(ref(rtDB, `teachers/${tRef.id}`), {
+                   email: email,
+                   name: name,
+                   createdAt: Date.now()
+                 });
+               } catch (rtdbErr) {
+                 console.warn('⚠️ Could not initialize RTDB for teacher:', rtdbErr);
+               }
+
                successCount++;
-             } catch(err) { console.error("Teacher Auth Error", err); errorCount++; }
+             } catch(err) { 
+               console.error("Teacher Auth Error", err); 
+               errorCount++; 
+             }
           }
           else if(bulkCurrentType === 'student') {
              const name = getVal(row, ['Name', 'name']);
@@ -1393,30 +1658,30 @@ function getVal(row, possibleKeys) {
                successCount++;
              } catch(err) { console.error("Student Auth Error", err); errorCount++; }
           }
-else if(bulkCurrentType === 'session') {
-   const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
-   const teacher = allTeachers.find(t => t.email === tEmail);
-   if(!teacher) { errorCount++; continue; }
-   
-   // Add to Firestore Collection
-   await addDoc(collection(db, 'sessions'), {
-     title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
-     grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
-     subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
-     className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
-     date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
-     startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
-     endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
-     active: false,
-     createdAt: serverTimestamp(),
-     ownerTeacherId: teacher.id,
-     ownerTeacherName: teacher.name,
-     createdBy: currentAdmin.uid,
-     createdByRole: 'superadmin',
-     instructions: ''
-   });
-   successCount++;
-}
+          else if(bulkCurrentType === 'session') {
+             const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
+             const teacher = allTeachers.find(t => t.email === tEmail);
+             if(!teacher) { errorCount++; continue; }
+             
+             // Add to Firestore Collection
+             await addDoc(collection(db, 'sessions'), {
+               title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
+               grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
+               subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
+               className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
+               date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
+               startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
+               endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
+               active: false,
+               createdAt: serverTimestamp(),
+               ownerTeacherId: teacher.id,
+               ownerTeacherName: teacher.name,
+               createdBy: currentAdmin.uid,
+               createdByRole: 'superadmin',
+               instructions: ''
+             });
+             successCount++;
+          }
         } catch(rowErr) {
           console.error("Row processing error", rowErr);
           errorCount++;
