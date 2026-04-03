@@ -2965,9 +2965,9 @@
                 } else if (status === 'completed') {
                     actionsHtml = `<button class="k-btn" onclick="openReview('${student.id}')">View Results</button>`;
                 } else if (status === 'notStarted' && isOnline) {
-                    actionsHtml = `<button class="k-btn" style="color:var(--amber);border-color:rgba(245,166,35,0.3)" onclick="showToast('Nudge sent!')">Nudge</button>`;
+                    // actionsHtml = `<button class="k-btn" style="color:var(--amber);border-color:rgba(245,166,35,0.3)" onclick="showToast('Nudge sent!')">Nudge</button>`;
                 } else if (status === 'absent') {
-                    actionsHtml = `<button class="k-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3)" onclick="showToast('Marked absent')">Mark Absent</button>`;
+                  // actionsHtml = `<button class="k-btn" style="color:var(--red);border-color:rgba(248,113,113,0.3)" onclick="showToast('Marked absent')">Mark Absent</button>`;
                 }
 
                 const card = document.createElement('div');
