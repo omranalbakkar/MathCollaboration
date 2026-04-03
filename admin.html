@@ -1,1026 +1,839 @@
-<!DOCTYPE html>
-<html lang="en">
+<script type="module">
+    import {
+        initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import {
+        getAuth,
+        signInWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+        sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import {
+        getFirestore,
+        collection,
+        getDocs,
+        doc,
+        setDoc,
+        deleteDoc,
+        query,
+        where,
+        updateDoc,
+        addDoc,
+        writeBatch,
+        serverTimestamp,
+        Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import {
+        getDatabase,
+        ref,
+        onValue
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduBoard — Super Admin Portal | Fixed Import/Export</title>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (XLSX) - Stable version -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    const firebaseConfig = {
+        apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
+        authDomain: "eduboard-870d3.firebaseapp.com",
+        databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
+        projectId: "eduboard-870d3",
+        storageBucket: "eduboard-870d3.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcdef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
+
+    let currentUser = null;
+    let allGrades = [];
+    let allSubjects = [];
+    let currentSection = 'dashboard';
+
+    // --- AUTH ---
+    window.handleAdminLogin = async () => {
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            alert("Login Failed: " + error.message);
         }
+    };
 
-        :root {
-            --bg: #f0f4f9;
-            --surface: #ffffff;
-            --text: #0f172a;
-            --text-muted: #475569;
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #e2e8f0;
-            --radius-xl: 1rem;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    window.handleLogout = async () => {
+        try {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Error signing out:", error);
+            alert("Error signing out: " + error.message);
         }
-
-        body {
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        /* login overlay */
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .login-card {
-            background: var(--surface);
-            padding: 2rem 2rem 2.5rem;
-            border-radius: var(--radius-xl);
-            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
-            border: 1px solid var(--border);
-        }
-
-        .form-group {
-            text-align: left;
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: block;
-            margin-bottom: 0.5rem;
-            color: var(--text-muted);
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 0.7rem 0.9rem;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 40px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .btn-sm {
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover {
-            background: #f8fafc;
-        }
-
-        .btn-success {
-            background: var(--success);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-        }
-
-        .btn-warning {
-            background: var(--warning);
-        }
-
-        /* main app */
-        #app-container {
-            display: none;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0.8rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .brand {
-            font-weight: 800;
-            font-size: 1.4rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        nav {
-            background: var(--surface);
-            padding: 0 1.5rem;
-            overflow-x: auto;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .nav-tabs {
-            display: flex;
-            gap: 0.2rem;
-        }
-
-        .nav-tab {
-            padding: 0.9rem 1.2rem;
-            background: none;
-            border: none;
-            font-weight: 500;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.2s;
-        }
-
-        .nav-tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: #eff6ff;
-        }
-
-        main {
-            flex: 1;
-            padding: 2rem;
-            max-width: 1400px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
-        .section {
-            display: none;
-            animation: fade 0.25s ease;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        @keyframes fade {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.2rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--surface);
-            padding: 1.2rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
-        }
-
-        .stat-val {
-            font-size: 2.2rem;
-            font-weight: 800;
-        }
-
-        .controls-bar {
-            background: var(--surface);
-            padding: 1rem;
-            border-radius: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
-            border: 1px solid var(--border);
-        }
-
-        .search-box {
-            flex: 2;
-            min-width: 220px;
-        }
-
-        .table-wrapper {
-            background: var(--surface);
-            border-radius: 1rem;
-            overflow-x: auto;
-            border: 1px solid var(--border);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 700px;
-        }
-
-        th,
-        td {
-            padding: 1rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        th {
-            background: #f9fafb;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-        }
-
-        .status-badge {
-            padding: 0.2rem 0.7rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-
-        .status-active {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .action-icons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .icon-btn {
-            background: white;
-            border: 1px solid var(--border);
-            padding: 0.4rem 0.6rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .icon-btn:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .icon-btn.danger:hover {
-            background: var(--danger);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-card {
-            background: white;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.8rem;
-            cursor: pointer;
-        }
-    </style>
-</head>
-
-<body>
-
-    <!-- LOGIN PANEL -->
-    <div id="login-overlay">
-        <div class="login-card">
-            <i class="fas fa-chalkboard-user" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
-            <h2>Super Admin</h2>
-            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">EduBoard Portal</p>
-            <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="admin-email" placeholder="admin@eduboard.com" value="admin@eduboard.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="admin-password" placeholder="••••••" value="admin123">
-            </div>
-            <button class="btn" id="login-btn" style="width:100%; justify-content:center;"><i class="fas fa-lock"></i> Sign In</button>
-            <p style="font-size: 0.7rem; margin-top: 1rem;">Demo: admin@eduboard.com / admin123</p>
-        </div>
-    </div>
-
-    <!-- MAIN APP -->
-    <div id="app-container">
-        <header>
-            <div class="brand"><i class="fas fa-graduation-cap"></i> EduBoard · Super Admin</div>
-            <div style="display: flex; gap: 1rem; align-items: center;">
-                <span id="admin-email-display" style="font-size:0.85rem;"></span>
-                <button class="btn btn-sm btn-outline" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </div>
-        </header>
-        <nav>
-            <div class="nav-tabs">
-                <button class="nav-tab active" data-section="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
-                <button class="nav-tab" data-section="grades"><i class="fas fa-layer-group"></i> Grades</button>
-                <button class="nav-tab" data-section="subjects"><i class="fas fa-book"></i> Subjects</button>
-                <button class="nav-tab" data-section="teachers"><i class="fas fa-chalkboard-user"></i> Teachers</button>
-                <button class="nav-tab" data-section="students"><i class="fas fa-users"></i> Students</button>
-                <button class="nav-tab" data-section="sessions"><i class="fas fa-video"></i> Sessions</button>
-            </div>
-        </nav>
-        <main>
-            <!-- Dashboard -->
-            <div id="dashboard" class="section active">
-                <h2 style="margin-bottom:1rem;">Analytics Overview</h2>
-                <div class="stats-grid" id="dashboard-stats"></div>
-            </div>
-
-            <!-- Grades -->
-            <div id="grades" class="section">
-                <div class="flex-between">
-                    <h2>📚 Grades Management</h2>
-                    <div style="display:flex; gap:0.5rem;"><button class="btn btn-sm" onclick="exportToExcel('grades')"><i class="fas fa-download"></i> Export</button><button class="btn btn-sm btn-outline" onclick="downloadTemplate('grades')"><i class="fas fa-file-csv"></i> Template</button><button class="btn btn-sm btn-outline" onclick="triggerImport('grades')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add</button></div>
-                </div>
-                <div class="controls-bar"><input type="text" class="search-box" id="search-grades" placeholder="Search grades..."></div>
-                <div class="table-wrapper">
-                    <table id="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Name EN</th>
-                                <th>Name AR</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Subjects -->
-            <div id="subjects" class="section">
-                <div class="flex-between">
-                    <h2>📖 Subjects</h2>
-                    <div><button class="btn btn-sm" onclick="exportToExcel('subjects')">Export</button><button class="btn btn-sm btn-outline" onclick="downloadTemplate('subjects')">Template</button><button class="btn btn-sm btn-outline" onclick="triggerImport('subjects')">Import</button><button class="btn btn-sm btn-success" onclick="openModal('subject')">Add</button></div>
-                </div>
-                <div class="controls-bar"><input type="text" class="search-box" id="search-subjects" placeholder="Search..."></div>
-                <div class="table-wrapper">
-                    <table id="subjects-table">
-                        <thead>
-                            <tr>
-                                <th>Name EN</th>
-                                <th>Name AR</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Teachers -->
-            <div id="teachers" class="section">
-                <div class="flex-between">
-                    <h2>👩‍🏫 Teachers</h2>
-                    <div><button class="btn btn-sm" onclick="exportToExcel('teachers')">Export</button><button class="btn btn-sm btn-outline" onclick="downloadTemplate('teachers')">Template</button><button class="btn btn-sm btn-outline" onclick="triggerImport('teachers')">Import</button><button class="btn btn-sm btn-success" onclick="openModal('teacher')">Add</button></div>
-                </div>
-                <div class="controls-bar"><input type="text" class="search-box" id="search-teachers" placeholder="Search by name/email"></div>
-                <div class="table-wrapper">
-                    <table id="teachers-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Assigned Grades</th>
-                                <th>Assigned Subjects</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Students -->
-            <div id="students" class="section">
-                <div class="flex-between">
-                    <h2>🎓 Students</h2>
-                    <div><button class="btn btn-sm" onclick="exportToExcel('students')">Export</button><button class="btn btn-sm btn-outline" onclick="downloadTemplate('students')">Template</button><button class="btn btn-sm btn-outline" onclick="triggerImport('students')">Import</button><button class="btn btn-sm btn-success" onclick="openModal('student')">Add</button></div>
-                </div>
-                <div class="controls-bar"><input type="text" class="search-box" id="search-students" placeholder="Search..."><select id="grade-filter-students" style="width:180px;">
-                        <option value="">All Grades</option>
-                    </select></div>
-                <div class="table-wrapper">
-                    <table id="students-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Grade</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Sessions -->
-            <div id="sessions" class="section">
-                <div class="flex-between">
-                    <h2>📅 Live Sessions</h2>
-                    <div><button class="btn btn-sm" onclick="exportToExcel('sessions')">Export</button><button class="btn btn-sm btn-outline" onclick="downloadTemplate('sessions')">Template</button><button class="btn btn-sm btn-outline" onclick="triggerImport('sessions')">Import</button></div>
-                </div>
-                <div class="controls-bar"><input type="text" class="search-box" id="search-sessions" placeholder="Search sessions"></div>
-                <div class="table-wrapper">
-                    <table id="sessions-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Teacher</th>
-                                <th>Grade</th>
-                                <th>Subject</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- MODAL -->
-    <div id="genericModal" class="modal">
-        <div class="modal-card">
-            <div class="flex-between">
-                <h3 id="modalTitle">Add Item</h3><button class="close-modal" onclick="closeModal()">&times;</button>
-            </div>
-            <form id="modalForm">
-                <input type="hidden" id="modalType">
-                <input type="hidden" id="modalDocId">
-                <div id="modalFields"></div>
-                <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;"><button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button><button type="submit" class="btn">Save</button></div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        // ---------- FAKE FIREBASE SIMULATION (standalone demo with localStorage) ----------
-        // Because the original firebase config was invalid and causing import/auth issues,
-        // we implement a robust local indexed storage that fully supports import/export.
-        // This fixes all import/export and data persistence issues.
-
-        const COLLECTIONS = {
-            grades: {
-                nameEn: "Grade 10",
-                nameAr: "الصف العاشر",
-                code: "G10",
-                status: "Active"
-            },
-            subjects: {
-                nameEn: "Mathematics",
-                nameAr: "رياضيات",
-                code: "MATH101",
-                status: "Active"
-            },
-            users: [{
-                id: "teacher1",
-                name: "Prof. Smith",
-                email: "teacher@demo.com",
-                role: "teacher",
-                status: "Active",
-                assignedGrades: [],
-                assignedSubjects: []
-            }],
-            students: [{
-                id: "stud1",
-                name: "Alice Wonder",
-                email: "alice@school.com",
-                gradeLevel: "grade_10",
-                status: "Active"
-            }],
-            sessions: [{
-                id: "sess1",
-                title: "Algebra Basics",
-                ownerTeacherId: "teacher1",
-                gradeLevel: "Grade 10",
-                subject: "Math",
-                startTime: new Date(),
-                isActive: true
-            }]
-        };
-
-        let APP_STATE = {
-            grades: [],
-            subjects: [],
-            teachers: [],
-            students: [],
-            sessions: []
-        };
-
-        function loadFromLocal() {
-            try {
-                APP_STATE.grades = JSON.parse(localStorage.getItem('eduboard_grades') || '[]');
-                APP_STATE.subjects = JSON.parse(localStorage.getItem('eduboard_subjects') || '[]');
-                APP_STATE.teachers = JSON.parse(localStorage.getItem('eduboard_teachers') || '[]');
-                APP_STATE.students = JSON.parse(localStorage.getItem('eduboard_students') || '[]');
-                APP_STATE.sessions = JSON.parse(localStorage.getItem('eduboard_sessions') || '[]');
-                if (APP_STATE.grades.length === 0) APP_STATE.grades = [{
-                    id: "g1",
-                    nameEn: "Grade 9",
-                    nameAr: "الصف التاسع",
-                    code: "G9",
-                    status: "Active"
-                }, {
-                    id: "g2",
-                    nameEn: "Grade 10",
-                    nameAr: "العاشر",
-                    code: "G10",
-                    status: "Active"
-                }];
-                if (APP_STATE.subjects.length === 0) APP_STATE.subjects = [{
-                    id: "sub1",
-                    nameEn: "Physics",
-                    nameAr: "فيزياء",
-                    code: "PHY",
-                    status: "Active"
-                }];
-                if (APP_STATE.teachers.length === 0) APP_STATE.teachers = [{
-                    id: "t1",
-                    name: "John Carter",
-                    email: "john@demo.com",
-                    role: "teacher",
-                    status: "Active",
-                    assignedGrades: ["g1"],
-                    assignedSubjects: ["sub1"]
-                }];
-                if (APP_STATE.students.length === 0) APP_STATE.students = [{
-                    id: "s1",
-                    name: "Emma Watson",
-                    email: "emma@demo.com",
-                    gradeLevel: "g1",
-                    status: "Active"
-                }];
-                if (APP_STATE.sessions.length === 0) APP_STATE.sessions = [{
-                    id: "sessA",
-                    title: "Morning Lecture",
-                    ownerTeacherId: "t1",
-                    gradeLevel: "Grade 9",
-                    subject: "Physics",
-                    startTime: new Date().toISOString(),
-                    isActive: true
-                }];
-            } catch (e) {
-                console.warn(e);
-            }
-            saveAllToLocal();
-        }
-
-        function saveAllToLocal() {
-            localStorage.setItem('eduboard_grades', JSON.stringify(APP_STATE.grades));
-            localStorage.setItem('eduboard_subjects', JSON.stringify(APP_STATE.subjects));
-            localStorage.setItem('eduboard_teachers', JSON.stringify(APP_STATE.teachers));
-            localStorage.setItem('eduboard_students', JSON.stringify(APP_STATE.students));
-            localStorage.setItem('eduboard_sessions', JSON.stringify(APP_STATE.sessions));
-        }
-
-        // Helper: find grade by id or name
-        function getGradeName(gradeId) {
-            let g = APP_STATE.grades.find(g => g.id === gradeId);
-            return g ? g.nameEn : gradeId;
-        }
-
-        function getSubjectName(subId) {
-            let s = APP_STATE.subjects.find(s => s.id === subId);
-            return s ? s.nameEn : subId;
-        }
-
-        // UI Rendering
-        let currentSection = 'dashboard';
-
-        function renderDashboard() {
-            document.getElementById('dashboard-stats').innerHTML = `
-            <div class="stat-card"><div class="stat-val">${APP_STATE.grades.length}</div><div>Grades</div></div>
-            <div class="stat-card"><div class="stat-val">${APP_STATE.subjects.length}</div><div>Subjects</div></div>
-            <div class="stat-card"><div class="stat-val">${APP_STATE.teachers.length}</div><div>Teachers</div></div>
-            <div class="stat-card"><div class="stat-val">${APP_STATE.students.length}</div><div>Students</div></div>
-            <div class="stat-card"><div class="stat-val">${APP_STATE.sessions.filter(s=>s.isActive).length}</div><div>Active Sessions</div></div>
-        `;
-        }
-
-        function renderGrades() {
-            let tbody = document.querySelector('#grades-table tbody');
-            tbody.innerHTML = APP_STATE.grades.map(g => `<tr><td>${g.nameEn}</td><td>${g.nameAr}</td><td>${g.code}</td><td><span class="status-badge ${g.status==='Active'?'status-active':'status-inactive'}">${g.status}</span></td><td class="action-icons"><button class="icon-btn" onclick="editItem('grade','${g.id}')"><i class="fas fa-edit"></i></button><button class="icon-btn danger" onclick="deleteItem('grades','${g.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-            applySearch('grades-table', 'search-grades');
-        }
-
-        function renderSubjects() {
-            let tbody = document.querySelector('#subjects-table tbody');
-            tbody.innerHTML = APP_STATE.subjects.map(s => `<tr><td>${s.nameEn}</td><td>${s.nameAr}</td><td>${s.code}</td><td><span class="status-badge ${s.status==='Active'?'status-active':'status-inactive'}">${s.status}</span></td><td class="action-icons"><button class="icon-btn" onclick="editItem('subject','${s.id}')"><i class="fas fa-edit"></i></button><button class="icon-btn danger" onclick="deleteItem('subjects','${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-            applySearch('subjects-table', 'search-subjects');
-        }
-
-        function renderTeachers() {
-            let tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = APP_STATE.teachers.map(t => `<tr><td>${t.name}</td><td>${t.email}</td><td>${(t.assignedGrades||[]).map(id=>getGradeName(id)).join(', ') || '-'}</td><td>${(t.assignedSubjects||[]).map(id=>getSubjectName(id)).join(', ') || '-'}</td><td><span class="status-badge ${t.status==='Active'?'status-active':'status-inactive'}">${t.status}</span></td><td class="action-icons"><button class="icon-btn" onclick="editItem('teacher','${t.id}')"><i class="fas fa-edit"></i></button><button class="icon-btn danger" onclick="deleteItem('teachers','${t.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-            applySearch('teachers-table', 'search-teachers');
-        }
-
-        function renderStudents() {
-            let filterGrade = document.getElementById('grade-filter-students')?.value || '';
-            let filtered = APP_STATE.students.filter(s => !filterGrade || getGradeName(s.gradeLevel) === filterGrade);
-            let tbody = document.querySelector('#students-table tbody');
-            tbody.innerHTML = filtered.map(st => `<tr><td>${st.name}</td><td>${st.email}</td><td>${getGradeName(st.gradeLevel)}</td><td><span class="status-badge ${st.status==='Active'?'status-active':'status-inactive'}">${st.status}</span></td><td class="action-icons"><button class="icon-btn" onclick="editItem('student','${st.id}')"><i class="fas fa-edit"></i></button><button class="icon-btn danger" onclick="deleteItem('students','${st.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-            applySearch('students-table', 'search-students');
-        }
-
-        function renderSessions() {
-            let tbody = document.querySelector('#sessions-table tbody');
-            tbody.innerHTML = APP_STATE.sessions.map(se => `<tr><td>${se.title}</td><td>${APP_STATE.teachers.find(t=>t.id===se.ownerTeacherId)?.name || se.ownerTeacherId}</td><td>${se.gradeLevel}</td><td>${se.subject}</td><td>${new Date(se.startTime).toLocaleDateString()}</td><td><span class="status-badge ${se.isActive?'status-active':'status-inactive'}">${se.isActive?'Active':'Closed'}</span></td><td><button class="icon-btn danger" onclick="deleteItem('sessions','${se.id}')"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-            applySearch('sessions-table', 'search-sessions');
-        }
-
-        function applySearch(tableId, inputId) {
-            let search = document.getElementById(inputId);
-            if (!search) return;
-            let val = search.value.toUpperCase();
-            let rows = document.querySelectorAll(`#${tableId} tbody tr`);
-            rows.forEach(r => {
-                r.style.display = r.innerText.toUpperCase().includes(val) ? '' : 'none';
-            });
-        }
-
-        function refreshCurrentView() {
-            if (currentSection === 'dashboard') renderDashboard();
-            else if (currentSection === 'grades') renderGrades();
-            else if (currentSection === 'subjects') renderSubjects();
-            else if (currentSection === 'teachers') renderTeachers();
-            else if (currentSection === 'students') renderStudents();
-            else if (currentSection === 'sessions') renderSessions();
-        }
-
-        window.deleteItem = (col, id) => {
-            if (confirm('Delete?')) {
-                APP_STATE[col] = APP_STATE[col].filter(i => i.id !== id);
-                saveAllToLocal();
-                refreshCurrentView();
-            }
-        };
-
-        // Modal CRUD
-        window.openModal = (type, id = null) => {
-            let data = null;
-            if (id) {
-                if (type === 'grade') data = APP_STATE.grades.find(g => g.id === id);
-                else if (type === 'subject') data = APP_STATE.subjects.find(s => s.id === id);
-                else if (type === 'teacher') data = APP_STATE.teachers.find(t => t.id === id);
-                else if (type === 'student') data = APP_STATE.students.find(st => st.id === id);
-            }
-            document.getElementById('modalType').value = type;
-            document.getElementById('modalDocId').value = id || '';
-            document.getElementById('modalTitle').innerText = (id ? 'Edit ' : 'Add ') + type;
-            let fieldsDiv = document.getElementById('modalFields');
-            if (type === 'grade' || type === 'subject') {
-                fieldsDiv.innerHTML = `<div class="form-group"><label>Name EN</label><input name="nameEn" required value="${data?.nameEn||''}"></div><div class="form-group"><label>Name AR</label><input name="nameAr" value="${data?.nameAr||''}"></div><div class="form-group"><label>Code</label><input name="code" required value="${data?.code||''}"></div><div class="form-group"><label>Status</label><select name="status"><option ${data?.status==='Active'?'selected':''}>Active</option><option ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            } else if (type === 'teacher') {
-                fieldsDiv.innerHTML = `<div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div><div class="form-group"><label>Email</label><input name="email" required value="${data?.email||''}"></div><div class="form-group"><label>Status</label><select name="status"><option ${data?.status==='Active'?'selected':''}>Active</option><option ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            } else if (type === 'student') {
-                let gradeOptions = APP_STATE.grades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                fieldsDiv.innerHTML = `<div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div><div class="form-group"><label>Email</label><input name="email" required value="${data?.email||''}"></div><div class="form-group"><label>Grade</label><select name="gradeLevel">${gradeOptions}</select></div><div class="form-group"><label>Status</label><select name="status"><option ${data?.status==='Active'?'selected':''}>Active</option><option ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            }
-            document.getElementById('genericModal').classList.add('active');
-        };
-        window.closeModal = () => document.getElementById('genericModal').classList.remove('active');
-        document.getElementById('modalForm').onsubmit = (e) => {
-            e.preventDefault();
-            let type = document.getElementById('modalType').value;
-            let id = document.getElementById('modalDocId').value;
-            let formData = new FormData(e.target);
-            let obj = Object.fromEntries(formData.entries());
-            if (type === 'grade') {
-                if (id) {
-                    let idx = APP_STATE.grades.findIndex(g => g.id === id);
-                    if (idx !== -1) APP_STATE.grades[idx] = {
-                        ...APP_STATE.grades[idx],
-                        ...obj
-                    };
-                } else {
-                    obj.id = Date.now() + '';
-                    APP_STATE.grades.push(obj);
-                }
-            } else if (type === 'subject') {
-                if (id) {
-                    let idx = APP_STATE.subjects.findIndex(s => s.id === id);
-                    if (idx !== -1) APP_STATE.subjects[idx] = {
-                        ...APP_STATE.subjects[idx],
-                        ...obj
-                    };
-                } else {
-                    obj.id = Date.now() + '';
-                    APP_STATE.subjects.push(obj);
-                }
-            } else if (type === 'teacher') {
-                obj.role = 'teacher';
-                obj.assignedGrades = [];
-                obj.assignedSubjects = [];
-                if (id) {
-                    let idx = APP_STATE.teachers.findIndex(t => t.id === id);
-                    if (idx !== -1) APP_STATE.teachers[idx] = {
-                        ...APP_STATE.teachers[idx],
-                        ...obj
-                    };
-                } else {
-                    obj.id = Date.now() + '';
-                    APP_STATE.teachers.push(obj);
-                }
-            } else if (type === 'student') {
-                if (id) {
-                    let idx = APP_STATE.students.findIndex(s => s.id === id);
-                    if (idx !== -1) APP_STATE.students[idx] = {
-                        ...APP_STATE.students[idx],
-                        ...obj
-                    };
-                } else {
-                    obj.id = Date.now() + '';
-                    APP_STATE.students.push(obj);
-                }
-            }
-            saveAllToLocal();
-            closeModal();
-            refreshCurrentView();
-        };
-
-        // =============== FIXED IMPORT/EXPORT ===============
-        window.downloadTemplate = (entity) => {
-            let headers = [],
-                sample = [];
-            if (entity === 'grades') {
-                headers = ['nameEn', 'nameAr', 'code', 'status'];
-                sample = ['Grade 12', 'الصف الثاني عشر', 'G12', 'Active'];
-            } else if (entity === 'subjects') {
-                headers = ['nameEn', 'nameAr', 'code', 'status'];
-                sample = ['Chemistry', 'كيمياء', 'CHEM', 'Active'];
-            } else if (entity === 'teachers') {
-                headers = ['name', 'email', 'status'];
-                sample = ['Dr. Nora', 'nora@school.com', 'Active'];
-            } else if (entity === 'students') {
-                headers = ['name', 'email', 'gradeLevel (id or name)', 'status'];
-                sample = ['Liam', 'liam@demo.com', 'Grade 10', 'Active'];
-            } else if (entity === 'sessions') {
-                headers = ['title', 'ownerTeacherId (email/id)', 'gradeLevel', 'subject', 'startTime (YYYY-MM-DD)', 'isActive'];
-                sample = ['Webinar', 'teacher@demo.com', 'Grade 9', 'Math', '2025-01-20', 'TRUE'];
-            }
-            let ws = XLSX.utils.aoa_to_sheet([headers, sample]);
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Template');
-            XLSX.writeFile(wb, `${entity}_template.xlsx`);
-        };
-
-        window.exportToExcel = (entity) => {
-            let data = [...APP_STATE[entity]];
-            let exportData = data.map(row => {
-                let copy = {
-                    ...row
-                };
-                delete copy.id;
-                if (entity === 'students' && copy.gradeLevel) copy.gradeLevel = getGradeName(copy.gradeLevel);
-                return copy;
-            });
-            let ws = XLSX.utils.json_to_sheet(exportData);
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, entity);
-            XLSX.writeFile(wb, `${entity}_data.xlsx`);
-        };
-
-        window.triggerImport = (entity) => {
-            let input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.xlsx, .xls';
-            input.onchange = async (e) => {
-                let file = e.target.files[0];
-                if (!file) return;
-                let reader = new FileReader();
-                reader.onload = (ev) => {
-                    let data = new Uint8Array(ev.target.result);
-                    let workbook = XLSX.read(data, {
-                        type: 'array'
-                    });
-                    let sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    let rows = XLSX.utils.sheet_to_json(sheet);
-                    if (rows.length === 0) {
-                        alert('Empty file');
-                        return;
-                    }
-                    let imported = [];
-                    for (let row of rows) {
-                        if (entity === 'grades') {
-                            if (!row.nameEn || !row.code) continue;
-                            imported.push({
-                                id: Date.now() + Math.random(),
-                                nameEn: row.nameEn,
-                                nameAr: row.nameAr || '',
-                                code: row.code,
-                                status: row.status || 'Active'
-                            });
-                        } else if (entity === 'subjects') {
-                            if (!row.nameEn || !row.code) continue;
-                            imported.push({
-                                id: Date.now() + Math.random(),
-                                nameEn: row.nameEn,
-                                nameAr: row.nameAr || '',
-                                code: row.code,
-                                status: row.status || 'Active'
-                            });
-                        } else if (entity === 'teachers') {
-                            if (!row.email) continue;
-                            imported.push({
-                                id: Date.now() + Math.random(),
-                                name: row.name || row.Name,
-                                email: row.email,
-                                role: 'teacher',
-                                status: row.status || 'Active',
-                                assignedGrades: [],
-                                assignedSubjects: []
-                            });
-                        } else if (entity === 'students') {
-                            if (!row.email) continue;
-                            let gradeId = row.gradeLevel;
-                            let foundGrade = APP_STATE.grades.find(g => g.nameEn === row.gradeLevel || g.id === row.gradeLevel);
-                            if (foundGrade) gradeId = foundGrade.id;
-                            imported.push({
-                                id: Date.now() + Math.random(),
-                                name: row.name,
-                                email: row.email,
-                                gradeLevel: gradeId,
-                                status: row.status || 'Active'
-                            });
-                        } else if (entity === 'sessions') {
-                            imported.push({
-                                id: Date.now() + Math.random(),
-                                title: row.title,
-                                ownerTeacherId: row.ownerTeacherId,
-                                gradeLevel: row.gradeLevel,
-                                subject: row.subject,
-                                startTime: row.startTime || new Date().toISOString(),
-                                isActive: (row.isActive === 'TRUE' || row.isActive === true)
-                            });
-                        }
-                    }
-                    if (imported.length) {
-                        APP_STATE[entity] = [...APP_STATE[entity], ...imported];
-                        saveAllToLocal();
-                        refreshCurrentView();
-                        alert(`Imported ${imported.length} records!`);
-                    } else alert('No valid rows found');
-                };
-                reader.readAsArrayBuffer(file);
-            };
-            input.click();
-        };
-
-        // Authentication mock (fix login)
-        window.handleFakeLogin = () => {
-            let email = document.getElementById('admin-email').value;
-            let pwd = document.getElementById('admin-password').value;
-            if (email && (pwd === 'admin123' || pwd === 'admin')) {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                document.getElementById('admin-email-display').innerText = email;
-                loadFromLocal();
-                initApp();
-            } else {
-                alert('Invalid credentials (use admin@eduboard.com / admin123)');
-            }
-        };
-        window.logout = () => {
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            document.getElementById('admin-user-display').textContent = user.email;
+            initDashboard();
+        } else {
             document.getElementById('login-overlay').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
-        };
-        document.getElementById('login-btn').onclick = handleFakeLogin;
+        }
+    });
 
-        function initApp() {
-            loadFromLocal();
-            renderDashboard();
-            renderGrades();
-            renderSubjects();
-            renderTeachers();
-            renderStudents();
-            renderSessions();
-            document.querySelectorAll('.nav-tab').forEach(btn => {
-                btn.onclick = () => {
-                    currentSection = btn.dataset.section;
-                    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                    document.getElementById(currentSection).classList.add('active');
-                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                    btn.classList.add('active');
-                    refreshCurrentView();
-                    if (currentSection === 'students') {
-                        let filterSel = document.getElementById('grade-filter-students');
-                        filterSel.innerHTML = '<option value="">All Grades</option>' + APP_STATE.grades.map(g => `<option value="${g.nameEn}">${g.nameEn}</option>`).join('');
-                        filterSel.onchange = () => renderStudents();
-                    }
-                };
-            });
-            document.getElementById('search-grades')?.addEventListener('keyup', () => applySearch('grades-table', 'search-grades'));
-            document.getElementById('search-subjects')?.addEventListener('keyup', () => applySearch('subjects-table', 'search-subjects'));
-            document.getElementById('search-teachers')?.addEventListener('keyup', () => applySearch('teachers-table', 'search-teachers'));
-            document.getElementById('search-students')?.addEventListener('keyup', () => applySearch('students-table', 'search-students'));
-            document.getElementById('search-sessions')?.addEventListener('keyup', () => applySearch('sessions-table', 'search-sessions'));
+    // --- NAVIGATION ---
+    window.showSection = (sectionId) => {
+        currentSection = sectionId;
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        const tabs = document.querySelectorAll('.nav-tab');
+        const map = {
+            'dashboard': 0,
+            'grades': 1,
+            'subjects': 2,
+            'teachers': 3,
+            'students': 4,
+            'sessions': 5
+        };
+        if (tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
+
+        if (sectionId === 'grades') loadGrades();
+        if (sectionId === 'subjects') loadSubjects();
+        if (sectionId === 'teachers') loadTeachers();
+        if (sectionId === 'students') loadStudents();
+        if (sectionId === 'sessions') loadSessions();
+    };
+
+    window.refreshCurrentSection = () => {
+        if (currentSection === 'grades') loadGrades();
+        else if (currentSection === 'subjects') loadSubjects();
+        else if (currentSection === 'teachers') loadTeachers();
+        else if (currentSection === 'students') loadStudents();
+        else if (currentSection === 'sessions') loadSessions();
+        else if (currentSection === 'dashboard') initDashboard();
+    };
+
+    // --- DASHBOARD ---
+    async function initDashboard() {
+        try {
+            const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
+                getDocs(collection(db, "grades")),
+                getDocs(collection(db, "subjects")),
+                getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
+                getDocs(collection(db, "students"))
+            ]);
+            document.getElementById('dashGrades').textContent = gradesSnap.size;
+            document.getElementById('dashSubjects').textContent = subjectsSnap.size;
+            document.getElementById('dashTeachers').textContent = teachersSnap.size;
+            document.getElementById('dashStudents').textContent = studentsSnap.size;
+
+            allGrades = gradesSnap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            allSubjects = subjectsSnap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            populateGradeFilter();
+        } catch (e) {
+            console.error(e);
+            alert("Error loading dashboard: " + e.message);
         }
 
-        // prefill default data if empty
-        if (!localStorage.getItem('eduboard_grades')) loadFromLocal();
-    </script>
-</body>
+        onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
+            const data = snapshot.val();
+            if (!data) {
+                document.getElementById('cardSessions').textContent = "0";
+                document.getElementById('cardActive').textContent = "0";
+                return;
+            }
+            let sCount = 0,
+                stCount = 0;
+            Object.values(data).forEach(s => {
+                sCount++;
+                if (s.students) stCount += Object.keys(s.students).length;
+            });
+            document.getElementById('cardSessions').textContent = sCount;
+            document.getElementById('cardActive').textContent = stCount;
+        });
+    }
 
-</html>
+    // --- HELPERS ---
+    function getDisplayName(d) {
+        return d?.name || d?.displayName || "Unnamed";
+    }
+
+    function getNameById(id, list) {
+        if (!id || !list) return 'N/A';
+        const item = list.find(i => i.id === id);
+        return item ? (item.nameEn || item.code || id) : id;
+    }
+
+    function populateGradeFilter() {
+        const sel = document.getElementById('student-grade-filter');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">All Grades</option>';
+        allGrades.forEach(g => sel.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`);
+    }
+
+    // --- LOADERS ---
+    async function loadGrades() {
+        const tbody = document.querySelector('#grades-table tbody');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            const snap = await getDocs(collection(db, "grades"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn || ''}</td><td>${d.nameAr || ''}</td><td>${d.code || ''}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick='editItem("grade","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('grades','${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+        }
+    }
+
+    async function loadSubjects() {
+        const tbody = document.querySelector('#subjects-table tbody');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            const snap = await getDocs(collection(db, "subjects"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn || ''}</td><td>${d.nameAr || ''}</td><td>${d.code || ''}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick='editItem("subject","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('subjects','${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+        }
+    }
+
+    async function loadTeachers() {
+        const tbody = document.querySelector('#teachers-table tbody');
+        tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+        try {
+            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+            tbody.innerHTML = '';
+            const seenEmails = new Set();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const cleanEmail = (d.email || '').toLowerCase().trim();
+                if (!cleanEmail || seenEmails.has(cleanEmail)) return;
+                seenEmails.add(cleanEmail);
+
+                const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
+                const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${getDisplayName(d)}</td><td>${d.email}</td>
+                        <td style="font-size:0.85rem">${gNames}</td><td style="font-size:0.85rem">${sNames}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick='editItem("teacher","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="6">Error loading data</td></tr>';
+        }
+    }
+
+    async function loadStudents() {
+        const filter = document.getElementById('student-grade-filter')?.value || '';
+        const tbody = document.querySelector('#students-table tbody');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            const snap = await getDocs(collection(db, "students"));
+            tbody.innerHTML = '';
+            const seenEmails = new Set();
+            snap.forEach(doc => {
+                const d = doc.data();
+                const cleanEmail = (d.email || '').toLowerCase().trim();
+                if (!cleanEmail || seenEmails.has(cleanEmail)) return;
+                seenEmails.add(cleanEmail);
+
+                let gName = "N/A";
+                if (d.gradeLevel) {
+                    const g = allGrades.find(x => x.id === d.gradeLevel);
+                    if (g) gName = g.nameEn;
+                }
+                if (filter && gName !== filter) return;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.name||'Unnamed'}</td><td>${d.email}</td><td>${gName}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick='editItem("student","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteStudent('${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+        }
+    }
+
+    async function loadSessions() {
+        const tbody = document.querySelector('#sessions-table tbody');
+        tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+        try {
+            const snap = await getDocs(collection(db, "sessions"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.startTime?.seconds ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : '-';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.title || ''}</td><td>${d.ownerTeacherId?.substring(0,8) || ''}...</td><td>${d.gradeLevel || ''}</td><td>${d.subject || ''}</td><td>${date}</td>
+                        <td><span class="status-badge ${d.isActive?'status-active':'status-inactive'}">${d.isActive?'Active':'Closed'}</span></td>
+                        <td><button class="icon-btn delete" onclick="deleteItem('sessions','${doc.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="7">Error loading data</td></tr>';
+        }
+    }
+
+    // ==========================================
+    // EXCEL IMPORT / EXPORT MANAGER (FIXED)
+    // ==========================================
+
+    window.downloadTemplate = (type) => {
+        const wb = XLSX.utils.book_new();
+        let headers = [],
+            sampleRow = [];
+
+        if (type === 'grades') {
+            headers = ["nameEn", "nameAr", "code", "status"];
+            sampleRow = ["Grade 10", "الصف العاشر", "G10", "Active"];
+        } else if (type === 'subjects') {
+            headers = ["nameEn", "nameAr", "code", "status"];
+            sampleRow = ["Mathematics", "الرياضيات", "MATH", "Active"];
+        } else if (type === 'teachers') {
+            headers = ["name", "email", "status", "assignedGrades", "assignedSubjects"];
+            sampleRow = ["John Doe", "john@school.com", "Active", "Grade 9, Grade 10", "Math, Physics"];
+        } else if (type === 'students') {
+            headers = ["name", "email", "gradeLevel", "status"];
+            sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "Active"];
+        } else if (type === 'sessions') {
+            headers = ["title", "ownerTeacherId", "gradeLevel", "subject", "startTime", "endTime", "isActive"];
+            sampleRow = ["Mock Exam", "teacher@school.com", "Grade 9", "Math", "2023-10-25 09:00", "2023-10-25 10:30", "TRUE"];
+        }
+
+        const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
+        XLSX.utils.book_append_sheet(wb, wsEmpty, "Empty_Template");
+        const wsSample = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+        XLSX.utils.book_append_sheet(wb, wsSample, "Sample_Data");
+        XLSX.writeFile(wb, `${type}_template.xlsx`);
+    };
+
+    window.exportCurrentData = async (type) => {
+        // Ensure reference data is loaded
+        if (allGrades.length === 0) {
+            const gradesSnap = await getDocs(collection(db, "grades"));
+            allGrades = gradesSnap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+        }
+        if (allSubjects.length === 0) {
+            const subjectsSnap = await getDocs(collection(db, "subjects"));
+            allSubjects = subjectsSnap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+        }
+
+        try {
+            let collectionRef = null,
+                queryRef = null;
+
+            if (type === 'grades') collectionRef = collection(db, "grades");
+            else if (type === 'subjects') collectionRef = collection(db, "subjects");
+            else if (type === 'teachers') queryRef = query(collection(db, "users"), where("role", "==", "teacher"));
+            else if (type === 'students') collectionRef = collection(db, "students");
+            else if (type === 'sessions') collectionRef = collection(db, "sessions");
+
+            let snap;
+            if (queryRef) snap = await getDocs(queryRef);
+            else if (collectionRef) snap = await getDocs(collectionRef);
+
+            const rawData = snap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const cleanData = rawData.map(row => {
+                // Remove audit fields
+                const {
+                    createdAt,
+                    updatedAt,
+                    createdBy,
+                    updatedBy,
+                    ...cleanRow
+                } = row;
+
+                // Resolve IDs to Names for better readability
+                if (type === 'teachers') {
+                    if (row.assignedGrades) {
+                        cleanRow.assignedGrades = row.assignedGrades.map(id => {
+                            const g = allGrades.find(x => x.id === id);
+                            return g ? g.nameEn : id;
+                        }).join(', ');
+                    }
+                    if (row.assignedSubjects) {
+                        cleanRow.assignedSubjects = row.assignedSubjects.map(id => {
+                            const s = allSubjects.find(x => x.id === id);
+                            return s ? s.nameEn : id;
+                        }).join(', ');
+                    }
+                }
+                if (type === 'students' && row.gradeLevel) {
+                    const g = allGrades.find(x => x.id === row.gradeLevel);
+                    cleanRow.gradeLevel = g ? g.nameEn : row.gradeLevel;
+                }
+                if (type === 'sessions' && row.startTime?.seconds) {
+                    const date = new Date(row.startTime.seconds * 1000);
+                    cleanRow.startTime = date.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                }
+                if (type === 'sessions' && row.endTime?.seconds) {
+                    const date = new Date(row.endTime.seconds * 1000);
+                    cleanRow.endTime = date.toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    }).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                }
+
+                return cleanRow;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(cleanData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Current_Data");
+            XLSX.writeFile(wb, `${type}_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+        } catch (err) {
+            alert("Export failed: " + err.message);
+            console.error(err);
+        }
+    };
+
+    window.processImport = async (type, input) => {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Reset input so same file can be selected again
+        input.value = '';
+
+        // Ensure reference data is loaded
+        if ((type === 'teachers' || type === 'students') && allGrades.length === 0) {
+            alert("Please wait for grades to load, or visit Dashboard first");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const workbook = XLSX.read(e.target.result, {
+                    type: 'array'
+                });
+
+                let jsonData = [];
+                for (let name of workbook.SheetNames) {
+                    const rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[name], {
+                        defval: ""
+                    });
+                    if (rawJson && rawJson.length > 0) {
+                        jsonData = rawJson;
+                        break;
+                    }
+                }
+
+                if (jsonData.length === 0) {
+                    alert("No data found in the Excel file.");
+                    return;
+                }
+
+                // Normalize headers (trim spaces, lowercase)
+                const normalizedData = jsonData.map(row => {
+                    const newRow = {};
+                    Object.keys(row).forEach(key => {
+                        const cleanKey = key.trim().toLowerCase().replace(/\s+/g, '');
+                        newRow[cleanKey] = row[key];
+                    });
+                    return newRow;
+                });
+
+                // Process in smaller batches to avoid Firebase limits
+                const BATCH_SIZE = 400;
+                let totalInsert = 0,
+                    totalUpdate = 0,
+                    totalSkip = 0;
+                const now = serverTimestamp();
+                const adminUid = currentUser.uid;
+                const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type);
+
+                // Pre-fetch existing records for lookup to avoid query-in-loop
+                let existingMap = new Map();
+                if (type === 'grades' || type === 'subjects') {
+                    const snap = await getDocs(collection(db, colName));
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        existingMap.set(data.code?.toLowerCase(), doc.id);
+                    });
+                } else if (type === 'teachers' || type === 'students') {
+                    const snap = await getDocs(collection(db, colName));
+                    snap.forEach(doc => {
+                        const data = doc.data();
+                        if (data.email) existingMap.set(data.email.toLowerCase(), doc.id);
+                    });
+                }
+
+                let batch = writeBatch(db);
+                let batchCount = 0;
+
+                for (let i = 0; i < normalizedData.length; i++) {
+                    const row = normalizedData[i];
+
+                    // Skip empty rows
+                    if (!row || (!row.nameen && !row.code && !row.email && !row.title && !row.name)) {
+                        continue;
+                    }
+
+                    let docData = {};
+                    let targetId = null;
+
+                    // Build document data based on type
+                    if (type === 'grades' || type === 'subjects') {
+                        docData = {
+                            nameEn: row.nameen || row.name || '',
+                            nameAr: row.namear || '',
+                            code: String(row.code || '').toUpperCase(),
+                            status: row.status || 'Active'
+                        };
+                        if (!docData.nameEn || !docData.code) {
+                            console.warn("Skipping row due to missing nameEn or code:", row);
+                            totalSkip++;
+                            continue;
+                        }
+
+                        // Lookup by code
+                        targetId = existingMap.get(docData.code.toLowerCase());
+                    } else if (type === 'teachers') {
+                        const email = (row.email || '').toLowerCase().trim();
+                        if (!email || !email.includes('@')) {
+                            totalSkip++;
+                            continue;
+                        }
+
+                        const gradeIds = resolveNamesToIds(row.assignedgrades || '', allGrades);
+                        const subjectIds = resolveNamesToIds(row.assignedsubjects || '', allSubjects);
+
+                        docData = {
+                            name: row.name || '',
+                            email: email,
+                            role: 'teacher',
+                            status: row.status || 'Active',
+                            assignedGrades: gradeIds,
+                            assignedSubjects: subjectIds
+                        };
+                        targetId = existingMap.get(email);
+                    } else if (type === 'students') {
+                        const email = (row.email || '').toLowerCase().trim();
+                        if (!email || !email.includes('@')) {
+                            totalSkip++;
+                            continue;
+                        }
+
+                        const gradeId = resolveNameToId(row.gradelevel || '', allGrades);
+                        docData = {
+                            name: row.name || '',
+                            email: email,
+                            gradeLevel: gradeId,
+                            status: row.status || 'Active'
+                        };
+                        targetId = existingMap.get(email);
+                    } else if (type === 'sessions') {
+                        let teacherId = row.ownerteacherid || '';
+                        if (teacherId && teacherId.includes('@')) {
+                            const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
+                            if (!tSnap.empty) teacherId = tSnap.docs[0].id;
+                        }
+
+                        // Parse dates properly
+                        let startTime = null,
+                            endTime = null;
+                        if (row.starttime) {
+                            const d = new Date(row.starttime);
+                            if (!isNaN(d.getTime())) startTime = Timestamp.fromDate(d);
+                        }
+                        if (row.endtime) {
+                            const d = new Date(row.endtime);
+                            if (!isNaN(d.getTime())) endTime = Timestamp.fromDate(d);
+                        }
+
+                        docData = {
+                            title: row.title || '',
+                            ownerTeacherId: teacherId,
+                            gradeLevel: row.gradelevel || '',
+                            subject: row.subject || '',
+                            startTime: startTime,
+                            endTime: endTime,
+                            isActive: String(row.isactive || '').toLowerCase() === 'true' || String(row.status || '').toLowerCase() === 'active'
+                        };
+                    }
+
+                    // Add audit fields
+                    docData.updatedAt = now;
+                    docData.updatedBy = adminUid;
+
+                    // Execute batch operation
+                    if (targetId) {
+                        batch.update(doc(db, colName, targetId), docData);
+                        totalUpdate++;
+                    } else {
+                        docData.createdAt = now;
+                        docData.createdBy = adminUid;
+                        const newRef = doc(collection(db, colName));
+                        batch.set(newRef, docData);
+                        totalInsert++;
+                    }
+                    batchCount++;
+
+                    // Commit batch if size limit reached
+                    if (batchCount >= BATCH_SIZE) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        batchCount = 0;
+                    }
+                }
+
+                // Commit final batch
+                if (batchCount > 0) {
+                    await batch.commit();
+                }
+
+                alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}`);
+                refreshCurrentSection();
+
+            } catch (err) {
+                alert("Import Failed: " + err.message);
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    function resolveNamesToIds(inputString, list) {
+        if (!inputString || !list) return [];
+        const items = String(inputString).split(',').map(s => s.trim()).filter(s => s);
+        const ids = [];
+        items.forEach(item => {
+            const found = list.find(l =>
+                (l.nameEn && l.nameEn.toLowerCase() === item.toLowerCase()) ||
+                (l.nameAr && l.nameAr === item) ||
+                (l.code && l.code.toLowerCase() === item.toLowerCase())
+            );
+            if (found) ids.push(found.id);
+            else if (item.length > 10) ids.push(item); // Assume it's already an ID
+        });
+        return ids;
+    }
+
+    function resolveNameToId(inputString, list) {
+        if (!inputString || !list) return null;
+        const str = String(inputString).trim();
+        const found = list.find(l =>
+            (l.nameEn && l.nameEn.toLowerCase() === str.toLowerCase()) ||
+            (l.nameAr && l.nameAr === str) ||
+            (l.code && l.code.toLowerCase() === str.toLowerCase())
+        );
+        return found ? found.id : str;
+    }
+
+    // --- CRUD ACTIONS ---
+    window.resetPassword = async (email) => {
+        if (confirm(`Send reset link to ${email}?`)) {
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("Password reset email sent!");
+            } catch (e) {
+                alert("Error: " + e.message);
+            }
+        }
+    };
+
+    window.deleteTeacher = async (uid) => {
+        if (!confirm("Delete teacher? This cannot be undone.")) return;
+        try {
+            await deleteDoc(doc(db, "users", uid));
+            loadTeachers();
+        } catch (e) {
+            alert("Error deleting: " + e.message);
+        }
+    };
+
+    window.deleteStudent = async (id) => {
+        if (!confirm("Delete student? This cannot be undone.")) return;
+        try {
+            await deleteDoc(doc(db, "students", id));
+            loadStudents();
+        } catch (e) {
+            alert("Error deleting: " + e.message);
+        }
+    };
+
+    window.deleteItem = async (col, id) => {
+        if (confirm("Are you sure you want to delete this item?")) {
+            try {
+                await deleteDoc(doc(db, col, id));
+                if (col === 'grades') loadGrades();
+                if (col === 'subjects') loadSubjects();
+                if (col === 'sessions') loadSessions();
+            } catch (e) {
+                alert("Error deleting: " + e.message);
+            }
+        }
+    };
+
+    // --- MODAL ---
+    window.openModal = (type, id = null, data = null) => {
+        const m = document.getElementById('generic-modal');
+        const f = document.getElementById('modal-fields');
+        document.getElementById('modal-type').value = type;
+        document.getElementById('modal-id').value = id || '';
+        document.getElementById('modal-title').textContent = (id ? 'Edit ' : 'Add ') + type;
+
+        let html = '';
+
+        if (type === 'grade' || type === 'subject') {
+            html = `<div class="form-group"><label>Name (EN) *</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
+                    <div class="form-group"><label>Name (AR) *</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
+                    <div class="form-group"><label>Code *</label><input name="code" required value="${data?.code || ''}"></div>
+                    <div class="form-group"><label>Status</label><select name="status">
+                        <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                        <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    </select></div>`;
+        } else if (type === 'teacher') {
+            html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
+                    <div class="form-group"><label>Name *</label><input name="name" required value="${getDisplayName(data)}"></div>
+                    <div class="form-group"><label>Status</label><select name="status">
+                        <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                        <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    </select></div>`;
+        } else if (type === 'student') {
+            const opts = allGrades.map(g => `<option value="${g.id}" ${data && data.gradeLevel === g.id ? 'selected' : ''}>${g.nameEn}</option>`).join('') || '<option value="">No grades available</option>';
+
+            html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
+                    <div class="form-group"><label>Name *</label><input name="name" required value="${data?.name || ''}"></div>
+                    <div class="form-group"><label>Grade *</label><select name="gradeLevel" required>${opts}</select></div>
+                    <div class="form-group"><label>Status</label><select name="status">
+                        <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                        <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    </select></div>`;
+        }
+
+        f.innerHTML = html;
+        m.classList.add('active');
+    };
+
+    window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
+    window.editItem = (t, id, data) => openModal(t, id, data);
+
+    window.handleFormSubmit = async (e) => {
+        e.preventDefault();
+        const type = document.getElementById('modal-type').value;
+        const id = document.getElementById('modal-id').value;
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        data.updatedAt = serverTimestamp();
+        data.updatedBy = currentUser.uid;
+
+        try {
+            if (type === 'grade' || type === 'subject') {
+                const col = type + 's';
+                if (id) {
+                    await updateDoc(doc(db, col, id), data);
+                } else {
+                    data.createdAt = serverTimestamp();
+                    data.createdBy = currentUser.uid;
+                    await addDoc(collection(db, col), data);
+                }
+            } else if (type === 'teacher') {
+                const uData = {
+                    ...data,
+                    role: 'teacher'
+                };
+                if (id) {
+                    delete uData.email; // Don't update email
+                    await updateDoc(doc(db, "users", id), uData);
+                } else {
+                    uData.createdAt = serverTimestamp();
+                    uData.createdBy = currentUser.uid;
+                    await addDoc(collection(db, "users"), uData);
+                }
+            } else if (type === 'student') {
+                if (id) {
+                    delete data.email; // Don't update email
+                    await updateDoc(doc(db, "students", id), data);
+                } else {
+                    data.createdAt = serverTimestamp();
+                    data.createdBy = currentUser.uid;
+                    await addDoc(collection(db, "students"), data);
+                }
+            }
+            closeModal();
+            refreshCurrentSection();
+            alert("Saved successfully!");
+        } catch (err) {
+            alert("Error saving: " + err.message);
+        }
+    };
+
+    window.filterTable = (id, q) => {
+        const f = q.toUpperCase();
+        const table = document.getElementById(id);
+        if (!table) return;
+        const rows = table.getElementsByTagName("tr");
+        for (let i = 1; i < rows.length; i++) {
+            const txt = rows[i].textContent || rows[i].innerText;
+            rows[i].style.display = txt.toUpperCase().indexOf(f) > -1 ? "" : "none";
+        }
+    };
+</script>
