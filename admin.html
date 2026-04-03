@@ -285,6 +285,97 @@
             color: #f97316;
         }
 
+        /* Live Dashboard Details */
+        .live-details-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .live-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .live-card-header {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .live-card-header.sessions {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+        }
+
+        .live-card-header.students {
+            background: linear-gradient(135deg, var(--success), #059669);
+        }
+
+        .live-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .live-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .live-item:last-child {
+            border-bottom: none;
+        }
+
+        .live-item:hover {
+            background: #f8fafc;
+        }
+
+        .live-item-title {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .live-item-sub {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        .live-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .live-badge.offline {
+            background: var(--text-light);
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
         /* Tables */
         .controls {
             background: var(--surface);
@@ -438,6 +529,12 @@
             border-radius: 8px;
             min-width: 150px;
         }
+
+        .password-hint {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 
@@ -502,13 +599,44 @@
                         <div class="stat-val purple" id="dashStudents">—</div>
                         <div class="stat-label">Students</div>
                     </div>
-                    <div class="stat-card" style="border-top: 4px solid var(--success);">
+                    <div class="stat-card" onclick="toggleLiveDetails()" style="border-top: 4px solid var(--success);">
                         <div class="stat-val green" id="cardActive">—</div>
                         <div class="stat-label">🟢 Live Students</div>
                     </div>
-                    <div class="stat-card" style="border-top: 4px solid var(--warning);">
+                    <div class="stat-card" onclick="toggleLiveDetails()" style="border-top: 4px solid var(--warning);">
                         <div class="stat-val orange" id="cardSessions">—</div>
                         <div class="stat-label">⚡ Active Sessions</div>
+                    </div>
+                </div>
+
+                <!-- Live Details Panel -->
+                <div id="live-details" style="display: none;">
+                    <div class="live-details-container">
+                        <!-- Active Sessions -->
+                        <div class="live-card">
+                            <div class="live-card-header sessions">
+                                <i class="fas fa-video"></i> Active Sessions
+                            </div>
+                            <div class="live-list" id="live-sessions-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-video-slash"></i>
+                                    <p>No active sessions</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Live Students -->
+                        <div class="live-card">
+                            <div class="live-card-header students">
+                                <i class="fas fa-users"></i> Students Online
+                            </div>
+                            <div class="live-list" id="live-students-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-user-slash"></i>
+                                    <p>No students online</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -621,7 +749,7 @@
                 </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('students-table', this.value)">
-                    <select class="filter-select" id="student-grade-filter" onchange="loadStudents()">
+                    <select class="filter-select" id="student-grade-filter" onchange="window.loadStudents()">
                         <option value="">All Grades</option>
                     </select>
                 </div>
@@ -650,6 +778,7 @@
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('sessions')"><i class="fas fa-download"></i> Template</button>
                         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-sessions').click()"><i class="fas fa-upload"></i> Import</button>
                         <input type="file" id="import-file-sessions" hidden accept=".xlsx, .xls" onchange="processImport('sessions', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('session')"><i class="fas fa-plus"></i> Create Session</button>
                     </div>
                 </h2>
                 <div class="controls">
@@ -696,8 +825,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp, Timestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -718,7 +847,9 @@
         let currentUser = null;
         let allGrades = [];
         let allSubjects = [];
+        let allTeachers = [];
         let currentSection = 'dashboard';
+        let liveDataCache = {};
 
         // --- AUTH ---
         window.handleAdminLogin = async () => {
@@ -780,6 +911,90 @@
             else if (currentSection === 'dashboard') initDashboard();
         };
 
+        // --- LIVE DASHBOARD TOGGLE ---
+        window.toggleLiveDetails = () => {
+            const details = document.getElementById('live-details');
+            details.style.display = details.style.display === 'none' ? 'block' : 'none';
+            if (details.style.display === 'block') {
+                updateLiveDetails();
+            }
+        };
+
+        function updateLiveDetails() {
+            const sessionsList = document.getElementById('live-sessions-list');
+            const studentsList = document.getElementById('live-students-list');
+            
+            if (!liveDataCache || !liveDataCache.sessions) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-video-slash"></i>
+                        <p>No active sessions</p>
+                    </div>`;
+                studentsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <p>No students online</p>
+                    </div>`;
+                return;
+            }
+
+            // Update Sessions List
+            const sessions = Object.entries(liveDataCache.sessions || {});
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-video-slash"></i>
+                        <p>No active sessions</p>
+                    </div>`;
+            } else {
+                sessionsList.innerHTML = sessions.map(([id, session]) => {
+                    const studentCount = session.students ? Object.keys(session.students).length : 0;
+                    const teacherName = session.teacherName || session.ownerTeacherId?.substring(0, 8) || 'Unknown';
+                    return `
+                        <div class="live-item">
+                            <div>
+                                <div class="live-item-title">${session.title || 'Untitled Session'}</div>
+                                <div class="live-item-sub">Teacher: ${teacherName} | Grade: ${session.gradeLevel || 'N/A'}</div>
+                            </div>
+                            <span class="live-badge">${studentCount} students</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Update Students List - aggregate from all sessions
+            const allStudents = [];
+            sessions.forEach(([sessionId, session]) => {
+                if (session.students) {
+                    Object.entries(session.students).forEach(([studentId, student]) => {
+                        allStudents.push({
+                            ...student,
+                            sessionTitle: session.title || 'Unknown Session',
+                            sessionId: sessionId
+                        });
+                    });
+                }
+            });
+
+            if (allStudents.length === 0) {
+                studentsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <p>No students online</p>
+                    </div>`;
+            } else {
+                studentsList.innerHTML = allStudents.map(student => `
+                    <div class="live-item">
+                        <div>
+                            <div class="live-item-title">${student.name || student.displayName || 'Unknown Student'}</div>
+                            <div class="live-item-sub">In: ${student.sessionTitle}</div>
+                        </div>
+                        <span class="live-badge">Online</span>
+                    </div>
+                `).join('');
+            }
+        }
+
         // --- DASHBOARD ---
         async function initDashboard() {
             try {
@@ -796,19 +1011,25 @@
 
                 allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                allTeachers = teachersSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 populateGradeFilter();
             } catch (e) {
                 console.error(e);
                 alert("Error loading dashboard: " + e.message);
             }
 
+            // Real-time listener for live sessions
             onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
                 const data = snapshot.val();
+                liveDataCache = { sessions: data };
+                
                 if (!data) {
                     document.getElementById('cardSessions').textContent = "0";
                     document.getElementById('cardActive').textContent = "0";
+                    updateLiveDetails();
                     return;
                 }
+                
                 let sCount = 0, stCount = 0;
                 Object.values(data).forEach(s => {
                     sCount++;
@@ -816,6 +1037,11 @@
                 });
                 document.getElementById('cardSessions').textContent = sCount;
                 document.getElementById('cardActive').textContent = stCount;
+                
+                // Update details if visible
+                if (document.getElementById('live-details').style.display === 'block') {
+                    updateLiveDetails();
+                }
             });
         }
 
@@ -838,6 +1064,44 @@
         }
 
         // --- LOADERS ---
+        // EXPOSE loadStudents to window to fix the onchange error
+        window.loadStudents = async () => {
+            const filter = document.getElementById('student-grade-filter')?.value || '';
+            const tbody = document.querySelector('#students-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            try {
+                const snap = await getDocs(collection(db, "students"));
+                tbody.innerHTML = '';
+                const seenEmails = new Set();
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const cleanEmail = (d.email || '').toLowerCase().trim();
+                    if (!cleanEmail || seenEmails.has(cleanEmail)) return;
+                    seenEmails.add(cleanEmail);
+
+                    let gName = "N/A";
+                    if (d.gradeLevel) {
+                        const g = allGrades.find(x => x.id === d.gradeLevel);
+                        if (g) gName = g.nameEn;
+                    }
+                    if (filter && gName !== filter) return;
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.name||'Unnamed'}</td><td>${d.email}</td><td>${gName}</td>
+                            <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick='editItem("student","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                                <button class="icon-btn delete" onclick="deleteStudent('${doc.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+            }
+        };
+
         async function loadGrades() {
             const tbody = document.querySelector('#grades-table tbody');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
@@ -891,11 +1155,13 @@
                 const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
                 tbody.innerHTML = '';
                 const seenEmails = new Set();
+                allTeachers = []; // Reset cache
                 snap.forEach(doc => {
                     const d = doc.data();
                     const cleanEmail = (d.email || '').toLowerCase().trim();
                     if (!cleanEmail || seenEmails.has(cleanEmail)) return;
                     seenEmails.add(cleanEmail);
+                    allTeachers.push({id: doc.id, ...d});
 
                     const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
                     const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
@@ -917,43 +1183,6 @@
             }
         }
 
-        async function loadStudents() {
-            const filter = document.getElementById('student-grade-filter')?.value || '';
-            const tbody = document.querySelector('#students-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-            try {
-                const snap = await getDocs(collection(db, "students"));
-                tbody.innerHTML = '';
-                const seenEmails = new Set();
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const cleanEmail = (d.email || '').toLowerCase().trim();
-                    if (!cleanEmail || seenEmails.has(cleanEmail)) return;
-                    seenEmails.add(cleanEmail);
-
-                    let gName = "N/A";
-                    if (d.gradeLevel) {
-                        const g = allGrades.find(x => x.id === d.gradeLevel);
-                        if (g) gName = g.nameEn;
-                    }
-                    if (filter && gName !== filter) return;
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${d.name||'Unnamed'}</td><td>${d.email}</td><td>${gName}</td>
-                            <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick='editItem("student","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
-                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
-                                <button class="icon-btn delete" onclick="deleteStudent('${doc.id}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
-                });
-            } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
-            }
-        }
-
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
@@ -963,11 +1192,17 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     const date = d.startTime?.seconds ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : '-';
+                    const teacher = allTeachers.find(t => t.id === d.ownerTeacherId);
+                    const teacherName = teacher ? getDisplayName(teacher) : (d.ownerTeacherId?.substring(0,8) || 'Unknown');
+                    
                     tbody.innerHTML += `
                         <tr>
-                            <td>${d.title || ''}</td><td>${d.ownerTeacherId?.substring(0,8) || ''}...</td><td>${d.gradeLevel || ''}</td><td>${d.subject || ''}</td><td>${date}</td>
+                            <td>${d.title || ''}</td><td>${teacherName}</td><td>${d.gradeLevel || ''}</td><td>${d.subject || ''}</td><td>${date}</td>
                             <td><span class="status-badge ${d.isActive?'status-active':'status-inactive'}">${d.isActive?'Active':'Closed'}</span></td>
-                            <td><button class="icon-btn delete" onclick="deleteItem('sessions','${doc.id}')"><i class="fas fa-trash"></i></button></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick='editItem("session","${doc.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn delete" onclick="deleteItem('sessions','${doc.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
                         </tr>`;
                 });
             } catch (e) {
@@ -990,11 +1225,11 @@
                 headers = ["nameEn", "nameAr", "code", "status"];
                 sampleRow = ["Mathematics", "الرياضيات", "MATH", "Active"];
             } else if (type === 'teachers') {
-                headers = ["name", "email", "status", "assignedGrades", "assignedSubjects"];
-                sampleRow = ["John Doe", "john@school.com", "Active", "Grade 9, Grade 10", "Math, Physics"];
+                headers = ["name", "email", "password", "status", "assignedGrades", "assignedSubjects"];
+                sampleRow = ["John Doe", "john@school.com", "TempPass123!", "Active", "Grade 9, Grade 10", "Math, Physics"];
             } else if (type === 'students') {
-                headers = ["name", "email", "gradeLevel", "status"];
-                sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "Active"];
+                headers = ["name", "email", "password", "gradeLevel", "status"];
+                sampleRow = ["Jane Smith", "jane@school.com", "TempPass123!", "Grade 9", "Active"];
             } else if (type === 'sessions') {
                 headers = ["title", "ownerTeacherId", "gradeLevel", "subject", "startTime", "endTime", "isActive"];
                 sampleRow = ["Mock Exam", "teacher@school.com", "Grade 9", "Math", "2023-10-25 09:00", "2023-10-25 10:30", "TRUE"];
@@ -1017,6 +1252,10 @@
                 const subjectsSnap = await getDocs(collection(db, "subjects"));
                 allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
             }
+            if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) {
+                const teachersSnap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+                allTeachers = teachersSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            }
 
             try {
                 let collectionRef = null, queryRef = null;
@@ -1034,8 +1273,8 @@
                 const rawData = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
 
                 const cleanData = rawData.map(row => {
-                    // Remove audit fields
-                    const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
+                    // Remove sensitive fields for export
+                    const { password, createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
 
                     // Resolve IDs to Names for better readability
                     if (type === 'teachers') {
@@ -1058,11 +1297,15 @@
                     }
                     if (type === 'sessions' && row.startTime?.seconds) {
                         const date = new Date(row.startTime.seconds * 1000);
-                        cleanRow.startTime = date.toLocaleString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                        cleanRow.startTime = date.toISOString().slice(0, 16).replace('T', ' ');
                     }
                     if (type === 'sessions' && row.endTime?.seconds) {
                         const date = new Date(row.endTime.seconds * 1000);
-                        cleanRow.endTime = date.toLocaleString('en-US', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}).replace(/(\d+)\/(\d+)\/(\d+),/, '$3-$1-$2').replace(',', '');
+                        cleanRow.endTime = date.toISOString().slice(0, 16).replace('T', ' ');
+                    }
+                    if (type === 'sessions' && row.ownerTeacherId) {
+                        const teacher = allTeachers.find(t => t.id === row.ownerTeacherId);
+                        if (teacher) cleanRow.ownerTeacherId = teacher.email || teacher.name || row.ownerTeacherId;
                     }
                     
                     return cleanRow;
@@ -1145,6 +1388,7 @@
 
                     let batch = writeBatch(db);
                     let batchCount = 0;
+                    const authUsersToCreate = []; // Track users to create in Auth
 
                     for (let i = 0; i < normalizedData.length; i++) {
                         const row = normalizedData[i];
@@ -1156,6 +1400,7 @@
 
                         let docData = {};
                         let targetId = null;
+                        let userPassword = null;
 
                         // Build document data based on type
                         if (type === 'grades' || type === 'subjects') {
@@ -1192,7 +1437,15 @@
                                 assignedGrades: gradeIds, 
                                 assignedSubjects: subjectIds 
                             };
+                            
+                            // Capture password for auth creation
+                            userPassword = row.password || 'TempPass123!';
                             targetId = existingMap.get(email);
+                            
+                            // If new user, mark for auth creation
+                            if (!targetId) {
+                                authUsersToCreate.push({ email, password: userPassword, type: 'teacher' });
+                            }
                         } 
                         else if (type === 'students') {
                             const email = (row.email || '').toLowerCase().trim();
@@ -1208,7 +1461,15 @@
                                 gradeLevel: gradeId, 
                                 status: row.status || 'Active' 
                             };
+                            
+                            // Capture password for auth creation
+                            userPassword = row.password || 'TempPass123!';
                             targetId = existingMap.get(email);
+                            
+                            // If new user, mark for auth creation
+                            if (!targetId) {
+                                authUsersToCreate.push({ email, password: userPassword, type: 'student' });
+                            }
                         } 
                         else if (type === 'sessions') {
                             let teacherId = row.ownerteacherid || '';
@@ -1269,7 +1530,26 @@
                         await batch.commit();
                     }
 
-                    alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}`);
+                    // Create Auth users for new teachers/students
+                    // Note: In a real app, you'd use Admin SDK or Cloud Functions for this
+                    // For client-side, we'll store a flag that password needs reset
+                    if (authUsersToCreate.length > 0) {
+                        console.log(`Marked ${authUsersToCreate.length} users for auth creation:`, authUsersToCreate);
+                        // Store in a separate collection for backend processing
+                        const authBatch = writeBatch(db);
+                        authUsersToCreate.forEach(user => {
+                            const ref = doc(collection(db, "pendingAuthUsers"));
+                            authBatch.set(ref, {
+                                ...user,
+                                createdAt: now,
+                                createdBy: adminUid,
+                                status: 'pending'
+                            });
+                        });
+                        await authBatch.commit();
+                    }
+
+                    alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}\n\n${authUsersToCreate.length} new users require password setup (check email).`);
                     refreshCurrentSection();
                     
                 } catch (err) { 
@@ -1309,10 +1589,10 @@
 
         // --- CRUD ACTIONS ---
         window.resetPassword = async (email) => {
-            if (confirm(`Send reset link to ${email}?`)) {
+            if (confirm(`Send password reset link to ${email}?`)) {
                 try {
                     await sendPasswordResetEmail(auth, email);
-                    alert("Password reset email sent!");
+                    alert("Password reset email sent! User will receive instructions to set a new password.");
                 } catch (e) {
                     alert("Error: " + e.message);
                 }
@@ -1374,6 +1654,8 @@
             else if (type === 'teacher') {
                 html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
                         <div class="form-group"><label>Name *</label><input name="name" required value="${getDisplayName(data)}"></div>
+                        ${!id ? `<div class="form-group"><label>Password *</label><input name="password" type="password" required placeholder="Min 6 characters">
+                                <div class="password-hint">User can reset this later</div></div>` : ''}
                         <div class="form-group"><label>Status</label><select name="status">
                             <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
                             <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
@@ -1384,10 +1666,31 @@
                 
                 html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
                         <div class="form-group"><label>Name *</label><input name="name" required value="${data?.name || ''}"></div>
+                        ${!id ? `<div class="form-group"><label>Password *</label><input name="password" type="password" required placeholder="Min 6 characters">
+                                <div class="password-hint">User can reset this later</div></div>` : ''}
                         <div class="form-group"><label>Grade *</label><select name="gradeLevel" required>${opts}</select></div>
                         <div class="form-group"><label>Status</label><select name="status">
                             <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
                             <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select></div>`;
+            }
+            else if (type === 'session') {
+                const teacherOpts = allTeachers.map(t => `<option value="${t.id}" ${data && data.ownerTeacherId === t.id ? 'selected' : ''}>${getDisplayName(t)}</option>`).join('') || '<option value="">No teachers available</option>';
+                const gradeOpts = allGrades.map(g => `<option value="${g.nameEn}" ${data && data.gradeLevel === g.nameEn ? 'selected' : ''}>${g.nameEn}</option>`).join('') || '<option value="">No grades available</option>';
+                const subjectOpts = allSubjects.map(s => `<option value="${s.nameEn}" ${data && data.subject === s.nameEn ? 'selected' : ''}>${s.nameEn}</option>`).join('') || '<option value="">No subjects available</option>';
+                
+                const startTime = data?.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toISOString().slice(0, 16) : '';
+                const endTime = data?.endTime?.seconds ? new Date(data.endTime.seconds * 1000).toISOString().slice(0, 16) : '';
+                
+                html = `<div class="form-group"><label>Title *</label><input name="title" required value="${data?.title || ''}"></div>
+                        <div class="form-group"><label>Teacher *</label><select name="ownerTeacherId" required>${teacherOpts}</select></div>
+                        <div class="form-group"><label>Grade *</label><select name="gradeLevel" required>${gradeOpts}</select></div>
+                        <div class="form-group"><label>Subject *</label><select name="subject" required>${subjectOpts}</select></div>
+                        <div class="form-group"><label>Start Time *</label><input name="startTime" type="datetime-local" required value="${startTime}"></div>
+                        <div class="form-group"><label>End Time</label><input name="endTime" type="datetime-local" value="${endTime}"></div>
+                        <div class="form-group"><label>Status</label><select name="isActive">
+                            <option value="true" ${data && data.isActive ? 'selected' : ''}>Active</option>
+                            <option value="false" ${data && !data.isActive ? 'selected' : ''}>Closed</option>
                         </select></div>`;
             }
 
@@ -1421,21 +1724,71 @@
                 } else if (type === 'teacher') {
                     const uData = {...data, role:'teacher'};
                     if(id) { 
-                        delete uData.email; // Don't update email
+                        delete uData.email;
+                        delete uData.password; // Don't update password on edit
                         await updateDoc(doc(db, "users", id), uData); 
                     } else {
+                        // Create teacher with password
+                        if (!data.password || data.password.length < 6) {
+                            alert("Password must be at least 6 characters");
+                            return;
+                        }
+                        
+                        // Create Auth user first
+                        try {
+                            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                            uData.uid = userCredential.user.uid;
+                        } catch (authErr) {
+                            // If user already exists in Auth, continue with Firestore
+                            console.log("Auth user may already exist:", authErr.message);
+                        }
+                        
                         uData.createdAt = serverTimestamp();
                         uData.createdBy = currentUser.uid;
+                        delete uData.password; // Don't store password in Firestore
                         await addDoc(collection(db, "users"), uData);
                     }
                 } else if (type === 'student') {
                     if(id) {
-                        delete data.email; // Don't update email
+                        delete data.email;
+                        delete data.password;
                         await updateDoc(doc(db, "students", id), data);
+                    } else {
+                        // Create student with password
+                        if (!data.password || data.password.length < 6) {
+                            alert("Password must be at least 6 characters");
+                            return;
+                        }
+                        
+                        // Create Auth user first
+                        try {
+                            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                            data.uid = userCredential.user.uid;
+                        } catch (authErr) {
+                            console.log("Auth user may already exist:", authErr.message);
+                        }
+                        
+                        data.createdAt = serverTimestamp();
+                        data.createdBy = currentUser.uid;
+                        delete data.password;
+                        await addDoc(collection(db, "students"), data);
+                    }
+                } else if (type === 'session') {
+                    // Convert datetime-local to Firestore Timestamp
+                    if (data.startTime) {
+                        data.startTime = Timestamp.fromDate(new Date(data.startTime));
+                    }
+                    if (data.endTime) {
+                        data.endTime = Timestamp.fromDate(new Date(data.endTime));
+                    }
+                    data.isActive = data.isActive === 'true';
+                    
+                    if(id) {
+                        await updateDoc(doc(db, "sessions", id), data);
                     } else {
                         data.createdAt = serverTimestamp();
                         data.createdBy = currentUser.uid;
-                        await addDoc(collection(db, "students"), data);
+                        await addDoc(collection(db, "sessions"), data);
                     }
                 }
                 closeModal();
