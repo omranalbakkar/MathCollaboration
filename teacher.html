@@ -2259,6 +2259,13 @@ async function loadActiveSession() {
 
         console.log('Loading session config:', config);
         console.log('Owner Teacher ID:', config.ownerTeacherId);
+        // After loading config, log the grade value
+console.log('Session grade value check:', {
+    gradeLevel: config.gradeLevel,
+    grade: config.grade,
+    classGrade: config.classGrade
+});
+        
 
         // Helper function to format Firestore Timestamp to time string (HH:MM)
         const formatTime = (timestamp) => {
@@ -2526,134 +2533,185 @@ async function loadStudents() {
 
 
         // --- UPDATED FUNCTION FOR CLASS STATUS TAB ---
-        async function loadClassStatus() {
-            if (!activeSessionId || !currentSessionData) return;
+async function loadClassStatus() {
+    if (!activeSessionId || !currentSessionData) return;
 
-            const sessionGradeName = currentSessionData.grade; // e.g., "Grade 9 - Z"
-            document.getElementById('csGradeName').textContent = sessionGradeName || 'Unknown Grade';
+    // Fix: Try multiple possible field names for grade
+    const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
+    
+    console.log('Session grade value:', sessionGradeName);
+    console.log('Full session data:', currentSessionData);
+    
+    const gradeDisplayElement = document.getElementById('csGradeName');
+    if (gradeDisplayElement) {
+        gradeDisplayElement.textContent = sessionGradeName || 'No Grade Assigned';
+    }
 
-            const grid = document.getElementById('classStatusGrid');
-            grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
+    const grid = document.getElementById('classStatusGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
 
-            let assignedStudents = [];
+    let assignedStudents = [];
 
-            if (sessionGradeName) {
-                try {
-                    // STEP 1: Find the Grade ID that matches the Session's Grade Name
-                    const gradesRef = collection(db, 'grades');
-                    // We query for the grade document where nameEn matches the session grade
-                    const q = query(gradesRef, where('nameEn', '==', sessionGradeName));
-                    const gradeSnap = await getDocs(q);
-
-                    let targetGradeId = null;
-                    if (!gradeSnap.empty) {
-                        // Assuming only one grade has this exact name
-                        targetGradeId = gradeSnap.docs[0].id;
-                    } else {
-                        // Fallback: Try searching by code if nameEn fails (optional)
-                        const qCode = query(gradesRef, where('code', '==', sessionGradeName));
-                        const codeSnap = await getDocs(qCode);
-                        if (!codeSnap.empty) targetGradeId = codeSnap.docs[0].id;
-                    }
-
-                    // STEP 2: If we found the Grade ID, fetch students with that gradeId
-                    if (targetGradeId) {
-                        const studentsRef = collection(db, 'students');
-                        // Query students where gradeId matches the ID we just found
-                        const studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
-                        const studentSnap = await getDocs(studentQuery);
-
-                        studentSnap.forEach(doc => {
-                            assignedStudents.push({
-                                id: doc.id,
-                                ...doc.data()
-                            });
-                        });
-                    } else {
-                        console.warn(`Could not find Grade ID for name: ${sessionGradeName}`);
-                    }
-
-                } catch (err) {
-                    console.error("Error fetching class status:", err);
-                }
-            }
-
-            allAssignedStudents = assignedStudents;
-
-            // 3. Fetch students currently in the session (who have logged in)
-            const sessionStudentsMap = {};
-            currentStudents.forEach(s => {
-                sessionStudentsMap[s.id] = s;
-            });
-
-            // 4. Merge Data & Render
-            let presentCount = 0;
-            let absentCount = 0;
-            const totalAssigned = assignedStudents.length;
-
-            if (totalAssigned === 0) {
-                grid.innerHTML = `<div class="empty-state">No students found for "${sessionGradeName}".<br><small>Check if Grade Name in Session matches Grade Name in Admin.</small></div>`;
-                updateClassStats(0, 0, 0);
-                return;
-            }
-
-            // Sort assigned students by name
-            assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-            grid.innerHTML = assignedStudents.map(student => {
-                const sessionData = sessionStudentsMap[student.id];
-                const isOnline = !!sessionData && sessionData.online;
-                const displayName = student.name || 'Unknown Student';
-                const initial = displayName.charAt(0).toUpperCase();
-
-                let cardHtml = '';
-
-                if (isOnline) {
-                    presentCount++;
-                    const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
-                    const qcount = currentQuestions.length;
-                    const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-                    const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
-
-                    cardHtml = `
-        <div class="student-card" style="border-left: 3px solid var(--green)">
-          <div class="student-header">
-            <div class="avatar" style="background:var(--green-dim);color:var(--green)">${initial}</div>
-            <div>
-              <div class="student-name">${escapeHtml(displayName)}</div>
-              <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
-            </div>
-          </div>
-          <div class="progress-bar-wrap">
-            <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
-          </div>
-          <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-           <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
-        </div>
-      `;
+    if (sessionGradeName) {
+        try {
+            // STEP 1: Find the Grade ID that matches the Session's Grade Name
+            const gradesRef = collection(db, 'grades');
+            // Try to match by nameEn first
+            let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
+            let gradeSnap = await getDocs(q);
+            
+            let targetGradeId = null;
+            if (!gradeSnap.empty) {
+                targetGradeId = gradeSnap.docs[0].id;
+                console.log('✅ Found grade by nameEn:', targetGradeId);
+            } else {
+                // Try matching by code
+                q = query(gradesRef, where('code', '==', sessionGradeName));
+                gradeSnap = await getDocs(q);
+                if (!gradeSnap.empty) {
+                    targetGradeId = gradeSnap.docs[0].id;
+                    console.log('✅ Found grade by code:', targetGradeId);
                 } else {
-                    absentCount++;
-                    cardHtml = `
-        <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
-          <div class="student-header">
-            <div class="avatar" style="background:var(--surface2);color:var(--muted)">${initial}</div>
-            <div>
-              <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
-              <div class="student-time">Not Logged In</div>
-            </div>
-          </div>
-          <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
-            Absent / Offline
-          </div>
-        </div>
-      `;
+                    // Try matching by name (without 'En')
+                    q = query(gradesRef, where('name', '==', sessionGradeName));
+                    gradeSnap = await getDocs(q);
+                    if (!gradeSnap.empty) {
+                        targetGradeId = gradeSnap.docs[0].id;
+                        console.log('✅ Found grade by name:', targetGradeId);
+                    }
                 }
-                return cardHtml;
-            }).join('');
+            }
 
-            updateClassStats(presentCount, absentCount, totalAssigned);
+            // STEP 2: If we found the Grade ID, fetch students with that gradeId
+            if (targetGradeId) {
+                const studentsRef = collection(db, 'students');
+                const studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
+                const studentSnap = await getDocs(studentQuery);
+
+                studentSnap.forEach(doc => {
+                    assignedStudents.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                console.log(`📚 Found ${assignedStudents.length} students for grade ${sessionGradeName}`);
+            } else {
+                console.warn(`⚠️ Could not find Grade ID for name: ${sessionGradeName}`);
+                // List all available grades for debugging
+                const allGrades = await getDocs(gradesRef);
+                console.log('Available grades in database:');
+                allGrades.forEach(doc => {
+                    console.log(`  - ${doc.id}:`, doc.data().nameEn, doc.data().code);
+                });
+            }
+
+        } catch (err) {
+            console.error("❌ Error fetching class status:", err);
         }
+    } else {
+        console.warn('⚠️ No grade name found in session data');
+        if (grid) {
+            grid.innerHTML = `<div class="empty-state">
+                <p style="font-size:15px">⚠️ No grade assigned to this session</p>
+                <span style="font-size:13px;display:block;margin-top:6px">Please edit the session configuration and select a grade level.</span>
+                <button class="btn btn-amber" onclick="switchTab('session', document.querySelector('.nav-btn'))" style="margin-top:12px">Go to Session Config →</button>
+            </div>`;
+        }
+        updateClassStats(0, 0, 0);
+        return;
+    }
 
+    allAssignedStudents = assignedStudents;
+
+    // 3. Fetch students currently in the session (who have logged in)
+    const sessionStudentsMap = {};
+    currentStudents.forEach(s => {
+        sessionStudentsMap[s.id] = s;
+    });
+
+    // 4. Merge Data & Render
+    let presentCount = 0;
+    let absentCount = 0;
+    const totalAssigned = assignedStudents.length;
+
+    if (totalAssigned === 0) {
+        if (grid) {
+            grid.innerHTML = `<div class="empty-state">
+                <p style="font-size:15px">👥 No students found for "${escapeHtml(sessionGradeName)}"</p>
+                <span style="font-size:13px;display:block;margin-top:6px">Make sure:</span>
+                <ul style="text-align:left;margin-top:8px;color:var(--muted);font-size:12px">
+                    <li>✓ Students are assigned to this grade in the Admin panel</li>
+                    <li>✓ The grade name "${escapeHtml(sessionGradeName)}" matches exactly in the Grades collection</li>
+                    <li>✓ Students have accounts created for this grade</li>
+                </ul>
+                <button class="btn btn-sm" onclick="loadClassStatus()" style="margin-top:12px">Refresh ↻</button>
+            </div>`;
+        }
+        updateClassStats(0, 0, 0);
+        return;
+    }
+
+    // Sort assigned students by name
+    assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    if (grid) {
+        grid.innerHTML = assignedStudents.map(student => {
+            const sessionData = sessionStudentsMap[student.id];
+            const isOnline = !!sessionData && sessionData.online === true;
+            const displayName = student.name || student.fullName || 'Unknown Student';
+            const initial = displayName.charAt(0).toUpperCase();
+
+            let cardHtml = '';
+
+            if (isOnline) {
+                presentCount++;
+                const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
+                const qcount = currentQuestions.length;
+                const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+                const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
+
+                cardHtml = `
+                    <div class="student-card" style="border-left: 3px solid var(--green)">
+                        <div class="student-header">
+                            <div class="avatar" style="background:var(--green-dim);color:var(--green)">${escapeHtml(initial)}</div>
+                            <div>
+                                <div class="student-name">${escapeHtml(displayName)}</div>
+                                <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
+                            </div>
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
+                        </div>
+                        <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+                        <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
+                    </div>
+                `;
+            } else {
+                absentCount++;
+                cardHtml = `
+                    <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
+                        <div class="student-header">
+                            <div class="avatar" style="background:var(--surface2);color:var(--muted)">${escapeHtml(initial)}</div>
+                            <div>
+                                <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
+                                <div class="student-time">Not Logged In</div>
+                            </div>
+                        </div>
+                        <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
+                            Absent / Offline
+                        </div>
+                    </div>
+                `;
+            }
+            return cardHtml;
+        }).join('');
+    }
+
+    updateClassStats(presentCount, absentCount, totalAssigned);
+    console.log(`📊 Class status: ${presentCount} present, ${absentCount} absent out of ${totalAssigned} total`);
+}
 
 function setupRealtimeStudentListener() {
     if (!activeSessionId) return;
@@ -2689,11 +2747,17 @@ function setupRealtimeStudentListener() {
 
         
         // Helper to update stats consistently
-        function updateClassStats(present, absent, total) {
-            document.getElementById('csTotalPresent').textContent = present;
-            document.getElementById('csTotalAbsent').textContent = absent;
-            document.getElementById('csTotalStudents').textContent = total;
-        }
+function updateClassStats(present, absent, total) {
+    const presentEl = document.getElementById('csTotalPresent');
+    const absentEl = document.getElementById('csTotalAbsent');
+    const totalEl = document.getElementById('csTotalStudents');
+    
+    if (presentEl) presentEl.textContent = present;
+    if (absentEl) absentEl.textContent = absent;
+    if (totalEl) totalEl.textContent = total;
+    
+    console.log(`📊 Stats updated: ${present} present, ${absent} absent, ${total} total`);
+}
 
         // function setupRealtimeListeners() {
         //   if (activeSessionId) {
