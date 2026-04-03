@@ -1529,24 +1529,73 @@ async function findAndJoinOpenSession() {
             }
         }
 
-        function showWelcome() {
-            document.getElementById('quizScreen').style.display = 'none';
-            document.getElementById('completionScreen').style.display = 'none';
-            document.getElementById('navFooter').style.display = 'none';
-            const ws = document.getElementById('welcomeScreen');
-            ws.style.display = 'block';
+       function showWelcome() {
+    document.getElementById('quizScreen').style.display = 'none';
+    document.getElementById('completionScreen').style.display = 'none';
+    document.getElementById('navFooter').style.display = 'none';
+    const ws = document.getElementById('welcomeScreen');
+    ws.style.display = 'block';
 
-            if (!questions.length) {
-                ws.innerHTML = '<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:"Lora",serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn\'t added questions yet.</div></div>';
-                return;
+    if (!questions.length) {
+        ws.innerHTML = '<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:"Lora",serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn\'t added questions yet.</div></div>';
+        return;
+    }
+
+    const studentKey = currentStudent.docId || currentStudent.uid;
+    getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
+        const s = sSnap.exists() ? sSnap.data() : {};
+        const answered = s.answers ? Object.keys(s.answers).length : 0;
+        
+        // ✅ FIXED: Helper function to format Firestore Timestamps or strings
+        function formatTime(timeValue) {
+            if (!timeValue) return null;
+            
+            // Handle Firestore Timestamp objects
+            if (timeValue && typeof timeValue === 'object' && timeValue.seconds) {
+                const date = new Date(timeValue.seconds * 1000);
+                return date.toLocaleTimeString('en-US', { 
+                    hour: 'numeric', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
             }
+            
+            // Handle string values (already formatted)
+            if (typeof timeValue === 'string') {
+                return timeValue;
+            }
+            
+            return String(timeValue);
+        }
+        
+        // ✅ FIXED: Format the time range properly
+        let timeDisplay = '';
+        if (sessionData.startTime || sessionData.endTime) {
+            const start = formatTime(sessionData.startTime);
+            const end = formatTime(sessionData.endTime);
+            if (start && end) {
+                timeDisplay = `${start} – ${end}`;
+            } else if (start) {
+                timeDisplay = start;
+            } else if (end) {
+                timeDisplay = `Until ${end}`;
+            }
+        }
 
-            const studentKey = currentStudent.docId || currentStudent.uid;
-            getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
-                const s = sSnap.exists() ? sSnap.data() : {};
-                const answered = s.answers ? Object.keys(s.answers).length : 0;
-                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
-                ws.innerHTML = `<div style="text-align:center;padding:20px 0">
+        // ✅ FIXED: Format date if it's a Timestamp
+        let dateDisplay = sessionData.date;
+        if (sessionData.date && typeof sessionData.date === 'object' && sessionData.date.seconds) {
+            const dateObj = new Date(sessionData.date.seconds * 1000);
+            dateDisplay = dateObj.toLocaleDateString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric'
+            });
+        }
+
+        const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
+        
+        ws.innerHTML = `<div style="text-align:center;padding:20px 0">
       <div class="welcome-icon">🎓</div>
       <div class="welcome-title">Welcome, ${escapeHtml((studentProfile.name || '').split(' ')[0] || 'Student')}!</div>
       <div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
@@ -1557,8 +1606,8 @@ async function findAndJoinOpenSession() {
       <div class="sc-meta-grid">
         ${sessionData.grade ? `<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${escapeHtml(sessionData.grade)}</div></div>` : ''}
         ${sessionData.className ? `<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${escapeHtml(sessionData.className)}</div></div>` : ''}
-        ${sessionData.date ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(sessionData.date)}</div></div>` : ''}
-        ${sessionData.startTime ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(sessionData.startTime)}${sessionData.endTime ? ' – ' + escapeHtml(sessionData.endTime) : ''}</div></div>` : ''}
+        ${dateDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(dateDisplay)}</div></div>` : ''}
+        ${timeDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(timeDisplay)}</div></div>` : ''}
       </div>
       <div class="sc-stats">
         <div class="sc-stat"><span class="dot" style="background:var(--sage)"></span>${questions.length} Questions</div>
@@ -1570,8 +1619,8 @@ async function findAndJoinOpenSession() {
     <div style="text-align:center">
       <button class="btn-start" onclick="startQuiz()">${answered > 0 ? 'Continue Quiz →' : 'Start Quiz →'}</button>
     </div>`;
-            }).catch(e => console.warn('Welcome error:', e));
-        }
+    }).catch(e => console.warn('Welcome error:', e));
+}
 
         window.startQuiz = async function() {
             if (!questions.length) return;
