@@ -2149,6 +2149,53 @@ async function createAuthTeacherUser(data) {
         createdBy: currentUser.uid
     });
 }
+
+async function createAuthStudentUser(data) {
+    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
+
+    // Secondary app so superadmin session is NOT disturbed
+    const secondaryApp = initializeApp(firebaseConfig, 'studentCreation_' + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
+
+    let uid;
+    try {
+        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+        uid = authResult.user.uid;
+        await signOut(secondaryAuth);
+    } finally {
+        await deleteApp(secondaryApp);
+    }
+
+    // Create students doc
+    const studentRef = doc(collection(db, 'students'));
+    await setDoc(studentRef, {
+        name: data.name,
+        email: data.email,
+        role: 'student',
+        gradeLevel: data.gradeLevel || '',
+        status: data.status || 'Active',
+        authProvisioned: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid
+    });
+
+    // Create users/<uid> doc
+    await setDoc(doc(db, 'users', uid), {
+        uid: uid,
+        email: data.email,
+        name: data.name,
+        role: 'student',
+        studentDocId: studentRef.id,
+        active: true,
+        status: data.status || 'Active',
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid
+    });
+}
+        
+
         
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
@@ -2187,16 +2234,14 @@ async function createAuthTeacherUser(data) {
                         await createAuthTeacherUser(data);
                     }
                 } else if (type === 'student') {
-                    if (!data.pendingPassword) throw new Error('Pending Password is required.');
-                    if (id) {
-                        const updatePayload = {
-                            ...data
-                        };
-                        delete updatePayload.email;
-                        await updateDoc(doc(db, 'students', id), updatePayload);
-                    } else {
-                        await createFirestoreOnlyUserRecord('students', 'student', data);
-                    }
+    if (!data.pendingPassword) throw new Error('Pending Password is required.');
+    if (id) {
+        const updatePayload = { ...data };
+        delete updatePayload.email;
+        await updateDoc(doc(db, 'students', id), updatePayload);
+    } else {
+        await createAuthStudentUser(data);
+    }
                 } else if (type === 'session') {
                     if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
                     if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
