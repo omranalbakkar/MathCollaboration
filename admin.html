@@ -1494,9 +1494,11 @@
     </div>
 
     <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+    initializeApp,
+    deleteApp
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        
         import {
             getAuth,
             signInWithEmailAndPassword,
@@ -2101,11 +2103,24 @@ async function createFirestoreOnlyUserRecord(collectionName, role, data) {
 async function createAuthTeacherUser(data) {
     if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
 
-    // 1. Create Auth user
-    const authResult = await createUserWithEmailAndPassword(auth, data.email, data.pendingPassword);
-    const uid = authResult.user.uid;
+    // Use a SECONDARY app so superadmin session is NOT disturbed
+    const secondaryApp = initializeApp(firebaseConfig, 'teacherCreation_' + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
 
-    // 2. Create teachers doc
+    let uid;
+    try {
+        // 1. Create Auth user in secondary app
+        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+        uid = authResult.user.uid;
+
+        // 2. Sign out of secondary app immediately
+        await signOut(secondaryAuth);
+    } finally {
+        // 3. Delete secondary app instance
+        await deleteApp(secondaryApp);
+    }
+
+    // 4. Create teachers doc
     const teacherRef = doc(collection(db, 'teachers'));
     await setDoc(teacherRef, {
         name: data.name,
@@ -2121,7 +2136,7 @@ async function createAuthTeacherUser(data) {
         updatedBy: currentUser.uid
     });
 
-    // 3. Create users/<uid> doc
+    // 5. Create users/<uid> doc
     await setDoc(doc(db, 'users', uid), {
         uid: uid,
         email: data.email,
@@ -2134,7 +2149,7 @@ async function createAuthTeacherUser(data) {
         createdBy: currentUser.uid
     });
 }
-
+        
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
             if (!currentUser) {
