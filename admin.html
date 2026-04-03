@@ -217,7 +217,6 @@
             <div id="dashboard" class="section active">
                 <h2>System Overview</h2>
                 
-                <!-- UPDATED STATS GRID START -->
                 <div class="stats-grid">
                     <!-- Existing Firestore Stats -->
                     <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
@@ -235,7 +234,6 @@
                         <div class="stat-label">⚡ Live Sessions</div>
                     </div>
                 </div>
-                <!-- UPDATED STATS GRID END -->
 
                 <div class="table-container">
                     <div style="padding: 2rem; text-align: center; color: var(--text-light);">
@@ -421,7 +419,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // --- CONFIGURATION ---
         const firebaseConfig = {
@@ -450,19 +448,7 @@
             const password = document.getElementById('admin-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // Check if superadmin in Firestore
-                const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", email)));
-                if (!userDoc.empty) {
-                    const userData = userDoc.docs[0].data();
-                    if (userData.role !== 'superadmin') {
-                        alert("Access Denied: Not a Super Admin");
-                        await signOut(auth);
-                        return;
-                    }
-                } else {
-                    // Fallback for demo if user doc doesn't exist but auth works
-                    console.warn("User document not found, allowing access for demo");
-                }
+                // Security is now enforced by Firestore Rules
             } catch (error) {
                 alert("Login Failed: " + error.message);
             }
@@ -474,7 +460,7 @@
             if (user) {
                 currentUser = user;
                 document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex'; // Fix display
+                document.getElementById('app-container').style.display = 'flex';
                 document.getElementById('admin-user-display').textContent = user.email;
                 initDashboard();
             } else {
@@ -500,7 +486,6 @@
 
         // --- DASHBOARD STATS ---
         async function initDashboard() {
-            // Load Firestore Counts
             try {
                 const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
                     getDocs(collection(db, "grades")),
@@ -514,19 +499,17 @@
                 document.getElementById('dashTeachers').textContent = teachersSnap.size;
                 document.getElementById('dashStudents').textContent = studentsSnap.size;
 
-                // Store for dropdowns
                 allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 
                 populateGradeFilter();
-
             } catch (e) {
                 console.error("Error loading stats:", e);
+                document.getElementById('dashGrades').textContent = "!";
+                document.getElementById('dashSubjects').textContent = "!";
             }
 
-            // Load RTDB Live Stats
             try {
-                // Listen to liveSessions node
                 const liveSessionsRef = ref(rtdb, 'liveSessions');
                 onValue(liveSessionsRef, (snapshot) => {
                     const data = snapshot.val();
@@ -538,33 +521,41 @@
                     
                     let sessionCount = 0;
                     let studentCount = 0;
-
                     Object.values(data).forEach(session => {
                         sessionCount++;
                         if (session.students) {
                             studentCount += Object.keys(session.students).length;
                         }
                     });
-
                     document.getElementById('cardSessions').textContent = sessionCount;
                     document.getElementById('cardActive').textContent = studentCount;
-                }, (error) => {
-                    console.error("RTDB metrics error:", error);
-                    document.getElementById('cardSessions').textContent = "Err";
-                    document.getElementById('cardActive').textContent = "Err";
                 });
-
             } catch (e) {
                 console.error("RTDB setup error:", e);
             }
         }
 
-        // --- DATA LOADERS ---
-        function getNameById(id, list, fieldName = 'nameEn') {
+        // --- HELPERS ---
+        // FIXED: Checks 'name' first (your DB structure), then 'displayName'
+        function getDisplayName(userDoc) {
+            return userDoc.name || userDoc.displayName || "Unnamed User";
+        }
+
+        function getNameById(id, list) {
             if (!id) return 'N/A';
             const item = list.find(i => i.id === id);
-            return item ? item[fieldName] : id; // Return name if found, else return ID
+            return item ? (item.nameEn || item.code || id) : id;
         }
+
+        function populateGradeFilter() {
+            const select = document.getElementById('student-grade-filter');
+            select.innerHTML = '<option value="">All Grades</option>';
+            allGrades.forEach(g => {
+                select.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`;
+            });
+        }
+
+        // --- DATA LOADERS ---
 
         async function loadGrades() {
             const tbody = document.querySelector('#grades-table tbody');
@@ -574,8 +565,7 @@
                 tbody.innerHTML = '';
                 snap.forEach(doc => {
                     const d = doc.data();
-                    // Default status to Active if undefined
-                    const status = d.status || 'Active'; 
+                    const status = d.status || 'Active';
                     tbody.innerHTML += `
                         <tr>
                             <td>${d.nameEn || 'N/A'}</td>
@@ -590,7 +580,7 @@
                     `;
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading grades: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -617,7 +607,7 @@
                     `;
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading subjects: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -633,13 +623,11 @@
                     const d = doc.data();
                     const status = d.status || 'Active';
                     
-                    // Resolve Grade IDs to Names
                     let gradeNames = 'None';
                     if (d.assignedGrades && Array.isArray(d.assignedGrades)) {
                         gradeNames = d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ');
                     }
 
-                    // Resolve Subject IDs to Names
                     let subjectNames = 'None';
                     if (d.assignedSubjects && Array.isArray(d.assignedSubjects)) {
                         subjectNames = d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ');
@@ -647,7 +635,7 @@
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${d.displayName || 'N/A'}</td>
+                            <td>${getDisplayName(d)}</td>
                             <td>${d.email}</td>
                             <td style="font-size:0.85rem; color:#666;">${gradeNames}</td>
                             <td style="font-size:0.85rem; color:#666;">${subjectNames}</td>
@@ -660,7 +648,7 @@
                     `;
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error loading teachers: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error: ${e.message}</td></tr>`;
             }
         }
 
@@ -679,14 +667,11 @@
                     if (gradeFilter && d.gradeLevel !== gradeFilter) return;
                     
                     const status = d.status || 'Active';
-                    // Resolve Grade Level ID to Name if it's an ID, otherwise show as is
-                    const gradeDisplay = getNameById(d.gradeLevel, allGrades) !== d.gradeLevel 
-                        ? getNameById(d.gradeLevel, allGrades) 
-                        : (d.gradeLevel || 'N/A');
+                    const gradeDisplay = getNameById(d.gradeLevel, allGrades);
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${d.displayName || 'N/A'}</td>
+                            <td>${getDisplayName(d)}</td>
                             <td>${d.email}</td>
                             <td>${gradeDisplay}</td>
                             <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
@@ -698,29 +683,24 @@
                     `;
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading students: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
             }
         }
-
+        
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, "sessions"));
                 tbody.innerHTML = '';
-                
                 snap.forEach(doc => {
                     const d = doc.data();
                     const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : 'N/A';
                     const status = d.isActive ? 'Active' : 'Closed';
-                    
-                    // Resolve Teacher ID to Name (Optional: requires fetching users first, simplified here)
-                    const teacherIdShort = d.ownerTeacherId ? d.ownerTeacherId.substring(0,8) + '...' : 'Unknown';
-                    
                     tbody.innerHTML += `
                         <tr>
                             <td>${d.title}</td>
-                            <td>${teacherIdShort}</td>
+                            <td>${d.ownerTeacherId ? d.ownerTeacherId.substring(0,8) + '...' : 'Unknown'}</td>
                             <td>${d.gradeLevel}</td>
                             <td>${d.subject}</td>
                             <td>${date}</td>
@@ -732,21 +712,13 @@
                     `;
                 });
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error loading sessions: ${e.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error: ${e.message}</td></tr>`;
             }
         }
 
         // --- UTILS ---
-        function populateGradeFilter() {
-            const select = document.getElementById('student-grade-filter');
-            select.innerHTML = '<option value="">All Grades</option>';
-            allGrades.forEach(g => {
-                select.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`;
-            });
-        }
-
-        window.filterTable = (tableId, query) => {
-            const filter = query.toUpperCase();
+        window.filterTable = (tableId, queryStr) => {
+            const filter = queryStr.toUpperCase();
             const table = document.getElementById(tableId);
             const tr = table.getElementsByTagName("tr");
             for (let i = 1; i < tr.length; i++) {
@@ -805,9 +777,12 @@
                 `;
             } else if (type === 'teacher' || type === 'student') {
                 const role = type === 'teacher' ? 'teacher' : 'student';
+                // FIXED: Use 'name' field primarily, fallback to 'displayName'
+                const userName = data?.name || data?.displayName || '';
+                
                 html = `
                     <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
-                    <div class="form-group"><label>Display Name</label><input name="displayName" required value="${data?.displayName || ''}"></div>
+                    <div class="form-group"><label>Display Name</label><input name="displayName" required value="${userName}"></div>
                     ${!id ? `<div class="form-group"><label>Password</label><input name="password" type="password" ${id ? '' : 'required'}></div>` : ''}
                     <div class="form-group"><label>Status</label>
                         <select name="status">
@@ -846,7 +821,7 @@
 
             try {
                 if (type === 'grade' || type === 'subject') {
-                    const col = type + 's'; // grades, subjects
+                    const col = type + 's';
                     if (id) {
                         await updateDoc(doc(db, col, id), data);
                     } else {
@@ -855,18 +830,16 @@
                 } else if (type === 'teacher' || type === 'student') {
                     const role = type === 'teacher' ? 'teacher' : 'student';
                     const userData = { ...data, role };
+                    
                     if (id) {
-                        // Update existing
+                        delete userData.role; 
                         await updateDoc(doc(db, "users", id), userData);
                     } else {
-                        // Create new (Note: This only creates Firestore doc. Auth creation requires Cloud Function or Admin SDK)
-                        // For this frontend-only demo, we warn the user.
                         alert("Note: This creates the database record. You must manually create the Authentication account in Firebase Console for login to work.");
                         await setDoc(doc(db, "users"), userData);
                     }
                 }
                 closeModal();
-                // Reload current view
                 if (type === 'grade') loadGrades();
                 if (type === 'subject') loadSubjects();
                 if (type === 'teacher') loadTeachers();
@@ -880,11 +853,9 @@
             if (confirm("Are you sure? This cannot be undone.")) {
                 try {
                     await deleteDoc(doc(db, collectionName, id));
-                    // Reload current view
                     if (collectionName === 'grades') loadGrades();
                     if (collectionName === 'subjects') loadSubjects();
                     if (collectionName === 'users') {
-                        // Check which tab is active to reload correctly
                         if (document.getElementById('teachers').classList.contains('active')) loadTeachers();
                         if (document.getElementById('students').classList.contains('active')) loadStudents();
                     }
