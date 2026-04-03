@@ -1,535 +1,1530 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduBoard | Super Admin Console</title>
-
-    <!-- Fix Favicon Error -->
-    <link rel="icon" href="data:,">
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome 6 -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduBoard — Super Admin Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <style>
         :root {
-            --sidebar-width: 260px;
-            --primary-color: #3b82f6;
-            --dark-bg: #0f172a;
+            --bg: #f4f7fb;
+            --surface: #ffffff;
+            --surface-2: #f8fbff;
+            --surface-3: #eef4ff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --text-faint: #94a3b8;
+            --primary: #1d4ed8;
+            --primary-2: #2563eb;
+            --primary-soft: #dbeafe;
+            --success: #059669;
+            --success-soft: #d1fae5;
+            --warning: #d97706;
+            --warning-soft: #ffedd5;
+            --danger: #dc2626;
+            --danger-soft: #fee2e2;
+            --purple: #7c3aed;
+            --purple-soft: #ede9fe;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
         }
 
         body {
-            background: #f8fafc;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* Sidebar Styling */
-        .wrapper {
-            display: flex;
-            width: 100%;
-            align-items: stretch;
-        }
-
-        #sidebar {
-            min-width: var(--sidebar-width);
-            max-width: var(--sidebar-width);
-            background: var(--dark-bg);
-            color: #fff;
-            transition: all 0.3s;
             min-height: 100vh;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .muted {
+            color: var(--text-muted);
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        #loading-overlay {
             position: fixed;
-            z-index: 999;
+            inset: 0;
+            background: rgba(244, 247, 251, .72);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
         }
 
-        #sidebar.active {
-            margin-left: -var(--sidebar-width);
+        #loading-overlay.active {
+            display: flex;
         }
 
-        #sidebar .sidebar-header {
-            padding: 20px;
-            background: #1e293b;
-            border-bottom: 1px solid #334155;
+        .spinner {
+            width: 52px;
+            height: 52px;
+            border: 4px solid #dbeafe;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
-        #sidebar ul.components {
-            padding: 20px 0;
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
 
-        #sidebar ul li a {
-            padding: 15px 20px;
-            font-size: 0.95em;
-            display: block;
-            color: #cbd5e1;
-            text-decoration: none;
-            transition: 0.2s;
-            border-left: 4px solid transparent;
+        #toast-container {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            z-index: 6000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        #sidebar ul li a:hover,
-        #sidebar ul li.active a {
+        .toast {
+            min-width: 280px;
+            max-width: 420px;
+            padding: 14px 16px;
+            border-radius: 14px;
             color: #fff;
-            background: #1e293b;
-            border-left: 4px solid var(--primary-color);
+            box-shadow: var(--shadow-md);
+            animation: fadeSlide .25s ease;
         }
 
-        #sidebar ul li a i {
-            margin-right: 10px;
-            width: 20px;
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .toast.info {
+            background: var(--primary);
+        }
+
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top left, #e0ecff 0%, #f8fbff 45%, #f4f7fb 100%);
+            padding: 24px;
+            z-index: 3000;
+        }
+
+        .login-shell {
+            width: 100%;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1.2fr .9fr;
+            gap: 24px;
+        }
+
+        .login-side,
+        .login-box {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(226, 232, 240, .95);
+            border-radius: 28px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-side {
+            padding: 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
+            color: white;
+        }
+
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.3rem;
+        }
+
+        .login-hero h1 {
+            margin: 18px 0 10px;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1.05;
+        }
+
+        .login-hero p {
+            margin: 0;
+            max-width: 42ch;
+            color: rgba(255, 255, 255, .86);
+        }
+
+        .login-feature-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .login-feature {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, .12);
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 18px;
+            padding: 14px 16px;
+        }
+
+        .login-feature i {
+            margin-top: 3px;
+        }
+
+        .login-box {
+            padding: 34px;
+            align-self: center;
+        }
+
+        .login-box h2 {
+            margin: 0 0 6px;
+            color: var(--text);
+            font-size: 1.6rem;
+        }
+
+        .login-box p {
+            margin: 0 0 24px;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: .92rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 13px 14px;
+            background: #fff;
+            color: var(--text);
+            transition: .2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+        }
+
+        .hint {
+            font-size: .78rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: .2s ease;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.02);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-2);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: .88rem;
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        #app-shell {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 290px;
+            background: linear-gradient(180deg, #0f172a 0%, #172554 100%);
+            color: #fff;
+            padding: 22px 18px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            overflow-y: auto;
+        }
+
+        .brand-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .brand-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #2563eb, #60a5fa);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15);
+        }
+
+        .brand-title {
+            font-size: 1.08rem;
+            font-weight: 800;
+        }
+
+        .brand-sub {
+            font-size: .82rem;
+            color: rgba(255, 255, 255, .68);
+            margin-top: 2px;
+        }
+
+        .admin-card {
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+
+        .admin-card .email {
+            font-size: .9rem;
+            color: rgba(255, 255, 255, .86);
+            word-break: break-word;
+        }
+
+        .admin-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 7px 11px;
+            background: rgba(96, 165, 250, .16);
+            color: #dbeafe;
+            font-size: .78rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .menu-label {
+            color: rgba(255, 255, 255, .5);
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin: 18px 12px 10px;
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-link {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, .78);
+            padding: 14px 14px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .nav-link i {
+            width: 18px;
             text-align: center;
         }
 
-        /* Content Styling */
-        #content {
-            width: 100%;
-            margin-left: var(--sidebar-width);
-            transition: all 0.3s;
+        .nav-link:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #fff;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, .28), rgba(37, 99, 235, .38));
+            color: #fff;
+            border: 1px solid rgba(147, 197, 253, .18);
+        }
+
+        .main {
+            margin-left: 290px;
+            width: calc(100% - 290px);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
-        #content.active {
-            margin-left: 0;
-        }
-
-        .navbar {
-            background: #fff;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-        }
-
-        .main-container {
-            padding: 30px;
-            flex: 1;
-        }
-
-        /* Cards & UI Elements */
-        .stat-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s;
-            border: 1px solid #f1f5f9;
-            height: 100%;
-            cursor: pointer;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-
-        .icon-box {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            background: rgba(244, 247, 251, .82);
+            border-bottom: 1px solid rgba(226, 232, 240, .85);
+            padding: 20px 28px;
             display: flex;
+            justify-content: space-between;
+            gap: 18px;
             align-items: center;
-            justify-content: center;
+        }
+
+        .topbar h1 {
+            margin: 0;
             font-size: 1.5rem;
         }
 
-        .table-card {
-            background: white;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
+        .topbar p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
         }
 
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .content {
+            padding: 28px;
+        }
+
+        .page-section {
+            display: none;
+            animation: sectionFade .22s ease;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes sectionFade {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.15fr .85fr;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .hero-card,
+        .panel,
+        .stat-card,
+        .table-shell,
+        .live-card,
+        .empty-shell {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .hero-card {
+            padding: 24px;
+        }
+
+        .hero-card.primary {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 45%, #eef5ff 100%);
+        }
+
+        .hero-card h2 {
+            margin: 0 0 8px;
+            font-size: 1.55rem;
+        }
+
+        .hero-card p {
+            margin: 0;
+            color: var(--text-muted);
+            max-width: 58ch;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .mini-stat {
+            border-radius: 18px;
+            padding: 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+
+        .mini-stat .label {
+            color: var(--text-muted);
+            font-size: .82rem;
             font-weight: 600;
         }
 
-        .bg-active {
-            background: #dcfce7;
-            color: #166534;
+        .mini-stat .value {
+            margin-top: 8px;
+            font-size: 1.7rem;
+            font-weight: 800;
         }
 
-        .bg-inactive {
-            background: #fee2e2;
-            color: #991b1b;
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
         }
 
-        /* Login Overlay */
-        #loginOverlay {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        .stat-card {
+            padding: 18px;
+            cursor: pointer;
+            transition: .2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            #sidebar {
-                margin-left: -var(--sidebar-width);
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            right: -18px;
+            top: -18px;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            opacity: .08;
+            background: currentColor;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 18px;
+            background: var(--surface-2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .stat-title {
+            color: var(--text-muted);
+            font-size: .88rem;
+            font-weight: 600;
+        }
+
+        .stat-card.blue {
+            color: var(--primary);
+        }
+
+        .stat-card.green {
+            color: var(--success);
+        }
+
+        .stat-card.orange {
+            color: var(--warning);
+        }
+
+        .stat-card.purple {
+            color: var(--purple);
+        }
+
+        .stat-card.red {
+            color: var(--danger);
+        }
+
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1.15fr .85fr;
+            gap: 18px;
+        }
+
+        .panel {
+            padding: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 1.06rem;
+        }
+
+        .panel-sub {
+            color: var(--text-muted);
+            font-size: .86rem;
+            margin-top: 4px;
+        }
+
+        .list-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .list-item {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: var(--surface-2);
+        }
+
+        .list-title {
+            font-weight: 700;
+        }
+
+        .list-meta {
+            color: var(--text-muted);
+            font-size: .84rem;
+            margin-top: 4px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: .76rem;
+            font-weight: 700;
+        }
+
+        .pill-blue {
+            background: var(--primary-soft);
+            color: var(--primary);
+        }
+
+        .pill-green {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .pill-orange {
+            background: var(--warning-soft);
+            color: var(--warning);
+        }
+
+        .pill-red {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .pill-purple {
+            background: var(--purple-soft);
+            color: var(--purple);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-wrap {
+            position: relative;
+            min-width: 280px;
+            flex: 1;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-faint);
+        }
+
+        .search-wrap input {
+            width: 100%;
+            padding: 12px 14px 12px 40px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .filter-select {
+            min-width: 170px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: #fff;
+        }
+
+        .info-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+        }
+
+        .info-banner.warning {
+            background: #fff7ed;
+            border-color: #fdba74;
+            color: #9a3412;
+        }
+
+        .table-shell {
+            overflow: hidden;
+        }
+
+        .table-shell table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 820px;
+        }
+
+        .table-shell th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-size: .76rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-shell td {
+            padding: 16px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: top;
+        }
+
+        .table-shell tr:hover td {
+            background: #fbfdff;
+        }
+
+        .row-title {
+            font-weight: 700;
+        }
+
+        .row-sub {
+            color: var(--text-muted);
+            font-size: .82rem;
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: .76rem;
+            font-weight: 700;
+        }
+
+        .status-active {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+
+        .status-inactive {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+
+        .status-closed {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .icon-btn {
+            width: 38px;
+            height: 38px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            color: var(--text-muted);
+            display: grid;
+            place-items: center;
+            transition: .2s ease;
+        }
+
+        .icon-btn:hover {
+            color: var(--primary);
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+
+        .icon-btn.delete:hover {
+            color: #fff;
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .icon-btn.disabled,
+        .icon-btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--surface-3);
+            color: #1e40af;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+        .empty-shell {
+            padding: 40px 24px;
+            text-align: center;
+        }
+
+        .empty-shell i {
+            font-size: 2.4rem;
+            color: var(--text-faint);
+            margin-bottom: 12px;
+        }
+
+        .empty-shell h3 {
+            margin: 0 0 8px;
+        }
+
+        .empty-shell p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, .45);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 4500;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: min(820px, 100%);
+            max-height: 92vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 26px;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, .18);
+            border: 1px solid var(--border);
+        }
+
+        .modal-header {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: rgba(255, 255, 255, .92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #eef2f7;
+            padding: 20px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .modal-body {
+            padding: 22px;
+        }
+
+        .close-modal {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            color: var(--text-muted);
+        }
+
+        .modal-footer {
+            position: sticky;
+            bottom: 0;
+            background: rgba(255, 255, 255, .95);
+            border-top: 1px solid #eef2f7;
+            padding: 16px 22px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .multi-select {
+            min-height: 130px;
+        }
+
+        @media (max-width: 1180px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
 
-            #sidebar.active {
-                margin-left: 0;
+            .split-grid,
+            .hero-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .login-shell {
+                grid-template-columns: 1fr;
             }
 
-            #content {
+            .sidebar {
+                position: static;
+                width: 100%;
+            }
+
+            .main {
                 margin-left: 0;
+                width: 100%;
+            }
+
+            #app-shell {
+                display: block;
+            }
+        }
+
+        @media (max-width: 760px) {
+
+            .content,
+            .topbar {
+                padding: 18px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .toolbar {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 560px) {
+
+            .stats-grid,
+            .mini-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-actions,
+            .toolbar-left,
+            .toolbar-right,
+            .topbar-actions {
+                width: 100%;
+            }
+
+            .search-wrap {
+                min-width: 100%;
             }
         }
     </style>
 </head>
 
 <body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    <div id="toast-container"></div>
 
-    <!-- LOGIN OVERLAY -->
-    <div id="loginOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 9999;">
-        <div class="card shadow-lg border-0 rounded-4" style="width: 90%; max-width: 400px;">
-            <div class="card-body p-5 text-center">
-                <div class="mb-4 text-primary"><i class="fas fa-shield-halved fa-3x"></i></div>
-                <h3 class="fw-bold mb-2">EduBoard</h3>
-                <p class="text-muted mb-4">Super Admin Portal</p>
-                <form id="loginForm">
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="adminEmail" placeholder="name@example.com" required>
-                        <label for="adminEmail">Email address</label>
+    <div id="login-overlay">
+        <div class="login-shell">
+            <div class="login-side">
+                <div>
+                    <div class="login-brand">
+                        <div class="brand-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <div>
+                            <div>EduBoard Admin</div>
+                            <div style="font-size:.85rem;color:rgba(255,255,255,.72);font-weight:500;">Super Admin Control Center</div>
+                        </div>
                     </div>
-                    <div class="form-floating mb-4">
-                        <input type="password" class="form-control" id="adminPassword" placeholder="Password" required>
-                        <label for="adminPassword">Password</label>
+                    <div class="login-hero">
+                        <h1>Manage grades, teachers, students, and sessions in one place.</h1>
+                        <p>This cleaned admin portal fixes teacher and student creation, keeps the superadmin session safe, and stores pending passwords only in Firestore until Auth provisioning is added later.</p>
                     </div>
-                    <button class="btn btn-primary w-100 py-2 fw-bold rounded-pill" type="submit">
-                        Sign In
-                    </button>
-                </form>
+                    <div class="login-feature-list">
+                        <div class="login-feature"><i class="fas fa-user-shield"></i>
+                            <div><strong>Superadmin-only access</strong><br><span style="color:rgba(255,255,255,.75)">Role verified from Firestore users collection.</span></div>
+                        </div>
+                        <div class="login-feature"><i class="fas fa-database"></i>
+                            <div><strong>Firestore-first user records</strong><br><span style="color:rgba(255,255,255,.75)">Teachers and students are created only in Firestore.</span></div>
+                        </div>
+                        <div class="login-feature"><i class="fas fa-file-import"></i>
+                            <div><strong>Import and export ready</strong><br><span style="color:rgba(255,255,255,.75)">Templates, upserts, and exports are preserved.</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size:.82rem;color:rgba(255,255,255,.7)">Version: corrected admin replacement</div>
+            </div>
+
+            <div class="login-box">
+                <h2><i class="fas fa-shield-halved"></i> Sign in</h2>
+                <p>Use a superadmin account to continue.</p>
+                <div class="form-group">
+                    <label for="admin-email">Email</label>
+                    <input type="email" id="admin-email" placeholder="admin@eduboard.com" />
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password</label>
+                    <input type="password" id="admin-password" placeholder="••••••••" />
+                </div>
+                <button class="btn btn-primary btn-block" onclick="handleAdminLogin()">
+                    <i class="fas fa-right-to-bracket"></i> Sign In
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER -->
-    <div class="wrapper" id="appContainer" style="display: none;">
-
-        <!-- SIDEBAR -->
-        <nav id="sidebar">
-            <div class="sidebar-header">
-                <h4 class="m-0 fw-bold"><i class="fas fa-graduation-cap me-2"></i>EduBoard</h4>
+    <div id="app-shell">
+        <aside class="sidebar">
+            <div class="brand-wrap">
+                <div class="brand-icon"><i class="fas fa-school"></i></div>
+                <div>
+                    <div class="brand-title">EduBoard Admin</div>
+                    <div class="brand-sub">Control center</div>
+                </div>
             </div>
-            <ul class="list-unstyled components">
-                <li class="active" onclick="switchSection('dashboard')">
-                    <a href="#"><i class="fas fa-chart-pie"></i> Dashboard</a>
-                </li>
-                <li onclick="switchSection('grades')">
-                    <a href="#"><i class="fas fa-layer-group"></i> Grades</a>
-                </li>
-                <li onclick="switchSection('subjects')">
-                    <a href="#"><i class="fas fa-book"></i> Subjects</a>
-                </li>
-                <li onclick="switchSection('teachers')">
-                    <a href="#"><i class="fas fa-chalkboard-user"></i> Teachers</a>
-                </li>
-                <li onclick="switchSection('students')">
-                    <a href="#"><i class="fas fa-user-graduate"></i> Students</a>
-                </li>
-                <li onclick="switchSection('sessions')">
-                    <a href="#"><i class="fas fa-video"></i> Live Sessions</a>
-                </li>
-            </ul>
-        </nav>
 
-        <!-- PAGE CONTENT -->
-        <div id="content">
-            <!-- Navbar -->
-            <nav class="navbar navbar-expand-lg">
-                <div class="container-fluid">
-                    <button type="button" id="sidebarCollapse" class="btn btn-light d-md-none">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <span class="ms-auto fw-medium text-secondary d-flex align-items-center gap-2">
-                        <i class="fas fa-circle-user fa-lg"></i>
-                        <span id="adminEmailDisplay">Admin</span>
-                    </span>
-                    <button class="btn btn-outline-danger btn-sm ms-3 rounded-pill px-3" onclick="handleLogout()">
-                        <i class="fas fa-sign-out-alt me-1"></i> Logout
-                    </button>
+            <div class="admin-card">
+                <div class="admin-role-badge"><i class="fas fa-crown"></i> Superadmin</div>
+                <div class="email" id="admin-user-display">admin@eduboard.com</div>
+            </div>
+
+            <div class="menu-label">Navigation</div>
+            <div class="nav-menu">
+                <button class="nav-link active" data-section-btn="dashboard" onclick="showSection('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+                <button class="nav-link" data-section-btn="grades" onclick="showSection('grades')"><i class="fas fa-layer-group"></i> Grades</button>
+                <button class="nav-link" data-section-btn="subjects" onclick="showSection('subjects')"><i class="fas fa-book-open"></i> Subjects</button>
+                <button class="nav-link" data-section-btn="teachers" onclick="showSection('teachers')"><i class="fas fa-chalkboard-user"></i> Teachers</button>
+                <button class="nav-link" data-section-btn="students" onclick="showSection('students')"><i class="fas fa-user-graduate"></i> Students</button>
+                <button class="nav-link" data-section-btn="sessions" onclick="showSection('sessions')"><i class="fas fa-video"></i> Sessions</button>
+            </div>
+
+            <div class="menu-label">Quick actions</div>
+            <div class="nav-menu">
+                <button class="nav-link" onclick="openModal('teacher')"><i class="fas fa-plus"></i> New Teacher</button>
+                <button class="nav-link" onclick="openModal('student')"><i class="fas fa-user-plus"></i> New Student</button>
+                <button class="nav-link" onclick="showSection('sessions');openModal('session')"><i class="fas fa-calendar-plus"></i> New Session</button>
+                <button class="nav-link" onclick="handleLogout()"><i class="fas fa-arrow-right-from-bracket"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div class="topbar">
+                <div>
+                    <h1 id="page-title">Dashboard</h1>
+                    <p id="page-subtitle">Overview of the entire EduBoard system.</p>
                 </div>
-            </nav>
-
-            <!-- Main Sections -->
-            <div class="main-container">
-
-                <!-- DASHBOARD SECTION -->
-                <div id="dashboardSection" class="section-content">
-                    <h3 class="fw-bold mb-4">Executive Overview</h3>
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-3 col-sm-6">
-                            <div class="stat-card" onclick="switchSection('grades')">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-1">Total Grades</h6>
-                                        <h2 class="fw-bold mb-0 text-primary" id="dashGrades">...</h2>
-                                    </div>
-                                    <div class="icon-box bg-primary bg-opacity-10 text-primary"><i class="fas fa-layer-group"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="stat-card" onclick="switchSection('subjects')">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-1">Subjects</h6>
-                                        <h2 class="fw-bold mb-0 text-success" id="dashSubjects">...</h2>
-                                    </div>
-                                    <div class="icon-box bg-success bg-opacity-10 text-success"><i class="fas fa-book"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="stat-card" onclick="switchSection('teachers')">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-1">Teachers</h6>
-                                        <h2 class="fw-bold mb-0 text-warning" id="dashTeachers">...</h2>
-                                    </div>
-                                    <div class="icon-box bg-warning bg-opacity-10 text-warning"><i class="fas fa-chalkboard-user"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="stat-card" onclick="switchSection('students')">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-1">Students</h6>
-                                        <h2 class="fw-bold mb-0 text-info" id="dashStudents">...</h2>
-                                    </div>
-                                    <div class="icon-box bg-info bg-opacity-10 text-info"><i class="fas fa-user-graduate"></i></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Live Monitor Panel -->
-                    <div class="card border-0 shadow-sm mt-4">
-                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="fas fa-satellite-dish text-danger me-2"></i>Live Monitor</h5>
-                            <button class="btn btn-sm btn-outline-primary" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Toggle View</button>
-                        </div>
-                        <div class="card-body" id="liveMonitorBody">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <h1 class="text-success mb-0" id="liveStudentCount">0</h1>
-                                        <small class="text-muted">Students Online</small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-light rounded text-center">
-                                        <h1 class="text-primary mb-0" id="liveSessionCount">0</h1>
-                                        <small class="text-muted">Active Sessions</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div id="liveDetailsPanel" class="mt-3" style="display:none;">
-                                <div class="alert alert-light border">
-                                    <strong>Active Sessions:</strong> <span id="liveSessionListText">None</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-secondary btn-sm" onclick="refreshCurrentSection()"><i class="fas fa-rotate"></i> Refresh</button>
+                    <button class="btn btn-secondary btn-sm" onclick="scrollToTopFast()"><i class="fas fa-arrow-up"></i> Top</button>
                 </div>
+            </div>
 
-                <!-- GRADES SECTION -->
-                <div id="gradesSection" class="section-content" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-bold m-0">Manage Grades</h3>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="exportData('grades')"><i class="fas fa-file-export"></i> Export</button>
-                            <button class="btn btn-outline-secondary" onclick="importData('grades')"><i class="fas fa-file-import"></i> Import</button>
-                            <button class="btn btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button>
+            <div class="content">
+                <section id="dashboard" class="page-section active">
+                    <div class="hero-grid">
+                        <div class="hero-card primary">
+                            <h2>Welcome back, superadmin.</h2>
+                            <p>The dashboard tracks master data, live sessions, and user counts. Teachers and students are now managed in Firestore only, so admin creation no longer breaks the current session.</p>
+                            <div class="hero-actions">
+                                <button class="btn btn-primary" onclick="showSection('teachers');openModal('teacher')"><i class="fas fa-plus"></i> Add Teacher</button>
+                                <button class="btn btn-secondary" onclick="showSection('students');openModal('student')"><i class="fas fa-user-plus"></i> Add Student</button>
+                                <button class="btn btn-secondary" onclick="showSection('sessions')"><i class="fas fa-video"></i> View Sessions</button>
+                            </div>
+                        </div>
+                        <div class="hero-card">
+                            <div class="mini-grid">
+                                <div class="mini-stat">
+                                    <div class="label">Portal mode</div>
+                                    <div class="value" style="font-size:1.1rem">Firestore-only user provisioning</div>
+                                </div>
+                                <div class="mini-stat">
+                                    <div class="label">Password handling</div>
+                                    <div class="value" style="font-size:1.1rem">pendingPassword field</div>
+                                </div>
+                                <div class="mini-stat">
+                                    <div class="label">Imports</div>
+                                    <div class="value" style="font-size:1.1rem">Upsert supported</div>
+                                </div>
+                                <div class="mini-stat">
+                                    <div class="label">UI</div>
+                                    <div class="value" style="font-size:1.1rem">Enhanced icons and layout</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="table-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="gradesTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th>Name (AR)</th>
-                                        <th>Code</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="gradesTbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- SUBJECTS SECTION -->
-                <div id="subjectsSection" class="section-content" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-bold m-0">Manage Subjects</h3>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="exportData('subjects')"><i class="fas fa-file-export"></i> Export</button>
-                            <button class="btn btn-outline-secondary" onclick="importData('subjects')"><i class="fas fa-file-import"></i> Import</button>
-                            <button class="btn btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button>
+                    <div class="stats-grid">
+                        <div class="stat-card orange" onclick="showSection('grades')">
+                            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+                            <div class="stat-value" id="dashGrades">—</div>
+                            <div class="stat-title">Grades</div>
+                        </div>
+                        <div class="stat-card blue" onclick="showSection('subjects')">
+                            <div class="stat-icon"><i class="fas fa-book-open"></i></div>
+                            <div class="stat-value" id="dashSubjects">—</div>
+                            <div class="stat-title">Subjects</div>
+                        </div>
+                        <div class="stat-card green" onclick="showSection('teachers')">
+                            <div class="stat-icon"><i class="fas fa-chalkboard-user"></i></div>
+                            <div class="stat-value" id="dashTeachers">—</div>
+                            <div class="stat-title">Teachers</div>
+                        </div>
+                        <div class="stat-card purple" onclick="showSection('students')">
+                            <div class="stat-icon"><i class="fas fa-user-graduate"></i></div>
+                            <div class="stat-value" id="dashStudents">—</div>
+                            <div class="stat-title">Students</div>
+                        </div>
+                        <div class="stat-card red" onclick="toggleLiveDetails()">
+                            <div class="stat-icon"><i class="fas fa-signal"></i></div>
+                            <div class="stat-value" id="cardActive">—</div>
+                            <div class="stat-title">Live Students</div>
+                        </div>
+                        <div class="stat-card blue" onclick="toggleLiveDetails()">
+                            <div class="stat-icon"><i class="fas fa-video"></i></div>
+                            <div class="stat-value" id="cardSessions">—</div>
+                            <div class="stat-title">Active Sessions</div>
                         </div>
                     </div>
-                    <div class="table-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="subjectsTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th>Name (AR)</th>
-                                        <th>Code</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="subjectsTbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- TEACHERS SECTION -->
-                <div id="teachersSection" class="section-content" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-bold m-0">Manage Teachers</h3>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="exportData('teachers')"><i class="fas fa-file-export"></i> Export</button>
-                            <button class="btn btn-outline-secondary" onclick="importData('teachers')"><i class="fas fa-file-import"></i> Import</button>
-                            <button class="btn btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button>
+                    <div id="live-details" class="split-grid hidden">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div>
+                                    <h3 class="panel-title">Active sessions</h3>
+                                    <div class="panel-sub">Realtime data from Realtime Database.</div>
+                                </div>
+                                <span class="pill pill-orange"><i class="fas fa-bolt"></i> Live</span>
+                            </div>
+                            <div class="list-stack" id="live-sessions-list"></div>
+                        </div>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <div>
+                                    <h3 class="panel-title">Students online</h3>
+                                    <div class="panel-sub">Students currently connected to active sessions.</div>
+                                </div>
+                                <span class="pill pill-green"><i class="fas fa-user-check"></i> Realtime</span>
+                            </div>
+                            <div class="list-stack" id="live-students-list"></div>
                         </div>
                     </div>
-                    <div class="alert alert-info border-0 shadow-sm">
-                        <i class="fas fa-info-circle me-2"></i> Teachers are created directly in Firestore. No Authentication account is generated automatically.
-                    </div>
-                    <div class="table-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="teachersTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Assigned Grades</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="teachersTbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                </section>
 
-                <!-- STUDENTS SECTION -->
-                <div id="studentsSection" class="section-content" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-bold m-0">Manage Students</h3>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="exportData('students')"><i class="fas fa-file-export"></i> Export</button>
-                            <button class="btn btn-outline-secondary" onclick="importData('students')"><i class="fas fa-file-import"></i> Import</button>
-                            <button class="btn btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button>
+                <section id="grades" class="page-section">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-grades" type="text" placeholder="Search grades..." onkeyup="filterTable('grades-table', this.value)" /></div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('grades')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('grades')"><i class="fas fa-file-arrow-down"></i> Template</button>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-file-import"></i> Import</button>
+                            <input id="import-file-grades" type="file" hidden accept=".xlsx,.xls" onchange="processImport('grades', this)" />
+                            <button class="btn btn-primary btn-sm" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add Grade</button>
                         </div>
                     </div>
-                    <div class="alert alert-info border-0 shadow-sm">
-                        <i class="fas fa-info-circle me-2"></i> Students are created directly in Firestore.
+                    <div class="table-shell">
+                        <table id="grades-table">
+                            <thead>
+                                <tr>
+                                    <th>Name (EN)</th>
+                                    <th>Name (AR)</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <select id="gradeFilter" class="form-select" onchange="renderStudentsTable()">
+                </section>
+
+                <section id="subjects" class="page-section">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-subjects" type="text" placeholder="Search subjects..." onkeyup="filterTable('subjects-table', this.value)" /></div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('subjects')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('subjects')"><i class="fas fa-file-arrow-down"></i> Template</button>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-file-import"></i> Import</button>
+                            <input id="import-file-subjects" type="file" hidden accept=".xlsx,.xls" onchange="processImport('subjects', this)" />
+                            <button class="btn btn-primary btn-sm" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add Subject</button>
+                        </div>
+                    </div>
+                    <div class="table-shell">
+                        <table id="subjects-table">
+                            <thead>
+                                <tr>
+                                    <th>Name (EN)</th>
+                                    <th>Name (AR)</th>
+                                    <th>Code</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="teachers" class="page-section">
+                    <div class="info-banner">
+                        <i class="fas fa-circle-info" style="margin-top:2px;"></i>
+                        <div><strong>Teacher records are Firestore-only right now.</strong> No Firebase Authentication account is created from this page. The plain-text password entered by the superadmin is saved as <span class="mono">pendingPassword</span> in the <span class="mono">teachers</span> collection for later provisioning.</div>
+                    </div>
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-teachers" type="text" placeholder="Search teachers..." onkeyup="filterTable('teachers-table', this.value)" /></div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('teachers')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('teachers')"><i class="fas fa-file-arrow-down"></i> Template</button>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-file-import"></i> Import</button>
+                            <input id="import-file-teachers" type="file" hidden accept=".xlsx,.xls" onchange="processImport('teachers', this)" />
+                            <button class="btn btn-primary btn-sm" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add Teacher</button>
+                        </div>
+                    </div>
+                    <div class="table-shell">
+                        <table id="teachers-table">
+                            <thead>
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th>Assignments</th>
+                                    <th>Pending Password</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="students" class="page-section">
+                    <div class="info-banner warning">
+                        <i class="fas fa-key" style="margin-top:2px;"></i>
+                        <div><strong>Student records are also Firestore-only.</strong> The entered password is stored as <span class="mono">pendingPassword</span> in the <span class="mono">students</span> collection. Reset-password email is disabled until Authentication accounts are provisioned later.</div>
+                    </div>
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-students" type="text" placeholder="Search students..." onkeyup="filterTable('students-table', this.value)" /></div>
+                            <select id="student-grade-filter" class="filter-select" onchange="window.loadStudents()">
                                 <option value="">All Grades</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="table-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="studentsTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Grade</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="studentsTbody"></tbody>
-                            </table>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('students')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('students')"><i class="fas fa-file-arrow-down"></i> Template</button>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-file-import"></i> Import</button>
+                            <input id="import-file-students" type="file" hidden accept=".xlsx,.xls" onchange="processImport('students', this)" />
+                            <button class="btn btn-primary btn-sm" onclick="openModal('student')"><i class="fas fa-user-plus"></i> Add Student</button>
                         </div>
                     </div>
-                </div>
+                    <div class="table-shell">
+                        <table id="students-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Grade</th>
+                                    <th>Pending Password</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </section>
 
-                <!-- SESSIONS SECTION -->
-                <div id="sessionsSection" class="section-content" style="display:none;">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-bold m-0">Live Sessions</h3>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="exportData('sessions')"><i class="fas fa-file-export"></i> Export</button>
-                            <button class="btn btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus"></i> Create Session</button>
+                <section id="sessions" class="page-section">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-sessions" type="text" placeholder="Search sessions..." onkeyup="filterTable('sessions-table', this.value)" /></div>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('sessions')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('sessions')"><i class="fas fa-file-arrow-down"></i> Template</button>
+                            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-sessions').click()"><i class="fas fa-file-import"></i> Import</button>
+                            <input id="import-file-sessions" type="file" hidden accept=".xlsx,.xls" onchange="processImport('sessions', this)" />
+                            <button class="btn btn-primary btn-sm" onclick="openModal('session')"><i class="fas fa-plus"></i> Create Session</button>
                         </div>
                     </div>
-                    <div class="table-card">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="sessionsTable">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Teacher</th>
-                                        <th>Grade</th>
-                                        <th>Subject</th>
-                                        <th>Start Time</th>
-                                        <th>Status</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sessionsTbody"></tbody>
-                            </table>
-                        </div>
+                    <div class="table-shell">
+                        <table id="sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Teacher</th>
+                                    <th>Grade</th>
+                                    <th>Subject</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
-                </div>
-
+                </section>
             </div>
-        </div>
+        </main>
     </div>
 
-    <!-- UNIVERSAL MODAL -->
-    <div class="modal fade" id="universalModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Add Item</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+    <div id="generic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Item</h3>
+                <button class="close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="modal-form" onsubmit="handleFormSubmit(event)">
                 <div class="modal-body">
-                    <form id="dynamicForm"></form>
+                    <input type="hidden" id="modal-type" />
+                    <input type="hidden" id="modal-id" />
+                    <div id="modal-fields"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="modalSaveBtn">Save Changes</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk"></i> Save</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- TOAST CONTAINER -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
-
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, addDoc, serverTimestamp, Timestamp, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            getDocs,
+            doc,
+            setDoc,
+            deleteDoc,
+            query,
+            where,
+            updateDoc,
+            addDoc,
+            writeBatch,
+            serverTimestamp,
+            Timestamp,
+            getDoc
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            getDatabase,
+            ref,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
             authDomain: "eduboard-870d3.firebaseapp.com",
@@ -540,647 +1535,991 @@
             appId: "1:123456789:web:abcdef"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // Global State
-        let currentAdmin = null;
-        let cachedData = {
-            grades: [],
-            subjects: [],
-            teachers: []
+        let currentUser = null;
+        let currentSection = 'dashboard';
+        let allGrades = [];
+        let allSubjects = [];
+        let allTeachers = [];
+        let liveDataCache = {
+            sessions: null
         };
 
-        // --- UTILITIES ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toastContainer');
-            const toastId = 'toast-' + Date.now();
-            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-            
-            const html = `
-                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 10000;">
-                    <div class="d-flex">
-                        <div class="toast-body">${message}</div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" onclick="this.parentElement.parentElement.remove()"></button>
-                    </div>
-                </div>`;
-            
-            container.insertAdjacentHTML('beforeend', html);
-            setTimeout(() => {
-                const el = document.getElementById(toastId);
-                if(el) el.remove();
-            }, 4000);
+        const pageMeta = {
+            dashboard: ['Dashboard', 'Overview of the entire EduBoard system.'],
+            grades: ['Grades', 'Manage grade master records and Excel operations.'],
+            subjects: ['Subjects', 'Manage subject master records and Excel operations.'],
+            teachers: ['Teachers', 'Create Firestore-only teacher records with pendingPassword.'],
+            students: ['Students', 'Create Firestore-only student records with pendingPassword.'],
+            sessions: ['Sessions', 'Manage scheduled and active sessions.']
+        };
+
+        function showLoading(show) {
+            document.getElementById('loading-overlay').classList.toggle('active', show);
         }
 
-        // --- AUTHENTICATION ---
-        
-        const loginForm = document.getElementById('loginForm');
-        if(loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                console.log("Login Form Submitted");
-                
-                const emailInput = document.getElementById('adminEmail');
-                const passInput = document.getElementById('adminPassword');
-                const email = emailInput.value.trim();
-                const password = passInput.value;
+        function toast(message, type = 'info') {
+            const wrap = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            wrap.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-6px)';
+                setTimeout(() => el.remove(), 220);
+            }, 3400);
+        }
 
-                if(!email || !password) {
-                    showToast("Please enter email and password", 'danger');
-                    return;
-                }
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
-                console.log("Attempting login for:", email);
-                
-                const btn = loginForm.querySelector('button[type="submit"]');
-                const originalBtnText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Signing In...';
+        function formatDate(ts) {
+            if (!ts?.seconds) return '-';
+            return new Date(ts.seconds * 1000).toLocaleString();
+        }
 
-                try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    console.log("Firebase Auth Success - Waiting for State Change...");
-                } catch (error) {
-                    console.error("Login Error:", error);
-                    showToast("Login Failed: " + error.message, 'danger');
-                    btn.disabled = false;
-                    btn.innerHTML = originalBtnText;
-                }
+        function getDisplayName(d) {
+            return d?.name || d?.displayName || 'Unnamed';
+        }
+
+        function getNameById(id, list) {
+            if (!id) return 'N/A';
+            const found = (list || []).find(x => x.id === id);
+            return found ? (found.nameEn || found.code || found.name || id) : id;
+        }
+
+        function toArray(value) {
+            if (Array.isArray(value)) return value;
+            if (value === undefined || value === null || value === '') return [];
+            return [value];
+        }
+
+        function scrollToTopFast() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
         }
+        window.scrollToTopFast = scrollToTopFast;
 
-        window.handleLogout = () => {
-            signOut(auth);
-            window.location.reload();
+        window.handleAdminLogin = async () => {
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value;
+            if (!email || !password) {
+                toast('Please enter email and password.', 'error');
+                return;
+            }
+            showLoading(true);
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                toast('Login failed: ' + error.message, 'error');
+                showLoading(false);
+            }
         };
 
-        // --- CORE FIX: ROBUST AUTH STATE HANDLER ---
+        window.handleLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch (e) {
+                toast('Logout failed: ' + e.message, 'error');
+            }
+        };
+
         onAuthStateChanged(auth, async (user) => {
-            const loginOverlay = document.getElementById('loginOverlay');
-            const appContainer = document.getElementById('appContainer');
-            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
-
-            if (user) {
-                console.log("User detected in Auth:", user.uid);
-                
+            showLoading(true);
+            try {
+                if (user) {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (!userDoc.exists() || userDoc.data().role !== 'superadmin') {
+                        toast("You don't have superadmin privileges.", 'error');
+                        await signOut(auth);
+                        return;
+                    }
+                    currentUser = user;
+                    document.getElementById('login-overlay').style.display = 'none';
+                    document.getElementById('app-shell').style.display = window.innerWidth > 980 ? 'block' : 'block';
+                    document.getElementById('admin-user-display').textContent = user.email || 'Superadmin';
+                    await initDashboard();
+                } else {
+                    currentUser = null;
+                    document.getElementById('login-overlay').style.display = 'flex';
+                    document.getElementById('app-shell').style.display = 'none';
+                }
+            } catch (e) {
+                console.error(e);
+                toast('Auth verification failed: ' + e.message, 'error');
                 try {
-                    // 1. Check Firestore for Role
-                    console.log("Checking Firestore for user role...");
-                    const userDocRef = doc(db, "users", user.uid);
-                    const userDoc = await getDoc(userDocRef);
-                    
-                    if (!userDoc.exists()) {
-                        throw new Error("User record not found in Firestore. Please contact support.");
-                    }
-                    
-                    const userData = userDoc.data();
-                    console.log("User Data Found:", userData);
-
-                    if (userData.role !== 'superadmin') {
-                        throw new Error("Access Denied: Your role is '" + (userData.role || 'unknown') + "'. Super Admin required.");
-                    }
-
-                    // 2. Success! Set State and UI
-                    console.log("Verification Successful. Loading Dashboard...");
-                    currentAdmin = user; 
-                    
-                    if(loginOverlay) loginOverlay.style.display = 'none';
-                    if(appContainer) appContainer.style.display = 'flex';
-                    document.getElementById('adminEmailDisplay').textContent = user.email;
-
-                    if(submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Sign In';
-                    }
-
-                    // 3. Load Data
-                    await loadAllMasterData();
-                    initLiveMonitor();
-                    switchSection('dashboard');
-
-                } catch (err) {
-                    console.error("CRITICAL ERROR in Auth Flow:", err);
-                    showToast(err.message, 'danger');
-                    
-                    // Force Sign Out on Error to prevent stuck state
-                    await signOut(auth); 
-                    
-                    if(loginOverlay) loginOverlay.style.display = 'flex';
-                    if(appContainer) appContainer.style.display = 'none';
-                    if(submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Sign In';
-                    }
-                }
-            } else {
-                console.log("No user logged in (or signed out). Showing Login.");
-                currentAdmin = null;
-                if(loginOverlay) loginOverlay.style.display = 'flex';
-                if(appContainer) appContainer.style.display = 'none';
-                if(submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Sign In';
-                }
+                    await signOut(auth);
+                } catch {}
+            } finally {
+                showLoading(false);
             }
         });
 
-        // --- DATA LOADING ---
-        async function loadAllMasterData() {
-            if(!currentAdmin) return; 
+        window.showSection = (sectionId) => {
+            currentSection = sectionId;
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('[data-section-btn]').forEach(b => b.classList.remove('active'));
+            document.getElementById(sectionId)?.classList.add('active');
+            document.querySelector(`[data-section-btn="${sectionId}"]`)?.classList.add('active');
+            const meta = pageMeta[sectionId] || ['EduBoard', ''];
+            document.getElementById('page-title').textContent = meta[0];
+            document.getElementById('page-subtitle').textContent = meta[1];
 
+            if (sectionId === 'dashboard') initDashboard();
+            if (sectionId === 'grades') loadGrades();
+            if (sectionId === 'subjects') loadSubjects();
+            if (sectionId === 'teachers') loadTeachers();
+            if (sectionId === 'students') loadStudents();
+            if (sectionId === 'sessions') loadSessions();
+        };
+
+        window.refreshCurrentSection = () => showSection(currentSection);
+
+        window.toggleLiveDetails = () => {
+            const el = document.getElementById('live-details');
+            el.classList.toggle('hidden');
+            if (!el.classList.contains('hidden')) updateLiveDetails();
+        };
+
+        async function initDashboard() {
+            if (!currentUser) return;
             try {
-                console.log("Fetching Master Data...");
-                const [gSnap, sSnap, tSnap, stSnap] = await Promise.all([
-                    getDocs(collection(db, "grades")),
-                    getDocs(collection(db, "subjects")),
-                    getDocs(collection(db, "teachers")),
-                    getDocs(collection(db, "students"))
+                const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
+                    getDocs(collection(db, 'grades')),
+                    getDocs(collection(db, 'subjects')),
+                    getDocs(collection(db, 'teachers')),
+                    getDocs(collection(db, 'students'))
                 ]);
 
-                cachedData.grades = gSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                cachedData.subjects = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                cachedData.teachers = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                const studentsCount = stSnap.size;
+                allGrades = gradesSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                allSubjects = subjectsSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                allTeachers = teachersSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
 
-                document.getElementById('dashGrades').innerText = cachedData.grades.length;
-                document.getElementById('dashSubjects').innerText = cachedData.subjects.length;
-                document.getElementById('dashTeachers').innerText = cachedData.teachers.length;
-                document.getElementById('dashStudents').innerText = studentsCount;
+                document.getElementById('dashGrades').textContent = gradesSnap.size;
+                document.getElementById('dashSubjects').textContent = subjectsSnap.size;
+                document.getElementById('dashTeachers').textContent = teachersSnap.size;
+                document.getElementById('dashStudents').textContent = studentsSnap.size;
 
                 populateGradeFilter();
-                renderGradesTable();
-                renderSubjectsTable();
-                renderTeachersTable();
-                renderStudentsTable();
-                renderSessionsTable();
-                console.log("Master Data Loaded.");
-
-            } catch (err) {
-                console.error("Load Error:", err);
-                showToast("Failed to load data: " + err.message, 'danger');
+            } catch (e) {
+                console.error('Dashboard load error:', e);
+                toast('Dashboard load failed: ' + e.message, 'error');
             }
+
+            try {
+                onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
+                    const data = snapshot.val();
+                    liveDataCache.sessions = data || null;
+                    if (!data) {
+                        document.getElementById('cardSessions').textContent = '0';
+                        document.getElementById('cardActive').textContent = '0';
+                        updateLiveDetails();
+                        return;
+                    }
+                    let sessionCount = 0;
+                    let studentCount = 0;
+                    Object.values(data).forEach(s => {
+                        sessionCount++;
+                        if (s.students) studentCount += Object.keys(s.students).length;
+                    });
+                    document.getElementById('cardSessions').textContent = sessionCount;
+                    document.getElementById('cardActive').textContent = studentCount;
+                    if (!document.getElementById('live-details').classList.contains('hidden')) updateLiveDetails();
+                });
+            } catch (e) {
+                console.error('Live session read error:', e);
+            }
+        }
+
+        function updateLiveDetails() {
+            const sessionsList = document.getElementById('live-sessions-list');
+            const studentsList = document.getElementById('live-students-list');
+            const sessions = Object.entries(liveDataCache.sessions || {});
+
+            if (!sessions.length) {
+                sessionsList.innerHTML = `
+            <div class="empty-shell"><i class="fas fa-video-slash"></i><h3>No active sessions</h3><p>Sessions will appear here when teachers go live.</p></div>`;
+                studentsList.innerHTML = `
+            <div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
+                return;
+            }
+
+            sessionsList.innerHTML = sessions.map(([id, s]) => `
+        <div class="list-item">
+            <div>
+                <div class="list-title">${escapeHtml(s.title || 'Untitled Session')}</div>
+                <div class="list-meta">Teacher: ${escapeHtml(s.teacherName || s.ownerTeacherId?.substring(0, 8) || '?')} • Grade: ${escapeHtml(s.gradeLevel || 'N/A')}</div>
+            </div>
+            <span class="pill pill-orange"><i class="fas fa-users"></i> ${s.students ? Object.keys(s.students).length : 0}</span>
+        </div>
+    `).join('');
+
+            const allLiveStudents = [];
+            sessions.forEach(([, s]) => {
+                if (s.students) {
+                    Object.values(s.students).forEach(st => {
+                        allLiveStudents.push({
+                            ...st,
+                            sessionTitle: s.title || 'Untitled Session'
+                        });
+                    });
+                }
+            });
+
+            studentsList.innerHTML = allLiveStudents.length ? allLiveStudents.map(st => `
+        <div class="list-item">
+            <div>
+                <div class="list-title">${escapeHtml(st.name || st.displayName || 'Unknown')}</div>
+                <div class="list-meta">In: ${escapeHtml(st.sessionTitle)}</div>
+            </div>
+            <span class="pill pill-green"><i class="fas fa-circle"></i> Online</span>
+        </div>
+    `).join('') : `
+        <div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
         }
 
         function populateGradeFilter() {
-            const select = document.getElementById('gradeFilter');
-            if(!select) return;
-            select.innerHTML = '<option value="">All Grades</option>';
-            cachedData.grades.forEach(g => {
-                select.innerHTML += `<option value="${g.id}">${g.nameEn}</option>`;
+            const sel = document.getElementById('student-grade-filter');
+            if (!sel) return;
+            const current = sel.value;
+            sel.innerHTML = '<option value="">All Grades</option>';
+            allGrades.forEach(g => {
+                sel.innerHTML += `<option value="${escapeHtml(g.id)}">${escapeHtml(g.nameEn || g.code || g.id)}</option>`;
             });
+            sel.value = current;
         }
 
-        // --- RENDER FUNCTIONS ---
-        function renderGradesTable() {
-            const tbody = document.getElementById('gradesTbody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(cachedData.grades.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No grades found</td></tr>';
-                return;
-            }
-            cachedData.grades.forEach(item => {
-                const statusClass = item.status === 'Active' ? 'bg-active' : 'bg-inactive';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.nameEn}</td>
-                        <td>${item.nameAr || '-'}</td>
-                        <td>${item.code}</td>
-                        <td><span class="status-badge ${statusClass}">${item.status}</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("grade", "${item.id}")'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("grades", "${item.id}")'><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function renderSubjectsTable() {
-            const tbody = document.getElementById('subjectsTbody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(cachedData.subjects.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No subjects found</td></tr>';
-                return;
-            }
-            cachedData.subjects.forEach(item => {
-                const statusClass = item.status === 'Active' ? 'bg-active' : 'bg-inactive';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.nameEn}</td>
-                        <td>${item.nameAr || '-'}</td>
-                        <td>${item.code}</td>
-                        <td><span class="status-badge ${statusClass}">${item.status}</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("subject", "${item.id}")'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("subjects", "${item.id}")'><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        function renderTeachersTable() {
-            const tbody = document.getElementById('teachersTbody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(cachedData.teachers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No teachers found</td></tr>';
-                return;
-            }
-            cachedData.teachers.forEach(t => {
-                const gradeNames = (t.assignedGrades || []).map(id => {
-                    const g = cachedData.grades.find(x => x.id === id);
-                    return g ? g.nameEn : id;
-                }).join(', ');
-                
-                const statusClass = t.status === 'Active' ? 'bg-active' : 'bg-inactive';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold">${t.name}</td>
-                        <td>${t.email}</td>
-                        <td><small class="text-muted">${gradeNames || 'None'}</small></td>
-                        <td><span class="status-badge ${statusClass}">${t.status || 'Active'}</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("teacher", "${t.id}")'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("teachers", "${t.id}")'><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
-
-        window.renderStudentsTable = async () => {
-            const filterGrade = document.getElementById('gradeFilter')?.value || '';
-            const tbody = document.getElementById('studentsTbody');
-            if(!tbody) return;
-            
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary"></div></td></tr>';
-            
+        async function loadGrades() {
+            if (!currentUser) return;
+            const tbody = document.querySelector('#grades-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
-                const snap = await getDocs(collection(db, "students"));
-                tbody.innerHTML = '';
-                
-                let count = 0;
-                snap.forEach(d => {
-                    const data = d.data();
-                    if (filterGrade && data.gradeLevel !== filterGrade) return;
-                    
-                    const gradeName = (cachedData.grades.find(g => g.id === data.gradeLevel) || {}).nameEn || data.gradeLevel;
-                    const statusClass = data.status === 'Active' ? 'bg-active' : 'bg-inactive';
+                const snap = await getDocs(collection(db, 'grades'));
+                allGrades = snap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                populateGradeFilter();
+                tbody.innerHTML = snap.docs.map(docSnap => {
+                    const d = docSnap.data();
+                    return `
+                <tr>
+                    <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
+                    <td>${escapeHtml(d.nameAr || '')}</td>
+                    <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
+                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='editItem("grade","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('grades','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-layer-group"></i><h3>No grades found</h3><p>Add a grade or import a template to get started.</p></div></td></tr>';
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${data.name}</td>
-                            <td>${data.email}</td>
-                            <td>${gradeName}</td>
-                            <td><span class="status-badge ${statusClass}">${data.status || 'Active'}</span></td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-light text-primary" onclick='editItem("student", "${d.id}")'><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("students", "${d.id}")'><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>`;
-                    count++;
-                });
+        async function loadSubjects() {
+            if (!currentUser) return;
+            const tbody = document.querySelector('#subjects-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            try {
+                const snap = await getDocs(collection(db, 'subjects'));
+                allSubjects = snap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                tbody.innerHTML = snap.docs.map(docSnap => {
+                    const d = docSnap.data();
+                    return `
+                <tr>
+                    <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
+                    <td>${escapeHtml(d.nameAr || '')}</td>
+                    <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
+                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='editItem("subject","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('subjects','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-book-open"></i><h3>No subjects found</h3><p>Add a subject or import a template to get started.</p></div></td></tr>';
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
 
-                if(count === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No students found</td></tr>';
-            } catch(e) {
-                console.error("Student Load Error", e);
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading students</td></tr>';
+        async function loadTeachers() {
+            if (!currentUser) return;
+            const tbody = document.querySelector('#teachers-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            try {
+                const snap = await getDocs(collection(db, 'teachers'));
+                allTeachers = snap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                tbody.innerHTML = snap.docs.map(docSnap => {
+                    const d = docSnap.data();
+                    const gradeChips = toArray(d.assignedGrades).map(id => `<span class="chip"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(id, allGrades))}</span>`).join('') || '<span class="muted">No grades</span>';
+                    const subjectChips = toArray(d.assignedSubjects).map(id => `<span class="chip"><i class="fas fa-book"></i>${escapeHtml(getNameById(id, allSubjects))}</span>`).join('') || '<span class="muted">No subjects</span>';
+                    return `
+                <tr>
+                    <td>
+                        <div class="row-title">${escapeHtml(getDisplayName(d))}</div>
+                        <div class="row-sub">${escapeHtml(d.email || '')}</div>
+                    </td>
+                    <td>
+                        <div class="chips">${gradeChips}</div>
+                        <div class="chips" style="margin-top:8px;">${subjectChips}</div>
+                    </td>
+                    <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
+                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='editItem("teacher","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn disabled" disabled title="Password reset is disabled for Firestore-only users"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteTeacherRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-chalkboard-user"></i><h3>No teachers found</h3><p>Add a teacher or import teacher records from Excel.</p></div></td></tr>';
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
+            }
+        }
+
+        window.loadStudents = async () => {
+            if (!currentUser) return;
+            const filter = document.getElementById('student-grade-filter')?.value || '';
+            const tbody = document.querySelector('#students-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            try {
+                const snap = await getDocs(collection(db, 'students'));
+                tbody.innerHTML = snap.docs.filter(docSnap => {
+                    const d = docSnap.data();
+                    return !filter || d.gradeLevel === filter;
+                }).map(docSnap => {
+                    const d = docSnap.data();
+                    return `
+                <tr>
+                    <td>
+                        <div class="row-title">${escapeHtml(d.name || 'Unnamed')}</div>
+                        <div class="row-sub">${escapeHtml(d.email || '')}</div>
+                    </td>
+                    <td><span class="pill pill-blue"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(d.gradeLevel, allGrades))}</span></td>
+                    <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
+                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='editItem("student","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn disabled" disabled title="Password reset is disabled for Firestore-only users"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteStudentRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-user-graduate"></i><h3>No students found</h3><p>Add a student or import student records from Excel.</p></div></td></tr>';
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
         };
 
-        async function renderSessionsTable() {
-            const tbody = document.getElementById('sessionsTbody');
-            if(!tbody) return;
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading sessions...</td></tr>';
+        async function loadSessions() {
+            if (!currentUser) return;
+            const tbody = document.querySelector('#sessions-table tbody');
+            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
             try {
-                const snap = await getDocs(collection(db, "sessions"));
-                tbody.innerHTML = '';
-                
-                snap.forEach(d => {
-                    const data = d.data();
-                    const teacher = cachedData.teachers.find(t => t.id === data.ownerTeacherId);
-                    const teacherName = teacher ? teacher.name : 'Unknown';
-                    
-                    let dateStr = '-';
-                    if(data.startTime && data.startTime.seconds) {
-                        dateStr = new Date(data.startTime.seconds * 1000).toLocaleString();
-                    }
-
-                    const badge = data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Closed</span>';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${data.title}</td>
-                            <td>${teacherName}</td>
-                            <td>${data.gradeLevel || '-'}</td>
-                            <td>${data.subject || '-'}</td>
-                            <td><small>${dateStr}</small></td>
-                            <td>${badge}</td>
-                            <td class="text-end">
-                                 <button class="btn btn-sm btn-light text-primary" onclick='editItem("session", "${d.id}")'><i class="fas fa-edit"></i></button>
-                                 <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("sessions", "${d.id}")'><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch(e) {
-                console.error("Session Load Error", e);
+                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                const snap = await getDocs(collection(db, 'sessions'));
+                tbody.innerHTML = snap.docs.map(docSnap => {
+                    const d = docSnap.data();
+                    const teacher = allTeachers.find(t => t.id === d.ownerTeacherId);
+                    return `
+                <tr>
+                    <td>
+                        <div class="row-title">${escapeHtml(d.title || '')}</div>
+                        <div class="row-sub">${escapeHtml(docSnap.id)}</div>
+                    </td>
+                    <td>${escapeHtml(teacher ? getDisplayName(teacher) : (d.ownerTeacherId || 'Unknown'))}</td>
+                    <td>${escapeHtml(d.gradeLevel || '')}</td>
+                    <td>${escapeHtml(d.subject || '')}</td>
+                    <td>${escapeHtml(formatDate(d.startTime))}</td>
+                    <td><span class="status-badge ${d.isActive ? 'status-active' : 'status-closed'}"><i class="fas fa-circle"></i>${d.isActive ? 'Active' : 'Closed'}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='editItem("session","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('sessions','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+                }).join('') || '<tr><td colspan="7"><div class="empty-shell"><i class="fas fa-video"></i><h3>No sessions found</h3><p>Create a session or import one from Excel.</p></div></td></tr>';
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
         }
 
-        // --- CRUD OPERATIONS ---
-        window.deleteItem = async (collectionName, id) => {
-            if(!confirm("Are you sure you want to delete this record?")) return;
-            try {
-                await deleteDoc(doc(db, collectionName, id));
-                showToast("Record deleted successfully");
-                loadAllMasterData();
-            } catch (err) {
-                showToast("Delete failed: " + err.message, 'danger');
-            }
-        };
+        function modalFieldWrap(label, fieldHtml, hint = '') {
+            return `<div class="form-group"><label>${label}</label>${fieldHtml}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
+        }
 
-        window.openModalForm = async (type, editId = null) => {
-            const modalTitle = document.getElementById('modalTitle');
-            const form = document.getElementById('dynamicForm');
-            const saveBtn = document.getElementById('modalSaveBtn');
-            
-            modalTitle.innerText = (editId ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
-            form.innerHTML = ''; 
+        window.openModal = (type, id = null, data = null) => {
+            document.getElementById('modal-type').value = type;
+            document.getElementById('modal-id').value = id || '';
+            document.getElementById('modal-title').textContent = `${id ? 'Edit' : 'Add'} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
 
-            let itemData = {};
-            if(editId) {
-                if(type === 'grade') itemData = cachedData.grades.find(x => x.id === editId);
-                if(type === 'subject') itemData = cachedData.subjects.find(x => x.id === editId);
-                if(type === 'teacher') itemData = cachedData.teachers.find(x => x.id === editId);
-            }
+            let html = '';
 
-            let html = `<input type="hidden" id="editId" value="${editId || ''}">`;
-            
             if (type === 'grade' || type === 'subject') {
-                html += `
-                    <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">Name (English)</label><input type="text" class="form-control" name="nameEn" value="${itemData.nameEn||''}" required></div>
-                        <div class="col-md-6"><label class="form-label">Name (Arabic)</label><input type="text" class="form-control" name="nameAr" value="${itemData.nameAr||''}"></div>
-                        <div class="col-md-6"><label class="form-label">Code</label><input type="text" class="form-control" name="code" value="${itemData.code||''}" required></div>
-                        <div class="col-md-6"><label class="form-label">Status</label>
-                            <select class="form-select" name="status">
-                                <option value="Active" ${itemData.status==='Active'?'selected':''}>Active</option>
-                                <option value="Inactive" ${itemData.status==='Inactive'?'selected':''}>Inactive</option>
-                            </select>
-                        </div>
-                    </div>`;
-            } 
-            else if (type === 'teacher') {
-                const gradeOptions = cachedData.grades.map(g => `<option value="${g.id}" ${(itemData.assignedGrades||[]).includes(g.id)?'selected':''}>${g.nameEn}</option>`).join('');
-                const subjectOptions = cachedData.subjects.map(s => `<option value="${s.id}" ${(itemData.assignedSubjects||[]).includes(s.id)?'selected':''}>${s.nameEn}</option>`).join('');
-                
-                html += `
-                    <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" value="${itemData.name||''}" required></div>
-                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="${itemData.email||''}" required></div>
-                        <div class="col-md-6"><label class="form-label">Assigned Grades</label><select class="form-select" multiple name="assignedGrades" size="4">${gradeOptions}</select><small class="text-muted">Ctrl+Click to select multiple</small></div>
-                        <div class="col-md-6"><label class="form-label">Assigned Subjects</label><select class="form-select" multiple name="assignedSubjects" size="4">${subjectOptions}</select></div>
-                        <div class="col-md-12"><label class="form-label">Status</label>
-                            <select class="form-select" name="status">
-                                <option value="Active" ${itemData.status!=='Inactive'?'selected':''}>Active</option>
-                                <option value="Inactive" ${itemData.status==='Inactive'?'selected':''}>Inactive</option>
-                            </select>
-                        </div>
-                    </div>`;
-            }
-            else if (type === 'student') {
-                 const gradeOptions = cachedData.grades.map(g => `<option value="${g.id}" ${itemData.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                 
-                 if(editId) {
-                     const docSnap = await getDoc(doc(db, "students", editId));
-                     if(docSnap.exists()) {
-                         const data = docSnap.data();
-                         const selectedOpts = cachedData.grades.map(g => `<option value="${g.id}" ${data.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                         
-                         html += `
-                            <div class="row g-3">
-                                <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" value="${data.name||''}" required></div>
-                                <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="${data.email||''}" required></div>
-                                <div class="col-md-6"><label class="form-label">Grade Level</label><select class="form-select" name="gradeLevel">${selectedOpts}</select></div>
-                                <div class="col-md-6"><label class="form-label">Status</label>
-                                    <select class="form-select" name="status">
-                                        <option value="Active" ${data.status!=='Inactive'?'selected':''}>Active</option>
-                                        <option value="Inactive" ${data.status==='Inactive'?'selected':''}>Inactive</option>
-                                    </select>
-                                </div>
-                            </div>`;
-                     }
-                 } else {
-                     html += `
-                        <div class="row g-3">
-                            <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" required></div>
-                            <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required></div>
-                            <div class="col-md-6"><label class="form-label">Grade Level</label><select class="form-select" name="gradeLevel">${gradeOptions}</select></div>
-                            <div class="col-md-6"><label class="form-label">Status</label>
-                                <select class="form-select" name="status">
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>`;
-                 }
-            }
-            else if (type === 'session') {
-                const teacherOpts = cachedData.teachers.map(t => `<option value="${t.id}" ${itemData.ownerTeacherId===t.id?'selected':''}>${t.name}</option>`).join('');
-                let startVal = '';
-                if(itemData.startTime?.seconds) {
-                    const d = new Date(itemData.startTime.seconds * 1000);
-                    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-                    startVal = d.toISOString().slice(0,16);
-                }
-                
-                html += `
-                    <div class="row g-3">
-                        <div class="col-md-12"><label class="form-label">Session Title</label><input type="text" class="form-control" name="title" value="${itemData.title||''}" required></div>
-                        <div class="col-md-6"><label class="form-label">Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div>
-                        <div class="col-md-6"><label class="form-label">Subject</label><input type="text" class="form-control" name="subject" value="${itemData.subject||''}"></div>
-                        <div class="col-md-6"><label class="form-label">Start Time</label><input type="datetime-local" class="form-control" name="startTime" value="${startVal}"></div>
-                        <div class="col-md-6"><label class="form-label">Active?</label><select class="form-select" name="isActive"><option value="true" ${itemData.isActive!==false?'selected':''}>Yes</option><option value="false" ${itemData.isActive===false?'selected':''}>No</option></select></div>
-                    </div>`;
+                html = `
+            <div class="form-row">
+                ${modalFieldWrap('Name (EN) *', `<input name="nameEn" required value="${escapeHtml(data?.nameEn || '')}" />`)}
+                ${modalFieldWrap('Code *', `<input name="code" required value="${escapeHtml(data?.code || '')}" />`)}
+            </div>
+            ${modalFieldWrap('Name (AR)', `<input name="nameAr" value="${escapeHtml(data?.nameAr || '')}" />`)}
+            ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+        `;
             }
 
-            form.innerHTML = html;
-            const modal = new bootstrap.Modal(document.getElementById('universalModal'));
-            modal.show();
-            saveBtn.onclick = () => submitDynamicForm(type, editId, modal);
+            if (type === 'teacher') {
+                const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.id)}" ${toArray(data?.assignedGrades).includes(g.id) ? 'selected' : ''}>${escapeHtml(g.nameEn || g.code || g.id)}</option>`).join('');
+                const subjectOpts = allSubjects.map(s => `<option value="${escapeHtml(s.id)}" ${toArray(data?.assignedSubjects).includes(s.id) ? 'selected' : ''}>${escapeHtml(s.nameEn || s.code || s.id)}</option>`).join('');
+                html = `
+            <div class="form-row">
+                ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
+                ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(getDisplayName(data) || '')}" />`)}
+            </div>
+            ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
+            <div class="form-row">
+                ${modalFieldWrap('Assigned Grades', `<select class="multi-select" name="assignedGrades" multiple>${gradeOpts}</select>`, 'Hold Ctrl or Cmd to select multiple grades.')}
+                ${modalFieldWrap('Assigned Subjects', `<select class="multi-select" name="assignedSubjects" multiple>${subjectOpts}</select>`, 'Hold Ctrl or Cmd to select multiple subjects.')}
+            </div>
+            ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+        `;
+            }
+
+            if (type === 'student') {
+                const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.id)}" ${data?.gradeLevel === g.id ? 'selected' : ''}>${escapeHtml(g.nameEn || g.code || g.id)}</option>`).join('');
+                html = `
+            <div class="form-row">
+                ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
+                ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(data?.name || '')}" />`)}
+            </div>
+            ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
+            <div class="form-row">
+                ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
+                ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+            </div>
+        `;
+            }
+
+            if (type === 'session') {
+                const teacherOpts = allTeachers.map(t => `<option value="${escapeHtml(t.id)}" ${data?.ownerTeacherId === t.id ? 'selected' : ''}>${escapeHtml(getDisplayName(t))}</option>`).join('');
+                const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.nameEn)}" ${data?.gradeLevel === g.nameEn ? 'selected' : ''}>${escapeHtml(g.nameEn)}</option>`).join('');
+                const subjectOpts = allSubjects.map(s => `<option value="${escapeHtml(s.nameEn)}" ${data?.subject === s.nameEn ? 'selected' : ''}>${escapeHtml(s.nameEn)}</option>`).join('');
+                const startTime = data?.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toISOString().slice(0, 16) : '';
+                const endTime = data?.endTime?.seconds ? new Date(data.endTime.seconds * 1000).toISOString().slice(0, 16) : '';
+                html = `
+            ${modalFieldWrap('Title *', `<input name="title" required value="${escapeHtml(data?.title || '')}" />`)}
+            <div class="form-row">
+                ${modalFieldWrap('Teacher *', `<select name="ownerTeacherId" required>${teacherOpts || '<option value="">No teachers available</option>'}</select>`)}
+                ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
+            </div>
+            <div class="form-row">
+                ${modalFieldWrap('Subject *', `<select name="subject" required>${subjectOpts || '<option value="">No subjects available</option>'}</select>`)}
+                ${modalFieldWrap('Status', `<select name="isActive"><option value="true" ${data?.isActive ? 'selected' : ''}>Active</option><option value="false" ${!data?.isActive ? 'selected' : ''}>Closed</option></select>`)}
+            </div>
+            <div class="form-row">
+                ${modalFieldWrap('Start Time *', `<input name="startTime" type="datetime-local" required value="${escapeHtml(startTime)}" />`)}
+                ${modalFieldWrap('End Time', `<input name="endTime" type="datetime-local" value="${escapeHtml(endTime)}" />`)}
+            </div>
+        `;
+            }
+
+            document.getElementById('modal-fields').innerHTML = html;
+            document.getElementById('generic-modal').classList.add('active');
         };
 
-        async function submitDynamicForm(type, editId, modalInstance) {
-            if(!currentAdmin) {
-                showToast("Session expired. Please login again.", 'danger');
-                return;
-            }
+        window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
+        window.editItem = (type, id, data) => openModal(type, id, data);
 
-            const form = document.getElementById('dynamicForm');
-            if(!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
+        function collectFormData(form) {
             const formData = new FormData(form);
             const data = {};
-            
-            for (let [key, value] of formData.entries()) {
-                if(key === 'assignedGrades' || key === 'assignedSubjects') {
-                    if(!data[key]) data[key] = [];
+            for (const [key, value] of formData.entries()) {
+                if (key === 'assignedGrades' || key === 'assignedSubjects') {
+                    if (!data[key]) data[key] = [];
                     data[key].push(value);
                 } else {
                     data[key] = value;
                 }
             }
-
-            if(type === 'session') {
-                if(data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
-                data.isActive = data.isActive === 'true';
-            }
-
-            const collectionName = type + 's';
-            
-            try {
-                if(editId) {
-                    await updateDoc(doc(db, collectionName, editId), data);
-                    showToast(`${type} updated successfully`);
-                } else {
-                    data.createdAt = serverTimestamp();
-                    data.createdBy = currentAdmin.uid;
-                    await addDoc(collection(db, collectionName), data);
-                    showToast(`${type} created successfully in Firestore`);
-                }
-                
-                modalInstance.hide();
-                loadAllMasterData();
-                
-            } catch (err) {
-                console.error(err);
-                showToast("Error saving: " + err.message, 'danger');
-            }
+            return data;
         }
 
-        window.editItem = (type, id) => openModalForm(type, id);
+        async function createFirestoreOnlyUserRecord(collectionName, role, data) {
+            const payload = {
+                ...data,
+                role,
+                createdAt: serverTimestamp(),
+                createdBy: currentUser.uid,
+                updatedAt: serverTimestamp(),
+                updatedBy: currentUser.uid,
+                authProvisioned: false
+            };
+            await addDoc(collection(db, collectionName), payload);
+        }
 
-        // --- IMPORT / EXPORT ---
-        window.exportData = async (type) => {
-            const collectionName = type + 's';
-            const snap = await getDocs(collection(db, collectionName));
-            const data = snap.docs.map(d => d.data());
-            
-            if(data.length === 0) {
-                showToast("No data to export", 'danger');
+        window.handleFormSubmit = async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                toast('Please login first.', 'error');
                 return;
             }
 
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, type);
-            XLSX.writeFile(wb, `EduBoard_${type}_${Date.now()}.xlsx`);
-            showToast("Export started");
-        };
+            const type = document.getElementById('modal-type').value;
+            const id = document.getElementById('modal-id').value;
+            const data = collectFormData(e.target);
 
-        window.importData = (type) => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.xlsx, .xls';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if(!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = async (evt) => {
-                    const bstr = evt.target.result;
-                    const wb = XLSX.read(bstr, {type:'binary'});
-                    const ws = wb.Sheets[wb.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(ws);
-                    
-                    if(jsonData.length === 0) {
-                        showToast("File is empty", 'danger');
-                        return;
+            data.updatedAt = serverTimestamp();
+            data.updatedBy = currentUser.uid;
+
+            showLoading(true);
+            try {
+                if (type === 'grade' || type === 'subject') {
+                    const col = type + 's';
+                    if (id) {
+                        await updateDoc(doc(db, col, id), data);
+                    } else {
+                        data.createdAt = serverTimestamp();
+                        data.createdBy = currentUser.uid;
+                        await addDoc(collection(db, col), data);
                     }
-
-                    if(!confirm(`Import ${jsonData.length} records into ${type}? This will add new entries.`)) return;
-
-                    const batch = writeBatch(db);
-                    const colRef = collection(db, type + 's');
-                    
-                    jsonData.forEach(row => {
-                        const cleanRow = { ...row, createdAt: serverTimestamp(), importedBy: currentAdmin?.uid };
-                        const newDocRef = doc(colRef);
-                        batch.set(newDocRef, cleanRow);
-                    });
-
-                    try {
-                        await batch.commit();
-                        showToast(`Successfully imported ${jsonData.length} records`);
-                        loadAllMasterData();
-                    } catch(err) {
-                        showToast("Import failed: " + err.message, 'danger');
+                } else if (type === 'teacher') {
+                    if (!data.pendingPassword) throw new Error('Pending Password is required.');
+                    if (id) {
+                        const updatePayload = {
+                            ...data
+                        };
+                        delete updatePayload.email;
+                        await updateDoc(doc(db, 'teachers', id), updatePayload);
+                    } else {
+                        await createFirestoreOnlyUserRecord('teachers', 'teacher', data);
                     }
-                };
-                reader.readAsBinaryString(file);
-            };
-            input.click();
-        };
-
-        // --- LIVE MONITOR ---
-        function initLiveMonitor() {
-            onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
-                const data = snapshot.val() || {};
-                const sessionIds = Object.keys(data);
-                const sessionCount = sessionIds.length;
-                
-                let totalStudents = 0;
-                sessionIds.forEach(sid => {
-                    const s = data[sid];
-                    if(s.students) totalStudents += Object.keys(s.students).length;
-                });
-
-                document.getElementById('liveSessionCount').innerText = sessionCount;
-                document.getElementById('liveStudentCount').innerText = totalStudents;
-                
-                const listDiv = document.getElementById('liveSessionListText');
-                if(sessionCount > 0) {
-                    listDiv.innerHTML = sessionIds.map(id => `<span class="badge bg-primary me-1">${data[id].title || 'Session'}</span>`).join('');
-                } else {
-                    listDiv.innerText = "No active sessions";
+                } else if (type === 'student') {
+                    if (!data.pendingPassword) throw new Error('Pending Password is required.');
+                    if (id) {
+                        const updatePayload = {
+                            ...data
+                        };
+                        delete updatePayload.email;
+                        await updateDoc(doc(db, 'students', id), updatePayload);
+                    } else {
+                        await createFirestoreOnlyUserRecord('students', 'student', data);
+                    }
+                } else if (type === 'session') {
+                    if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
+                    if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
+                    data.isActive = data.isActive === 'true';
+                    if (id) {
+                        await updateDoc(doc(db, 'sessions', id), data);
+                    } else {
+                        data.createdAt = serverTimestamp();
+                        data.createdBy = currentUser.uid;
+                        await addDoc(collection(db, 'sessions'), data);
+                    }
                 }
-            });
-        }
 
-        // --- UI HELPERS ---
-        window.switchSection = (sectionId) => {
-            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
-            document.getElementById(sectionId + 'Section').style.display = 'block';
-            
-            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
-            const items = document.querySelectorAll('#sidebar ul li');
-            items.forEach(item => {
-                if(item.getAttribute('onclick').includes(sectionId)) item.classList.add('active');
-            });
-
-            if(window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.remove('active');
+                closeModal();
+                toast('Saved successfully.', 'success');
+                refreshCurrentSection();
+                if (type === 'teacher' || type === 'student') initDashboard();
+            } catch (err) {
+                console.error(err);
+                toast('Error saving: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
             }
         };
 
-        window.toggleLivePanel = () => {
-            const panel = document.getElementById('liveDetailsPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        window.deleteTeacherRecord = async (docId) => {
+            if (!confirm('Delete teacher record?')) return;
+            showLoading(true);
+            try {
+                await deleteDoc(doc(db, 'teachers', docId));
+                toast('Teacher deleted.', 'success');
+                loadTeachers();
+                initDashboard();
+            } catch (e) {
+                toast('Delete failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
         };
 
-        document.getElementById('sidebarCollapse').addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('active');
-        });
+        window.deleteStudentRecord = async (docId) => {
+            if (!confirm('Delete student record?')) return;
+            showLoading(true);
+            try {
+                await deleteDoc(doc(db, 'students', docId));
+                toast('Student deleted.', 'success');
+                loadStudents();
+                initDashboard();
+            } catch (e) {
+                toast('Delete failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
 
-    </script>    
+        window.deleteItem = async (col, id) => {
+            if (!confirm('Delete this item?')) return;
+            showLoading(true);
+            try {
+                await deleteDoc(doc(db, col, id));
+                toast('Item deleted.', 'success');
+                refreshCurrentSection();
+                if (col === 'grades' || col === 'subjects') await initDashboard();
+            } catch (e) {
+                toast('Delete failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        window.downloadTemplate = (type) => {
+            const wb = XLSX.utils.book_new();
+            let headers = [],
+                sampleRow = [];
+            if (type === 'grades') {
+                headers = ['nameEn', 'nameAr', 'code', 'status'];
+                sampleRow = ['Grade 10', 'الصف العاشر', 'G10', 'Active'];
+            } else if (type === 'subjects') {
+                headers = ['nameEn', 'nameAr', 'code', 'status'];
+                sampleRow = ['Mathematics', 'الرياضيات', 'MATH', 'Active'];
+            } else if (type === 'teachers') {
+                headers = ['name', 'email', 'pendingPassword', 'status', 'assignedGrades', 'assignedSubjects'];
+                sampleRow = ['John Doe', 'john@school.com', 'TempPass123!', 'Active', 'Grade 9,Grade 10', 'Math,Physics'];
+            } else if (type === 'students') {
+                headers = ['name', 'email', 'pendingPassword', 'gradeLevel', 'status'];
+                sampleRow = ['Jane Smith', 'jane@school.com', 'TempPass123!', 'Grade 9', 'Active'];
+            } else if (type === 'sessions') {
+                headers = ['title', 'ownerTeacherId', 'gradeLevel', 'subject', 'startTime', 'endTime', 'isActive'];
+                sampleRow = ['Mock Exam', 'teacher@school.com', 'Grade 9', 'Math', '2026-04-10 09:00', '2026-04-10 10:30', 'TRUE'];
+            }
+            const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
+            const wsSample = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+            XLSX.utils.book_append_sheet(wb, wsEmpty, 'Empty_Template');
+            XLSX.utils.book_append_sheet(wb, wsSample, 'Sample_Data');
+            XLSX.writeFile(wb, `${type}_template.xlsx`);
+        };
+
+        window.exportCurrentData = async (type) => {
+            if (!currentUser) {
+                toast('Please login first.', 'error');
+                return;
+            }
+            showLoading(true);
+            try {
+                if (allGrades.length === 0) allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+
+                const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
+                const snap = await getDocs(collection(db, colName));
+                const rows = snap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                })).map(row => {
+                    const {
+                        createdAt,
+                        updatedAt,
+                        createdBy,
+                        updatedBy,
+                        ...cleanRow
+                    } = row;
+                    if (type === 'teachers') {
+                        cleanRow.assignedGrades = toArray(row.assignedGrades).map(id => getNameById(id, allGrades)).join(', ');
+                        cleanRow.assignedSubjects = toArray(row.assignedSubjects).map(id => getNameById(id, allSubjects)).join(', ');
+                    }
+                    if (type === 'students' && row.gradeLevel) cleanRow.gradeLevel = getNameById(row.gradeLevel, allGrades);
+                    if (type === 'sessions' && row.startTime?.seconds) cleanRow.startTime = new Date(row.startTime.seconds * 1000).toISOString().slice(0, 16).replace('T', ' ');
+                    if (type === 'sessions' && row.endTime?.seconds) cleanRow.endTime = new Date(row.endTime.seconds * 1000).toISOString().slice(0, 16).replace('T', ' ');
+                    if (type === 'sessions' && row.ownerTeacherId) {
+                        const t = allTeachers.find(x => x.id === row.ownerTeacherId);
+                        cleanRow.ownerTeacherId = t ? (t.email || t.name || row.ownerTeacherId) : row.ownerTeacherId;
+                    }
+                    return cleanRow;
+                });
+                const ws = XLSX.utils.json_to_sheet(rows);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Current_Data');
+                XLSX.writeFile(wb, `${type}_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+            } catch (e) {
+                toast('Export failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        function resolveNamesToIds(inputString, list) {
+            if (!inputString || !list) return [];
+            return String(inputString).split(',').map(s => s.trim()).filter(Boolean).map(item => {
+                const found = list.find(l => l.nameEn?.toLowerCase() === item.toLowerCase() || l.nameAr === item || l.code?.toLowerCase() === item.toLowerCase());
+                return found ? found.id : null;
+            }).filter(Boolean);
+        }
+
+        function resolveNameToId(inputString, list) {
+            if (!inputString || !list) return '';
+            const str = String(inputString).trim();
+            const found = list.find(l => l.nameEn?.toLowerCase() === str.toLowerCase() || l.nameAr === str || l.code?.toLowerCase() === str.toLowerCase());
+            return found ? found.id : str;
+        }
+
+        window.processImport = async (type, input) => {
+            if (!currentUser) {
+                toast('Please login first.', 'error');
+                return;
+            }
+            const file = input.files[0];
+            if (!file) return;
+            input.value = '';
+            showLoading(true);
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    if ((type === 'teachers' || type === 'students') && allGrades.length === 0) {
+                        allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
+                            id: d.id,
+                            ...d.data()
+                        }));
+                    }
+                    if (type === 'teachers' && allSubjects.length === 0) {
+                        allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
+                            id: d.id,
+                            ...d.data()
+                        }));
+                    }
+                    if ((type === 'sessions' || type === 'teachers') && allTeachers.length === 0) {
+                        allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
+                            id: d.id,
+                            ...d.data()
+                        }));
+                    }
+
+                    const workbook = XLSX.read(e.target.result, {
+                        type: 'array'
+                    });
+                    let jsonData = [];
+                    for (const sheetName of workbook.SheetNames) {
+                        const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+                            defval: ''
+                        });
+                        if (raw.length > 0) {
+                            jsonData = raw;
+                            break;
+                        }
+                    }
+                    if (!jsonData.length) throw new Error('No data found in file.');
+
+                    const normalized = jsonData.map(row => {
+                        const n = {};
+                        Object.keys(row).forEach(k => {
+                            n[k.trim().toLowerCase().replace(/\s+/g, '')] = row[k];
+                        });
+                        return n;
+                    });
+
+                    const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
+                    const existingMap = new Map();
+                    const currentDocs = await getDocs(collection(db, colName));
+                    currentDocs.forEach(d => {
+                        const data = d.data();
+                        if (type === 'grades' || type === 'subjects') existingMap.set((data.code || '').toLowerCase(), d.id);
+                        else if (type === 'teachers' || type === 'students') existingMap.set((data.email || '').toLowerCase(), d.id);
+                    });
+
+                    let batch = writeBatch(db);
+                    let batchCount = 0;
+                    let inserted = 0,
+                        updated = 0,
+                        skipped = 0;
+
+                    for (const row of normalized) {
+                        if (!row || (!row.nameen && !row.code && !row.email && !row.title && !row.name)) {
+                            skipped++;
+                            continue;
+                        }
+                        let docData = {};
+                        let targetId = null;
+
+                        if (type === 'grades' || type === 'subjects') {
+                            docData = {
+                                nameEn: row.nameen || row.name || '',
+                                nameAr: row.namear || '',
+                                code: String(row.code || '').toUpperCase(),
+                                status: row.status || 'Active'
+                            };
+                            if (!docData.nameEn || !docData.code) {
+                                skipped++;
+                                continue;
+                            }
+                            targetId = existingMap.get(docData.code.toLowerCase()) || null;
+                        } else if (type === 'teachers') {
+                            const email = String(row.email || '').trim().toLowerCase();
+                            if (!email || !email.includes('@')) {
+                                skipped++;
+                                continue;
+                            }
+                            docData = {
+                                name: row.name || '',
+                                email,
+                                role: 'teacher',
+                                status: row.status || 'Active',
+                                pendingPassword: row.pendingpassword || row.password || '',
+                                assignedGrades: resolveNamesToIds(row.assignedgrades || '', allGrades),
+                                assignedSubjects: resolveNamesToIds(row.assignedsubjects || '', allSubjects),
+                                authProvisioned: false
+                            };
+                            if (!docData.pendingPassword) {
+                                skipped++;
+                                continue;
+                            }
+                            targetId = existingMap.get(email) || null;
+                        } else if (type === 'students') {
+                            const email = String(row.email || '').trim().toLowerCase();
+                            if (!email || !email.includes('@')) {
+                                skipped++;
+                                continue;
+                            }
+                            docData = {
+                                name: row.name || '',
+                                email,
+                                role: 'student',
+                                gradeLevel: resolveNameToId(row.gradelevel || '', allGrades),
+                                pendingPassword: row.pendingpassword || row.password || '',
+                                status: row.status || 'Active',
+                                authProvisioned: false
+                            };
+                            if (!docData.pendingPassword) {
+                                skipped++;
+                                continue;
+                            }
+                            targetId = existingMap.get(email) || null;
+                        } else if (type === 'sessions') {
+                            let teacherId = String(row.ownerteacherid || '').trim();
+                            if (teacherId.includes('@')) {
+                                const foundTeacher = allTeachers.find(t => (t.email || '').toLowerCase() === teacherId.toLowerCase());
+                                if (foundTeacher) teacherId = foundTeacher.id;
+                            }
+                            let startTime = null,
+                                endTime = null;
+                            if (row.starttime) {
+                                const d = new Date(row.starttime);
+                                if (!isNaN(d)) startTime = Timestamp.fromDate(d);
+                            }
+                            if (row.endtime) {
+                                const d = new Date(row.endtime);
+                                if (!isNaN(d)) endTime = Timestamp.fromDate(d);
+                            }
+                            docData = {
+                                title: row.title || '',
+                                ownerTeacherId: teacherId,
+                                gradeLevel: row.gradelevel || '',
+                                subject: row.subject || '',
+                                startTime,
+                                endTime,
+                                isActive: String(row.isactive || '').toLowerCase() === 'true'
+                            };
+                        }
+
+                        docData.updatedAt = serverTimestamp();
+                        docData.updatedBy = currentUser.uid;
+
+                        if (targetId) {
+                            batch.update(doc(db, colName, targetId), docData);
+                            updated++;
+                        } else {
+                            docData.createdAt = serverTimestamp();
+                            docData.createdBy = currentUser.uid;
+                            batch.set(doc(collection(db, colName)), docData);
+                            inserted++;
+                        }
+                        batchCount++;
+                        if (batchCount >= 400) {
+                            await batch.commit();
+                            batch = writeBatch(db);
+                            batchCount = 0;
+                        }
+                    }
+
+                    if (batchCount > 0) await batch.commit();
+
+                    toast(`Import complete. Inserted: ${inserted}, Updated: ${updated}, Skipped: ${skipped}`, 'success');
+                    refreshCurrentSection();
+                    initDashboard();
+                } catch (err) {
+                    console.error(err);
+                    toast('Import failed: ' + err.message, 'error');
+                } finally {
+                    showLoading(false);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
+        window.filterTable = (tableId, queryText) => {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const q = String(queryText || '').toUpperCase();
+            Array.from(table.getElementsByTagName('tr')).slice(1).forEach(row => {
+                row.style.display = (row.textContent || row.innerText).toUpperCase().includes(q) ? '' : 'none';
+            });
+        };
+
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('generic-modal');
+            if (e.target === modal) closeModal();
+        });
+    </script>
 </body>
 
 </html>
