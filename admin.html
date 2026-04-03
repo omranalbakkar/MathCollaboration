@@ -606,12 +606,12 @@
                 headers = ["nameEn", "nameAr", "code", "status"];
                 sampleRow = ["Mathematics", "الرياضيات", "MATH", "Active"];
             } else if (type === 'teachers') {
-                headers = ["name", "email", "active", "assignedGrades (Names or IDs)", "assignedSubjects (Names or IDs)"];
-                sampleRow = ["John Doe", "john@school.com", "TRUE", "Grade 9, Grade 10", "Math, Physics"];
-            } else if (type === 'students') {
-                headers = ["name", "email", "gradeLevel (Name or ID)", "active"];
-                sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "TRUE"];
-            } else if (type === 'sessions') {
+    headers = ["name", "email", "status", "assignedGrades (Names or IDs)", "assignedSubjects (Names or IDs)"];
+    sampleRow = ["John Doe", "john@school.com", "Active", "Grade 9, Grade 10", "Math, Physics"];
+} else if (type === 'students') {
+    headers = ["name", "email", "gradeLevel (Name or ID)", "status"];
+    sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "Active"];
+} else if (type === 'sessions') {
                 headers = ["title", "ownerTeacherId (Email or ID)", "gradeLevel", "subject", "startTime (YYYY-MM-DD HH:MM)", "endTime (YYYY-MM-DD HH:MM)", "isActive"];
                 sampleRow = ["Mock Exam", "teacher@school.com", "Grade 9", "Math", "2023-10-25 09:00", "2023-10-25 10:30", "TRUE"];
             }
