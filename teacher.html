@@ -2229,40 +2229,54 @@
             showToast('Session deleted');
         };
 
-        async function loadActiveSession() {
-            if (!activeSessionId) return;
+async function loadActiveSession() {
+    if (!activeSessionId) return;
 
-            const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-            if (!sessionDoc.exists()) {
-                activeSessionId = null;
-                localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
-                return;
-            }
+    const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+    if (!sessionDoc.exists()) {
+        activeSessionId = null;
+        localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
+        return;
+    }
 
-            currentSessionData = {
-                id: sessionDoc.id,
-                ...sessionDoc.data()
-            };
+    currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
+    const config = currentSessionData;
 
-            const config = currentSessionData;
-            document.getElementById('cfTitle').value = config.title || '';
-            document.getElementById('cfGrade').value = config.grade || '';
-            document.getElementById('cfClass').value = config.className || '';
-            document.getElementById('cfSubject').value = config.subject || '';
-            document.getElementById('cfTeacher').value = currentTeacher.name || '';
-            document.getElementById('cfDate').value = config.date || '';
-            document.getElementById('cfStart').value = config.startTime || '';
-            document.getElementById('cfEnd').value = config.endTime || '';
-            document.getElementById('cfInstructions').value = config.instructions || '';
-            setToggle(!!config.active);
-            updateSessionChip(config);
+    document.getElementById('cfTitle').value = config.title || '';
 
-            await loadQuestions();
-            await loadStudents();
-            await loadClassStatus(); // Load the new tab data
-            updateStats();
-        }
+    // gradeLevel in Firestore, grade in teacher-created sessions
+    document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
 
+    // className may not exist in admin-created sessions
+    document.getElementById('cfClass').value = config.className || config.class || '';
+
+    document.getElementById('cfSubject').value = config.subject || '';
+    document.getElementById('cfTeacher').value = currentTeacher.name || '';
+
+    // date may not exist in admin-created sessions
+    document.getElementById('cfDate').value = config.date || '';
+
+    // startTime/endTime stored as Timestamps by admin, strings by teacher
+    const toTimeStr = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string') return val;
+        if (val.seconds) return new Date(val.seconds * 1000).toTimeString().slice(0, 5);
+        return '';
+    };
+    document.getElementById('cfStart').value = toTimeStr(config.startTime);
+    document.getElementById('cfEnd').value = toTimeStr(config.endTime);
+
+    document.getElementById('cfInstructions').value = config.instructions || '';
+
+    // isActive in Firestore (admin), active in teacher-created
+    setToggle(!!(config.isActive || config.active));
+    updateSessionChip(config);
+
+    await loadQuestions();
+    await loadStudents();
+    await loadClassStatus();
+    updateStats();
+}
         async function loadQuestions() {
             if (!activeSessionId) return;
 
@@ -2653,30 +2667,35 @@
             showToast('Deleted');
         };
 
-        window.saveSessionConfig = async function() {
-            if (!activeSessionId) {
-                showToast('No active session', true);
-                return;
-            }
+window.saveSessionConfig = async function() {
+    if (!activeSessionId) {
+        showToast('No active session', true);
+        return;
+    }
 
-            const config = {
-                title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
-                grade: document.getElementById('cfGrade').value,
-                className: document.getElementById('cfClass').value.trim(),
-                subject: document.getElementById('cfSubject').value,
-                teacher: currentTeacher.name || '',
-                date: document.getElementById('cfDate').value,
-                startTime: document.getElementById('cfStart').value,
-                endTime: document.getElementById('cfEnd').value,
-                instructions: document.getElementById('cfInstructions').value.trim(),
-                updatedAt: serverTimestamp()
-            };
+    const gradeValue = document.getElementById('cfGrade').value;
+    const subjectValue = document.getElementById('cfSubject').value;
 
-            await updateDoc(doc(db, 'sessions', activeSessionId), config);
-            updateSessionChip(config);
-            showToast('Configuration saved!');
-        };
+    const config = {
+        title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
+        grade: gradeValue,
+        gradeLevel: gradeValue,          // sync both field names
+        className: document.getElementById('cfClass').value.trim(),
+        subject: subjectValue,
+        teacher: currentTeacher.name || '',
+        date: document.getElementById('cfDate').value,
+        startTime: document.getElementById('cfStart').value,
+        endTime: document.getElementById('cfEnd').value,
+        instructions: document.getElementById('cfInstructions').value.trim(),
+        active: !!(document.getElementById('sessionToggle').classList.contains('on')),
+        isActive: !!(document.getElementById('sessionToggle').classList.contains('on')), // sync both
+        updatedAt: serverTimestamp()
+    };
 
+    await updateDoc(doc(db, 'sessions', activeSessionId), config);
+    updateSessionChip(config);
+    showToast('Configuration saved!');
+};
         // window.toggleSession = async function() {
         //   if (!activeSessionId) return;
         //   
