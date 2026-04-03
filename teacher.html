@@ -2242,20 +2242,30 @@ async function loadActiveSession() {
     currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
     const config = currentSessionData;
 
-    // Extract date from Timestamp or string
-    const toDate = (val) => {
-        if (!val) return '';
-        if (typeof val === 'string') return val.slice(0, 10);
-        if (val.seconds) return new Date(val.seconds * 1000).toISOString().slice(0, 10);
-        return '';
-    };
+ const toTimeStr = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && val.includes(':')) return val.slice(0, 5);
+    if (val.seconds) {
+        const d = new Date(val.seconds * 1000);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+    return '';
+};
 
-    // Extract HH:MM from Timestamp or string
-    const toTimeStr = (val) => {
-        if (!val) return '';
-        if (typeof val === 'string' && val.includes(':')) return val.slice(0, 5);
-        if (val.seconds) return new Date(val.seconds * 1000).toTimeString().slice(0, 5);
-        return '';
+const toDate = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string') return val.slice(0, 10);
+    if (val.seconds) {
+        const d = new Date(val.seconds * 1000);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+    return '';
+};
     };
 
     document.getElementById('cfTitle').value = config.title || '';
