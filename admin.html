@@ -560,72 +560,108 @@
         }
 
         // --- DATA LOADERS ---
+        function getNameById(id, list, fieldName = 'nameEn') {
+            if (!id) return 'N/A';
+            const item = list.find(i => i.id === id);
+            return item ? item[fieldName] : id; // Return name if found, else return ID
+        }
+
         async function loadGrades() {
             const tbody = document.querySelector('#grades-table tbody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "grades"));
-            tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${d.nameEn}</td>
-                        <td>${d.nameAr}</td>
-                        <td>${d.code}</td>
-                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn" onclick="editItem('grade', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                            <button class="icon-btn delete" onclick="deleteItem('grades', '${doc.id}')">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            try {
+                const snap = await getDocs(collection(db, "grades"));
+                tbody.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    // Default status to Active if undefined
+                    const status = d.status || 'Active'; 
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.nameEn || 'N/A'}</td>
+                            <td>${d.nameAr || 'N/A'}</td>
+                            <td>${d.code || 'N/A'}</td>
+                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick="editItem('grade', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('grades', '${doc.id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading grades: ${e.message}</td></tr>`;
+            }
         }
 
         async function loadSubjects() {
             const tbody = document.querySelector('#subjects-table tbody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "subjects"));
-            tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${d.nameEn}</td>
-                        <td>${d.nameAr}</td>
-                        <td>${d.code}</td>
-                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn" onclick="editItem('subject', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                            <button class="icon-btn delete" onclick="deleteItem('subjects', '${doc.id}')">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            try {
+                const snap = await getDocs(collection(db, "subjects"));
+                tbody.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const status = d.status || 'Active';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.nameEn || 'N/A'}</td>
+                            <td>${d.nameAr || 'N/A'}</td>
+                            <td>${d.code || 'N/A'}</td>
+                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick="editItem('subject', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('subjects', '${doc.id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading subjects: ${e.message}</td></tr>`;
+            }
         }
 
         async function loadTeachers() {
             const tbody = document.querySelector('#teachers-table tbody');
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
-            const q = query(collection(db, "users"), where("role", "==", "teacher"));
-            const snap = await getDocs(q);
-            tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${d.displayName || 'N/A'}</td>
-                        <td>${d.email}</td>
-                        <td>${(d.assignedGrades || []).join(', ')}</td>
-                        <td>${(d.assignedSubjects || []).join(', ')}</td>
-                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                            <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+            try {
+                const q = query(collection(db, "users"), where("role", "==", "teacher"));
+                const snap = await getDocs(q);
+                tbody.innerHTML = '';
+                
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const status = d.status || 'Active';
+                    
+                    // Resolve Grade IDs to Names
+                    let gradeNames = 'None';
+                    if (d.assignedGrades && Array.isArray(d.assignedGrades)) {
+                        gradeNames = d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ');
+                    }
+
+                    // Resolve Subject IDs to Names
+                    let subjectNames = 'None';
+                    if (d.assignedSubjects && Array.isArray(d.assignedSubjects)) {
+                        subjectNames = d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ');
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.displayName || 'N/A'}</td>
+                            <td>${d.email}</td>
+                            <td style="font-size:0.85rem; color:#666;">${gradeNames}</td>
+                            <td style="font-size:0.85rem; color:#666;">${subjectNames}</td>
+                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error loading teachers: ${e.message}</td></tr>`;
+            }
         }
 
         async function loadStudents() {
@@ -633,60 +669,71 @@
             const tbody = document.querySelector('#students-table tbody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
             
-            let q = query(collection(db, "users"), where("role", "==", "student"));
-            // Note: Firestore doesn't support simple OR/AND filtering easily without composite indexes for multiple fields. 
-            // For simplicity, we fetch all students and filter client-side if grade is selected, or use simple query if possible.
-            // Here we fetch all for simplicity given the scale.
-            
-            const snap = await getDocs(q);
-            tbody.innerHTML = '';
-            snap.forEach(doc => {
-                const d = doc.data();
-                if (gradeFilter && d.gradeLevel !== gradeFilter) return;
+            try {
+                const q = query(collection(db, "users"), where("role", "==", "student"));
+                const snap = await getDocs(q);
+                tbody.innerHTML = '';
+                
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (gradeFilter && d.gradeLevel !== gradeFilter) return;
+                    
+                    const status = d.status || 'Active';
+                    // Resolve Grade Level ID to Name if it's an ID, otherwise show as is
+                    const gradeDisplay = getNameById(d.gradeLevel, allGrades) !== d.gradeLevel 
+                        ? getNameById(d.gradeLevel, allGrades) 
+                        : (d.gradeLevel || 'N/A');
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${d.displayName || 'N/A'}</td>
-                        <td>${d.email}</td>
-                        <td>${d.gradeLevel || 'N/A'}</td>
-                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                            <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.displayName || 'N/A'}</td>
+                            <td>${d.email}</td>
+                            <td>${gradeDisplay}</td>
+                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error loading students: ${e.message}</td></tr>`;
+            }
         }
 
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "sessions"));
-            tbody.innerHTML = '';
-            
-            // Cache teacher names for display
-            const teacherCache = {};
-            
-            snap.forEach(doc => {
-                const d = doc.data();
-                const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : 'N/A';
-                const status = d.isActive ? 'Active' : 'Closed';
+            try {
+                const snap = await getDocs(collection(db, "sessions"));
+                tbody.innerHTML = '';
                 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${d.title}</td>
-                        <td>${d.ownerTeacherId.substring(0,8)}...</td>
-                        <td>${d.gradeLevel}</td>
-                        <td>${d.subject}</td>
-                        <td>${date}</td>
-                        <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : 'N/A';
+                    const status = d.isActive ? 'Active' : 'Closed';
+                    
+                    // Resolve Teacher ID to Name (Optional: requires fetching users first, simplified here)
+                    const teacherIdShort = d.ownerTeacherId ? d.ownerTeacherId.substring(0,8) + '...' : 'Unknown';
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${d.title}</td>
+                            <td>${teacherIdShort}</td>
+                            <td>${d.gradeLevel}</td>
+                            <td>${d.subject}</td>
+                            <td>${date}</td>
+                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')">🗑️</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error loading sessions: ${e.message}</td></tr>`;
+            }
         }
 
         // --- UTILS ---
