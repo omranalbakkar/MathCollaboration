@@ -523,7 +523,7 @@
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-        <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, addDoc, serverTimestamp, Timestamp, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -577,11 +577,10 @@
 
         // --- AUTHENTICATION ---
         
-        // 1. Handle Form Submit Explicitly
         const loginForm = document.getElementById('loginForm');
         if(loginForm) {
             loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault(); // Stop page reload
+                e.preventDefault();
                 console.log("Login Form Submitted");
                 
                 const emailInput = document.getElementById('adminEmail');
@@ -596,7 +595,6 @@
 
                 console.log("Attempting login for:", email);
                 
-                // Disable button to prevent double clicks
                 const btn = loginForm.querySelector('button[type="submit"]');
                 const originalBtnText = btn.innerHTML;
                 btn.disabled = true;
@@ -604,8 +602,7 @@
 
                 try {
                     await signInWithEmailAndPassword(auth, email, password);
-                    console.log("Firebase Auth Success");
-                    // onAuthStateChanged will handle the rest
+                    console.log("Firebase Auth Success - Waiting for State Change...");
                 } catch (error) {
                     console.error("Login Error:", error);
                     showToast("Login Failed: " + error.message, 'danger');
@@ -620,54 +617,57 @@
             window.location.reload();
         };
 
-        // 2. Handle Auth State Change
+        // --- CORE FIX: ROBUST AUTH STATE HANDLER ---
         onAuthStateChanged(auth, async (user) => {
             const loginOverlay = document.getElementById('loginOverlay');
             const appContainer = document.getElementById('appContainer');
             const submitBtn = document.querySelector('#loginForm button[type="submit"]');
 
             if (user) {
-                console.log("User detected:", user.uid);
+                console.log("User detected in Auth:", user.uid);
                 
-                // Verify Super Admin Role in Firestore
                 try {
+                    // 1. Check Firestore for Role
+                    console.log("Checking Firestore for user role...");
                     const userDocRef = doc(db, "users", user.uid);
                     const userDoc = await getDoc(userDocRef);
                     
                     if (!userDoc.exists()) {
-                        throw new Error("User record not found in Firestore.");
+                        throw new Error("User record not found in Firestore. Please contact support.");
                     }
                     
                     const userData = userDoc.data();
+                    console.log("User Data Found:", userData);
+
                     if (userData.role !== 'superadmin') {
-                        throw new Error("Access Denied: Not a Super Admin.");
+                        throw new Error("Access Denied: Your role is '" + (userData.role || 'unknown') + "'. Super Admin required.");
                     }
 
-                    // Set Global State
+                    // 2. Success! Set State and UI
+                    console.log("Verification Successful. Loading Dashboard...");
                     currentAdmin = user; 
                     
-                    // UI Updates
                     if(loginOverlay) loginOverlay.style.display = 'none';
                     if(appContainer) appContainer.style.display = 'flex';
                     document.getElementById('adminEmailDisplay').textContent = user.email;
 
-                    // Reset Login Button
                     if(submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = 'Sign In';
                     }
 
-                    // Load Data
+                    // 3. Load Data
                     await loadAllMasterData();
                     initLiveMonitor();
                     switchSection('dashboard');
 
                 } catch (err) {
-                    console.error("Verification Error:", err);
+                    console.error("CRITICAL ERROR in Auth Flow:", err);
                     showToast(err.message, 'danger');
-                    await signOut(auth); // Sign out if verification fails
                     
-                    // Reset UI to Login
+                    // Force Sign Out on Error to prevent stuck state
+                    await signOut(auth); 
+                    
                     if(loginOverlay) loginOverlay.style.display = 'flex';
                     if(appContainer) appContainer.style.display = 'none';
                     if(submitBtn) {
@@ -676,7 +676,7 @@
                     }
                 }
             } else {
-                console.log("No user logged in");
+                console.log("No user logged in (or signed out). Showing Login.");
                 currentAdmin = null;
                 if(loginOverlay) loginOverlay.style.display = 'flex';
                 if(appContainer) appContainer.style.display = 'none';
@@ -692,7 +692,7 @@
             if(!currentAdmin) return; 
 
             try {
-                // Fetch parallel
+                console.log("Fetching Master Data...");
                 const [gSnap, sSnap, tSnap, stSnap] = await Promise.all([
                     getDocs(collection(db, "grades")),
                     getDocs(collection(db, "subjects")),
@@ -700,31 +700,27 @@
                     getDocs(collection(db, "students"))
                 ]);
 
-                // Cache Data
                 cachedData.grades = gSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 cachedData.subjects = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 cachedData.teachers = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 const studentsCount = stSnap.size;
 
-                // Update Dashboard Counters
                 document.getElementById('dashGrades').innerText = cachedData.grades.length;
                 document.getElementById('dashSubjects').innerText = cachedData.subjects.length;
                 document.getElementById('dashTeachers').innerText = cachedData.teachers.length;
                 document.getElementById('dashStudents').innerText = studentsCount;
 
-                // Populate Filters
                 populateGradeFilter();
-
-                // Render Tables
                 renderGradesTable();
                 renderSubjectsTable();
                 renderTeachersTable();
                 renderStudentsTable();
                 renderSessionsTable();
+                console.log("Master Data Loaded.");
 
             } catch (err) {
                 console.error("Load Error:", err);
-                showToast("Failed to load data", 'danger');
+                showToast("Failed to load data: " + err.message, 'danger');
             }
         }
 
@@ -823,68 +819,77 @@
             
             tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary"></div></td></tr>';
             
-            const snap = await getDocs(collection(db, "students"));
-            tbody.innerHTML = '';
-            
-            let count = 0;
-            snap.forEach(d => {
-                const data = d.data();
-                if (filterGrade && data.gradeLevel !== filterGrade) return;
+            try {
+                const snap = await getDocs(collection(db, "students"));
+                tbody.innerHTML = '';
                 
-                const gradeName = (cachedData.grades.find(g => g.id === data.gradeLevel) || {}).nameEn || data.gradeLevel;
-                const statusClass = data.status === 'Active' ? 'bg-active' : 'bg-inactive';
+                let count = 0;
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (filterGrade && data.gradeLevel !== filterGrade) return;
+                    
+                    const gradeName = (cachedData.grades.find(g => g.id === data.gradeLevel) || {}).nameEn || data.gradeLevel;
+                    const statusClass = data.status === 'Active' ? 'bg-active' : 'bg-inactive';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${data.name}</td>
-                        <td>${data.email}</td>
-                        <td>${gradeName}</td>
-                        <td><span class="status-badge ${statusClass}">${data.status || 'Active'}</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("student", "${d.id}")'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("students", "${d.id}")'><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-                count++;
-            });
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${data.name}</td>
+                            <td>${data.email}</td>
+                            <td>${gradeName}</td>
+                            <td><span class="status-badge ${statusClass}">${data.status || 'Active'}</span></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-light text-primary" onclick='editItem("student", "${d.id}")'><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("students", "${d.id}")'><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                    count++;
+                });
 
-            if(count === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No students found</td></tr>';
+                if(count === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No students found</td></tr>';
+            } catch(e) {
+                console.error("Student Load Error", e);
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading students</td></tr>';
+            }
         };
 
         async function renderSessionsTable() {
             const tbody = document.getElementById('sessionsTbody');
             if(!tbody) return;
             tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading sessions...</td></tr>';
-            const snap = await getDocs(collection(db, "sessions"));
-            tbody.innerHTML = '';
-            
-            snap.forEach(d => {
-                const data = d.data();
-                const teacher = cachedData.teachers.find(t => t.id === data.ownerTeacherId);
-                const teacherName = teacher ? teacher.name : 'Unknown';
+            try {
+                const snap = await getDocs(collection(db, "sessions"));
+                tbody.innerHTML = '';
                 
-                let dateStr = '-';
-                if(data.startTime && data.startTime.seconds) {
-                    dateStr = new Date(data.startTime.seconds * 1000).toLocaleString();
-                }
+                snap.forEach(d => {
+                    const data = d.data();
+                    const teacher = cachedData.teachers.find(t => t.id === data.ownerTeacherId);
+                    const teacherName = teacher ? teacher.name : 'Unknown';
+                    
+                    let dateStr = '-';
+                    if(data.startTime && data.startTime.seconds) {
+                        dateStr = new Date(data.startTime.seconds * 1000).toLocaleString();
+                    }
 
-                const badge = data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Closed</span>';
+                    const badge = data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Closed</span>';
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${data.title}</td>
-                        <td>${teacherName}</td>
-                        <td>${data.gradeLevel || '-'}</td>
-                        <td>${data.subject || '-'}</td>
-                        <td><small>${dateStr}</small></td>
-                        <td>${badge}</td>
-                        <td class="text-end">
-                             <button class="btn btn-sm btn-light text-primary" onclick='editItem("session", "${d.id}")'><i class="fas fa-edit"></i></button>
-                             <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("sessions", "${d.id}")'><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${data.title}</td>
+                            <td>${teacherName}</td>
+                            <td>${data.gradeLevel || '-'}</td>
+                            <td>${data.subject || '-'}</td>
+                            <td><small>${dateStr}</small></td>
+                            <td>${badge}</td>
+                            <td class="text-end">
+                                 <button class="btn btn-sm btn-light text-primary" onclick='editItem("session", "${d.id}")'><i class="fas fa-edit"></i></button>
+                                 <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("sessions", "${d.id}")'><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch(e) {
+                console.error("Session Load Error", e);
+            }
         }
 
         // --- CRUD OPERATIONS ---
@@ -1175,8 +1180,7 @@
             document.getElementById('sidebar').classList.toggle('active');
         });
 
-    </script>
-    
+    </script>    
 </body>
 
 </html>
