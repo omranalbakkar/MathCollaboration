@@ -1288,70 +1288,89 @@
         let activeSessionId = null;
         let unsubSession = null;
 
-        onAuthStateChanged(auth, async (user) => {
-            document.getElementById('loadingScreen').style.display = 'none';
 
-            if (!user) {
-                const box = document.getElementById('sessionInfoBox');
-                if (box) {
-                    box.innerHTML = '<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>';
+onAuthStateChanged(auth, async (user) => {
+    document.getElementById('loadingScreen').style.display = 'none';
+
+    if (!user) {
+        const box = document.getElementById('sessionInfoBox');
+        if (box) {
+            box.innerHTML = '<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>';
+        }
+        document.getElementById('loginScreen').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        return;
+    }
+
+    try {
+        let studentData = null;
+        let studentDocId = null;
+
+        console.log('Current user UID:', user.uid);
+        
+        // Method 1: Try to find by uid field in students collection
+        const studentsRef = collection(db, 'students');
+        const q = query(studentsRef, where('uid', '==', user.uid));
+        const querySnapshot = await getDocs(q);
+        
+        console.log('Query by uid found:', querySnapshot.size, 'documents');
+        
+        if (!querySnapshot.empty) {
+            studentDocId = querySnapshot.docs[0].id;
+            studentData = querySnapshot.docs[0].data();
+            console.log('✅ Found student by uid field:', studentData);
+        } else {
+            // Method 2: Try to find by document ID (if it matches auth UID)
+            const docSnap = await getDoc(doc(db, 'students', user.uid));
+            if (docSnap.exists()) {
+                studentData = docSnap.data();
+                studentDocId = user.uid;
+                console.log('✅ Found student by document ID:', studentData);
+            } else {
+                // Method 3: Try to find by email
+                const emailQuery = query(studentsRef, where('email', '==', user.email));
+                const emailSnapshot = await getDocs(emailQuery);
+                if (!emailSnapshot.empty) {
+                    studentDocId = emailSnapshot.docs[0].id;
+                    studentData = emailSnapshot.docs[0].data();
+                    console.log('✅ Found student by email:', studentData);
                 }
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('app').style.display = 'none';
-                return;
             }
+        }
+        
+        if (!studentData) {
+            console.error("Student profile not found for UID:", user.uid);
+            console.error("Student email:", user.email);
+            showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
+            await signOut(auth);
+            return;
+        }
 
-            try {
-                let studentData = null;
-                let studentDocId = null;
+        // Check if account is active
+        if (studentData.status === 'inactive' || studentData.active === false) {
+            await signOut(auth);
+            showErr('Your account has been deactivated. Contact your teacher.');
+            return;
+        }
 
-                const studentsRef = collection(db, 'students');
-                const q = query(studentsRef, where('uid', '==', user.uid));
-                const querySnapshot = await getDocs(q);
+        // Set Global Variables
+        currentStudent = user;
+        studentProfile = studentData;
+        currentStudent.docId = studentDocId;
 
-                if (!querySnapshot.empty) {
-                    studentDocId = querySnapshot.docs[0].id;
-                    studentData = querySnapshot.docs[0].data();
-                    console.log('Found student by uid field:', studentData);
-                } else {
-                    const docSnap = await getDoc(doc(db, 'students', user.uid));
-                    if (docSnap.exists()) {
-                        studentData = docSnap.data();
-                        studentDocId = user.uid;
-                        console.log('Found student by document ID:', studentData);
-                    }
-                }
+        document.getElementById('headerName').textContent = studentProfile.name || user.email;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
 
-                if (!studentData) {
-                    console.error("Student profile not found for UID:", user.uid);
-                    await signOut(auth);
-                    showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
-                    return;
-                }
+        await findAndJoinOpenSession();
 
-                if (studentData.status === 'inactive' || studentData.active === false) {
-                    await signOut(auth);
-                    showErr('Your account has been deactivated. Contact your teacher.');
-                    return;
-                }
-
-                currentStudent = user;
-                studentProfile = studentData;
-                currentStudent.docId = studentDocId;
-
-                document.getElementById('headerName').textContent = studentProfile.name || user.email;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('app').style.display = 'block';
-
-                await findAndJoinOpenSession();
-
-            } catch (e) {
-                console.error('Auth verification error:', e);
-                document.getElementById('loginScreen').style.display = 'flex';
-                showErr('Error: ' + e.message);
-            }
-        });
-
+    } catch (e) {
+        console.error('Auth verification error:', e);
+        document.getElementById('loginScreen').style.display = 'flex';
+        showErr('Error: ' + e.message);
+    }
+});
+        
         window.doStudentLogin = async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
