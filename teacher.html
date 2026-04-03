@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduBoard — Teacher Portal</title>
-    <link rel="icon" href="image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
     <script>
         window.MathJax = {
             tex: {
@@ -1866,7 +1866,7 @@
         import {
             auth,
             db,
-            rtDB, // ✅ ADD rtDB
+            rtDB,
             onAuthStateChanged,
             signInWithEmailAndPassword,
             signOut,
@@ -1894,15 +1894,6 @@
             get
         } from './firebase-config.js';
 
-
-        // Import from firebase-config.js
-        //import { 
-        //  auth, db,
-        //  onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
-        //  doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, getDocs, serverTimestamp,
-        //  ref, set, push, onValue, update, remove, child, get
-        //} from './firebase-config.js';
-
         let currentTeacher = null;
         let activeSessionId = null;
         let editingId = null;
@@ -1910,10 +1901,8 @@
         let currentSessionData = null;
         let currentQuestions = [];
         let currentStudents = [];
-        // New variable to store all assigned students for the grade
         let allAssignedStudents = [];
 
-        // Auth state listener
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingOverlay').style.display = 'none';
             if (!user) {
@@ -2002,7 +1991,7 @@
 
         async function loadTeacherData() {
             await populateAssignedDropdowns();
-            await populateTeacherProfile(); // Made async to wait for data resolution
+            await populateTeacherProfile();
             await loadSessions();
             setupRealtimeListeners();
 
@@ -2052,65 +2041,61 @@
             document.getElementById('cfTeacher').value = currentTeacher.name || '';
         }
 
-        // UPDATED: Fixed My Profile Data to resolve IDs to Names
-async function populateTeacherProfile() {
-    const assignedGradeIds = currentTeacher.assignedGrades || [];
-    const assignedSubjectIds = currentTeacher.assignedSubjects || [];
+        async function populateTeacherProfile() {
+            const assignedGradeIds = currentTeacher.assignedGrades || [];
+            const assignedSubjectIds = currentTeacher.assignedSubjects || [];
 
-    let gradeNames = [];
-    let subjectNames = [];
+            let gradeNames = [];
+            let subjectNames = [];
 
-    // Resolve Grade Names
-    if (assignedGradeIds.length > 0) {
-        for (const gradeId of assignedGradeIds) {
-            try {
-                const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
-                if (gradeDoc.exists()) {
-                    gradeNames.push(gradeDoc.data().nameEn);
+            if (assignedGradeIds.length > 0) {
+                for (const gradeId of assignedGradeIds) {
+                    try {
+                        const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
+                        if (gradeDoc.exists()) {
+                            gradeNames.push(gradeDoc.data().nameEn);
+                        }
+                    } catch (e) {
+                        console.warn(`Could not fetch grade ${gradeId}`, e);
+                    }
                 }
-            } catch (e) {
-                console.warn(`Could not fetch grade ${gradeId}`, e);
             }
-        }
-    }
 
-    // Resolve Subject Names
-    if (assignedSubjectIds.length > 0) {
-        for (const subjectId of assignedSubjectIds) {
-            try {
-                const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
-                if (subjectDoc.exists()) {
-                    subjectNames.push(subjectDoc.data().nameEn);
+            if (assignedSubjectIds.length > 0) {
+                for (const subjectId of assignedSubjectIds) {
+                    try {
+                        const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
+                        if (subjectDoc.exists()) {
+                            subjectNames.push(subjectDoc.data().nameEn);
+                        }
+                    } catch (e) {
+                        console.warn(`Could not fetch subject ${subjectId}`, e);
+                    }
                 }
-            } catch (e) {
-                console.warn(`Could not fetch subject ${subjectId}`, e);
             }
-        }
-    }
 
-    const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
-    const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
+            const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
+            const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
 
-    // Get the teacher's name from the teachers collection if available
-    let teacherDisplayName = currentTeacher.name || '';
-    if (!teacherDisplayName && currentTeacher.firestoreId) {
-        try {
-            const teacherDoc = await getDoc(doc(db, 'teachers', currentTeacher.firestoreId));
-            if (teacherDoc.exists()) {
-                teacherDisplayName = teacherDoc.data().name || teacherDoc.data().displayName || currentTeacher.email || '';
+            let teacherDisplayName = currentTeacher.name || '';
+            if (!teacherDisplayName && currentTeacher.firestoreId) {
+                try {
+                    const teacherDoc = await getDoc(doc(db, 'teachers', currentTeacher.firestoreId));
+                    if (teacherDoc.exists()) {
+                        teacherDisplayName = teacherDoc.data().name || teacherDoc.data().displayName || currentTeacher.email || '';
+                    }
+                } catch (err) {
+                    console.error('Error fetching teacher details:', err);
+                }
             }
-        } catch (err) {
-            console.error('Error fetching teacher details:', err);
-        }
-    }
 
-    document.getElementById('teacherProfileInfo').innerHTML = `
-        <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
-        <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
-        <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
-        <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
-    `;
-}            
+            document.getElementById('teacherProfileInfo').innerHTML = `
+                <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
+                <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
+                <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
+                <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
+            `;
+        }
 
         async function loadSessions() {
             console.log('Loading sessions for teacher:', currentTeacher);
@@ -2242,177 +2227,148 @@ async function populateTeacherProfile() {
             showToast('Session deleted');
         };
 
-async function loadActiveSession() {
-    if (!activeSessionId) return;
+        async function loadActiveSession() {
+            if (!activeSessionId) return;
 
-    try {
-        const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-        if (!sessionDoc.exists()) {
-            activeSessionId = null;
-            localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
-            showToast('Session not found', true);
-            return;
-        }
-
-        currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
-        const config = currentSessionData;
-
-        console.log('Loading session config:', config);
-        console.log('Owner Teacher ID:', config.ownerTeacherId);
-        // After loading config, log the grade value
-console.log('Session grade value check:', {
-    gradeLevel: config.gradeLevel,
-    grade: config.grade,
-    classGrade: config.classGrade
-});
-        
-
-        // Helper function to format Firestore Timestamp to time string (HH:MM)
-        const formatTime = (timestamp) => {
-            if (!timestamp) return '';
-            if (typeof timestamp === 'string') return timestamp.slice(0, 5);
-            if (timestamp.toDate) {
-                const date = timestamp.toDate();
-                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-            }
-            if (timestamp.seconds) {
-                const date = new Date(timestamp.seconds * 1000);
-                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-            }
-            return '';
-        };
-
-        // Helper function to format Firestore Timestamp to date string (YYYY-MM-DD)
-        const formatDate = (timestamp) => {
-            if (!timestamp) return '';
-            if (typeof timestamp === 'string') return timestamp.slice(0, 10);
-            if (timestamp.toDate) {
-                const date = timestamp.toDate();
-                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            }
-            if (timestamp.seconds) {
-                const date = new Date(timestamp.seconds * 1000);
-                return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            }
-            return '';
-        };
-
-        // FIRST: Try to get teacher name from the session document if it exists
-        let teacherName = config.teacherName || config.teacher || '';
-        
-        // SECOND: If not in session, fetch from teachers collection using ownerTeacherId
-        if (!teacherName && config.ownerTeacherId) {
             try {
-                console.log('🔍 Fetching teacher for ID:', config.ownerTeacherId);
-                const teacherDocRef = doc(db, 'teachers', config.ownerTeacherId);
-                const teacherDoc = await getDoc(teacherDocRef);
-                
-                if (teacherDoc.exists()) {
-                    const teacherData = teacherDoc.data();
-                    teacherName = teacherData.name || teacherData.displayName || teacherData.fullName || '';
-                    console.log('📚 Found teacher in teachers collection:', teacherName);
-                } else {
-                    console.warn('⚠️ Teacher document not found for ID:', config.ownerTeacherId);
+                const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+                if (!sessionDoc.exists()) {
+                    activeSessionId = null;
+                    localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
+                    showToast('Session not found', true);
+                    return;
                 }
-            } catch (err) {
-                console.error('❌ Error fetching teacher:', err);
+
+                currentSessionData = {
+                    id: sessionDoc.id,
+                    ...sessionDoc.data()
+                };
+                const config = currentSessionData;
+
+                console.log('Loading session config:', config);
+                console.log('Owner Teacher ID:', config.ownerTeacherId);
+
+                const formatTime = (timestamp) => {
+                    if (!timestamp) return '';
+                    if (typeof timestamp === 'string') return timestamp.slice(0, 5);
+                    if (timestamp.toDate) {
+                        const date = timestamp.toDate();
+                        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                    }
+                    if (timestamp.seconds) {
+                        const date = new Date(timestamp.seconds * 1000);
+                        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                    }
+                    return '';
+                };
+
+                const formatDate = (timestamp) => {
+                    if (!timestamp) return '';
+                    if (typeof timestamp === 'string') return timestamp.slice(0, 10);
+                    if (timestamp.toDate) {
+                        const date = timestamp.toDate();
+                        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    }
+                    if (timestamp.seconds) {
+                        const date = new Date(timestamp.seconds * 1000);
+                        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    }
+                    return '';
+                };
+
+                let teacherName = config.teacherName || config.teacher || '';
+
+                if (!teacherName && config.ownerTeacherId) {
+                    try {
+                        const teacherDocRef = doc(db, 'teachers', config.ownerTeacherId);
+                        const teacherDoc = await getDoc(teacherDocRef);
+
+                        if (teacherDoc.exists()) {
+                            const teacherData = teacherDoc.data();
+                            teacherName = teacherData.name || teacherData.displayName || teacherData.fullName || '';
+                        }
+                    } catch (err) {
+                        console.error('Error fetching teacher:', err);
+                    }
+                }
+
+                if (!teacherName && config.ownerTeacherId) {
+                    try {
+                        const teachersRef = collection(db, 'teachers');
+                        const q = query(teachersRef, where('userId', '==', config.ownerTeacherId));
+                        const querySnapshot = await getDocs(q);
+                        if (!querySnapshot.empty) {
+                            const teacherData = querySnapshot.docs[0].data();
+                            teacherName = teacherData.name || teacherData.displayName || '';
+                        }
+                    } catch (err) {
+                        console.error('Error querying teacher:', err);
+                    }
+                }
+
+                if (!teacherName && currentTeacher) {
+                    teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
+                }
+
+                if (!teacherName) {
+                    teacherName = 'Teacher Name Not Found';
+                }
+
+                const titleField = document.getElementById('cfTitle');
+                if (titleField) titleField.value = config.title || '';
+
+                const gradeField = document.getElementById('cfGrade');
+                if (gradeField) gradeField.value = config.gradeLevel || config.grade || '';
+
+                const classField = document.getElementById('cfClass');
+                if (classField) classField.value = config.className || config.class || '';
+
+                const subjectField = document.getElementById('cfSubject');
+                if (subjectField) subjectField.value = config.subject || '';
+
+                const teacherField = document.getElementById('cfTeacher');
+                if (teacherField) {
+                    teacherField.value = teacherName;
+                    teacherField.dispatchEvent(new Event('input', {
+                        bubbles: true
+                    }));
+                }
+
+                const dateField = document.getElementById('cfDate');
+                if (dateField) {
+                    dateField.value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
+                }
+
+                const startField = document.getElementById('cfStart');
+                if (startField) {
+                    startField.value = formatTime(config.startTime);
+                }
+
+                const endField = document.getElementById('cfEnd');
+                if (endField) {
+                    endField.value = formatTime(config.endTime);
+                }
+
+                const instructionsField = document.getElementById('cfInstructions');
+                if (instructionsField) {
+                    instructionsField.value = config.instructions || '';
+                }
+
+                const isSessionActive = !!(config.isActive || config.active);
+                setToggle(isSessionActive);
+                updateSessionChip(config);
+
+                await loadQuestions();
+                await loadStudents();
+                await loadClassStatus();
+                updateStats();
+
+            } catch (error) {
+                console.error('Error loading session:', error);
+                showToast('Error loading session: ' + error.message, true);
             }
         }
-        
-        // THIRD: Try to find teacher by querying with userId field
-        if (!teacherName && config.ownerTeacherId) {
-            try {
-                const teachersRef = collection(db, 'teachers');
-                const q = query(teachersRef, where('userId', '==', config.ownerTeacherId));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const teacherData = querySnapshot.docs[0].data();
-                    teacherName = teacherData.name || teacherData.displayName || '';
-                    console.log('📚 Found teacher by userId query:', teacherName);
-                }
-            } catch (err) {
-                console.error('❌ Error querying teacher:', err);
-            }
-        }
-        
-        // FOURTH: Fallback to currentTeacher
-        if (!teacherName && currentTeacher) {
-            teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
-            console.log('📚 Using currentTeacher name:', teacherName);
-        }
-        
-        // LAST RESORT
-        if (!teacherName) {
-            teacherName = 'Teacher Name Not Found';
-        }
 
-        // Populate form fields
-        const titleField = document.getElementById('cfTitle');
-        if (titleField) titleField.value = config.title || '';
-        
-        const gradeField = document.getElementById('cfGrade');
-        if (gradeField) gradeField.value = config.gradeLevel || config.grade || '';
-        
-        const classField = document.getElementById('cfClass');
-        if (classField) classField.value = config.className || config.class || '';
-        
-        const subjectField = document.getElementById('cfSubject');
-        if (subjectField) subjectField.value = config.subject || '';
-        
-        // CRITICAL: Set the teacher name field
-        const teacherField = document.getElementById('cfTeacher');
-        if (teacherField) {
-            teacherField.value = teacherName;
-            console.log('✅ SUCCESS: Set cfTeacher field to:', teacherName);
-            // Force a visual update
-            teacherField.dispatchEvent(new Event('input', { bubbles: true }));
-        } else {
-            console.error('❌ CRITICAL: cfTeacher element not found in DOM!');
-        }
-        
-        // Set date and time fields
-        const dateField = document.getElementById('cfDate');
-        if (dateField) {
-            dateField.value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
-        }
-        
-        const startField = document.getElementById('cfStart');
-        if (startField) {
-            startField.value = formatTime(config.startTime);
-        }
-        
-        const endField = document.getElementById('cfEnd');
-        if (endField) {
-            endField.value = formatTime(config.endTime);
-        }
-        
-        const instructionsField = document.getElementById('cfInstructions');
-        if (instructionsField) {
-            instructionsField.value = config.instructions || '';
-        }
-
-        // Set toggle state
-        const isSessionActive = !!(config.isActive || config.active);
-        setToggle(isSessionActive);
-        updateSessionChip(config);
-
-        // Load related data
-        await loadQuestions();
-        await loadStudents();
-        await loadClassStatus();
-        updateStats();
-        
-        console.log('✅ Session loaded successfully:', config.title);
-        console.log('📋 FINAL - Teacher name in cfTeacher:', document.getElementById('cfTeacher')?.value);
-        
-    } catch (error) {
-        console.error('❌ Error loading session:', error);
-        showToast('Error loading session: ' + error.message, true);
-    }
-}
-        
-        
-        
         async function loadQuestions() {
             if (!activeSessionId) return;
 
@@ -2429,376 +2385,340 @@ console.log('Session grade value check:', {
             renderQuestions();
         }
 
-        // async function loadStudents() {
-        //   if (!activeSessionId) return;
-        //   
-        //   const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-        //   const querySnapshot = await getDocs(studentsRef);
-        //   currentStudents = [];
-        //   querySnapshot.forEach(doc => {
-        //     currentStudents.push({ id: doc.id, ...doc.data() });
-        //   });
-        //   renderStudentCards();
-        // }
-
-async function loadStudents() {
-    if (!activeSessionId) {
-        console.log('⚠️ No active session ID, cannot load students');
-        return;
-    }
-
-    try {
-        const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-        const querySnapshot = await getDocs(studentsRef);
-        
-        // DEBUG: Log what we found
-        console.log(`📊 Found ${querySnapshot.size} student records in Firestore for session: ${activeSessionId}`);
-        
-        currentStudents = [];
-        querySnapshot.forEach(doc => {
-            const studentData = { id: doc.id, ...doc.data() };
-            console.log('👨‍🎓 Student loaded:', studentData.id, studentData.name || 'Unnamed', 'Online:', studentData.online);
-            currentStudents.push(studentData);
-        });
-
-        // 🟢 RTDB: Sync live student data to RTDB (for real-time metrics)
-        try {
-            for (const student of currentStudents) {
-                const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
-                
-                // Only update if student is marked as online in Firestore
-                if (student.online === true) {
-                    await set(rtdbRef, {
-                        name: student.name || 'Student',
-                        uid: student.id,
-                        status: 'active',
-                        loginTime: student.loginTime || Date.now(),
-                        lastSeen: Date.now()
-                    });
-                    console.log(`🟢 Synced student ${student.name || student.id} to RTDB (ONLINE)`);
-                } else {
-                    // Remove from RTDB if they are offline to keep it clean
-                    await remove(rtdbRef);
-                    console.log(`🔴 Removed student ${student.name || student.id} from RTDB (OFFLINE)`);
-                }
-            }
-            console.log(`🟢 Synced ${currentStudents.length} students to RTDB`);
-        } catch (e) {
-            console.warn('⚠️ Error syncing to RTDB:', e);
-        }
-
-        // Update UI components
-        renderStudentCards();
-        
-        // Update stats for monitor tab
-        const onlineCount = currentStudents.filter(s => s.online === true).length;
-        const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
-        const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
-        
-        // Update various UI elements with student data
-        document.getElementById('statOnline').textContent = onlineCount;
-        document.getElementById('statAnswers').textContent = answersCount;
-        document.getElementById('statGraded').textContent = gradedCount;
-        document.getElementById('liveCount').textContent = `● ${onlineCount} online`;
-        
-        // If on class-status tab, refresh that too
-        const activeTab = document.querySelector('.tab-pane.active')?.id;
-        if (activeTab === 'tab-class-status') {
-            await loadClassStatus();
-        }
-        
-        // If on results tab, refresh results
-        if (activeTab === 'tab-results') {
-            await renderResults();
-        }
-        
-        console.log(`✅ Students loaded: ${currentStudents.length} total, ${onlineCount} online`);
-        
-    } catch (error) {
-        console.error('❌ Error loading students:', error);
-        showToast('Error loading student data: ' + error.message, true);
-        
-        // Show error state in UI
-        const grid = document.getElementById('studentsGrid');
-        if (grid) {
-            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-                <p style="font-size:15px;color:var(--red)">⚠️ Error loading students</p>
-                <span style="font-size:13px;display:block;margin-top:6px">${escapeHtml(error.message)}</span>
-                <button class="btn btn-sm" onclick="loadStudents()" style="margin-top:10px">Retry ↻</button>
-            </div>`;
-        }
-    }
-}
-
-
-
-        // --- UPDATED FUNCTION FOR CLASS STATUS TAB ---
-async function loadClassStatus() {
-    if (!activeSessionId || !currentSessionData) return;
-
-    // Fix: Try multiple possible field names for grade
-    const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
-    
-    console.log('Session grade value:', sessionGradeName);
-    console.log('Full session data:', currentSessionData);
-    
-    const gradeDisplayElement = document.getElementById('csGradeName');
-    if (gradeDisplayElement) {
-        gradeDisplayElement.textContent = sessionGradeName || 'No Grade Assigned';
-    }
-
-    const grid = document.getElementById('classStatusGrid');
-    if (!grid) return;
-    
-    grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
-
-    let assignedStudents = [];
-
-    if (sessionGradeName) {
-        try {
-            // STEP 1: Find the Grade ID that matches the Session's Grade Name
-            const gradesRef = collection(db, 'grades');
-            // Try to match by nameEn first
-            let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
-            let gradeSnap = await getDocs(q);
-            
-            let targetGradeId = null;
-            if (!gradeSnap.empty) {
-                targetGradeId = gradeSnap.docs[0].id;
-                console.log('✅ Found grade by nameEn:', targetGradeId);
-            } else {
-                // Try matching by code
-                q = query(gradesRef, where('code', '==', sessionGradeName));
-                gradeSnap = await getDocs(q);
-                if (!gradeSnap.empty) {
-                    targetGradeId = gradeSnap.docs[0].id;
-                    console.log('✅ Found grade by code:', targetGradeId);
-                } else {
-                    // Try matching by name (without 'En')
-                    q = query(gradesRef, where('name', '==', sessionGradeName));
-                    gradeSnap = await getDocs(q);
-                    if (!gradeSnap.empty) {
-                        targetGradeId = gradeSnap.docs[0].id;
-                        console.log('✅ Found grade by name:', targetGradeId);
-                    }
-                }
+        async function loadStudents() {
+            if (!activeSessionId) {
+                console.log('No active session ID, cannot load students');
+                return;
             }
 
-            // STEP 2: If we found the Grade ID, fetch students with that gradeId
-            if (targetGradeId) {
-                const studentsRef = collection(db, 'students');
-                const studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
-                const studentSnap = await getDocs(studentQuery);
+            try {
+                const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+                const querySnapshot = await getDocs(studentsRef);
 
-                studentSnap.forEach(doc => {
-                    assignedStudents.push({
+                console.log(`Found ${querySnapshot.size} student records in Firestore for session: ${activeSessionId}`);
+
+                currentStudents = [];
+                querySnapshot.forEach(doc => {
+                    const studentData = {
                         id: doc.id,
                         ...doc.data()
-                    });
+                    };
+                    console.log('Student loaded:', studentData.id, studentData.name || 'Unnamed', 'Online:', studentData.online);
+                    currentStudents.push(studentData);
                 });
-                console.log(`📚 Found ${assignedStudents.length} students for grade ${sessionGradeName}`);
+
+                try {
+                    for (const student of currentStudents) {
+                        const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
+
+                        if (student.online === true) {
+                            await set(rtdbRef, {
+                                name: student.name || 'Student',
+                                uid: student.id,
+                                status: 'active',
+                                loginTime: student.loginTime || Date.now(),
+                                lastSeen: Date.now()
+                            });
+                            console.log(`Synced student ${student.name || student.id} to RTDB (ONLINE)`);
+                        } else {
+                            await remove(rtdbRef);
+                            console.log(`Removed student ${student.name || student.id} from RTDB (OFFLINE)`);
+                        }
+                    }
+                    console.log(`Synced ${currentStudents.length} students to RTDB`);
+                } catch (e) {
+                    console.warn('Error syncing to RTDB:', e);
+                }
+
+                renderStudentCards();
+
+                const onlineCount = currentStudents.filter(s => s.online === true).length;
+                const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
+                const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+
+                document.getElementById('statOnline').textContent = onlineCount;
+                document.getElementById('statAnswers').textContent = answersCount;
+                document.getElementById('statGraded').textContent = gradedCount;
+                document.getElementById('liveCount').textContent = `● ${onlineCount} online`;
+
+                const activeTab = document.querySelector('.tab-pane.active')?.id;
+                if (activeTab === 'tab-class-status') {
+                    await loadClassStatus();
+                }
+
+                if (activeTab === 'tab-results') {
+                    await renderResults();
+                }
+
+                console.log(`Students loaded: ${currentStudents.length} total, ${onlineCount} online`);
+
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast('Error loading student data: ' + error.message, true);
+
+                const grid = document.getElementById('studentsGrid');
+                if (grid) {
+                    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+                        <p style="font-size:15px;color:var(--red)">Error loading students</p>
+                        <span style="font-size:13px;display:block;margin-top:6px">${escapeHtml(error.message)}</span>
+                        <button class="btn btn-sm" onclick="loadStudents()" style="margin-top:10px">Retry ↻</button>
+                    </div>`;
+                }
+            }
+        }
+
+        async function loadClassStatus() {
+            if (!activeSessionId || !currentSessionData) return;
+
+            const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
+
+            console.log('Session grade value:', sessionGradeName);
+            console.log('Full session data:', currentSessionData);
+
+            const gradeDisplayElement = document.getElementById('csGradeName');
+            if (gradeDisplayElement) {
+                gradeDisplayElement.textContent = sessionGradeName || 'No Grade Assigned';
+            }
+
+            const grid = document.getElementById('classStatusGrid');
+            if (!grid) return;
+
+            grid.innerHTML = '<div class="empty-state">Loading class roster...</div>';
+
+            let assignedStudents = [];
+
+            if (sessionGradeName) {
+                try {
+                    const gradesRef = collection(db, 'grades');
+                    let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
+                    let gradeSnap = await getDocs(q);
+
+                    let targetGradeId = null;
+                    if (!gradeSnap.empty) {
+                        targetGradeId = gradeSnap.docs[0].id;
+                        console.log('Found grade by nameEn:', targetGradeId);
+                    } else {
+                        q = query(gradesRef, where('code', '==', sessionGradeName));
+                        gradeSnap = await getDocs(q);
+                        if (!gradeSnap.empty) {
+                            targetGradeId = gradeSnap.docs[0].id;
+                            console.log('Found grade by code:', targetGradeId);
+                        } else {
+                            q = query(gradesRef, where('name', '==', sessionGradeName));
+                            gradeSnap = await getDocs(q);
+                            if (!gradeSnap.empty) {
+                                targetGradeId = gradeSnap.docs[0].id;
+                                console.log('Found grade by name:', targetGradeId);
+                            }
+                        }
+                    }
+
+                    if (targetGradeId) {
+                        const studentsRef = collection(db, 'students');
+
+                        // FIXED: Try both 'gradeLevel' and 'gradeId' field names
+                        let studentQuery = query(studentsRef, where('gradeLevel', '==', targetGradeId));
+                        let studentSnap = await getDocs(studentQuery);
+
+                        if (studentSnap.empty) {
+                            console.log('No students found with gradeLevel, trying gradeId...');
+                            studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
+                            studentSnap = await getDocs(studentQuery);
+                        }
+
+                        // Also try matching by grade name directly
+                        if (studentSnap.empty) {
+                            console.log('No students found with gradeId, trying gradeLevel as name...');
+                            studentQuery = query(studentsRef, where('gradeLevel', '==', sessionGradeName));
+                            studentSnap = await getDocs(studentQuery);
+                        }
+
+                        studentSnap.forEach(doc => {
+                            assignedStudents.push({
+                                id: doc.id,
+                                ...doc.data()
+                            });
+                        });
+                        console.log(`Found ${assignedStudents.length} students for grade ${sessionGradeName}`);
+                    } else {
+                        console.warn(`Could not find Grade ID for name: ${sessionGradeName}`);
+                    }
+
+                } catch (err) {
+                    console.error("Error fetching class status:", err);
+                }
             } else {
-                console.warn(`⚠️ Could not find Grade ID for name: ${sessionGradeName}`);
-                // List all available grades for debugging
-                const allGrades = await getDocs(gradesRef);
-                console.log('Available grades in database:');
-                allGrades.forEach(doc => {
-                    console.log(`  - ${doc.id}:`, doc.data().nameEn, doc.data().code);
+                console.warn('No grade name found in session data');
+                if (grid) {
+                    grid.innerHTML = `<div class="empty-state">
+                        <p style="font-size:15px">No grade assigned to this session</p>
+                        <span style="font-size:13px;display:block;margin-top:6px">Please edit the session configuration and select a grade level.</span>
+                        <button class="btn btn-amber" onclick="switchTab('session', document.querySelector('.nav-btn'))" style="margin-top:12px">Go to Session Config →</button>
+                    </div>`;
+                }
+                updateClassStats(0, 0, 0);
+                return;
+            }
+
+            allAssignedStudents = assignedStudents;
+
+            const sessionStudentsMap = {};
+            currentStudents.forEach(s => {
+                sessionStudentsMap[s.id] = s;
+            });
+
+            let presentCount = 0;
+            let absentCount = 0;
+            const totalAssigned = assignedStudents.length;
+
+            if (totalAssigned === 0) {
+                if (grid) {
+                    grid.innerHTML = `<div class="empty-state">
+                        <p style="font-size:15px">No students found for "${escapeHtml(sessionGradeName)}"</p>
+                        <span style="font-size:13px;display:block;margin-top:6px">Make sure:</span>
+                        <ul style="text-align:left;margin-top:8px;color:var(--muted);font-size:12px">
+                            <li>✓ Students are assigned to this grade in the Admin panel</li>
+                            <li>✓ The grade name "${escapeHtml(sessionGradeName)}" matches exactly in the Grades collection</li>
+                            <li>✓ Students have accounts created for this grade</li>
+                        </ul>
+                        <button class="btn btn-sm" onclick="loadClassStatus()" style="margin-top:12px">Refresh ↻</button>
+                    </div>`;
+                }
+                updateClassStats(0, 0, 0);
+                return;
+            }
+
+            assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+            if (grid) {
+                grid.innerHTML = assignedStudents.map(student => {
+                    const sessionData = sessionStudentsMap[student.id];
+                    const isOnline = !!sessionData && sessionData.online === true;
+                    const displayName = student.name || student.fullName || 'Unknown Student';
+                    const initial = displayName.charAt(0).toUpperCase();
+
+                    let cardHtml = '';
+
+                    if (isOnline) {
+                        presentCount++;
+                        const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
+                        const qcount = currentQuestions.length;
+                        const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+                        const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
+
+                        cardHtml = `
+                            <div class="student-card" style="border-left: 3px solid var(--green)">
+                                <div class="student-header">
+                                    <div class="avatar" style="background:var(--green-dim);color:var(--green)">${escapeHtml(initial)}</div>
+                                    <div>
+                                        <div class="student-name">${escapeHtml(displayName)}</div>
+                                        <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
+                                    </div>
+                                </div>
+                                <div class="progress-bar-wrap">
+                                    <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
+                                </div>
+                                <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+                                <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
+                            </div>
+                        `;
+                    } else {
+                        absentCount++;
+                        cardHtml = `
+                            <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
+                                <div class="student-header">
+                                    <div class="avatar" style="background:var(--surface2);color:var(--muted)">${escapeHtml(initial)}</div>
+                                    <div>
+                                        <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
+                                        <div class="student-time">Not Logged In</div>
+                                    </div>
+                                </div>
+                                <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
+                                    Absent / Offline
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return cardHtml;
+                }).join('');
+            }
+
+            updateClassStats(presentCount, absentCount, totalAssigned);
+            console.log(`Class status: ${presentCount} present, ${absentCount} absent out of ${totalAssigned} total`);
+        }
+
+        function setupRealtimeStudentListener() {
+            if (!activeSessionId) return;
+
+            console.log('Setting up real-time student listener...');
+
+            const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+
+            onSnapshot(studentsRef, (snapshot) => {
+                console.log(`Real-time update: ${snapshot.docChanges().length} changes detected`);
+
+                snapshot.docChanges().forEach((change) => {
+                    const studentData = {
+                        id: change.doc.id,
+                        ...change.doc.data()
+                    };
+
+                    if (change.type === 'added') {
+                        console.log('Student joined:', studentData.name || studentData.id);
+                        showToast(`${studentData.name || 'A student'} joined the session`, false);
+                    } else if (change.type === 'modified') {
+                        console.log('Student updated:', studentData.name || studentData.id);
+                    } else if (change.type === 'removed') {
+                        console.log('Student left:', studentData.name || studentData.id);
+                    }
                 });
-            }
 
-        } catch (err) {
-            console.error("❌ Error fetching class status:", err);
+                loadStudents();
+            }, (error) => {
+                console.error('Real-time listener error:', error);
+            });
         }
-    } else {
-        console.warn('⚠️ No grade name found in session data');
-        if (grid) {
-            grid.innerHTML = `<div class="empty-state">
-                <p style="font-size:15px">⚠️ No grade assigned to this session</p>
-                <span style="font-size:13px;display:block;margin-top:6px">Please edit the session configuration and select a grade level.</span>
-                <button class="btn btn-amber" onclick="switchTab('session', document.querySelector('.nav-btn'))" style="margin-top:12px">Go to Session Config →</button>
-            </div>`;
+
+        function updateClassStats(present, absent, total) {
+            const presentEl = document.getElementById('csTotalPresent');
+            const absentEl = document.getElementById('csTotalAbsent');
+            const totalEl = document.getElementById('csTotalStudents');
+
+            if (presentEl) presentEl.textContent = present;
+            if (absentEl) absentEl.textContent = absent;
+            if (totalEl) totalEl.textContent = total;
+
+            console.log(`Stats updated: ${present} present, ${absent} absent, ${total} total`);
         }
-        updateClassStats(0, 0, 0);
-        return;
-    }
 
-    allAssignedStudents = assignedStudents;
+        function setupRealtimeListeners() {
+            if (!activeSessionId) return;
 
-    // 3. Fetch students currently in the session (who have logged in)
-    const sessionStudentsMap = {};
-    currentStudents.forEach(s => {
-        sessionStudentsMap[s.id] = s;
-    });
+            console.log('Setting up RTDB real-time listeners...');
 
-    // 4. Merge Data & Render
-    let presentCount = 0;
-    let absentCount = 0;
-    const totalAssigned = assignedStudents.length;
+            const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
 
-    if (totalAssigned === 0) {
-        if (grid) {
-            grid.innerHTML = `<div class="empty-state">
-                <p style="font-size:15px">👥 No students found for "${escapeHtml(sessionGradeName)}"</p>
-                <span style="font-size:13px;display:block;margin-top:6px">Make sure:</span>
-                <ul style="text-align:left;margin-top:8px;color:var(--muted);font-size:12px">
-                    <li>✓ Students are assigned to this grade in the Admin panel</li>
-                    <li>✓ The grade name "${escapeHtml(sessionGradeName)}" matches exactly in the Grades collection</li>
-                    <li>✓ Students have accounts created for this grade</li>
-                </ul>
-                <button class="btn btn-sm" onclick="loadClassStatus()" style="margin-top:12px">Refresh ↻</button>
-            </div>`;
+            try {
+                onValue(liveStudentsRef, (snapshot) => {
+                    const students = snapshot.val();
+                    const liveCount = students ? Object.keys(students).length : 0;
+
+                    const liveChip = document.querySelector('.live-count');
+                    if (liveChip) {
+                        liveChip.textContent = `${liveCount} online`;
+                    }
+
+                    console.log(`Active students in RTDB: ${liveCount}`);
+                }, (error) => {
+                    console.warn('RTDB listener error:', error);
+                });
+
+                setupRealtimeStudentListener();
+
+            } catch (e) {
+                console.warn('Could not set up RTDB listener:', e);
+            }
         }
-        updateClassStats(0, 0, 0);
-        return;
-    }
-
-    // Sort assigned students by name
-    assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-    if (grid) {
-        grid.innerHTML = assignedStudents.map(student => {
-            const sessionData = sessionStudentsMap[student.id];
-            const isOnline = !!sessionData && sessionData.online === true;
-            const displayName = student.name || student.fullName || 'Unknown Student';
-            const initial = displayName.charAt(0).toUpperCase();
-
-            let cardHtml = '';
-
-            if (isOnline) {
-                presentCount++;
-                const answered = sessionData.answers ? Object.keys(sessionData.answers).length : 0;
-                const qcount = currentQuestions.length;
-                const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-                const loginTime = sessionData.loginTime ? new Date(sessionData.loginTime).toLocaleTimeString() : '--:--';
-
-                cardHtml = `
-                    <div class="student-card" style="border-left: 3px solid var(--green)">
-                        <div class="student-header">
-                            <div class="avatar" style="background:var(--green-dim);color:var(--green)">${escapeHtml(initial)}</div>
-                            <div>
-                                <div class="student-name">${escapeHtml(displayName)}</div>
-                                <div class="student-time" style="color:var(--green)">Logged in at ${loginTime}</div>
-                            </div>
-                        </div>
-                        <div class="progress-bar-wrap">
-                            <div class="progress-bar" style="width:${pct}%;background:var(--green)"></div>
-                        </div>
-                        <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-                        <button class="btn-review" onclick="openReview('${student.id}')">Review Work →</button>
-                    </div>
-                `;
-            } else {
-                absentCount++;
-                cardHtml = `
-                    <div class="student-card" style="opacity:0.7;border-left: 3px solid var(--muted)">
-                        <div class="student-header">
-                            <div class="avatar" style="background:var(--surface2);color:var(--muted)">${escapeHtml(initial)}</div>
-                            <div>
-                                <div class="student-name" style="color:var(--muted)">${escapeHtml(displayName)}</div>
-                                <div class="student-time">Not Logged In</div>
-                            </div>
-                        </div>
-                        <div style="font-size:12px;color:var(--red);background:var(--red-dim);padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px;">
-                            Absent / Offline
-                        </div>
-                    </div>
-                `;
-            }
-            return cardHtml;
-        }).join('');
-    }
-
-    updateClassStats(presentCount, absentCount, totalAssigned);
-    console.log(`📊 Class status: ${presentCount} present, ${absentCount} absent out of ${totalAssigned} total`);
-}
-
-function setupRealtimeStudentListener() {
-    if (!activeSessionId) return;
-    
-    console.log('🟢 Setting up real-time student listener...');
-    
-    const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-    
-    // Use onSnapshot for real-time updates
-    onSnapshot(studentsRef, (snapshot) => {
-        console.log(`🔄 Real-time update: ${snapshot.docChanges().length} changes detected`);
-        
-        snapshot.docChanges().forEach((change) => {
-            const studentData = { id: change.doc.id, ...change.doc.data() };
-            
-            if (change.type === 'added') {
-                console.log('➕ Student joined:', studentData.name || studentData.id);
-                showToast(`${studentData.name || 'A student'} joined the session`, false);
-            } else if (change.type === 'modified') {
-                console.log('✏️ Student updated:', studentData.name || studentData.id);
-            } else if (change.type === 'removed') {
-                console.log('➖ Student left:', studentData.name || studentData.id);
-            }
-        });
-        
-        // Refresh the student list on any change
-        loadStudents();
-    }, (error) => {
-        console.error('❌ Real-time listener error:', error);
-    });
-}
-        
-
-        
-        // Helper to update stats consistently
-function updateClassStats(present, absent, total) {
-    const presentEl = document.getElementById('csTotalPresent');
-    const absentEl = document.getElementById('csTotalAbsent');
-    const totalEl = document.getElementById('csTotalStudents');
-    
-    if (presentEl) presentEl.textContent = present;
-    if (absentEl) absentEl.textContent = absent;
-    if (totalEl) totalEl.textContent = total;
-    
-    console.log(`📊 Stats updated: ${present} present, ${absent} absent, ${total} total`);
-}
-
-        // function setupRealtimeListeners() {
-        //   if (activeSessionId) {
-        //     const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
-        //     onValue(ref(db), () => {});
-        //     const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-        //     onValue(ref(db), () => {});
-        //   }
-        // }
-
-function setupRealtimeListeners() {
-    if (!activeSessionId) return;
-
-    console.log('🟢 Setting up RTDB real-time listeners...');
-
-    // 🟢 RTDB: Listen to live student count
-    const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
-
-    try {
-        onValue(liveStudentsRef, (snapshot) => {
-            const students = snapshot.val();
-            const liveCount = students ? Object.keys(students).length : 0;
-
-            // Update UI with live count
-            const liveChip = document.querySelector('.live-count');
-            if (liveChip) {
-                liveChip.textContent = `${liveCount} online`;
-            }
-
-            console.log(`🟢 Active students in RTDB: ${liveCount}`);
-        }, (error) => {
-            console.warn('⚠️ RTDB listener error:', error);
-        });
-        
-        // 🆕 Add Firestore real-time student listener
-        setupRealtimeStudentListener();
-        
-    } catch (e) {
-        console.warn('⚠️ Could not set up RTDB listener:', e);
-    }
-}
 
         function renderQuestions() {
             const list = document.getElementById('questionsList');
@@ -2946,121 +2866,97 @@ function setupRealtimeListeners() {
             showToast('Deleted');
         };
 
-window.saveSessionConfig = async function() {
-    if (!activeSessionId) {
-        showToast('No active session', true);
-        return;
-    }
-
-    // Get the current teacher name from the field or fetch it
-    let teacherName = document.getElementById('cfTeacher')?.value || '';
-    
-    if (!teacherName && currentTeacher) {
-        teacherName = currentTeacher.name || currentTeacher.displayName || '';
-    }
-    
-    if (!teacherName && currentSessionData?.ownerTeacherId) {
-        try {
-            const teacherDoc = await getDoc(doc(db, 'teachers', currentSessionData.ownerTeacherId));
-            if (teacherDoc.exists()) {
-                teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
+        window.saveSessionConfig = async function() {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
             }
-        } catch (err) {
-            console.error('Error fetching teacher:', err);
-        }
-    }
 
-    const gradeValue = document.getElementById('cfGrade').value;
-    const subjectValue = document.getElementById('cfSubject').value;
+            let teacherName = document.getElementById('cfTeacher')?.value || '';
 
-    const config = {
-        title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
-        grade: gradeValue,
-        gradeLevel: gradeValue,
-        className: document.getElementById('cfClass').value.trim(),
-        subject: subjectValue,
-        teacherName: teacherName,  // Save teacher name to session
-        teacher: teacherName,       // Save to teacher field as well
-        date: document.getElementById('cfDate').value,
-        startTime: document.getElementById('cfStart').value,
-        endTime: document.getElementById('cfEnd').value,
-        instructions: document.getElementById('cfInstructions').value.trim(),
-        active: !!(document.getElementById('sessionToggle').classList.contains('on')),
-        isActive: !!(document.getElementById('sessionToggle').classList.contains('on')),
-        updatedAt: serverTimestamp(),
-        updatedBy: currentTeacher?.uid || ''
-    };
+            if (!teacherName && currentTeacher) {
+                teacherName = currentTeacher.name || currentTeacher.displayName || '';
+            }
 
-    await updateDoc(doc(db, 'sessions', activeSessionId), config);
-    updateSessionChip(config);
-    showToast('Configuration saved!');
-    
-    // Reload to ensure everything is fresh
-    await loadActiveSession();
-};
-    
-        // window.toggleSession = async function() {
-        //   if (!activeSessionId) return;
-        //   
-        //   const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
-        //   await updateDoc(doc(db, 'sessions', activeSessionId), { active: !currentStatus });
-        //   setToggle(!currentStatus);
-        //   showToast(!currentStatus ? '✅ Session is OPEN — students can join!' : 'Session closed');
-        // };
+            if (!teacherName && currentSessionData?.ownerTeacherId) {
+                try {
+                    const teacherDoc = await getDoc(doc(db, 'teachers', currentSessionData.ownerTeacherId));
+                    if (teacherDoc.exists()) {
+                        teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
+                    }
+                } catch (err) {
+                    console.error('Error fetching teacher:', err);
+                }
+            }
 
+            const gradeValue = document.getElementById('cfGrade').value;
+            const subjectValue = document.getElementById('cfSubject').value;
+
+            const config = {
+                title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
+                grade: gradeValue,
+                gradeLevel: gradeValue,
+                className: document.getElementById('cfClass').value.trim(),
+                subject: subjectValue,
+                teacherName: teacherName,
+                teacher: teacherName,
+                date: document.getElementById('cfDate').value,
+                startTime: document.getElementById('cfStart').value,
+                endTime: document.getElementById('cfEnd').value,
+                instructions: document.getElementById('cfInstructions').value.trim(),
+                active: !!(document.getElementById('sessionToggle').classList.contains('on')),
+                isActive: !!(document.getElementById('sessionToggle').classList.contains('on')),
+                updatedAt: serverTimestamp(),
+                updatedBy: currentTeacher?.uid || ''
+            };
+
+            await updateDoc(doc(db, 'sessions', activeSessionId), config);
+            updateSessionChip(config);
+            showToast('Configuration saved!');
+
+            await loadActiveSession();
+        };
 
         window.toggleSessionOpen = async function() {
             if (!activeSessionId || !currentSessionData) return;
 
-            // Determine current status from the UI toggle state
             const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
             const newStatus = !currentStatus;
 
             try {
                 console.log(`Toggling session to ${newStatus}`);
 
-                // 📝 Firestore: Update session status
                 await updateDoc(doc(db, 'sessions', activeSessionId), {
-                    active: newStatus // Note: Your HTML toggle checks for 'active' class, so we update 'active' field
+                    active: newStatus
                 });
 
-                // 🟢 RTDB: Create/remove live session tracking
                 if (newStatus) {
-                    // Session opening - initialize live tracking
                     await set(ref(rtDB, `liveSessions/${activeSessionId}`), {
                         createdAt: Date.now(),
                         status: 'active',
                         students: {}
                     });
-                    console.log('✅ Session opened - RTDB live tracking initialized');
+                    console.log('Session opened - RTDB live tracking initialized');
 
-                    // Set up real-time listeners
                     setupRealtimeListeners();
 
-                    showToast('✅ Session is now OPEN to students');
+                    showToast('Session is now OPEN to students');
                 } else {
-                    // Session closing - clean up live tracking
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
-                    console.log('✅ Session closed - RTDB cleaned up');
+                    console.log('Session closed - RTDB cleaned up');
 
-                    showToast('✅ Session is now CLOSED');
+                    showToast('Session is now CLOSED');
                 }
 
-                // Update UI state
-                // We manually call setToggle to update the visual switch
                 setToggle(newStatus);
 
-                // Update local data object to match
                 if (currentSessionData) currentSessionData.active = newStatus;
 
             } catch (error) {
-                console.error('❌ Error toggling session:', error);
+                console.error('Error toggling session:', error);
                 showToast('Failed to update session', true);
             }
         };
-
-
-
 
         function setToggle(on) {
             const track = document.getElementById('sessionToggle');
@@ -3083,107 +2979,105 @@ window.saveSessionConfig = async function() {
             document.getElementById('topSessionChip').textContent = parts.length ? parts.join(' · ') : 'No Active Session';
         }
 
-function updateStats() {
-    const onlineCount = currentStudents.filter(s => s.online === true).length;
-    const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
-    const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
-    const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+        function updateStats() {
+            const onlineCount = currentStudents.filter(s => s.online === true).length;
+            const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
+            const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+            const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
 
-    // Update UI elements
-    const liveCountEl = document.getElementById('liveCount');
-    if (liveCountEl) liveCountEl.textContent = `● ${onlineCount} online`;
-    
-    const prevQuestionsEl = document.getElementById('prevQuestions');
-    if (prevQuestionsEl) prevQuestionsEl.textContent = currentQuestions.length;
-    
-    const prevStudentsEl = document.getElementById('prevStudents');
-    if (prevStudentsEl) prevStudentsEl.textContent = onlineCount;
-    
-    const prevAnswersEl = document.getElementById('prevAnswers');
-    if (prevAnswersEl) prevAnswersEl.textContent = answersCount;
-    
-    const prevTotalEl = document.getElementById('prevTotal');
-    if (prevTotalEl) prevTotalEl.textContent = totalPoints;
-    
-    const statOnlineEl = document.getElementById('statOnline');
-    if (statOnlineEl) statOnlineEl.textContent = onlineCount;
-    
-    const statAnswersEl = document.getElementById('statAnswers');
-    if (statAnswersEl) statAnswersEl.textContent = answersCount;
-    
-    const statQuestionsEl = document.getElementById('statQuestions');
-    if (statQuestionsEl) statQuestionsEl.textContent = currentQuestions.length;
-    
-    const statGradedEl = document.getElementById('statGraded');
-    if (statGradedEl) statGradedEl.textContent = gradedCount;
-    
-    console.log(`📊 Stats updated: ${onlineCount} online, ${answersCount} answers, ${gradedCount} graded`);
-}
+            const liveCountEl = document.getElementById('liveCount');
+            if (liveCountEl) liveCountEl.textContent = `● ${onlineCount} online`;
 
-function renderStudentCards() {
-    const online = currentStudents.filter(s => s.online === true);
-    const grid = document.getElementById('studentsGrid');
-    const qcount = currentQuestions.length;
+            const prevQuestionsEl = document.getElementById('prevQuestions');
+            if (prevQuestionsEl) prevQuestionsEl.textContent = currentQuestions.length;
 
-    if (!currentStudents.length) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-            <p style="font-size:15px">👥 No students have joined this session yet</p>
-            <span style="font-size:13px;display:block;margin-top:6px">Students need to enter the session code to join</span>
-            <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;display:inline-block;">
-                <span style="font-size:11px;color:var(--muted)">Session ID: </span>
-                <code style="font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:4px">${activeSessionId}</code>
-            </div>
-        </div>`;
-        return;
-    }
+            const prevStudentsEl = document.getElementById('prevStudents');
+            if (prevStudentsEl) prevStudentsEl.textContent = onlineCount;
 
-    if (!online.length) {
-        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-            <p style="font-size:15px">😴 All students are offline</p>
-            <span style="font-size:13px;display:block;margin-top:6px">Make sure the session is OPEN for students to join</span>
-            <div style="margin-top:12px">
-                <button class="btn btn-amber" onclick="document.getElementById('sessionToggle').click()" style="font-size:12px">Open Session →</button>
-            </div>
-        </div>`;
-        return;
-    }
+            const prevAnswersEl = document.getElementById('prevAnswers');
+            if (prevAnswersEl) prevAnswersEl.textContent = answersCount;
 
-    const colors = ['#f5a623', '#60a5fa', '#4ade80', '#f87171', '#c084fc', '#fb923c', '#34d399', '#fbbf24'];
+            const prevTotalEl = document.getElementById('prevTotal');
+            if (prevTotalEl) prevTotalEl.textContent = totalPoints;
 
-    grid.innerHTML = online.map((student, i) => {
-        const answered = student.answers ? Object.keys(student.answers).length : 0;
-        const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-        const color = colors[i % colors.length];
-        const displayName = student.name || student.id || 'Student';
+            const statOnlineEl = document.getElementById('statOnline');
+            if (statOnlineEl) statOnlineEl.textContent = onlineCount;
 
-        return `<div class="student-card">
-            <div class="student-header">
-                <div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
-                <div>
-                    <div class="student-name">${escapeHtml(displayName)}${student.submitted ? '<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700">✓ SUBMITTED</span>' : ''}</div>
-                    <div class="student-time">${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
-                </div>
-            </div>
-            <div class="progress-bar-wrap">
-                <div class="progress-bar" style="width:${pct}%;background:${student.submitted ? 'var(--green)' : 'var(--amber)'}"></div>
-            </div>
-            <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-            <div style="display:flex;gap:6px;margin-top:10px">
-                <button class="btn-review" onclick="openReview('${student.id}')">Review →</button>
-                <button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear Ans</button>
-            </div>
-            <button class="btn-delete-student" onclick="deleteStudentRecord('${student.id}')">🗑 Delete Record</button>
-        </div>`;
-    }).join('');
-}
-        // --- EXPORT CLASS STATUS TO EXCEL ---
+            const statAnswersEl = document.getElementById('statAnswers');
+            if (statAnswersEl) statAnswersEl.textContent = answersCount;
+
+            const statQuestionsEl = document.getElementById('statQuestions');
+            if (statQuestionsEl) statQuestionsEl.textContent = currentQuestions.length;
+
+            const statGradedEl = document.getElementById('statGraded');
+            if (statGradedEl) statGradedEl.textContent = gradedCount;
+
+            console.log(`Stats updated: ${onlineCount} online, ${answersCount} answers, ${gradedCount} graded`);
+        }
+
+        function renderStudentCards() {
+            const online = currentStudents.filter(s => s.online === true);
+            const grid = document.getElementById('studentsGrid');
+            const qcount = currentQuestions.length;
+
+            if (!currentStudents.length) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+                    <p style="font-size:15px">No students have joined this session yet</p>
+                    <span style="font-size:13px;display:block;margin-top:6px">Students need to enter the session code to join</span>
+                    <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:8px;display:inline-block;">
+                        <span style="font-size:11px;color:var(--muted)">Session ID: </span>
+                        <code style="font-family:monospace;background:var(--bg);padding:4px 8px;border-radius:4px">${activeSessionId}</code>
+                    </div>
+                </div>`;
+                return;
+            }
+
+            if (!online.length) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+                    <p style="font-size:15px">All students are offline</p>
+                    <span style="font-size:13px;display:block;margin-top:6px">Make sure the session is OPEN for students to join</span>
+                    <div style="margin-top:12px">
+                        <button class="btn btn-amber" onclick="document.getElementById('sessionToggle').click()" style="font-size:12px">Open Session →</button>
+                    </div>
+                </div>`;
+                return;
+            }
+
+            const colors = ['#f5a623', '#60a5fa', '#4ade80', '#f87171', '#c084fc', '#fb923c', '#34d399', '#fbbf24'];
+
+            grid.innerHTML = online.map((student, i) => {
+                const answered = student.answers ? Object.keys(student.answers).length : 0;
+                const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+                const color = colors[i % colors.length];
+                const displayName = student.name || student.id || 'Student';
+
+                return `<div class="student-card">
+                    <div class="student-header">
+                        <div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <div class="student-name">${escapeHtml(displayName)}${student.submitted ? '<span style="font-size:10px;background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:2px 8px;margin-left:6px;font-weight:700">✓ SUBMITTED</span>' : ''}</div>
+                            <div class="student-time">${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar" style="width:${pct}%;background:${student.submitted ? 'var(--green)' : 'var(--amber)'}"></div>
+                    </div>
+                    <div class="progress-text"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
+                    <div style="display:flex;gap:6px;margin-top:10px">
+                        <button class="btn-review" onclick="openReview('${student.id}')">Review →</button>
+                        <button class="btn-review" style="background:var(--red-dim);color:var(--red);border:none" onclick="clearStudentAnswers('${student.id}')">Clear Ans</button>
+                    </div>
+                    <button class="btn-delete-student" onclick="deleteStudentRecord('${student.id}')">🗑 Delete Record</button>
+                </div>`;
+            }).join('');
+        }
+
         window.exportClassStatusExcel = function() {
             if (!currentSessionData) {
                 showToast('No active session loaded', true);
                 return;
             }
 
-            // Prepare Data
             const sessionInfo = [
                 ["Session Title", currentSessionData.title || ""],
                 ["Grade", currentSessionData.grade || ""],
@@ -3196,7 +3090,6 @@ function renderStudentCards() {
 
             const headerRow = ["Student Name", "Status", "Login Time", "Progress (%)", "Answers Submitted", "Total Questions"];
 
-            // Map all assigned students
             const sessionStudentsMap = {};
             currentStudents.forEach(s => {
                 sessionStudentsMap[s.id] = s;
@@ -3221,16 +3114,13 @@ function renderStudentCards() {
                 ];
             });
 
-            // Create Worksheet
             const wb = XLSX.utils.book_new();
 
-            // Sheet 1: Summary & List
             const wsData = [...sessionInfo, [],
                 ["--- Student Attendance & Status ---"], headerRow, ...dataRows
             ];
             const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-            // Set column widths
             ws['!cols'] = [{
                 wch: 25
             }, {
@@ -3247,18 +3137,13 @@ function renderStudentCards() {
 
             XLSX.utils.book_append_sheet(wb, ws, "Class Status");
 
-            // Download
             const fileName = `Class_Status_${(currentSessionData.title||'Session').replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, fileName);
 
             showToast('Excel file downloaded!');
         };
 
-
-        // --- REVIEW LOGIC ---
-
         window.openReview = async function(studentId) {
-            // Find student and their data
             const student = currentStudents.find(s => s.id === studentId);
             if (!student) return;
 
@@ -3266,25 +3151,22 @@ function renderStudentCards() {
             const overlay = document.getElementById('overlay');
             const content = document.getElementById('reviewContent');
 
-            // Generate Review HTML
             let html = `
-    <div class="panel-student-info">
-      <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
-        <div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
-      </div>
-      <button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
-    </div>
-  `;
+                <div class="panel-student-info">
+                    <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
+                    <div style="flex:1">
+                        <div style="font-weight:700;font-size:16px">${escapeHtml(student.name || student.id)}</div>
+                        <div style="font-size:12px;color:var(--muted)">Submitted: ${student.submitted ? 'Yes' : 'In Progress'}</div>
+                    </div>
+                    <button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
+                </div>
+            `;
 
-            // Loop through all questions in the session
             for (const q of currentQuestions) {
                 const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
                 const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '';
                 const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
 
-                // Determine correctness styling
                 let statusColor = 'var(--muted)';
                 let statusIcon = '○';
                 if (score !== '') {
@@ -3302,36 +3184,34 @@ function renderStudentCards() {
                 }
 
                 html += `
-      <div class="review-item">
-        <div class="review-q">
-          <strong>Q:</strong> <span class="math-content">${mathHtml(q.text)}</span>
-          <span style="float:right;color:${statusColor}">${statusIcon} ${q.points} pts</span>
-        </div>
-        
-        <div class="review-answer math-content">
-          ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>'}
-        </div>
+                    <div class="review-item">
+                        <div class="review-q">
+                            <strong>Q:</strong> <span class="math-content">${mathHtml(q.text)}</span>
+                            <span style="float:right;color:${statusColor}">${statusIcon} ${q.points} pts</span>
+                        </div>
+                        
+                        <div class="review-answer math-content">
+                            ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>'}
+                        </div>
 
-        <div class="grade-row">
-          <label>Grade:</label>
-          <input type="number" class="grade-input" id="grade-${q.id}" value="${score}" placeholder="-" min="0" max="${q.points}">
-          
-          <label>Feedback:</label>
-          <input type="text" class="feedback-input" id="feedback-${q.id}" value="${escapeHtml(feedback)}" placeholder="Optional comment...">
-          
-          <button class="btn-save-grade" onclick="saveGrade('${studentId}', '${q.id}', ${q.points})">Save</button>
-        </div>
-      </div>
-    `;
+                        <div class="grade-row">
+                            <label>Grade:</label>
+                            <input type="number" class="grade-input" id="grade-${q.id}" value="${score}" placeholder="-" min="0" max="${q.points}">
+                            
+                            <label>Feedback:</label>
+                            <input type="text" class="feedback-input" id="feedback-${q.id}" value="${escapeHtml(feedback)}" placeholder="Optional comment...">
+                            
+                            <button class="btn-save-grade" onclick="saveGrade('${studentId}', '${q.id}', ${q.points})">Save</button>
+                        </div>
+                    </div>
+                `;
             }
 
             content.innerHTML = html;
 
-            // Open Panel
             panel.classList.add('open');
             overlay.classList.add('show');
 
-            // Render MathJax inside the panel
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([content]).catch(err => console.log('MathJax error:', err));
             }
@@ -3349,7 +3229,6 @@ function renderStudentCards() {
             let score = scoreInput.value;
             const feedback = feedbackInput.value;
 
-            // Validate score
             if (score !== '') {
                 score = parseFloat(score);
                 if (isNaN(score)) {
@@ -3360,20 +3239,17 @@ function renderStudentCards() {
             }
 
             try {
-                // Update specific fields in the student document
                 const updates = {};
                 updates[`grades.${questionId}`] = score === '' ? null : score;
                 updates[`feedback.${questionId}`] = feedback;
 
                 await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), updates);
 
-                // Visual feedback
                 scoreInput.style.borderColor = 'var(--green)';
                 setTimeout(() => scoreInput.style.borderColor = 'var(--border)', 1000);
 
                 showToast('Grade saved');
 
-                // Refresh local data to update stats
                 await loadStudents();
                 updateStats();
 
@@ -3383,39 +3259,21 @@ function renderStudentCards() {
             }
         };
 
-        // --- DELETE STUDENT RECORD LOGIC ---
-
-        // window.deleteStudentRecord = async function(studentId) {
-        //   if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
-        //   
-        //   try {
-        //     await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
-        //     showToast('Student record deleted. They can rejoin now.');
-        //     await loadStudents(); // Refresh list
-        //     updateStats();
-        //   } catch (err) {
-        //     console.error(err);
-        //     showToast('Error deleting student record', true);
-        //   }
-        // };
-
         window.deleteStudentRecord = async function(studentId) {
             if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
 
             try {
-                // 📝 Firestore: Delete student record
                 await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
 
-                // 🟢 RTDB: Remove student from live tracking
                 try {
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
-                    console.log(`✅ Student ${studentId} removed from RTDB`);
+                    console.log(`Student ${studentId} removed from RTDB`);
                 } catch (e) {
-                    console.warn('⚠️ Could not remove from RTDB:', e);
+                    console.warn('Could not remove from RTDB:', e);
                 }
 
                 showToast('Student record deleted. They can rejoin now.');
-                await loadStudents(); // Refresh list
+                await loadStudents();
                 updateStats();
             } catch (err) {
                 console.error(err);
@@ -3423,20 +3281,15 @@ function renderStudentCards() {
             }
         };
 
-
-        // --- RESULTS & EXPORT LOGIC ---
-
         window.renderResults = async function() {
             if (!activeSessionId) return;
 
-            // Ensure we have latest data
             await loadStudents();
 
             const tbody = document.getElementById('resultsBody');
             const filterStudent = document.getElementById('filterStudent').value;
             const filterQuestion = document.getElementById('filterQuestion').value;
 
-            // Populate filters if empty
             const studentSelect = document.getElementById('filterStudent');
             if (studentSelect.options.length <= 1) {
                 currentStudents.forEach(s => {
@@ -3461,11 +3314,9 @@ function renderStudentCards() {
 
             let hasData = false;
 
-            // Iterate through students
             for (const student of currentStudents) {
                 if (filterStudent && student.id !== filterStudent) continue;
 
-                // Iterate through questions
                 for (const q of currentQuestions) {
                     if (filterQuestion && q.id !== filterQuestion) continue;
 
@@ -3484,33 +3335,33 @@ function renderStudentCards() {
                     }
 
                     const row = `
-        <tr>
-          <td>
-            <div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
-            <div style="font-size:11px;color:var(--muted)">${student.submitted ? 'Submitted' : 'Draft'}</div>
-          </td>
-          <td>
-            <div style="font-size:11px;color:var(--muted)">Q${currentQuestions.indexOf(q)+1}</div>
-            <div class="math-content" style="font-size:13px">${mathHtml(q.text)}</div>
-          </td>
-          <td>
-            <div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span style="color:var(--muted);font-style:italic">-</span>'}</div>
-          </td>
-          <td>
-            <span class="score-pill" style="${scoreClass};background:var(--surface2);border:1px solid var(--border)">
-              ${score === '-' ? '-' : `${score}/${q.points}`}
-            </span>
-          </td>
-          <td>
-            <div style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">
-              ${escapeHtml(feedback) || '-'}
-            </div>
-          </td>
-          <td>
-             <button class="btn btn-sm btn-edit" onclick="openReview('${student.id}')">View</button>
-          </td>
-        </tr>
-      `;
+                        <tr>
+                            <td>
+                                <div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
+                                <div style="font-size:11px;color:var(--muted)">${student.submitted ? 'Submitted' : 'Draft'}</div>
+                            </td>
+                            <td>
+                                <div style="font-size:11px;color:var(--muted)">Q${currentQuestions.indexOf(q)+1}</div>
+                                <div class="math-content" style="font-size:13px">${mathHtml(q.text)}</div>
+                            </td>
+                            <td>
+                                <div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span style="color:var(--muted);font-style:italic">-</span>'}</div>
+                            </td>
+                            <td>
+                                <span class="score-pill" style="${scoreClass};background:var(--surface2);border:1px solid var(--border)">
+                                    ${score === '-' ? '-' : `${score}/${q.points}`}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">
+                                    ${escapeHtml(feedback) || '-'}
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-edit" onclick="openReview('${student.id}')">View</button>
+                            </td>
+                        </tr>
+                    `;
                     tbody.innerHTML += row;
                 }
             }
@@ -3519,48 +3370,10 @@ function renderStudentCards() {
                 tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
             }
 
-            // Render MathJax in table
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
             }
         };
-
-        // window.exportData = async function() {
-        //   if (!activeSessionId) {
-        //     showToast('No active session', true);
-        //     return;
-        //   }
-        //   
-        //   showToast('Preparing JSON export...');
-        //   
-        //   const exportObj = {
-        //     version: "1.0",
-        //     exportedAt: new Date().toISOString(),
-        //     session: currentSessionData,
-        //     questions: currentQuestions,
-        //     students: currentStudents.map(s => ({
-        //       id: s.id,
-        //       name: s.name,
-        //       submitted: s.submitted,
-        //       loginTime: s.loginTime,
-        //       answers: s.answers,
-        //       grades: s.grades,
-        //       feedback: s.feedback
-        //     }))
-        //   };
-        //   
-        //   const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-        //   const url = URL.createObjectURL(blob);
-        //   const a = document.createElement('a');
-        //   a.href = url;
-        //   a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
-        //   a.click();
-        //   URL.revokeObjectURL(url);
-        //   
-        //   showToast('JSON Export Complete');
-        // };
-
-
 
         window.exportData = async function() {
             if (!activeSessionId) {
@@ -3596,7 +3409,6 @@ function renderStudentCards() {
             a.click();
             URL.revokeObjectURL(url);
 
-            // 🟢 RTDB: Log export event (optional - for audit trail)
             try {
                 const timestamp = Date.now();
                 await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
@@ -3604,14 +3416,13 @@ function renderStudentCards() {
                     timestamp: new Date().toISOString(),
                     studentsCount: currentStudents.length
                 });
-                console.log('✅ Export logged to RTDB');
+                console.log('Export logged to RTDB');
             } catch (e) {
-                console.warn('⚠️ Could not log export to RTDB:', e);
+                console.warn('Could not log export to RTDB:', e);
             }
 
             showToast('JSON Export Complete');
         };
-
 
         window.exportReports = async function() {
             if (!activeSessionId) {
@@ -3631,22 +3442,20 @@ function renderStudentCards() {
             } = window.jspdf;
             const printContainer = document.getElementById('print-container');
 
-            // Process students one by one to avoid memory issues
             for (const student of currentStudents) {
-                // Build HTML for this student
                 let html = `
-      <div class="print-page">
-        <div class="print-header">
-          <div>
-            <h1 style="margin:0;font-size:20px;">${escapeHtml(currentSessionData?.title || 'Quiz Report')}</h1>
-            <div style="font-size:12px;color:#555;">${escapeHtml(currentSessionData?.subject || '')} - ${escapeHtml(currentSessionData?.className || '')}</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="print-student-name">${escapeHtml(student.name || student.id)}</div>
-            <div class="print-meta">Date: ${new Date().toLocaleDateString()}</div>
-          </div>
-        </div>
-    `;
+                    <div class="print-page">
+                        <div class="print-header">
+                            <div>
+                                <h1 style="margin:0;font-size:20px;">${escapeHtml(currentSessionData?.title || 'Quiz Report')}</h1>
+                                <div style="font-size:12px;color:#555;">${escapeHtml(currentSessionData?.subject || '')} - ${escapeHtml(currentSessionData?.className || '')}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div class="print-student-name">${escapeHtml(student.name || student.id)}</div>
+                                <div class="print-meta">Date: ${new Date().toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                `;
 
                 let totalScore = 0;
                 let maxTotal = 0;
@@ -3660,33 +3469,31 @@ function renderStudentCards() {
                     maxTotal += q.points;
 
                     html += `
-        <div class="print-q-item">
-          <div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
-          <div class="print-a-label">Student Answer:</div>
-          <div class="print-a-text math-content">${mathHtml(answer)}</div>
-          ${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedback: ${escapeHtml(feedback)}</em></div>` : ''}
-          <div class="print-score">${score} / ${q.points}</div>
-          <div style="clear:both;"></div>
-        </div>
-      `;
+                        <div class="print-q-item">
+                            <div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
+                            <div class="print-a-label">Student Answer:</div>
+                            <div class="print-a-text math-content">${mathHtml(answer)}</div>
+                            ${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedback: ${escapeHtml(feedback)}</em></div>` : ''}
+                            <div class="print-score">${score} / ${q.points}</div>
+                            <div style="clear:both;"></div>
+                        </div>
+                    `;
                 });
 
                 html += `
-        <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
-          <span>Total Score:</span>
-          <span>${totalScore} / ${maxTotal}</span>
-        </div>
-      </div>
-    `;
+                        <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
+                            <span>Total Score:</span>
+                            <span>${totalScore} / ${maxTotal}</span>
+                        </div>
+                    </div>
+                `;
 
                 printContainer.innerHTML = html;
 
-                // Wait for MathJax to render
                 if (window.MathJax && MathJax.typesetPromise) {
                     await MathJax.typesetPromise([printContainer]);
                 }
 
-                // Capture with html2canvas
                 try {
                     const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
                         scale: 2,
@@ -3706,7 +3513,6 @@ function renderStudentCards() {
                     console.error("PDF Generation Error:", err);
                 }
 
-                // Small delay between students
                 await new Promise(r => setTimeout(r, 500));
             }
 
@@ -3742,7 +3548,6 @@ function renderStudentCards() {
             showToast('All answers cleared');
         };
 
-        // JSON Export Functions
         window.exportQuestionToJSON = async function(questionId) {
             if (!activeSessionId) return;
 
@@ -3822,7 +3627,6 @@ function renderStudentCards() {
             showToast(`Exported ${currentQuestions.length} questions to JSON!`);
         };
 
-        // JSON Import Function
         window.importFromJSON = async function(event) {
             if (!activeSessionId) {
                 showToast('No active session', true);
@@ -3842,7 +3646,6 @@ function renderStudentCards() {
                     let imported = 0;
                     let skipped = 0;
 
-                    // Handle single question format
                     if (jsonData.type === 'question' && jsonData.question) {
                         const q = jsonData.question;
                         const questionData = {
@@ -3864,9 +3667,7 @@ function renderStudentCards() {
                         const qId = 'q_' + Date.now();
                         await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
                         imported = 1;
-                    }
-                    // Handle batch questions format
-                    else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
+                    } else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
                         for (let i = 0; i < jsonData.questions.length; i++) {
                             const q = jsonData.questions[i];
 
@@ -3890,12 +3691,9 @@ function renderStudentCards() {
                             await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
                             imported++;
 
-                            // Small delay
                             await new Promise(r => setTimeout(r, 50));
                         }
-                    }
-                    // Handle simple array of questions
-                    else if (Array.isArray(jsonData)) {
+                    } else if (Array.isArray(jsonData)) {
                         for (let i = 0; i < jsonData.length; i++) {
                             const q = jsonData[i];
 
@@ -3925,7 +3723,6 @@ function renderStudentCards() {
                         return;
                     }
 
-                    // Refresh questions
                     await loadQuestions();
                     updateStats();
 
@@ -3960,14 +3757,11 @@ function renderStudentCards() {
             reader.onload = async function(e) {
                 try {
                     const parser = new DOMParser();
-                    // Rename this variable to avoid conflict with Firestore's doc function
                     const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
 
-                    // Look for question cards in the imported HTML
                     let questionCards = htmlDoc.querySelectorAll('.question-card');
 
                     if (!questionCards.length) {
-                        // Alternative: look for questions in different structure
                         questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
                     }
 
@@ -3981,7 +3775,6 @@ function renderStudentCards() {
 
                     for (const card of questionCards) {
                         try {
-                            // Extract question text
                             let questionText = '';
                             const mainInput = card.querySelector('.main-q-input');
                             if (mainInput) {
@@ -3989,7 +3782,6 @@ function renderStudentCards() {
                             }
 
                             if (!questionText.trim()) {
-                                // Try to get from other elements
                                 const qTextDiv = card.querySelector('.q-text');
                                 if (qTextDiv) questionText = qTextDiv.innerText;
                             }
@@ -3999,7 +3791,6 @@ function renderStudentCards() {
                                 continue;
                             }
 
-                            // Determine question type
                             let questionType = 'text';
                             const typeSelector = card.querySelector('.q-type-selector');
                             if (typeSelector) {
@@ -4014,7 +3805,6 @@ function renderStudentCards() {
                                 }
                             }
 
-                            // Extract points/marks
                             let points = 10;
                             const marksInput = card.querySelector('.mark-input-field, .marks-input');
                             if (marksInput) {
@@ -4022,7 +3812,6 @@ function renderStudentCards() {
                                 if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
                             }
 
-                            // Extract options for MCQ
                             let options = null;
                             let correctAnswer = '';
 
@@ -4032,7 +3821,6 @@ function renderStudentCards() {
                                     options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
                                 }
 
-                                // Try to detect correct answer from highlighted or checked option
                                 const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
                                 if (checkedOption) {
                                     const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
@@ -4043,14 +3831,12 @@ function renderStudentCards() {
                                 if (correctTF) correctAnswer = correctTF.value;
                             }
 
-                            // Extract subject/tag from context or header
                             let tag = 'Imported';
                             const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
                             if (headerTitle) {
                                 tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
                             }
 
-                            // Create question object
                             const questionData = {
                                 text: questionText.trim(),
                                 type: questionType,
@@ -4062,14 +3848,11 @@ function renderStudentCards() {
                                 importedFrom: 'HTML'
                             };
 
-                            // Save to Firestore - use setDoc with the imported firestore function
                             const qId = 'q_' + Date.now() + '_' + imported;
-                            // The doc function is imported from firebase-config.js, so we use it directly
                             await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
 
                             imported++;
 
-                            // Small delay to avoid overwhelming the database
                             await new Promise(r => setTimeout(r, 50));
 
                         } catch (err) {
@@ -4078,7 +3861,6 @@ function renderStudentCards() {
                         }
                     }
 
-                    // Refresh questions display
                     await loadQuestions();
                     updateStats();
 
@@ -4088,7 +3870,6 @@ function renderStudentCards() {
                         showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
                     }
 
-                    // Log errors for debugging
                     if (errors.length) {
                         console.warn('Import errors:', errors);
                     }
@@ -4148,10 +3929,16 @@ function renderStudentCards() {
                 return;
             }
 
-            if (id === 'results') renderResults();
-            if (id === 'questions') loadQuestions();
-            if (id === 'monitor') loadStudents();
-            if (id === 'class-status') loadClassStatus(); // Load class status when tab clicked
+            // FIXED: Ensure data is loaded before rendering results
+            if (id === 'results') {
+                loadStudents().then(() => renderResults());
+            } else if (id === 'questions') {
+                loadQuestions();
+            } else if (id === 'monitor') {
+                loadStudents();
+            } else if (id === 'class-status') {
+                loadClassStatus();
+            }
         };
 
         function showToast(msg, isError = false) {
