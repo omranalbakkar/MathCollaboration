@@ -935,48 +935,44 @@
             }
         }
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user && !authStateReady) {
-                authStateReady = true;
-                
-                // Check if admin
-                isAdminUser = await checkAdminRole(user);
-                
-                if (!isAdminUser) {
-                    // Not an admin, check if this is the first user or special case
-                    // For now, allow if user exists in users collection with any role
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if (!userDoc.exists()) {
-                        alert("You don't have admin privileges");
-                        await signOut(auth);
-                        authStateReady = false;
-                        return;
-                    }
-                    // User exists but might not be superadmin - still allow for now
-                    isAdminUser = true;
-                }
-                
-                currentUser = user;
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                document.getElementById('admin-user-display').textContent = user.email;
-                
-                try {
-                    await initDashboard();
-                } catch (e) {
-                    console.error("Dashboard init error:", e);
-                    // Don't show alert here, just log it
-                }
-                showLoading(false);
-            } else if (!user) {
-                authStateReady = false;
-                isAdminUser = false;
-                currentUser = null;
-                document.getElementById('login-overlay').style.display = 'flex';
-                document.getElementById('app-container').style.display = 'none';
-                showLoading(false);
-            }
-        });
+      onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    authStateReady = true;
+    showLoading(true);
+    try {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      
+      if (!userDoc.exists() || userDoc.data().role !== 'superadmin') {
+        alert("You don't have admin privileges");
+        await signOut(auth);
+        authStateReady = false;
+        showLoading(false);
+        return;
+      }
+      
+      // ✅ Only reaches here if role is exactly "superadmin"
+      isAdminUser = true;
+      currentUser = user;
+      document.getElementById('login-overlay').style.display = 'none';
+      document.getElementById('app-container').style.display = 'flex';
+      document.getElementById('admin-user-display').textContent = user.email;
+      await initDashboard();
+    } catch (e) {
+      console.error("Auth check error", e);
+      alert("Error verifying admin role: " + e.message);
+      await signOut(auth);
+    } finally {
+      showLoading(false);
+    }
+  } else {
+    authStateReady = false;
+    isAdminUser = false;
+    currentUser = null;
+    document.getElementById('login-overlay').style.display = 'flex';
+    document.getElementById('app-container').style.display = 'none';
+    showLoading(false);
+  }
+});
 
         // --- NAVIGATION ---
         window.showSection = (sectionId) => {
