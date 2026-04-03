@@ -2337,45 +2337,94 @@ async function loadActiveSession() {
         //   renderStudentCards();
         // }
 
-        async function loadStudents() {
-            if (!activeSessionId) return;
+async function loadStudents() {
+    if (!activeSessionId) {
+        console.log('⚠️ No active session ID, cannot load students');
+        return;
+    }
 
-            const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-            const querySnapshot = await getDocs(studentsRef);
-            currentStudents = [];
-            querySnapshot.forEach(doc => {
-                currentStudents.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
+    try {
+        const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+        const querySnapshot = await getDocs(studentsRef);
+        
+        // DEBUG: Log what we found
+        console.log(`📊 Found ${querySnapshot.size} student records in Firestore for session: ${activeSessionId}`);
+        
+        currentStudents = [];
+        querySnapshot.forEach(doc => {
+            const studentData = { id: doc.id, ...doc.data() };
+            console.log('👨‍🎓 Student loaded:', studentData.id, studentData.name || 'Unnamed', 'Online:', studentData.online);
+            currentStudents.push(studentData);
+        });
 
-            // 🟢 RTDB: Sync live student data to RTDB (optional - for real-time metrics)
-            try {
-                for (const student of currentStudents) {
-                    const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
-
-                    // Only update if student is marked as online in Firestore
-                    if (student.online) {
-                        await set(rtdbRef, {
-                            name: student.name,
-                            uid: student.id,
-                            status: 'active',
-                            loginTime: student.loginTime || Date.now()
-                        });
-                    } else {
-                        // Optional: Remove from RTDB if they are offline in Firestore to keep it clean
-                        await remove(rtdbRef);
-                    }
+        // 🟢 RTDB: Sync live student data to RTDB (for real-time metrics)
+        try {
+            for (const student of currentStudents) {
+                const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
+                
+                // Only update if student is marked as online in Firestore
+                if (student.online === true) {
+                    await set(rtdbRef, {
+                        name: student.name || 'Student',
+                        uid: student.id,
+                        status: 'active',
+                        loginTime: student.loginTime || Date.now(),
+                        lastSeen: Date.now()
+                    });
+                    console.log(`🟢 Synced student ${student.name || student.id} to RTDB (ONLINE)`);
+                } else {
+                    // Remove from RTDB if they are offline to keep it clean
+                    await remove(rtdbRef);
+                    console.log(`🔴 Removed student ${student.name || student.id} from RTDB (OFFLINE)`);
                 }
-                console.log(`🟢 Synced ${currentStudents.length} students to RTDB`);
-            } catch (e) {
-                console.warn('⚠️ Error syncing to RTDB:', e);
             }
-
-            renderStudentCards();
+            console.log(`🟢 Synced ${currentStudents.length} students to RTDB`);
+        } catch (e) {
+            console.warn('⚠️ Error syncing to RTDB:', e);
         }
 
+        // Update UI components
+        renderStudentCards();
+        
+        // Update stats for monitor tab
+        const onlineCount = currentStudents.filter(s => s.online === true).length;
+        const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
+        const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+        
+        // Update various UI elements with student data
+        document.getElementById('statOnline').textContent = onlineCount;
+        document.getElementById('statAnswers').textContent = answersCount;
+        document.getElementById('statGraded').textContent = gradedCount;
+        document.getElementById('liveCount').textContent = `● ${onlineCount} online`;
+        
+        // If on class-status tab, refresh that too
+        const activeTab = document.querySelector('.tab-pane.active')?.id;
+        if (activeTab === 'tab-class-status') {
+            await loadClassStatus();
+        }
+        
+        // If on results tab, refresh results
+        if (activeTab === 'tab-results') {
+            await renderResults();
+        }
+        
+        console.log(`✅ Students loaded: ${currentStudents.length} total, ${onlineCount} online`);
+        
+    } catch (error) {
+        console.error('❌ Error loading students:', error);
+        showToast('Error loading student data: ' + error.message, true);
+        
+        // Show error state in UI
+        const grid = document.getElementById('studentsGrid');
+        if (grid) {
+            grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+                <p style="font-size:15px;color:var(--red)">⚠️ Error loading students</p>
+                <span style="font-size:13px;display:block;margin-top:6px">${escapeHtml(error.message)}</span>
+                <button class="btn btn-sm" onclick="loadStudents()" style="margin-top:10px">Retry ↻</button>
+            </div>`;
+        }
+    }
+}
 
 
 
@@ -2508,6 +2557,40 @@ async function loadActiveSession() {
             updateClassStats(presentCount, absentCount, totalAssigned);
         }
 
+
+function setupRealtimeStudentListener() {
+    if (!activeSessionId) return;
+    
+    console.log('🟢 Setting up real-time student listener...');
+    
+    const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+    
+    // Use onSnapshot for real-time updates
+    onSnapshot(studentsRef, (snapshot) => {
+        console.log(`🔄 Real-time update: ${snapshot.docChanges().length} changes detected`);
+        
+        snapshot.docChanges().forEach((change) => {
+            const studentData = { id: change.doc.id, ...change.doc.data() };
+            
+            if (change.type === 'added') {
+                console.log('➕ Student joined:', studentData.name || studentData.id);
+                showToast(`${studentData.name || 'A student'} joined the session`, false);
+            } else if (change.type === 'modified') {
+                console.log('✏️ Student updated:', studentData.name || studentData.id);
+            } else if (change.type === 'removed') {
+                console.log('➖ Student left:', studentData.name || studentData.id);
+            }
+        });
+        
+        // Refresh the student list on any change
+        loadStudents();
+    }, (error) => {
+        console.error('❌ Real-time listener error:', error);
+    });
+}
+        
+
+        
         // Helper to update stats consistently
         function updateClassStats(present, absent, total) {
             document.getElementById('csTotalPresent').textContent = present;
@@ -2524,34 +2607,37 @@ async function loadActiveSession() {
         //   }
         // }
 
-        function setupRealtimeListeners() {
-            if (!activeSessionId) return;
+function setupRealtimeListeners() {
+    if (!activeSessionId) return;
 
-            console.log('🟢 Setting up RTDB real-time listeners...');
+    console.log('🟢 Setting up RTDB real-time listeners...');
 
-            // 🟢 RTDB: Listen to live student count
-            const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
+    // 🟢 RTDB: Listen to live student count
+    const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
 
-            try {
-                onValue(liveStudentsRef, (snapshot) => {
-                    const students = snapshot.val();
-                    const liveCount = students ? Object.keys(students).length : 0;
+    try {
+        onValue(liveStudentsRef, (snapshot) => {
+            const students = snapshot.val();
+            const liveCount = students ? Object.keys(students).length : 0;
 
-                    // Update UI with live count
-                    const liveChip = document.querySelector('.live-count');
-                    if (liveChip) {
-                        liveChip.textContent = `${liveCount} online`;
-                    }
-
-                    console.log(`🟢 Active students in RTDB: ${liveCount}`);
-                }, (error) => {
-                    console.warn('⚠️ RTDB listener error:', error);
-                });
-            } catch (e) {
-                console.warn('⚠️ Could not set up RTDB listener:', e);
+            // Update UI with live count
+            const liveChip = document.querySelector('.live-count');
+            if (liveChip) {
+                liveChip.textContent = `${liveCount} online`;
             }
-        }
 
+            console.log(`🟢 Active students in RTDB: ${liveCount}`);
+        }, (error) => {
+            console.warn('⚠️ RTDB listener error:', error);
+        });
+        
+        // 🆕 Add Firestore real-time student listener
+        setupRealtimeStudentListener();
+        
+    } catch (e) {
+        console.warn('⚠️ Could not set up RTDB listener:', e);
+    }
+}
 
         function renderQuestions() {
             const list = document.getElementById('questionsList');
