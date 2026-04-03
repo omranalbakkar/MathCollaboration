@@ -4,14 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduBoard | Super Admin Portal - Modern Dashboard</title>
-    <!-- Bootstrap 5 + Icons + Font Awesome -->
+    <title>EduBoard | Super Admin Console</title>
+    <!-- Bootstrap 5 + Icons + Font Awesome + SheetJS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #3b82f6, #1e40af);
             --sidebar-width: 280px;
         }
 
@@ -21,7 +20,6 @@
             overflow-x: hidden;
         }
 
-        /* Sidebar & Layout */
         .wrapper {
             display: flex;
             width: 100%;
@@ -44,24 +42,14 @@
             border-bottom: 1px solid #334155;
         }
 
-        #sidebar ul.components {
-            padding: 1rem 0;
-        }
-
         #sidebar ul li a {
             padding: 0.8rem 1.5rem;
-            font-size: 0.95rem;
             display: flex;
             align-items: center;
             gap: 12px;
             color: #cbd5e1;
-            transition: 0.2s;
             text-decoration: none;
-        }
-
-        #sidebar ul li a i {
-            width: 24px;
-            font-size: 1.1rem;
+            transition: 0.2s;
         }
 
         #sidebar ul li a:hover,
@@ -109,29 +97,6 @@
             color: #3b82f6;
         }
 
-        .table-responsive-custom {
-            border-radius: 1rem;
-            overflow: hidden;
-            background: white;
-        }
-
-        .btn-icon {
-            margin: 0 2px;
-        }
-
-        .toast-container {
-            z-index: 1055;
-        }
-
-        .live-badge {
-            background: #10b981;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-
         .status-badge {
             padding: 0.2rem 0.7rem;
             border-radius: 30px;
@@ -149,6 +114,14 @@
             color: #991b1b;
         }
 
+        .live-badge {
+            background: #10b981;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+        }
+
         @media (max-width: 768px) {
             #sidebar {
                 margin-left: -280px;
@@ -164,21 +137,15 @@
             }
         }
 
-        footer {
-            background: white;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .login-wrapper {
-            min-height: 100vh;
-            background: linear-gradient(130deg, #2563eb, #1e40af);
+        .toast-container {
+            z-index: 1055;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- LOGIN OVERLAY (initially visible) -->
+    <!-- LOGIN OVERLAY -->
     <div id="loginOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(15,23,42,0.92); backdrop-filter: blur(10px); z-index: 9999;">
         <div class="card shadow-lg border-0 rounded-4" style="width: 100%; max-width: 450px;">
             <div class="card-body p-4 p-lg-5">
@@ -188,24 +155,17 @@
                     <p class="text-muted">Super Admin Portal</p>
                 </div>
                 <form id="loginForm">
-                    <div class="mb-3">
-                        <label class="form-label"><i class="fas fa-envelope me-1"></i> Email</label>
-                        <input type="email" id="adminEmail" class="form-control form-control-lg" placeholder="admin@eduboard.com" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label"><i class="fas fa-lock me-1"></i> Password</label>
-                        <input type="password" id="adminPassword" class="form-control form-control-lg" placeholder="••••••••" required>
-                    </div>
+                    <div class="mb-3"><label class="form-label"><i class="fas fa-envelope me-1"></i> Email</label><input type="email" id="adminEmail" class="form-control form-control-lg" required></div>
+                    <div class="mb-4"><label class="form-label"><i class="fas fa-lock me-1"></i> Password</label><input type="password" id="adminPassword" class="form-control form-control-lg" required></div>
                     <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill"><i class="fas fa-sign-in-alt me-2"></i> Sign In</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP (hidden until login) -->
+    <!-- MAIN APP -->
     <div id="appContainer" style="display: none;">
         <div class="wrapper">
-            <!-- Sidebar -->
             <nav id="sidebar">
                 <div class="sidebar-header d-flex align-items-center gap-2">
                     <i class="fas fa-chalkboard-user fa-2x text-primary"></i>
@@ -221,23 +181,18 @@
                 </ul>
             </nav>
 
-            <!-- Page Content -->
             <div id="content">
                 <nav class="navbar navbar-custom">
                     <div class="container-fluid">
                         <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarCollapse"><i class="fas fa-bars"></i></button>
-                        <div class="ms-auto d-flex align-items-center gap-3">
-                            <span id="adminUserBadge" class="text-secondary"><i class="fas fa-user-shield"></i> Admin</span>
-                            <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-                        </div>
+                        <div class="ms-auto d-flex gap-3"><span id="adminUserBadge" class="text-secondary"><i class="fas fa-user-shield"></i> Admin</span><button class="btn btn-outline-danger btn-sm rounded-pill" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
                     </div>
                 </nav>
                 <main class="p-3 p-md-4">
-                    <!-- Dashboard Section -->
+                    <!-- DASHBOARD -->
                     <div id="dashboardSection" class="section-content">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3><i class="fas fa-chart-line text-primary me-2"></i>Executive Dashboard</h3>
-                            <button class="btn btn-sm btn-outline-info" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Live Monitor</button>
+                            <h3><i class="fas fa-chart-line text-primary me-2"></i>Executive Dashboard</h3><button class="btn btn-sm btn-outline-info" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Live Monitor</button>
                         </div>
                         <div class="row g-4" id="statsRow">
                             <div class="col-md-3 col-sm-6">
@@ -323,13 +278,13 @@
                         </div>
                     </div>
 
-                    <!-- Grades / Subjects / Teachers / Students / Sessions sections (simplified dynamic) -->
+                    <!-- GRADES -->
                     <div id="gradesSection" class="section-content" style="display:none;">
                         <div class="d-flex justify-content-between mb-3">
                             <h3><i class="fas fa-layer-group"></i> Grades</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('grades')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button></div>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('grades')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('grades')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button></div>
                         </div>
-                        <div class="table-responsive-custom">
+                        <div class="table-responsive">
                             <table class="table table-hover align-middle" id="gradesTable">
                                 <thead class="table-light">
                                     <tr>
@@ -348,12 +303,13 @@
                             </table>
                         </div>
                     </div>
+                    <!-- SUBJECTS -->
                     <div id="subjectsSection" class="section-content" style="display:none;">
                         <div class="d-flex justify-content-between mb-3">
                             <h3><i class="fas fa-book-open"></i> Subjects</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('subjects')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button></div>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('subjects')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('subjects')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button></div>
                         </div>
-                        <div class="table-responsive-custom">
+                        <div class="table-responsive">
                             <table class="table table-hover" id="subjectsTable">
                                 <thead class="table-light">
                                     <tr>
@@ -368,12 +324,13 @@
                             </table>
                         </div>
                     </div>
+                    <!-- TEACHERS (Firestore only, no Auth) -->
                     <div id="teachersSection" class="section-content" style="display:none;">
                         <div class="d-flex justify-content-between mb-3">
                             <h3><i class="fas fa-chalkboard-user"></i> Teachers</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('teachers')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button></div>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('teachers')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('teachers')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button></div>
                         </div>
-                        <div class="alert alert-info"><i class="fas fa-sync-alt"></i> Auto-sync with Firebase Auth & users collection.</div>
+                        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Teachers stored only in Firestore (no Firebase Auth account created).</div>
                         <div class="table-responsive">
                             <table class="table table-hover" id="teachersTable">
                                 <thead class="table-light">
@@ -390,12 +347,13 @@
                             </table>
                         </div>
                     </div>
+                    <!-- STUDENTS (Firestore only) -->
                     <div id="studentsSection" class="section-content" style="display:none;">
                         <div class="d-flex justify-content-between mb-3">
                             <h3><i class="fas fa-user-graduate"></i> Students</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('students')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button></div>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('students')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('students')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button></div>
                         </div>
-                        <div class="alert alert-info"><i class="fas fa-sync-alt"></i> Auto-sync with Firebase Auth.</div>
+                        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Students stored only in Firestore (no Firebase Auth).</div>
                         <div class="row mb-3">
                             <div class="col-md-4"><select id="gradeFilter" class="form-select" onchange="loadStudentsData()">
                                     <option value="">All Grades</option>
@@ -416,10 +374,11 @@
                             </table>
                         </div>
                     </div>
+                    <!-- SESSIONS -->
                     <div id="sessionsSection" class="section-content" style="display:none;">
                         <div class="d-flex justify-content-between mb-3">
                             <h3><i class="fas fa-video"></i> Sessions</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('sessions')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus-circle"></i> Create Session</button></div>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('sessions')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('sessions')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus-circle"></i> Create Session</button></div>
                         </div>
                         <div class="table-responsive">
                             <table class="table table-hover" id="sessionsTable">
@@ -439,15 +398,15 @@
                         </div>
                     </div>
                 </main>
-                <footer class="text-center text-muted py-3 small">© 2025 EduBoard — Secure Admin Panel</footer>
+                <footer class="text-center text-muted py-3 small">© 2025 EduBoard — Secure Admin Portal</footer>
             </div>
         </div>
     </div>
 
-    <!-- Global Toast Container -->
+    <!-- Toast Container -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
 
-    <!-- Modal Form (dynamic) -->
+    <!-- Modal Form -->
     <div class="modal fade" id="universalModal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -471,10 +430,7 @@
             getAuth,
             signInWithEmailAndPassword,
             signOut,
-            onAuthStateChanged,
-            sendPasswordResetEmail,
-            createUserWithEmailAndPassword,
-            updateProfile
+            onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import {
             getFirestore,
@@ -483,14 +439,13 @@
             doc,
             setDoc,
             deleteDoc,
-            query,
-            where,
             updateDoc,
             addDoc,
-            writeBatch,
             serverTimestamp,
             Timestamp,
-            getDoc
+            query,
+            where,
+            writeBatch
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import {
             getDatabase,
@@ -513,10 +468,6 @@
         const rtdb = getDatabase(app);
 
         let currentAdmin = null;
-        let adminCreds = {
-            email: '',
-            password: ''
-        };
         let allGrades = [],
             allSubjects = [],
             allTeachers = [];
@@ -528,32 +479,23 @@
             setTimeout(() => document.querySelector('.toast')?.remove(), 3000);
         }
 
-        // Login
+        // LOGIN
         document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('adminEmail').value,
                 pwd = document.getElementById('adminPassword').value;
             try {
                 await signInWithEmailAndPassword(auth, email, pwd);
-                adminCreds = {
-                    email,
-                    password: pwd
-                };
             } catch (err) {
                 showToast("Login failed: " + err.message, 'danger');
             }
         });
-
         window.handleLogout = async () => {
             await signOut(auth);
             document.getElementById('loginOverlay').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
-            adminCreds = {
-                email: '',
-                password: ''
-            };
+            currentAdmin = null;
         };
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDoc = await getDoc(doc(db, "users", user.uid));
@@ -566,18 +508,17 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 document.getElementById('appContainer').style.display = 'block';
                 document.getElementById('adminUserBadge').innerHTML = `<i class="fas fa-user-shield"></i> ${user.email}`;
-                await loadCoreData();
+                await loadAllMasterData();
                 initLiveMonitor();
                 switchSection('dashboard');
             } else {
-                currentAdmin = null;
                 document.getElementById('loginOverlay').style.display = 'flex';
                 document.getElementById('appContainer').style.display = 'none';
             }
         });
 
-        async function loadCoreData() {
-            const [gradesSnap, subjectsSnap, teachersSnap] = await Promise.all([getDocs(collection(db, "grades")), getDocs(collection(db, "subjects")), getDocs(collection(db, "teachers"))]);
+        async function loadAllMasterData() {
+            const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([getDocs(collection(db, "grades")), getDocs(collection(db, "subjects")), getDocs(collection(db, "teachers")), getDocs(collection(db, "students"))]);
             allGrades = gradesSnap.docs.map(d => ({
                 id: d.id,
                 ...d.data()
@@ -593,14 +534,9 @@
             document.getElementById('dashGrades').innerText = allGrades.length;
             document.getElementById('dashSubjects').innerText = allSubjects.length;
             document.getElementById('dashTeachers').innerText = allTeachers.length;
-            const studentsSnap = await getDocs(collection(db, "students"));
             document.getElementById('dashStudents').innerText = studentsSnap.size;
             populateGradeFilter();
-            loadGradesTable();
-            loadSubjectsTable();
-            loadTeachersTable();
-            loadStudentsData();
-            loadSessionsTable();
+            await Promise.all([loadGradesTable(), loadSubjectsTable(), loadTeachersTable(), loadStudentsData(), loadSessionsTable()]);
         }
 
         function populateGradeFilter() {
@@ -612,9 +548,9 @@
             const tbody = document.getElementById('gradesTbody');
             tbody.innerHTML = '';
             const snap = await getDocs(collection(db, "grades"));
-            snap.forEach(docSnap => {
-                const d = docSnap.data();
-                tbody.innerHTML += `<tr><td>${d.nameEn||''}</td><td>${d.nameAr||''}</td><td>${d.code||''}</td><td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td><td class="text-center"><button class="btn btn-sm btn-outline-secondary me-1" onclick='editItem("grade","${docSnap.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick='deleteItem("grades","${docSnap.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+            snap.forEach(d => {
+                const data = d.data();
+                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="text-center"><button class="btn btn-sm btn-outline-secondary me-1" onclick='editItem("grade","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick='deleteItem("grades","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
             if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No grades</td></tr>';
         }
@@ -635,7 +571,7 @@
                 const data = d.data();
                 const gNames = data.assignedGrades?.map(id => allGrades.find(g => g.id === id)?.nameEn || id).join(', ') || 'None';
                 const sNames = data.assignedSubjects?.map(id => allSubjects.find(s => s.id === id)?.nameEn || id).join(', ') || 'None';
-                tbody.innerHTML += `<tr><td>${data.name||'Unnamed'}</td><td>${data.email}</td><td>${gNames}</td><td>${sNames}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("teacher","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-warning" onclick='resetUserPassword("${data.email}")'><i class="fas fa-key"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteTeacherFull("${d.id}","${data.uid||''}")'><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${data.name||'Unnamed'}</td><td>${data.email}</td><td>${gNames}</td><td>${sNames}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("teacher","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteTeacherRecord("${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
         }
         window.loadStudentsData = async () => {
@@ -647,7 +583,7 @@
                 const data = d.data();
                 if (filter && data.gradeLevel !== filter) return;
                 const gradeName = allGrades.find(g => g.id === data.gradeLevel)?.nameEn || data.gradeLevel || '-';
-                tbody.innerHTML += `<tr><td>${data.name||''}</td><td>${data.email||''}</td><td>${gradeName}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("student","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-warning" onclick='resetUserPassword("${data.email}")'><i class="fas fa-key"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteStudentFull("${d.id}","${data.uid||''}")'><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${data.name||''}</td><td>${data.email||''}</td><td>${gradeName}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("student","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteStudentRecord("${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
             if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No students</td></tr>';
         };
@@ -664,103 +600,48 @@
             });
         }
 
-        // fix create user record with re-auth
-        async function createUserRecordWithReauth(collectionName, role, data, password) {
-            if (!currentAdmin) throw new Error("No admin");
-            let newAuthUser = null;
-            try {
-                const cred = await createUserWithEmailAndPassword(auth, data.email, password);
-                newAuthUser = cred.user;
-                await updateProfile(newAuthUser, {
-                    displayName: data.name
-                });
-            } catch (e) {
-                console.warn(e);
-            }
-            const uid = newAuthUser ? newAuthUser.uid : null;
-            const docData = {
-                ...data,
-                uid,
-                createdAt: serverTimestamp(),
-                createdBy: currentAdmin.uid
-            };
-            let refDoc;
-            if (uid) {
-                refDoc = doc(db, collectionName, uid);
-                await setDoc(refDoc, docData);
-            } else {
-                refDoc = await addDoc(collection(db, collectionName), docData);
-                await updateDoc(refDoc, {
-                    uid: refDoc.id
-                });
-            }
-            await setDoc(doc(db, "users", uid || refDoc.id), {
-                uid: uid || refDoc.id,
-                email: data.email,
-                name: data.name,
-                role,
-                status: data.status,
-                assignedGrades: data.assignedGrades || [],
-                assignedSubjects: data.assignedSubjects || [],
-                gradeLevel: data.gradeLevel || '',
-                updatedAt: serverTimestamp()
-            }, {
-                merge: true
-            });
-            // Re-authenticate admin
-            if (adminCreds.email && adminCreds.password) await signInWithEmailAndPassword(auth, adminCreds.email, adminCreds.password);
-            return uid;
-        }
-
+        // DELETE helpers
         window.deleteItem = async (col, id) => {
             if (confirm("Delete permanently?")) {
                 await deleteDoc(doc(db, col, id));
-                loadGradesTable();
-                loadSubjectsTable();
-                loadSessionsTable();
+                if (col === 'grades') loadGradesTable();
+                if (col === 'subjects') loadSubjectsTable();
+                if (col === 'sessions') loadSessionsTable();
                 showToast("Deleted");
             }
         };
-        window.deleteTeacherFull = async (docId, uid) => {
+        window.deleteTeacherRecord = async (id) => {
             if (confirm("Delete teacher?")) {
-                await deleteDoc(doc(db, "teachers", docId));
-                if (uid) await deleteDoc(doc(db, "users", uid)).catch(() => {});
+                await deleteDoc(doc(db, "teachers", id));
                 loadTeachersTable();
                 showToast("Teacher deleted");
             }
         };
-        window.deleteStudentFull = async (docId, uid) => {
+        window.deleteStudentRecord = async (id) => {
             if (confirm("Delete student?")) {
-                await deleteDoc(doc(db, "students", docId));
-                if (uid) await deleteDoc(doc(db, "users", uid)).catch(() => {});
+                await deleteDoc(doc(db, "students", id));
                 loadStudentsData();
                 showToast("Student deleted");
             }
         };
-        window.resetUserPassword = async (email) => {
-            if (confirm(`Send reset to ${email}?`)) {
-                await sendPasswordResetEmail(auth, email);
-                showToast("Reset email sent");
-            }
-        };
 
-        // Modal handling
+        // MODAL & CRUD (NO AUTH CREATION)
         window.openModalForm = (type, id = null, data = null) => {
             document.getElementById('modalTitle').innerText = (id ? 'Edit ' : 'Add ') + type;
             const form = document.getElementById('dynamicForm');
-            let html = '';
+            let html = `<input type="hidden" id="editId" value="${id||''}">`;
             if (type === 'grade' || type === 'subject') {
-                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Name (EN)</label><input class="form-control" name="nameEn" value="${data?.nameEn||''}" required></div><div class="mb-3"><label>Name (AR)</label><input class="form-control" name="nameAr" value="${data?.nameAr||''}"></div><div class="mb-3"><label>Code</label><input class="form-control" name="code" value="${data?.code||''}" required></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
+                html += `<div class="mb-3"><label>Name (EN)</label><input class="form-control" name="nameEn" value="${data?.nameEn||''}" required></div><div class="mb-3"><label>Name (AR)</label><input class="form-control" name="nameAr" value="${data?.nameAr||''}"></div><div class="mb-3"><label>Code</label><input class="form-control" name="code" value="${data?.code||''}" required></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
             } else if (type === 'teacher') {
                 const gradeOpts = allGrades.map(g => `<option value="${g.id}" ${data?.assignedGrades?.includes(g.id)?'selected':''}>${g.nameEn}</option>`).join('');
                 const subOpts = allSubjects.map(s => `<option value="${s.id}" ${data?.assignedSubjects?.includes(s.id)?'selected':''}>${s.nameEn}</option>`).join('');
-                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Email</label><input class="form-control" name="email" ${id?'disabled':''} value="${data?.email||''}" required></div><div class="mb-3"><label>Full Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div>${!id?`<div class="mb-3"><label>Password</label><input class="form-control" name="password" type="password" required placeholder="min 6 chars"></div>`:''}<div class="mb-3"><label>Assigned Grades (Ctrl+Click)</label><select multiple class="form-select" name="assignedGrades" size="4">${gradeOpts}</select></div><div class="mb-3"><label>Assigned Subjects</label><select multiple class="form-select" name="assignedSubjects" size="4">${subOpts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" selected>Active</option><option value="Inactive">Inactive</option></select></div>`;
+                html += `<div class="mb-3"><label>Email</label><input class="form-control" name="email" value="${data?.email||''}" required></div><div class="mb-3"><label>Full Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div><div class="mb-3"><label>Assigned Grades (Ctrl+Click)</label><select multiple class="form-select" name="assignedGrades" size="4">${gradeOpts}</select></div><div class="mb-3"><label>Assigned Subjects</label><select multiple class="form-select" name="assignedSubjects" size="4">${subOpts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status!=='Inactive'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
             } else if (type === 'student') {
                 const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Email</label><input class="form-control" name="email" ${id?'disabled':''} value="${data?.email||''}" required></div><div class="mb-3"><label>Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div>${!id?`<div class="mb-3"><label>Password</label><input class="form-control" name="password" type="password" required></div>`:''}<div class="mb-3"><label>Grade</label><select class="form-select" name="gradeLevel">${opts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" selected>Active</option><option value="Inactive">Inactive</option></select></div>`;
+                html += `<div class="mb-3"><label>Email</label><input class="form-control" name="email" value="${data?.email||''}" required></div><div class="mb-3"><label>Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div><div class="mb-3"><label>Grade</label><select class="form-select" name="gradeLevel">${opts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status!=='Inactive'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
             } else if (type === 'session') {
                 const teacherOpts = allTeachers.map(t => `<option value="${t.id}" ${data?.ownerTeacherId===t.id?'selected':''}>${t.name||t.email}</option>`).join('');
-                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Title</label><input class="form-control" name="title" value="${data?.title||''}" required></div><div class="mb-3"><label>Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div><div class="mb-3"><label>Grade Level</label><input class="form-control" name="gradeLevel" value="${data?.gradeLevel||''}"></div><div class="mb-3"><label>Subject</label><input class="form-control" name="subject" value="${data?.subject||''}"></div><div class="mb-3"><label>Start Time</label><input class="form-control" name="startTime" type="datetime-local"></div><div class="mb-3"><label>End Time</label><input class="form-control" name="endTime" type="datetime-local"></div><div class="mb-3"><label>Active</label><select class="form-select" name="isActive"><option value="true">Active</option><option value="false">Closed</option></select></div>`;
+                html += `<div class="mb-3"><label>Title</label><input class="form-control" name="title" value="${data?.title||''}" required></div><div class="mb-3"><label>Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div><div class="mb-3"><label>Grade Level</label><input class="form-control" name="gradeLevel" value="${data?.gradeLevel||''}"></div><div class="mb-3"><label>Subject</label><input class="form-control" name="subject" value="${data?.subject||''}"></div><div class="mb-3"><label>Start Time</label><input class="form-control" name="startTime" type="datetime-local"></div><div class="mb-3"><label>End Time</label><input class="form-control" name="endTime" type="datetime-local"></div><div class="mb-3"><label>Active</label><select class="form-select" name="isActive"><option value="true" ${data?.isActive?'selected':''}>Active</option><option value="false" ${!data?.isActive?'selected':''}>Closed</option></select></div>`;
             }
             form.innerHTML = html;
             const modal = new bootstrap.Modal(document.getElementById('universalModal'));
@@ -787,53 +668,35 @@
                     else await addDoc(collection(db, col), {
                         ...data,
                         createdAt: serverTimestamp(),
-                        createdBy: currentAdmin.uid
+                        createdBy: currentAdmin?.uid
                     });
                     showToast(`${type} saved`);
                     loadGradesTable();
                     loadSubjectsTable();
                 } else if (type === 'teacher') {
                     if (id) {
-                        const upd = {
-                            ...data
-                        };
-                        delete upd.email;
-                        delete upd.password;
-                        await updateDoc(doc(db, "teachers", id), upd);
-                        const tSnap = await getDoc(doc(db, "teachers", id));
-                        if (tSnap.exists() && tSnap.data().uid) await setDoc(doc(db, "users", tSnap.data().uid), {
-                            ...upd,
-                            email: tSnap.data().email,
-                            role: 'teacher'
-                        }, {
-                            merge: true
-                        });
+                        await updateDoc(doc(db, "teachers", id), data);
                     } else {
-                        if (!data.password || data.password.length < 6) throw new Error("Password min 6");
-                        await createUserRecordWithReauth("teachers", "teacher", data, data.password);
+                        await addDoc(collection(db, "teachers"), {
+                            ...data,
+                            createdAt: serverTimestamp(),
+                            createdBy: currentAdmin?.uid
+                        });
                     }
                     loadTeachersTable();
+                    showToast("Teacher saved");
                 } else if (type === 'student') {
                     if (id) {
-                        const upd = {
-                            ...data
-                        };
-                        delete upd.email;
-                        delete upd.password;
-                        await updateDoc(doc(db, "students", id), upd);
-                        const sSnap = await getDoc(doc(db, "students", id));
-                        if (sSnap.exists() && sSnap.data().uid) await setDoc(doc(db, "users", sSnap.data().uid), {
-                            ...upd,
-                            email: sSnap.data().email,
-                            role: 'student'
-                        }, {
-                            merge: true
-                        });
+                        await updateDoc(doc(db, "students", id), data);
                     } else {
-                        if (!data.password || data.password.length < 6) throw new Error("Password min 6");
-                        await createUserRecordWithReauth("students", "student", data, data.password);
+                        await addDoc(collection(db, "students"), {
+                            ...data,
+                            createdAt: serverTimestamp(),
+                            createdBy: currentAdmin?.uid
+                        });
                     }
                     loadStudentsData();
+                    showToast("Student saved");
                 } else if (type === 'session') {
                     if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
                     if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
@@ -842,31 +705,78 @@
                     else await addDoc(collection(db, "sessions"), {
                         ...data,
                         createdAt: serverTimestamp(),
-                        createdBy: currentAdmin.uid
+                        createdBy: currentAdmin?.uid
                     });
                     loadSessionsTable();
+                    showToast("Session saved");
                 }
-                showToast("Operation completed");
             } catch (err) {
                 showToast(err.message, 'danger');
             }
         };
         window.editItem = (type, id, data) => openModalForm(type, id, data);
-        window.switchSection = (section) => {
-            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
-            document.getElementById(`${section}Section`).style.display = 'block';
-            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
-            document.querySelector(`#sidebar ul li[data-section="${section}"]`)?.classList.add('active');
-            if (section === 'dashboard') {
-                loadCoreData();
-            }
+
+        // IMPORT / EXPORT
+        window.exportData = async (type) => {
+            const col = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
+            const snap = await getDocs(collection(db, col));
+            const docs = snap.docs.map(d => d.data());
+            const ws = XLSX.utils.json_to_sheet(docs);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `${type}_export_${new Date().toISOString().slice(0,19)}.xlsx`);
+            showToast(`Exported ${type}`);
         };
-        window.toggleLivePanel = () => {
-            const panel = document.getElementById('liveDetailsPanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if (panel.style.display === 'block') updateLiveUI();
+        window.importData = async (type) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx, .xls';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const wb = XLSX.read(ev.target.result, {
+                        type: 'array'
+                    });
+                    const sheet = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(sheet);
+                    if (rows.length === 0) {
+                        showToast("Empty file", 'danger');
+                        return;
+                    }
+                    const batch = writeBatch(db);
+                    let count = 0;
+                    const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
+                    for (const row of rows) {
+                        const docData = {
+                            ...row,
+                            createdAt: serverTimestamp(),
+                            createdBy: currentAdmin?.uid
+                        };
+                        const docRef = doc(collection(db, colName));
+                        batch.set(docRef, docData);
+                        count++;
+                        if (count >= 400) {
+                            await batch.commit();
+                            count = 0;
+                        }
+                    }
+                    if (count > 0) await batch.commit();
+                    showToast(`Imported ${rows.length} records`);
+                    if (type === 'grades') loadGradesTable();
+                    if (type === 'subjects') loadSubjectsTable();
+                    if (type === 'teachers') loadTeachersTable();
+                    if (type === 'students') loadStudentsData();
+                    if (type === 'sessions') loadSessionsTable();
+                    await loadAllMasterData();
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
         };
 
+        // LIVE SESSIONS MONITOR
         function initLiveMonitor() {
             onValue(ref(rtdb, 'liveSessions'), (snap) => {
                 liveSessionsData = snap.val() || {};
@@ -899,19 +809,19 @@
             sessionsDiv.innerHTML = sessionsHtml || '<div class="p-3 text-muted">None</div>';
             studentsDiv.innerHTML = studentsList.map(st => `<div class="border-bottom p-3"><i class="fas fa-user-circle me-2"></i>${st.name||st.displayName||'Student'}</div>`).join('') || '<div class="p-3 text-muted">No students</div>';
         }
-        window.exportTableData = async (type) => {
-            const col = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
-            const snap = await getDocs(collection(db, col));
-            const data = snap.docs.map(d => d.data());
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, `${type}_export.xlsx`);
-            showToast("Exported");
+        window.toggleLivePanel = () => {
+            const panel = document.getElementById('liveDetailsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') updateLiveUI();
+        };
+        window.switchSection = (section) => {
+            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
+            document.getElementById(`${section}Section`).style.display = 'block';
+            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
+            document.querySelector(`#sidebar ul li[data-section="${section}"]`)?.classList.add('active');
+            if (section === 'dashboard') loadAllMasterData();
         };
         document.getElementById('sidebarCollapse')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('active'));
-        window.resetUserPassword = resetUserPassword;
-        window.deleteItem = deleteItem;
     </script>
 </body>
 
