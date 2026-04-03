@@ -190,7 +190,6 @@
             <div id="dashboard" class="section active">
                 <h2>System Overview</h2>
                 <div class="stats-grid">
-                    <!-- Added onclick to navigate -->
                     <div class="stat-card" onclick="showSection('grades')">
                         <div class="stat-val amber" id="dashGrades">—</div>
                         <div class="stat-label">Grades</div>
@@ -223,9 +222,9 @@
                 <h2>
                     Grade Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('grades')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('grades')"><i class="fas fa-file-excel"></i> Export</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('grades')"><i class="fas fa-download"></i> Template</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import</button>
                         <input type="file" id="import-file-grades" hidden accept=".xlsx, .xls" onchange="importFromExcel('grades', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add</button>
                     </div>
@@ -243,9 +242,9 @@
                 <h2>
                     Subjects Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('subjects')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('subjects')"><i class="fas fa-file-excel"></i> Export</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('subjects')"><i class="fas fa-download"></i> Template</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import</button>
                         <input type="file" id="import-file-subjects" hidden accept=".xlsx, .xls" onchange="importFromExcel('subjects', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add</button>
                     </div>
@@ -263,9 +262,9 @@
                 <h2>
                     Teachers Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('teachers')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('teachers')"><i class="fas fa-file-excel"></i> Export</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('teachers')"><i class="fas fa-download"></i> Template</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import</button>
                         <input type="file" id="import-file-teachers" hidden accept=".xlsx, .xls" onchange="importFromExcel('teachers', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add</button>
                     </div>
@@ -283,9 +282,9 @@
                 <h2>
                     Students Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('students')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('students')"><i class="fas fa-file-excel"></i> Export</button>
                         <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('students')"><i class="fas fa-download"></i> Template</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import</button>
                         <input type="file" id="import-file-students" hidden accept=".xlsx, .xls" onchange="importFromExcel('students', this)">
                         <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add</button>
                     </div>
@@ -358,14 +357,19 @@
         let allGrades = [];
         let allSubjects = [];
 
-        // --- AUTH ---
+        // --- AUTH FUNCTIONS (Attached to Window) ---
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
-            try { await signInWithEmailAndPassword(auth, email, password); } 
-            catch (error) { alert("Login Failed: " + error.message); }
+            try { 
+                await signInWithEmailAndPassword(auth, email, password); 
+            } catch (error) { 
+                alert("Login Failed: " + error.message); 
+            }
         };
+
         window.handleLogout = () => signOut(auth);
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -384,15 +388,11 @@
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
-            // Find the button that triggered this or match by index/text if needed, but here we assume event bubbling or manual trigger
-            // For dashboard clicks, we need to manually highlight the tab
+            
+            // Highlight correct tab
             const tabs = document.querySelectorAll('.nav-tab');
-            if(sectionId === 'dashboard') tabs[0].classList.add('active');
-            if(sectionId === 'grades') tabs[1].classList.add('active');
-            if(sectionId === 'subjects') tabs[2].classList.add('active');
-            if(sectionId === 'teachers') tabs[3].classList.add('active');
-            if(sectionId === 'students') tabs[4].classList.add('active');
-            if(sectionId === 'sessions') tabs[5].classList.add('active');
+            const map = {'dashboard':0, 'grades':1, 'subjects':2, 'teachers':3, 'students':4, 'sessions':5};
+            if(tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
 
             if (sectionId === 'grades') loadGrades();
             if (sectionId === 'subjects') loadSubjects();
@@ -495,12 +495,10 @@
             const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
             tbody.innerHTML = '';
             
-            // FIX DUPLICATES: Use Set to track emails
             const seenEmails = new Set();
-
             snap.forEach(doc => {
                 const d = doc.data();
-                if(seenEmails.has(d.email)) return; // Skip if email already processed
+                if(seenEmails.has(d.email)) return;
                 seenEmails.add(d.email);
 
                 const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
@@ -528,7 +526,6 @@
             tbody.innerHTML = '';
 
             const seenEmails = new Set();
-
             snap.forEach(doc => {
                 const d = doc.data();
                 if(seenEmails.has(d.email)) return;
@@ -572,14 +569,9 @@
         }
 
         // --- EXCEL FUNCTIONS ---
-        
-        // 1. Download Template (2 Sheets: Empty & Sample)
         window.downloadTemplate = (type) => {
             const wb = XLSX.utils.book_new();
-            
-            // Sheet 1: Empty Headers
-            let headers = [];
-            let sampleData = [];
+            let headers = [], sampleData = [];
             
             if(type === 'grades') {
                 headers = ["nameEn", "nameAr", "code", "status"];
@@ -597,14 +589,11 @@
 
             const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
             XLSX.utils.book_append_sheet(wb, wsEmpty, "Empty_Template");
-            
             const wsSample = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
             XLSX.utils.book_append_sheet(wb, wsSample, "Sample_Data");
-            
             XLSX.writeFile(wb, `${type}_template.xlsx`);
         };
 
-        // 2. Export Current Data
         window.exportToExcel = async (type) => {
             let data = [];
             if(type === 'grades') data = (await getDocs(collection(db, "grades"))).docs.map(d => ({id:d.id, ...d.data()}));
@@ -618,7 +607,6 @@
             XLSX.writeFile(wb, `${type}_export.xlsx`);
         };
 
-        // 3. Import from Excel
         window.importFromExcel = async (type, input) => {
             const file = input.files[0];
             if(!file) return;
@@ -626,7 +614,6 @@
             reader.onload = async (e) => {
                 try {
                     const workbook = XLSX.read(e.target.result, {type: 'array'});
-                    // Read first sheet (whether empty or sample)
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
@@ -637,51 +624,31 @@
                     let count = 0;
 
                     for(const row of jsonData) {
-                        // Basic validation
                         if(!row.email && (type === 'teachers' || type === 'students')) continue;
 
-                        // Prepare Data
                         let docData = {};
                         if(type === 'grades' || type === 'subjects') {
                             docData = { nameEn: row.nameEn, nameAr: row.nameAr, code: row.code, status: row.status || 'Active' };
                         } else if (type === 'teachers') {
-                            // Parse comma-separated IDs
                             const gIds = row['assignedGrades (IDs comma-sep)'] ? String(row['assignedGrades (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
                             const sIds = row['assignedSubjects (IDs comma-sep)'] ? String(row['assignedSubjects (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
-                            
-                            docData = { 
-                                name: row.name, email: row.email, 
-                                role: 'teacher', active: String(row.active).toLowerCase() === 'true',
-                                assignedGrades: gIds, assignedSubjects: sIds
-                            };
+                            docData = { name: row.name, email: row.email, role: 'teacher', active: String(row.active).toLowerCase() === 'true', assignedGrades: gIds, assignedSubjects: sIds };
                         } else if (type === 'students') {
-                            docData = {
-                                name: row.name, email: row.email,
-                                gradeId: row.gradeId, active: String(row.active).toLowerCase() === 'true'
-                            };
+                            docData = { name: row.name, email: row.email, gradeId: row.gradeId, active: String(row.active).toLowerCase() === 'true' };
                         }
 
-                        // Check for Update vs Create based on Email for users/students
                         if((type === 'teachers' || type === 'students') && row.email) {
-                            // Try to find existing
                             const qType = type === 'teachers' ? 'users' : 'students';
-                            const qField = type === 'teachers' ? 'role' : 'email'; // Teachers queried by role+email logic usually, but here simple email check
-                            // Simplified: We will just use addDoc for new, or update if ID provided in excel (advanced)
-                            // For this demo, we assume new entries unless ID column exists
                             if(row.id) {
                                 batch.update(doc(db, qType, row.id), docData);
                             } else {
-                                // Check duplicate email before adding
                                 const existing = await getDocs(query(collection(db, qType), where("email", "==", row.email)));
                                 if(existing.empty) {
                                     const newRef = doc(collection(db, qType));
                                     batch.set(newRef, docData);
-                                } else {
-                                    console.warn(`Skipping duplicate email: ${row.email}`);
                                 }
                             }
                         } else {
-                            // Grades/Subjects
                             const newRef = doc(collection(db, type + 's'));
                             batch.set(newRef, docData);
                         }
@@ -707,7 +674,6 @@
             }
         };
 
-        // Cascade Delete Teachers
         window.deleteTeacher = async (uid) => {
             if(!confirm("Delete teacher? This will also remove their account from Users.")) return;
             try {
@@ -716,19 +682,10 @@
             } catch(e) { alert(e.message); }
         };
 
-        // Cascade Delete Students
         window.deleteStudent = async (id) => {
-            if(!confirm("Delete student? This will also remove their account from Users if linked.")) return;
+            if(!confirm("Delete student?")) return;
             try {
-                // Note: In your schema, students are in 'students' collection. 
-                // If they also exist in 'users', you'd need to query users by email first to delete.
-                // Assuming primary record is in 'students' collection based on previous context.
                 await deleteDoc(doc(db, "students", id));
-                
-                // Optional: Clean up 'users' collection if email matches
-                const userSnap = await getDocs(query(collection(db, "users"), where("email", "==", ...))); // Need email var
-                // For simplicity, we delete the main record.
-                
                 loadStudents();
             } catch(e) { alert(e.message); }
         };
