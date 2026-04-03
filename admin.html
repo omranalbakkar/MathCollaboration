@@ -1,1864 +1,853 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — Super Admin Portal</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- SheetJS for Excel Operations -->
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBoard — Super Admin Portal</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
 
-<style>
-:root{--bg:#0f1117;--surface:#181c27;--surface2:#1f2436;--border:#2a3050;--amber:#f5a623;--amber-dim:rgba(245,166,35,0.12);--green:#4ade80;--green-dim:rgba(74,222,128,0.1);--red:#f87171;--red-dim:rgba(248,113,113,0.1);--blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);--purple:#c084fc;--purple-dim:rgba(192,132,252,0.1);--orange:#fb923c;--orange-dim:rgba(251,146,60,0.1);--text:#e8eaf6;--muted:#7986a8;--faint:#3d4766;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg); color: var(--text); line-height: 1.5; }
 
-/* ── LOGIN ── */
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 40%,#1a1030 0%,#0f1117 60%);overflow:hidden;position:relative;}
-#loginScreen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(192,82,42,0.07) 0%,transparent 70%);top:-200px;right:-100px;pointer-events:none;}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 52px;width:440px;max-width:95vw;position:relative;z-index:1;box-shadow:0 32px 80px rgba(0,0,0,0.5);}
-.login-logo{font-family:'Fraunces',serif;font-size:32px;font-weight:800;color:var(--amber);letter-spacing:-1px;margin-bottom:4px;}
-.login-sub{color:var(--muted);font-size:13px;margin-bottom:36px;}
-.login-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(192,82,42,0.12);color:#e87a4a;border:1px solid rgba(192,82,42,0.3);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:24px;}
-.field{margin-bottom:18px;}
-.field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;}
-.field input[type=password]{font-family:'DM Mono',monospace;}
-.field input:focus{border-color:var(--amber);}
-.btn-primary{width:100%;background:var(--amber);color:#0f1117;border:none;border-radius:8px;padding:13px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s;margin-top:8px;}
-.btn-primary:hover{opacity:0.9;}
-.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
-.login-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;margin-top:14px;display:none;}
-.back-link{display:block;text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);text-decoration:none;}
-.back-link:hover{color:var(--amber);}
-.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:14px;}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-text{font-size:13px;color:var(--muted);}
+        /* Login Overlay */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-box {
+            background: var(--surface); padding: 2rem; border-radius: 12px;
+            box-shadow: var(--shadow); width: 100%; max-width: 400px; text-align: center;
+        }
+        .login-box h2 { margin-bottom: 1.5rem; color: var(--primary); }
+        .form-group { margin-bottom: 1rem; text-align: left; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-light); }
+        .form-group input {
+            width: 100%; padding: 0.75rem; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 1rem;
+        }
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem;
+            border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600;
+            transition: background 0.2s; width: 100%;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-secondary { background: var(--text-light); margin-top: 1rem; }
+        .btn-secondary:hover { background: #475569; }
 
-/* ── APP SHELL ── */
-#app{display:none;}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.topbar-left{display:flex;align-items:center;gap:14px;}
-.brand{font-family:'Fraunces',serif;font-size:20px;font-weight:800;color:var(--amber);letter-spacing:-0.5px;}
-.badge-admin{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(192,82,42,0.12);color:#e87a4a;padding:3px 8px;border-radius:20px;border:1px solid rgba(192,82,42,0.3);}
-.topbar-nav{display:flex;gap:4px;}
-.nav-btn{background:none;border:none;color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
-.nav-btn:hover{color:var(--text);background:var(--surface2);}
-.nav-btn.active{color:var(--amber);background:var(--amber-dim);}
-.topbar-right{display:flex;align-items:center;gap:12px;}
-.admin-name{font-size:13px;color:var(--muted);font-weight:500;}
-.btn-logout{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
-.btn-logout:hover{color:var(--red);border-color:var(--red);}
-.content{padding:32px 28px;max-width:1200px;margin:0 auto;}
-.tab-pane{display:none;animation:fadeIn 0.2s ease;}
-.tab-pane.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        /* Main Layout */
+        #app-container { display: none; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+        }
+        .brand { font-size: 1.5rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .logout-btn { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 0.5rem 1rem; }
+        .logout-btn:hover { background: var(--red); color: white; }
 
-/* ── SECTION HEADERS ── */
-.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
-.section-title{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.5px;}
-.section-sub{color:var(--muted);font-size:13px;margin-top:3px;}
+        nav {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 0 2rem; overflow-x: auto; white-space: nowrap;
+        }
+        .nav-tabs { display: flex; gap: 1rem; }
+        .nav-tab {
+            padding: 1rem 0.5rem; background: none; border: none; cursor: pointer;
+            color: var(--text-light); font-weight: 500; border-bottom: 2px solid transparent;
+        }
+        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .nav-tab:hover { color: var(--text); }
 
-	.stat-val.loading {
-  opacity: 0.5;
-  filter: blur(1px);
-}
-	
-/* ── BUTTONS ── */
-.btn{border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
-.btn-add{background:var(--amber);color:#0f1117;}.btn-add:hover{opacity:0.9;}
-.btn-bulk{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(192,132,252,0.3);}.btn-bulk:hover{background:rgba(192,132,252,0.2);}
-.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px;}
-.btn-edit{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.3);}
-.btn-delete{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
-.btn-save{background:var(--green);color:#0f1117;}
-.btn-cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
-.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);width:100%;padding:10px;justify-content:center;}
-.btn-danger:hover{background:var(--red);color:#fff;}
-.btn-toggle-on{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);font-size:11px;padding:4px 10px;border-radius:20px;}
-.btn-toggle-off{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);font-size:11px;padding:4px 10px;border-radius:20px;}
+        main { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
 
-/* ── SEARCH BAR ── */
-.search-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
-.search-input{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;}
-.search-input:focus{border-color:var(--amber);}
-.filter-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+        /* Sections */
+        .section { display: none; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ── TABLE ── */
-.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border);}
-table{width:100%;border-collapse:collapse;}
-th{background:var(--surface2);padding:12px 16px;text-align:left;font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
-td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--surface2);}
-.badge-active{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
-.badge-inactive{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
-.tag-pill{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,0.2);border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;display:inline-block;margin:2px;}
-.actions-cell{display:flex;gap:6px;flex-wrap:wrap;}
-.empty-state{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+        h2 { margin-bottom: 1.5rem; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--surface); padding: 1.5rem; border-radius: 12px;
+            box-shadow: var(--shadow); border-left: 4px solid var(--border);
+            text-align: center;
+        }
+        .stat-val { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .stat-label { color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .stat-val.green { color: var(--green); }
+        .stat-val.blue { color: var(--blue); }
+        .stat-val.purple { color: var(--purple); }
+        .stat-val.amber { color: var(--amber); }
+        .stat-val.orange { color: var(--orange); }
 
-/* ── MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-.modal-overlay.show{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:580px;max-width:95vw;max-height:90vh;overflow-y:auto;position:relative;}
-.modal-title{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:24px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-.form-group{display:flex;flex-direction:column;gap:7px;}
-.form-group.full{grid-column:1/-1;}
-.form-group label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);}
-.form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--amber);}
-.form-group select option{background:var(--surface);}
-.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
-.form-error{background:var(--red-dim);border:1px solid var(--red);color:var(--red);padding:10px 14px;border-radius:8px;font-size:13px;display:none;margin-bottom:12px;}
+        /* Tables & Controls */
+        .controls {
+            background: var(--surface); padding: 1rem; border-radius: 8px;
+            margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+            box-shadow: var(--shadow);
+        }
+        .search-box {
+            flex: 1; min-width: 200px; padding: 0.5rem; border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .filter-select {
+            padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;
+            background: white;
+        }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.9rem; width: auto; }
+        .btn-success { background: var(--green); }
+        .btn-success:hover { background: #059669; }
 
-/* ── MULTI-SELECT CHECKBOXES ── */
-.multi-select-wrap{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;max-height:160px;overflow-y:auto;}
-.multi-check-item{display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:6px;cursor:pointer;transition:background 0.1s;}
-.multi-check-item:hover{background:var(--surface2);}
-.multi-check-item input[type=checkbox]{accent-color:var(--amber);width:14px;height:14px;cursor:pointer;}
-.multi-check-item label{font-size:13px;color:var(--text);cursor:pointer;flex:1;}
+        .table-container {
+            background: var(--surface); border-radius: 8px; box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; }
+        tr:hover { background: #f8fafc; }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600;
+        }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #fee2e2; color: #991b1b; }
 
-/* ── BULK ACTIONS STYLES ── */
-.bulk-tabs{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:10px;}
-.bulk-tab{background:none;border:none;color:var(--muted);font-size:14px;font-weight:600;cursor:pointer;padding:6px 12px;border-radius:6px;}
-.bulk-tab.active{background:var(--purple-dim);color:var(--purple);}
-.bulk-panel{display:none;}
-.bulk-panel.active{display:block;}
-.file-drop-zone{border:2px dashed var(--border);border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--bg);}
-.file-drop-zone:hover{border-color:var(--purple);background:rgba(192,132,252,0.05);}
-.file-icon{font-size:32px;margin-bottom:10px;display:block;}
-.bulk-info{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5;}
-.bulk-btn-group{display:flex;gap:10px;margin-top:15px;justify-content:center;}
+        .action-btns { display: flex; gap: 0.5rem; }
+        .icon-btn {
+            background: none; border: none; cursor: pointer; padding: 0.25rem;
+            color: var(--text-light); transition: color 0.2s;
+        }
+        .icon-btn:hover { color: var(--primary); }
+        .icon-btn.delete:hover { color: var(--red); }
 
-/* ── STATS CARDS ── */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:28px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
-.stat-val{font-family:'Fraunces',serif;font-size:32px;font-weight:800;line-height:1;margin-bottom:6px;}
-.stat-val.amber{color:var(--amber);}.stat-val.green{color:var(--green);}.stat-val.blue{color:var(--blue);}.stat-val.purple{color:var(--purple);}.stat-val.orange{color:var(--orange);}
-.stat-label{font-size:12px;color:var(--muted);font-weight:500;}
+        /* Modal */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--surface); padding: 2rem; border-radius: 12px;
+            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        
+        /* Loading */
+        .loading-spinner {
+            border: 3px solid #f3f3f3; border-top: 3px solid var(--primary);
+            border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
+            display: inline-block; vertical-align: middle; margin-right: 5px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:28px;right:28px;background:var(--green);color:#0f1117;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:600;transform:translateY(80px);opacity:0;transition:all 0.3s;z-index:1000;}
-.toast.show{transform:translateY(0);opacity:1;}
-
-@media(max-width:700px){.form-grid{grid-template-columns:1fr;}.topbar-nav .nav-btn span{display:none;}.content{padding:16px 14px;}}
-</style>
+    </style>
 </head>
 <body>
 
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text">Verifying access…</div>
-</div>
-
-<div id="loginScreen" style="display:none">
-  <div class="login-box">
-    <div class="login-logo">EduBoard</div>
-    <div class="login-sub">Secure Administration Portal</div>
-    <div class="login-badge">🛡️ Super Admin Access</div>
-    <div class="field"><label>Email Address</label><input type="email" id="loginEmail" autocomplete="email"></div>
-    <div class="field"><label>Password</label><input type="password" id="loginPass" autocomplete="current-password"></div>
-    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
-    <div class="login-error" id="loginErr"></div>
-    <a href="index.html" class="back-link">← Back to Home</a>
-  </div>
-</div>
-
-<div id="app">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="brand">EduBoard</div>
-      <span class="badge-admin">Super Admin</span>
-    </div>
-    <div class="topbar-nav">
-      <button class="nav-btn active" onclick="switchTab('dashboard',this)"><span>Dashboard</span></button>
-      <button class="nav-btn" onclick="switchTab('grades',this)"><span>Grades</span></button>
-      <button class="nav-btn" onclick="switchTab('subjects',this)"><span>Subjects</span></button>
-      <button class="nav-btn" onclick="switchTab('teachers',this)"><span>Teachers</span></button>
-      <button class="nav-btn" onclick="switchTab('students',this)"><span>Students</span></button>
-      <button class="nav-btn" onclick="switchTab('sessions',this)"><span>Sessions</span></button>
-    </div>
-    <div class="topbar-right">
-      <div class="admin-name" id="adminName"></div>
-      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
-    </div>
-  </div>
-
-  <div class="content">
-      <!-- 
-	  <div class="tab-pane active" id="tab-dashboard">
-      <div class="section-header">
-        <div><div class="section-title">System Overview</div><div class="section-sub">Platform-wide statistics</div></div>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
-        <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
-        <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
-        <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
-        <div class="stat-card"><div class="stat-val orange" id="dashSessions">—</div><div class="stat-label">Sessions</div></div>
-      </div>
-    </div>
-	-->
-	
-	<!-- DASHBOARD TAB -->
-    <div class="tab-pane active" id="tab-dashboard">
-      <div class="section-header">
-        <div><div class="section-title">System Overview</div><div class="section-sub">Platform-wide statistics</div></div>
-      </div>
-      <div class="stats-grid">
-        <!-- Existing Firestore Stats -->
-        <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
-        <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
-        <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
-        <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
-        
-        <!-- 🟢 NEW: RTDB Real-time Stats -->
-        <div class="stat-card" style="border-color:var(--green);">
-            <div class="stat-val green loading" id="cardActive">—</div>
-            <div class="stat-label">🟢 Active Students (Live)</div>
+    <!-- Login Overlay -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>🛡️ Super Admin Access</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-light);">EduBoard Secure Administration Portal</p>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="admin-email" placeholder="admin@eduboard.com">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="admin-password" placeholder="••••••••">
+            </div>
+            <button class="btn" onclick="handleAdminLogin()">Sign In →</button>
+            <a href="index.html" class="btn btn-secondary" style="display:block; text-decoration:none;">← Back to Home</a>
         </div>
-        <div class="stat-card" style="border-color:var(--orange);">
-            <div class="stat-val orange loading" id="cardSessions">—</div>
-            <div class="stat-label">⚡ Live Sessions</div>
-        </div>
-      </div>
-    </div>
-	
-
-    
-
-    <!-- GRADES TAB -->
-    <div class="tab-pane" id="tab-grades">
-      <div class="section-header">
-        <div><div class="section-title">Grade Master</div><div class="section-sub">Manage all grade levels</div></div>
-        <div style="display:flex;gap:10px;">
-            <button class="btn btn-bulk" onclick="openBulkModal('grade')">⚡ Bulk Actions</button>
-            <button class="btn btn-add" onclick="openModal('grade')">＋ Add Grade</button>
-        </div>
-      </div>
-      <div class="search-bar">
-        <input class="search-input" id="gradeSearch" placeholder="Search grades…" oninput="renderGrades()">
-        <select class="filter-select" id="gradeStatusFilter" onchange="renderGrades()">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Grade Name (English)</th><th>Grade Name (Arabic)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="gradesBody"></tbody></table>
-      </div>
     </div>
 
-    <!-- SUBJECTS TAB -->
-    <div class="tab-pane" id="tab-subjects">
-      <div class="section-header">
-        <div><div class="section-title">Subjects Master</div><div class="section-sub">Manage all subjects</div></div>
-        <div style="display:flex;gap:10px;">
-            <button class="btn btn-bulk" onclick="openBulkModal('subject')">⚡ Bulk Actions</button>
-            <button class="btn btn-add" onclick="openModal('subject')">＋ Add Subject</button>
-        </div>
-      </div>
-      <div class="search-bar">
-        <input class="search-input" id="subjectSearch" placeholder="Search subjects…" oninput="renderSubjects()">
-        <select class="filter-select" id="subjectStatusFilter" onchange="renderSubjects()">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Subject Name (English)</th><th>Subject Name (Arabic)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="subjectsBody"></tbody></table>
-      </div>
+    <!-- Main App -->
+    <div id="app-container" style="display:none;">
+        <header>
+            <div class="brand">
+                <span>🛡️</span> EduBoard Super Admin
+            </div>
+            <div class="user-info">
+                <span id="admin-user-display">Admin</span>
+                <button class="btn logout-btn" onclick="handleLogout()">Sign Out</button>
+            </div>
+        </header>
+
+        <nav>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('dashboard')">Dashboard</button>
+                <button class="nav-tab" onclick="showSection('grades')">Grades</button>
+                <button class="nav-tab" onclick="showSection('subjects')">Subjects</button>
+                <button class="nav-tab" onclick="showSection('teachers')">Teachers</button>
+                <button class="nav-tab" onclick="showSection('students')">Students</button>
+                <button class="nav-tab" onclick="showSection('sessions')">Sessions</button>
+            </div>
+        </nav>
+
+        <main>
+            <!-- DASHBOARD SECTION -->
+            <div id="dashboard" class="section active">
+                <h2>System Overview</h2>
+                
+                <!-- UPDATED STATS GRID START -->
+                <div class="stats-grid">
+                    <!-- Existing Firestore Stats -->
+                    <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
+                    <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
+                    <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
+                    <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
+                    
+                    <!-- 🟢 NEW: RTDB Real-time Stats -->
+                    <div class="stat-card" style="border-color:var(--green);">
+                        <div class="stat-val green loading" id="cardActive">—</div>
+                        <div class="stat-label">🟢 Active Students (Live)</div>
+                    </div>
+                    <div class="stat-card" style="border-color:var(--orange);">
+                        <div class="stat-val orange loading" id="cardSessions">—</div>
+                        <div class="stat-label">⚡ Live Sessions</div>
+                    </div>
+                </div>
+                <!-- UPDATED STATS GRID END -->
+
+                <div class="table-container">
+                    <div style="padding: 2rem; text-align: center; color: var(--text-light);">
+                        Select a tab above to manage specific entities.
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRADES SECTION -->
+            <div id="grades" class="section">
+                <h2>
+                    Grade Master
+                    <button class="btn btn-sm btn-success" onclick="openModal('grade')">＋ Add Grade</button>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search grades..." onkeyup="filterTable('grades-table', this.value)">
+                    <select class="filter-select" onchange="filterStatus('grades-table', this.value)">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table id="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Grade Name (English)</th>
+                                <th>Grade Name (Arabic)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Populated by JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SUBJECTS SECTION -->
+            <div id="subjects" class="section">
+                <h2>
+                    Subjects Master
+                    <button class="btn btn-sm btn-success" onclick="openModal('subject')">＋ Add Subject</button>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search subjects..." onkeyup="filterTable('subjects-table', this.value)">
+                    <select class="filter-select" onchange="filterStatus('subjects-table', this.value)">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table id="subjects-table">
+                        <thead>
+                            <tr>
+                                <th>Subject Name (English)</th>
+                                <th>Subject Name (Arabic)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Populated by JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TEACHERS SECTION -->
+            <div id="teachers" class="section">
+                <h2>
+                    Teachers Master
+                    <button class="btn btn-sm btn-success" onclick="openModal('teacher')">＋ Add Teacher</button>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search teachers..." onkeyup="filterTable('teachers-table', this.value)">
+                    <select class="filter-select" onchange="filterStatus('teachers-table', this.value)">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table id="teachers-table">
+                        <thead>
+                            <tr>
+                                <th>Teacher Name</th>
+                                <th>Email</th>
+                                <th>Assigned Grades</th>
+                                <th>Assigned Subjects</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Populated by JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- STUDENTS SECTION -->
+            <div id="students" class="section">
+                <h2>
+                    Students Master
+                    <button class="btn btn-sm btn-success" onclick="openModal('student')">＋ Add Student</button>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search students..." onkeyup="filterTable('students-table', this.value)">
+                    <select class="filter-select" id="student-grade-filter" onchange="loadStudents()">
+                        <option value="">All Grades</option>
+                    </select>
+                    <select class="filter-select" onchange="filterStatus('students-table', this.value)">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table id="students-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Email</th>
+                                <th>Grade</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Populated by JS --></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SESSIONS SECTION -->
+            <div id="sessions" class="section">
+                <h2>
+                    All Sessions
+                    <button class="btn btn-sm btn-success" onclick="alert('Create session via Teacher Portal')">＋ Create Session</button>
+                </h2>
+                <div class="controls">
+                    <input type="text" class="search-box" placeholder="Search sessions..." onkeyup="filterTable('sessions-table', this.value)">
+                </div>
+                <div class="table-container">
+                    <table id="sessions-table">
+                        <thead>
+                            <tr>
+                                <th>Session Title</th>
+                                <th>Teacher</th>
+                                <th>Grade</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- Populated by JS --></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- TEACHERS TAB -->
-    <div class="tab-pane" id="tab-teachers">
-      <div class="section-header">
-        <div><div class="section-title">Teachers Master</div><div class="section-sub">Manage teacher accounts and assignments</div></div>
-        <div style="display:flex;gap:10px;">
-            <button class="btn btn-bulk" onclick="openBulkModal('teacher')">⚡ Bulk Actions</button>
-            <button class="btn btn-add" onclick="openModal('teacher')">＋ Add Teacher</button>
+    <!-- GENERIC MODAL -->
+    <div id="generic-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Add Item</h3>
+                <button class="close-modal" onclick="closeModal()">×</button>
+            </div>
+            <form id="modal-form" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="modal-type">
+                <input type="hidden" id="modal-id">
+                <div id="modal-fields"></div>
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                    <button type="submit" class="btn">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="background: #cbd5e1; color: #334155;">Cancel</button>
+                </div>
+            </form>
         </div>
-      </div>
-      <div class="search-bar">
-        <input class="search-input" id="teacherSearch" placeholder="Search teachers…" oninput="renderTeachers()">
-        <select class="filter-select" id="teacherStatusFilter" onchange="renderTeachers()">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Teacher Name</th><th>Email</th><th>Assigned Grades</th><th>Assigned Subjects</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="teachersBody"></tbody></table>
-      </div>
     </div>
 
-    <!-- STUDENTS TAB -->
-    <div class="tab-pane" id="tab-students">
-      <div class="section-header">
-        <div><div class="section-title">Students Master</div><div class="section-sub">Manage student accounts</div></div>
-        <div style="display:flex;gap:10px;">
-            <button class="btn btn-bulk" onclick="openBulkModal('student')">⚡ Bulk Actions</button>
-            <button class="btn btn-add" onclick="openModal('student')">＋ Add Student</button>
-        </div>
-      </div>
-      <div class="search-bar">
-        <input class="search-input" id="studentSearch" placeholder="Search students…" oninput="renderStudents()">
-        <select class="filter-select" id="studentGradeFilter" onchange="renderStudents()">
-          <option value="">All Grades</option>
-        </select>
-        <select class="filter-select" id="studentStatusFilter" onchange="renderStudents()">
-          <option value="">All Status</option>
-          <option value="true">Active</option>
-          <option value="false">Inactive</option>
-        </select>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Student Name</th><th>Email</th><th>Grade</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="studentsBody"></tbody></table>
-      </div>
-    </div>
-
-    <!-- SESSIONS TAB -->
-    <div class="tab-pane" id="tab-sessions">
-      <div class="section-header">
-        <div><div class="section-title">All Sessions</div><div class="section-sub">View and manage sessions across all teachers</div></div>
-        <div style="display:flex;gap:10px;">
-            <button class="btn btn-bulk" onclick="openBulkModal('session')">⚡ Bulk Actions</button>
-            <button class="btn btn-add" onclick="openModal('session-admin')">＋ Create Session</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table><thead><tr><th>Session Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="adminSessionsBody"></tbody></table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── MODALS ── -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
-  <div class="modal" id="modalBox">
-    <div class="modal-title" id="modalTitle">—</div>
-    <div class="form-error" id="formError"></div>
-    <div id="modalBody"></div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<!-- 1. Load Config First (Standard Script) -->
-<script type="module" src="firebase-config.js"></script>
-
-<!-- 2. Main App Logic (Module) -->
-<script type="module">
-import { 
-  auth, db, rtDB, 
-  onAuthStateChanged, signInWithEmailAndPassword, signOut, 
-  createUserWithEmailAndPassword, 
-  getDoc, doc, getDocs, collection, query, orderBy, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp,
-  ref, get, set, remove, onValue 
-} from './firebase-config.js';
-
-let currentAdmin = null;
-let allGrades    = [];
-let allSubjects  = [];
-let allTeachers  = [];
-let allStudents  = [];
-let allSessions  = []; // Local cache for RTDB sessions
-
-// ── ROUTE GUARD ──
-onAuthStateChanged(auth, async (user) => {
-  document.getElementById('loadingOverlay').style.display = 'none';
-  if (!user) { showLogin(); return; }
-  try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (!snap.exists() || snap.data().role !== 'superadmin') {
-      await signOut(auth);
-      showLogin('Access denied. This portal is for Super Admin only.');
-      return;
-    }
-    if (snap.data().active === false) {
-      await signOut(auth);
-      showLogin('Your account has been deactivated.');
-      return;
-    }
-    currentAdmin = { uid: user.uid, ...snap.data() };
-    document.getElementById('adminName').textContent = currentAdmin.name || user.email;
-    showApp();
-  } catch(e) {
-    showLogin('Error verifying access: ' + e.message);
-  }
-});
-
-function showLogin(msg) {
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-  if (msg) {
-    const el = document.getElementById('loginErr');
-    el.textContent = msg; el.style.display = 'block';
-  }
-}
- // function showApp() {
- //   document.getElementById('loginScreen').style.display = 'none';
- //   document.getElementById('app').style.display = 'block';
- //   loadAll();
- // }
-
-
-function showApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  
-  // 1. Load static data from Firestore
-  loadAll();
-  
-  // 2. 🟢 START RTDB Metrics Listener (This was missing!)
-  loadRTDBMetrics();
-}
-
-// ── LOGIN ──
-window.doLogin = async function() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
-  const btn   = document.getElementById('loginBtn');
-  const err   = document.getElementById('loginErr');
-  err.style.display = 'none';
-  if (!email || !pass) { err.textContent = 'Email and password are required.'; err.style.display = 'block'; return; }
-  btn.disabled = true; btn.textContent = 'Signing in…';
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    err.textContent = 'Invalid email or password.';
-    err.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Sign In →';
-  }
-};
-document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-
-window.doLogout = async function() {
-  await signOut(auth);
-  window.location.href = 'index.html';
-};
-
-// ── TAB SWITCH ──
-window.switchTab = function(id, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  btn.classList.add('active');
-  if (id === 'sessions') loadAdminSessions();
-};
-
-// ── LOAD ALL DATA ──
-async function loadAll() {
-  await Promise.all([loadGrades(), loadSubjects(), loadTeachers(), loadStudents()]);
-  loadDashboardStats();
-}
-
-// ── GRADES ──
-async function loadGrades() {
-  const snap = await getDocs(query(collection(db,'grades'), orderBy('createdAt','desc')));
-  allGrades = snap.docs.map(d => ({id:d.id,...d.data()}));
-  renderGrades();
-  populateStudentGradeFilter();
-}
-
-window.renderGrades = function() {
-  const search = (document.getElementById('gradeSearch')?.value||'').toLowerCase();
-  const statusF = document.getElementById('gradeStatusFilter')?.value;
-  let rows = allGrades.filter(g => {
-    const matchText = g.nameEn?.toLowerCase().includes(search) || g.nameAr?.includes(search) || g.code?.toLowerCase().includes(search);
-    const matchStatus = statusF === '' || String(g.active) === statusF;
-    return matchText && matchStatus;
-  });
-  const tbody = document.getElementById('gradesBody');
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No grades found</td></tr>`; return; }
-  tbody.innerHTML = rows.map(g => `
-    <tr>
-      <td>${esc(g.nameEn||'')}</td>
-      <td style="font-family:'DM Mono',monospace;direction:rtl">${esc(g.nameAr||'')}</td>
-      <td><span class="tag-pill">${esc(g.code||'')}</span></td>
-      <td><span class="${g.active?'badge-active':'badge-inactive'}">${g.active?'Active':'Inactive'}</span></td>
-      <td><div class="actions-cell">
-        <button class="btn btn-sm btn-edit" onclick="openModal('grade','${g.id}')">Edit</button>
-        <button class="btn btn-sm ${g.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('grades','${g.id}',${!g.active})">${g.active?'Deactivate':'Activate'}</button>
-        <button class="btn btn-sm btn-delete" onclick="deleteRecord('grades','${g.id}','grade')">Delete</button>
-      </div></td>
-    </tr>`).join('');
-};
-
-  // Helper to update Grade/Subject dropdowns based on selected Teacher
-window.updateSessionDropdowns = function() {
-  const teacherId = document.getElementById('f_teacherId').value;
-  const gradeSelect = document.getElementById('f_gradeId');
-  const subjectSelect = document.getElementById('f_subjectId');
-  
-  // Reset dropdowns
-  gradeSelect.innerHTML = '<option value="">Select Grade…</option>';
-  subjectSelect.innerHTML = '<option value="">Select Subject…</option>';
-  gradeSelect.disabled = true;
-  subjectSelect.disabled = true;
-
-  if (!teacherId) return;
-
-  // Find the selected teacher object
-  const teacher = allTeachers.find(t => t.id === teacherId);
-  if (!teacher) return;
-
-  // Enable dropdowns
-  gradeSelect.disabled = false;
-  subjectSelect.disabled = false;
-
-  // Populate Grades
-  if (teacher.assignedGrades && teacher.assignedGrades.length > 0) {
-    teacher.assignedGrades.forEach(gId => {
-      const grade = allGrades.find(g => g.id === gId);
-      if (grade) {
-        const option = document.createElement('option');
-        option.value = grade.id; // Or grade.nameEn if you prefer storing name directly
-        option.textContent = grade.nameEn;
-        gradeSelect.appendChild(option);
-      }
-    });
-  } else {
-    gradeSelect.innerHTML = '<option value="">No Grades Assigned</option>';
-  }
-
-  // Populate Subjects
-  if (teacher.assignedSubjects && teacher.assignedSubjects.length > 0) {
-    teacher.assignedSubjects.forEach(sId => {
-      const subject = allSubjects.find(s => s.id === sId);
-      if (subject) {
-        const option = document.createElement('option');
-        option.value = subject.id; // Or subject.nameEn
-        option.textContent = subject.nameEn;
-        subjectSelect.appendChild(option);
-      }
-    });
-  } else {
-    subjectSelect.innerHTML = '<option value="">No Subjects Assigned</option>';
-  }
-}; 
-  
-// ── SUBJECTS ──
-async function loadSubjects() {
-  const snap = await getDocs(query(collection(db,'subjects'), orderBy('createdAt','desc')));
-  allSubjects = snap.docs.map(d => ({id:d.id,...d.data()}));
-  renderSubjects();
-}
-
-window.renderSubjects = function() {
-  const search = (document.getElementById('subjectSearch')?.value||'').toLowerCase();
-  const statusF = document.getElementById('subjectStatusFilter')?.value;
-  let rows = allSubjects.filter(s => {
-    const matchText = s.nameEn?.toLowerCase().includes(search) || s.nameAr?.includes(search) || s.code?.toLowerCase().includes(search);
-    const matchStatus = statusF === '' || String(s.active) === statusF;
-    return matchText && matchStatus;
-  });
-  const tbody = document.getElementById('subjectsBody');
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No subjects found</td></tr>`; return; }
-  tbody.innerHTML = rows.map(s => `
-    <tr>
-      <td>${esc(s.nameEn||'')}</td>
-      <td style="font-family:'DM Mono',monospace;direction:rtl">${esc(s.nameAr||'')}</td>
-      <td><span class="tag-pill">${esc(s.code||'')}</span></td>
-      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Active':'Inactive'}</span></td>
-      <td><div class="actions-cell">
-        <button class="btn btn-sm btn-edit" onclick="openModal('subject','${s.id}')">Edit</button>
-        <button class="btn btn-sm ${s.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('subjects','${s.id}',${!s.active})">${s.active?'Deactivate':'Activate'}</button>
-        <button class="btn btn-sm btn-delete" onclick="deleteRecord('subjects','${s.id}','subject')">Delete</button>
-      </div></td>
-    </tr>`).join('');
-};
-
-// ── TEACHERS ──
-async function loadTeachers() {
-  const snap = await getDocs(query(collection(db,'teachers'), orderBy('createdAt','desc')));
-  allTeachers = snap.docs.map(d => ({id:d.id,...d.data()}));
-  renderTeachers();
-}
-
-window.renderTeachers = function() {
-  const search = (document.getElementById('teacherSearch')?.value||'').toLowerCase();
-  const statusF = document.getElementById('teacherStatusFilter')?.value;
-  let rows = allTeachers.filter(t => {
-    const matchText = t.name?.toLowerCase().includes(search) || t.email?.toLowerCase().includes(search);
-    const matchStatus = statusF === '' || String(t.active) === statusF;
-    return matchText && matchStatus;
-  });
-  const tbody = document.getElementById('teachersBody');
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No teachers found</td></tr>`; return; }
-  tbody.innerHTML = rows.map(t => {
-    const gradeNames = (t.assignedGrades||[]).map(gid => { const g = allGrades.find(x=>x.id===gid); return g?g.nameEn:gid; });
-    const subjectNames = (t.assignedSubjects||[]).map(sid => { const s = allSubjects.find(x=>x.id===sid); return s?s.nameEn:sid; });
-    return `<tr>
-      <td><strong>${esc(t.name||'')}</strong></td>
-      <td style="color:var(--muted)">${esc(t.email||'')}</td>
-      <td>${gradeNames.map(n=>`<span class="tag-pill">${esc(n)}</span>`).join('')||'<span style="color:var(--muted)">—</span>'}</td>
-      <td>${subjectNames.map(n=>`<span class="tag-pill" style="color:var(--purple);border-color:rgba(192,132,252,0.2);background:var(--purple-dim)">${esc(n)}</span>`).join('')||'<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="${t.active?'badge-active':'badge-inactive'}">${t.active?'Active':'Inactive'}</span></td>
-      <td><div class="actions-cell">
-        <button class="btn btn-sm btn-edit" onclick="openModal('teacher','${t.id}')">Edit</button>
-        <button class="btn btn-sm ${t.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('teachers','${t.id}',${!t.active})">${t.active?'Deactivate':'Activate'}</button>
-        <button class="btn btn-sm btn-delete" onclick="deleteRecord('teachers','${t.id}','teacher')">Delete</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-};
-
-// ── STUDENTS ──
-async function loadStudents() {
-  const snap = await getDocs(query(collection(db,'students'), orderBy('createdAt','desc')));
-  allStudents = snap.docs.map(d => ({id:d.id,...d.data()}));
-  renderStudents();
-}
-
-function populateStudentGradeFilter() {
-  const sel = document.getElementById('studentGradeFilter');
-  if (!sel) return;
-  const existing = sel.innerHTML;
-  sel.innerHTML = '<option value="">All Grades</option>' + allGrades.map(g=>`<option value="${g.id}">${esc(g.nameEn)}</option>`).join('');
-}
-
-window.renderStudents = function() {
-  const search  = (document.getElementById('studentSearch')?.value||'').toLowerCase();
-  const statusF = document.getElementById('studentStatusFilter')?.value;
-  const gradeF  = document.getElementById('studentGradeFilter')?.value;
-  let rows = allStudents.filter(s => {
-    const matchText   = s.name?.toLowerCase().includes(search) || s.email?.toLowerCase().includes(search);
-    const matchStatus = statusF === '' || String(s.active) === statusF;
-    const matchGrade  = gradeF === '' || s.gradeId === gradeF;
-    return matchText && matchStatus && matchGrade;
-  });
-  const tbody = document.getElementById('studentsBody');
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No students found</td></tr>`; return; }
-  tbody.innerHTML = rows.map(s => {
-    const grade = allGrades.find(g=>g.id===s.gradeId);
-    return `<tr>
-      <td><strong>${esc(s.name||'')}</strong></td>
-      <td style="color:var(--muted)">${esc(s.email||'')}</td>
-      <td>${grade?`<span class="tag-pill">${esc(grade.nameEn)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
-      <td><span class="${s.active?'badge-active':'badge-inactive'}">${s.active?'Active':'Inactive'}</span></td>
-      <td><div class="actions-cell">
-        <button class="btn btn-sm btn-edit" onclick="openModal('student','${s.id}')">Edit</button>
-        <button class="btn btn-sm ${s.active?'btn-toggle-on':'btn-toggle-off'}" onclick="toggleActive('students','${s.id}',${!s.active})">${s.active?'Deactivate':'Activate'}</button>
-        <button class="btn btn-sm btn-delete" onclick="deleteRecord('students','${s.id}','student')">Delete</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-};
-
-// ── ADMIN SESSIONS ──
-
-  // REPLACE the existing loadAdminSessions in admin.html with this:
-async function loadAdminSessions() {
-  const tbody = document.getElementById('adminSessionsBody');
-  tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading sessions...</td></tr>';
-
-  try {
-    // Query Firestore instead of RTDB
-    const q = query(collection(db, 'sessions'), orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    const sessions = [];
-    snapshot.forEach(doc => {
-      sessions.push({ id: doc.id, ...doc.data() });
-    });
-
-    if (sessions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No sessions found</td></tr>';
-      return;
-    }
-
-    const rows = sessions.map(s => {
-      // Find teacher name from local cache or use stored name
-      const teacher = allTeachers.find(t => t.id === s.ownerTeacherId);
-      const teacherName = teacher ? teacher.name : (s.ownerTeacherName || 'Unknown');
-      
-      // Determine status color
-      const isActive = s.active === true;
-      const statusClass = isActive ? 'badge-active' : 'badge-inactive';
-      const statusText = isActive ? 'Open' : 'Closed';
-
-      return `<tr>
-        <td><strong>${esc(s.title || 'Untitled')}</strong></td>
-        <td>${esc(teacherName)}</td>
-        <td>${esc(s.grade || '—')}</td>
-        <td>${esc(s.subject || '—')}</td>
-        <td>${esc(s.date || '—')}</td>
-        <td><span class="${statusClass}">${statusText}</span></td>
-        <td><div class="actions-cell">
-          <button class="btn btn-sm btn-delete" onclick="deleteAdminSession('${s.id}')">Delete</button>
-        </div></td>
-      </tr>`;
-    });
-
-    tbody.innerHTML = rows.join('');
-  } catch (error) {
-    console.error("Error loading sessions:", error);
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="color:var(--red)">Error loading data.</td></tr>';
-  }
-}
-  
-
-// REPLACE the existing deleteAdminSession in admin.html with this:
-window.deleteAdminSession = async function(id) {
-  if (!confirm('Delete this session and all its data? This cannot be undone.')) return;
-  
-  try {
-    // Delete from Firestore
-    await deleteDoc(doc(db, 'sessions', id));
-    
-    // Note: If you have sub-collections like questions/students in Firestore, 
-    // you might need to delete those too, or use a Cloud Function.
-    // For now, this deletes the main session document.
-    
-    showToast('Session deleted');
-    loadAdminSessions();
-  } catch (e) {
-    console.error(e);
-    showToast('Error deleting session', true);
-  }
-};
-  
-
-// ── DASHBOARD STATS ──
-async function loadDashboardStats() {
-  // 1. Count Local Arrays (Firestore Collections)
-  document.getElementById('dashGrades').textContent    = allGrades.length;
-  document.getElementById('dashSubjects').textContent  = allSubjects.length;
-  document.getElementById('dashTeachers').textContent  = allTeachers.length;
-  document.getElementById('dashStudents').textContent  = allStudents.length;
-
-  // 2. Count Sessions (Firestore Collection)
-  // We fetch the count directly from Firestore 'sessions' collection
-  try {
-    const sessionsRef = collection(db, 'sessions');
-    // Note: counting documents client-side can be expensive if you have thousands. 
-    // For small/medium apps, getDocs is fine.
-    const snapshot = await getDocs(sessionsRef);
-    document.getElementById('dashSessions').textContent = snapshot.size;
-  } catch (error) {
-    console.error("Error counting sessions:", error);
-    document.getElementById('dashSessions').textContent = "Err";
-  }
-}
-
-  // 🟢 NEW: RTDB Real-time Metrics Function
-function loadRTDBMetrics() {
-  try {
-    // Listen to the 'liveSessions' node in RTDB
-    onValue(ref(rtDB, 'liveSessions'), (snapshot) => {
-      const sessions = snapshot.val() || {};
-      
-      let totalActive = 0;
-      let totalSessions = 0;
-      
-      for (const sessionId in sessions) {
-        totalSessions++;
-        // Assuming structure: liveSessions/{sessionId}/students/{studentId}/...
-        const students = sessions[sessionId].students || {};
-        totalActive += Object.keys(students).length;
-      }
-      
-      // Update UI if elements exist
-      const activeCard = document.getElementById('cardActive');
-      if (activeCard) {
-        activeCard.textContent = totalActive;
-        activeCard.classList.remove('loading');
-      }
-      
-      const sessionsCard = document.getElementById('cardSessions');
-      if (sessionsCard) {
-        sessionsCard.textContent = totalSessions;
-        sessionsCard.classList.remove('loading');
-      }
-      
-      // Optional: Log for debugging
-      // console.log(`🟢 RTDB: ${totalActive} students active, ${totalSessions} sessions`);
-    }, (error) => {
-      console.warn('⚠️ RTDB metrics error:', error);
-    });
-  } catch (e) {
-    console.warn('⚠️ Could not load RTDB metrics:', e);
-  }
-}
-
-  
-
-// ── TOGGLE ACTIVE ──
-window.toggleActive = async function(collName, id, newState) {
-  await updateDoc(doc(db, collName, id), { active: newState, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid });
-  showToast(newState ? 'Activated' : 'Deactivated');
-  if (collName === 'grades')    { allGrades   = allGrades.map(g=>g.id===id?{...g,active:newState}:g);    renderGrades(); }
-  if (collName === 'subjects')  { allSubjects = allSubjects.map(s=>s.id===id?{...s,active:newState}:s);  renderSubjects(); }
-  if (collName === 'teachers')  { allTeachers = allTeachers.map(t=>t.id===id?{...t,active:newState}:t);  renderTeachers(); }
-  if (collName === 'students')  { allStudents = allStudents.map(s=>s.id===id?{...s,active:newState}:s);  renderStudents(); }
-};
-
-// ── DELETE RECORD ──
-window.deleteRecord = async function(collName, id, label) {
-  if (!confirm(`Delete this ${label}? This action cannot be undone.`)) return;
-  await deleteDoc(doc(db, collName, id));
-  // Also delete from users collection
-  if (collName === 'teachers' || collName === 'students') {
-    const item = (collName === 'teachers' ? allTeachers : allStudents).find(x=>x.id===id);
-    if (item?.uid) await deleteDoc(doc(db, 'users', item.uid));
-  }
-  showToast(`${label} deleted`);
-  if (collName === 'grades')    { allGrades   = allGrades.filter(x=>x.id!==id);    renderGrades(); }
-  if (collName === 'subjects')  { allSubjects = allSubjects.filter(x=>x.id!==id);  renderSubjects(); }
-  if (collName === 'teachers')  { allTeachers = allTeachers.filter(x=>x.id!==id);  renderTeachers(); }
-  if (collName === 'students')  { allStudents = allStudents.filter(x=>x.id!==id);  renderStudents(); }
-};
-
-// ── SINGLE ITEM MODAL ──
-let currentModalType = '';
-let currentEditId    = null;
-
-window.openModal = function(type, editId = null) {
-  currentModalType = type;
-  currentEditId    = editId;
-  const modalTitle = document.getElementById('modalTitle');
-  const modalBody  = document.getElementById('modalBody');
-  const formError  = document.getElementById('formError');
-  formError.style.display = 'none';
-
-  if (type === 'grade') {
-    const g = editId ? allGrades.find(x=>x.id===editId) : null;
-    modalTitle.textContent = editId ? 'Edit Grade' : 'Add Grade';
-    modalBody.innerHTML = `
-      <div class="form-grid">
-        <div class="form-group"><label>Grade Name (English)</label><input id="f_nameEn" value="${esc(g?.nameEn||'')}"></div>
-        <div class="form-group"><label>Grade Name (Arabic)</label><input id="f_nameAr" dir="rtl" value="${esc(g?.nameAr||'')}"></div>
-        <div class="form-group"><label>Grade Code</label><input id="f_code" placeholder="e.g. G10" value="${esc(g?.code||'')}"></div>
-        <div class="form-group"><label>Status</label>
-          <select id="f_active"><option value="true" ${g?.active!==false?'selected':''}>Active</option><option value="false" ${g?.active===false?'selected':''}>Inactive</option></select>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-save" onclick="saveGrade()">Save Grade</button>
-      </div>`;
-  }
-  else if (type === 'subject') {
-    const s = editId ? allSubjects.find(x=>x.id===editId) : null;
-    modalTitle.textContent = editId ? 'Edit Subject' : 'Add Subject';
-    modalBody.innerHTML = `
-      <div class="form-grid">
-        <div class="form-group"><label>Subject Name (English)</label><input id="f_nameEn" value="${esc(s?.nameEn||'')}"></div>
-        <div class="form-group"><label>Subject Name (Arabic)</label><input id="f_nameAr" dir="rtl" value="${esc(s?.nameAr||'')}"></div>
-        <div class="form-group"><label>Subject Code</label><input id="f_code" placeholder="e.g. MATH" value="${esc(s?.code||'')}"></div>
-        <div class="form-group"><label>Status</label>
-          <select id="f_active"><option value="true" ${s?.active!==false?'selected':''}>Active</option><option value="false" ${s?.active===false?'selected':''}>Inactive</option></select>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-save" onclick="saveSubject()">Save Subject</button>
-      </div>`;
-  }
-  else if (type === 'teacher') {
-    const t = editId ? allTeachers.find(x=>x.id===editId) : null;
-    const activeGrades   = allGrades.filter(g=>g.active);
-    const activeSubjects = allSubjects.filter(s=>s.active);
-    modalTitle.textContent = editId ? 'Edit Teacher' : 'Add Teacher';
-    modalBody.innerHTML = `
-      <div class="form-grid">
-        <div class="form-group full"><label>Teacher Name</label><input id="f_name" value="${esc(t?.name||'')}"></div>
-        <div class="form-group"><label>Email (Login)</label><input type="email" id="f_email" value="${esc(t?.email||'')}" ${editId?'readonly style="opacity:0.5"':''}></div>
-        ${!editId ? `<div class="form-group"><label>Password</label><input type="password" id="f_password" placeholder="Min 6 characters"></div>` : `<div class="form-group"><label>Password (leave blank = no change)</label><input type="password" id="f_password" placeholder="New password (optional)"></div>`}
-        <div class="form-group"><label>Status</label>
-          <select id="f_active"><option value="true" ${t?.active!==false?'selected':''}>Active</option><option value="false" ${t?.active===false?'selected':''}>Inactive</option></select>
-        </div>
-      </div>
-      <div class="form-group full" style="margin-bottom:16px"><label>Assigned Grades</label>
-        <div class="multi-select-wrap" id="gradesCheckboxes">
-          ${activeGrades.map(g=>`<div class="multi-check-item"><input type="checkbox" id="ag_${g.id}" value="${g.id}" ${(t?.assignedGrades||[]).includes(g.id)?'checked':''}><label for="ag_${g.id}">${esc(g.nameEn)}</label></div>`).join('')}
-        </div>
-      </div>
-      <div class="form-group full" style="margin-bottom:16px"><label>Assigned Subjects</label>
-        <div class="multi-select-wrap" id="subjectsCheckboxes">
-          ${activeSubjects.map(s=>`<div class="multi-check-item"><input type="checkbox" id="as_${s.id}" value="${s.id}" ${(t?.assignedSubjects||[]).includes(s.id)?'checked':''}><label for="as_${s.id}">${esc(s.nameEn)}</label></div>`).join('')}
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-save" onclick="saveTeacher()">Save Teacher</button>
-      </div>`;
-  }
-  else if (type === 'student') {
-    const s = editId ? allStudents.find(x=>x.id===editId) : null;
-    const activeGrades = allGrades.filter(g=>g.active);
-    modalTitle.textContent = editId ? 'Edit Student' : 'Add Student';
-    modalBody.innerHTML = `
-      <div class="form-grid">
-        <div class="form-group full"><label>Student Name</label><input id="f_name" value="${esc(s?.name||'')}"></div>
-        <div class="form-group"><label>Email (Login)</label><input type="email" id="f_email" value="${esc(s?.email||'')}" ${editId?'readonly style="opacity:0.5"':''}></div>
-        ${!editId ? `<div class="form-group"><label>Password</label><input type="password" id="f_password" placeholder="Min 6 characters"></div>` : `<div class="form-group"><label>Password (leave blank = no change)</label><input type="password" id="f_password" placeholder="New password (optional)"></div>`}
-        <div class="form-group"><label>Grade</label>
-          <select id="f_gradeId">
-            <option value="">Select Grade…</option>
-            ${activeGrades.map(g=>`<option value="${g.id}" ${s?.gradeId===g.id?'selected':''}>${esc(g.nameEn)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group"><label>Status</label>
-          <select id="f_active"><option value="true" ${s?.active!==false?'selected':''}>Active</option><option value="false" ${s?.active===false?'selected':''}>Inactive</option></select>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-save" onclick="saveStudent()">Save Student</button>
-      </div>`;
-  }
-  else if (type === 'session-admin') {
-    modalTitle.textContent = 'Create Session (as Admin)';
-    
-    // Get active teachers for the dropdown
-    const activeTeachers = allTeachers.filter(t => t.active);
-    
-    modalBody.innerHTML = `
-      <div class="form-grid">
-        <div class="form-group full"><label>Session Title</label><input id="f_title" placeholder="e.g. Chapter 5 Quiz"></div>
-        
-        <div class="form-group"><label>Owner Teacher</label>
-          <select id="f_teacherId" onchange="updateSessionDropdowns()">
-            <option value="">Select Teacher…</option>
-            ${activeTeachers.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
-          </select>
-        </div>
-        
-        <div class="form-group"><label>Grade</label>
-          <select id="f_gradeId" disabled>
-            <option value="">Select Teacher First</option>
-          </select>
-        </div>
-        
-        <div class="form-group"><label>Subject</label>
-          <select id="f_subjectId" disabled>
-            <option value="">Select Teacher First</option>
-          </select>
-        </div>
-        
-        <div class="form-group"><label>Class / Section</label><input id="f_className" placeholder="e.g. Class A"></div>
-        <div class="form-group"><label>Date</label><input type="date" id="f_date"></div>
-        <div class="form-group"><label>Start Time</label><input type="time" id="f_start"></div>
-        <div class="form-group"><label>End Time</label><input type="time" id="f_end"></div>
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-save" onclick="saveAdminSession()">Create Session</button>
-      </div>`;
-  }
-  document.getElementById('modalOverlay').classList.add('show');
-};
-
-window.closeModal = function() { document.getElementById('modalOverlay').classList.remove('show'); };
-window.closeModalOnOverlay = function(e) { if(e.target===document.getElementById('modalOverlay')) closeModal(); };
-
-function showFormError(msg) {
-  const el = document.getElementById('formError');
-  el.textContent = msg; el.style.display = 'block';
-}
-
-// ── SAVE FUNCTIONS (SINGLE) ──
-window.saveGrade = async function() {
-  const nameEn = document.getElementById('f_nameEn')?.value.trim();
-  const nameAr = document.getElementById('f_nameAr')?.value.trim();
-  const code   = document.getElementById('f_code')?.value.trim();
-  const active = document.getElementById('f_active')?.value === 'true';
-  if (!nameEn || !code) { showFormError('Grade Name (English) and Code are required.'); return; }
-  const data = { nameEn, nameAr: nameAr||'', code, active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
-  if (currentEditId) {
-    await updateDoc(doc(db,'grades',currentEditId), data);
-    allGrades = allGrades.map(g=>g.id===currentEditId?{...g,...data}:g);
-    showToast('Grade updated');
-  } else {
-    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
-    const ref_ = await addDoc(collection(db,'grades'), data);
-    allGrades.unshift({ id: ref_.id, ...data });
-    showToast('Grade added');
-  }
-  closeModal(); renderGrades(); populateStudentGradeFilter();
-};
-
-window.saveSubject = async function() {
-  const nameEn = document.getElementById('f_nameEn')?.value.trim();
-  const nameAr = document.getElementById('f_nameAr')?.value.trim();
-  const code   = document.getElementById('f_code')?.value.trim();
-  const active = document.getElementById('f_active')?.value === 'true';
-  if (!nameEn || !code) { showFormError('Subject Name (English) and Code are required.'); return; }
-  const data = { nameEn, nameAr: nameAr||'', code, active, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
-  if (currentEditId) {
-    await updateDoc(doc(db,'subjects',currentEditId), data);
-    allSubjects = allSubjects.map(s=>s.id===currentEditId?{...s,...data}:s);
-    showToast('Subject updated');
-  } else {
-    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
-    const ref_ = await addDoc(collection(db,'subjects'), data);
-    allSubjects.unshift({ id: ref_.id, ...data });
-    showToast('Subject added');
-  }
-  closeModal(); renderSubjects();
-};
-
-window.saveTeacher = async function() {
-  const name     = document.getElementById('f_name')?.value.trim();
-  const email    = document.getElementById('f_email')?.value.trim();
-  const password = document.getElementById('f_password')?.value;
-  const active   = document.getElementById('f_active')?.value === 'true';
-  const assignedGrades   = [...document.querySelectorAll('#gradesCheckboxes input:checked')].map(i=>i.value);
-  const assignedSubjects = [...document.querySelectorAll('#subjectsCheckboxes input:checked')].map(i=>i.value);
-  if (!name || !email) { showFormError('Name and email are required.'); return; }
-  if (!currentEditId && (!password || password.length < 6)) { showFormError('Password must be at least 6 characters.'); return; }
-
-  const data = { name, email, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp(), updatedBy: currentAdmin.uid };
-
-if (currentEditId) {
-    if (password && password.length >= 6) data.pendingPassword = password;
-    await updateDoc(doc(db,'teachers',currentEditId), data);
-    const t = allTeachers.find(x=>x.id===currentEditId);
-    if (t?.uid) await updateDoc(doc(db,'users',t.uid), { name, active, assignedGrades, assignedSubjects, updatedAt: serverTimestamp() });
-    allTeachers = allTeachers.map(t=>t.id===currentEditId?{...t,...data}:t);
-    showToast('Teacher updated');
-  } else {
-    if (!password || password.length < 6) { showFormError('Password required for new teacher.'); return; }
-    data.createdAt = serverTimestamp(); data.createdBy = currentAdmin.uid;
-    data.pendingPassword = password; 
-    const ref_ = await addDoc(collection(db,'teachers'), data);
-    await setDoc(doc(db,'users', ref_.id), { role:'teacher', name, email, active, assignedGrades, assignedSubjects, teacherDocId: ref_.id, createdAt: serverTimestamp(), createdBy: currentAdmin.uid });
-    allTeachers.unshift({ id: ref_.id, ...data });
-    showToast('Teacher profile created. Auth account will be provisioned on first login.');
-  }
-  closeModal(); renderTeachers();
-};
-
-window.saveStudent = async function() {
-  const name     = document.getElementById('f_name')?.value.trim();
-  const email    = document.getElementById('f_email')?.value.trim();
-  const password = document.getElementById('f_password')?.value;
-  const gradeId  = document.getElementById('f_gradeId')?.value;
-  const active   = document.getElementById('f_active')?.value === 'true';
-  
-  if (!name || !email) { showFormError('Name and email are required.'); return; }
-  
-  if (!currentEditId) {
-    if (!password || password.length < 6) { 
-      showFormError('Password must be at least 6 characters.'); 
-      return; 
-    }
-    
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUid = userCredential.user.uid;
-      
-      const data = { 
-        name, 
-        email, 
-        gradeId: gradeId||'', 
-        active, 
-        uid: newUid, 
-        createdAt: serverTimestamp(), 
-        createdBy: currentAdmin.uid 
-      };
-      
-      await setDoc(doc(db, 'students', newUid), data);
-      await setDoc(doc(db, 'users', newUid), { 
-        role: 'student', 
-        name, 
-        email, 
-        active, 
-        gradeId, 
-        studentDocId: newUid, 
-        createdAt: serverTimestamp(), 
-        createdBy: currentAdmin.uid 
-      });
-      
-      allStudents.unshift({ id: newUid, ...data });
-      showToast('Student created successfully!');
-      
-    } catch (error) {
-      console.error("❌ Auth creation error:", error);
-      if (error.code === 'auth/email-already-in-use') {
-        showFormError('This email is already registered.');
-      } else if (error.code === 'auth/invalid-email') {
-        showFormError('Invalid email address.');
-      } else if (error.code === 'auth/weak-password') {
-        showFormError('Password should be at least 6 characters.');
-      } else {
-        showFormError('Error creating account: ' + error.message);
-      }
-      return;
-    }
-  } 
-  else {
-    const data = { 
-      name, 
-      email, 
-      gradeId: gradeId||'', 
-      active, 
-      updatedAt: serverTimestamp(), 
-      updatedBy: currentAdmin.uid 
-    };
-    
-    if (password && password.length >= 6) {
-      data.pendingPassword = password;
-    }
-    
-    await updateDoc(doc(db, 'students', currentEditId), data);
-    
-    const s = allStudents.find(x => x.id === currentEditId);
-    if (s?.uid) {
-      await updateDoc(doc(db, 'users', s.uid), { 
-        name, 
-        active, 
-        gradeId, 
-        updatedAt: serverTimestamp() 
-      });
-    }
-    
-    allStudents = allStudents.map(s => s.id === currentEditId ? {...s, ...data} : s);
-    showToast('Student updated');
-  }
-  
-  closeModal(); 
-  renderStudents();
-};
-
-// REPLACE the existing saveAdminSession in admin.html with this:
-window.saveAdminSession = async function() {
-  const title     = document.getElementById('f_title')?.value.trim();
-  const teacherId = document.getElementById('f_teacherId')?.value;
-  const gradeId   = document.getElementById('f_gradeId')?.value; // Assuming you implemented the dropdowns from previous step
-  const subjectId = document.getElementById('f_subjectId')?.value; // Assuming you implemented the dropdowns
-  
-  // Fallback to text inputs if dropdowns aren't fully implemented yet
-  const gradeNameInput = document.getElementById('f_grade')?.value.trim(); 
-  const subjectNameInput = document.getElementById('f_subject')?.value.trim();
-
-  const className = document.getElementById('f_className')?.value.trim();
-  const date      = document.getElementById('f_date')?.value;
-  const startTime = document.getElementById('f_start')?.value;
-  const endTime   = document.getElementById('f_end')?.value;
-
-  if (!title || !teacherId) { showFormError('Title and teacher are required.'); return; }
-  
-  const teacher = allTeachers.find(t => t.id === teacherId);
-  
-  // Resolve Names from IDs (if using dropdowns) or use Inputs
-  let finalGrade = gradeNameInput;
-  let finalSubject = subjectNameInput;
-  
-  if (gradeId) {
-    const g = allGrades.find(x => x.id === gradeId);
-    if(g) finalGrade = g.nameEn;
-  }
-  
-  if (subjectId) {
-    const s = allSubjects.find(x => x.id === subjectId);
-    if(s) finalSubject = s.nameEn;
-  }
-
-  // SAVE TO FIRESTORE (Not RTDB)
-  try {
-    await addDoc(collection(db, 'sessions'), {
-      title: title,
-      grade: finalGrade || '',
-      subject: finalSubject || '',
-      className: className || '',
-      date: date || '',
-      startTime: startTime || '',
-      endTime: endTime || '',
-      active: false, // Default to closed
-      createdAt: serverTimestamp(),
-      ownerTeacherId: teacherId,
-      ownerTeacherName: teacher?.name || '',
-      createdBy: currentAdmin.uid,
-      createdByRole: 'superadmin',
-      instructions: ''
-    });
-    
-    closeModal(); 
-    showToast('Session created in Firestore'); 
-    loadAdminSessions(); // Make sure this function also reads from Firestore now
-  } catch (e) {
-    console.error(e);
-    showToast('Error creating session: ' + e.message, true);
-  }
-};
-  
-
-// ──────────────────────────────────────────────
-// ── BULK OPERATIONS LOGIC (NEW) ──
-// ──────────────────────────────────────────────
-
-let bulkCurrentType = '';
-
-window.openBulkModal = function(type) {
-  bulkCurrentType = type;
-  const modalTitle = document.getElementById('modalTitle');
-  const modalBody  = document.getElementById('modalBody');
-  const formError  = document.getElementById('formError');
-  formError.style.display = 'none';
-
-  modalTitle.textContent = `Bulk Actions: ${type.charAt(0).toUpperCase() + type.slice(1)}s`;
-  
-  modalBody.innerHTML = `
-    <div class="bulk-tabs">
-      <button class="bulk-tab active" onclick="switchBulkTab('import')">Import New (Excel)</button>
-      <button class="bulk-tab" onclick="switchBulkTab('update')">Update Existing (Excel)</button>
-    </div>
-
-    <!-- IMPORT PANEL -->
-    <div id="bulk-import-panel" class="bulk-panel active">
-      <p style="margin-bottom:15px;color:var(--muted);font-size:13px;">
-        1. Download the template. Sheet 1 is empty headers, Sheet 2 has sample data.<br>
-        2. Fill your data in the Excel file.<br>
-        3. Upload to insert new records.
-      </p>
-      <div class="bulk-btn-group">
-        <button class="btn btn-cancel" onclick="downloadTemplate('${type}')">⬇ Download Template</button>
-      </div>
-      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0;">
-      <div class="file-drop-zone" onclick="document.getElementById('importFileInput').click()">
-        <span class="file-icon">📂</span>
-        <div>Click to upload filled Excel file</div>
-        <input type="file" id="importFileInput" accept=".xlsx, .xls" style="display:none" onchange="handleBulkImport(this)">
-      </div>
-    </div>
-
-    <!-- UPDATE PANEL -->
-    <div id="bulk-update-panel" class="bulk-panel">
-      <p style="margin-bottom:15px;color:var(--muted);font-size:13px;">
-        1. Download current data.<br>
-        2. Edit values (Do NOT change ID column).<br>
-        3. Upload to update records.
-      </p>
-      <div class="bulk-btn-group">
-        <button class="btn btn-cancel" onclick="downloadCurrentData('${type}')">⬇ Download Current Data</button>
-      </div>
-      <hr style="border:0;border-top:1px solid var(--border);margin:20px 0;">
-      <div class="file-drop-zone" onclick="document.getElementById('updateFileInput').click()">
-        <span class="file-icon">📝</span>
-        <div>Click to upload edited Excel file</div>
-        <input type="file" id="updateFileInput" accept=".xlsx, .xls" style="display:none" onchange="handleBulkUpdate(this)">
-      </div>
-    </div>
-  `;
-  
-  document.getElementById('modalOverlay').classList.add('show');
-};
-
-window.switchBulkTab = function(tab) {
-  document.querySelectorAll('.bulk-tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.bulk-panel').forEach(p => p.classList.remove('active'));
-  
-  if(tab === 'import') {
-    document.querySelector('.bulk-tab:nth-child(1)').classList.add('active');
-    document.getElementById('bulk-import-panel').classList.add('active');
-  } else {
-    document.querySelector('.bulk-tab:nth-child(2)').classList.add('active');
-    document.getElementById('bulk-update-panel').classList.add('active');
-  }
-};
-
-// --- DOWNLOAD TEMPLATE (IMPORT) ---
-window.downloadTemplate = function(type) {
-  let wb = XLSX.utils.book_new();
-  let headers = [], sample = [];
-
-  if (type === 'grade') {
-    headers = ['Name English', 'Name Arabic', 'Code', 'Active (true/false)'];
-    sample  = ['Grade 10', 'الصف العاشر', 'G10', 'true'];
-  } else if (type === 'subject') {
-    headers = ['Name English', 'Name Arabic', 'Code', 'Active (true/false)'];
-    sample  = ['Mathematics', 'الرياضيات', 'MATH', 'true'];
-  } else if (type === 'teacher') {
-    headers = ['Name', 'Email', 'Password (Min 6)', 'Active (true/false)', 'Assigned Grades (Codes comma sep)', 'Assigned Subjects (Codes comma sep)'];
-    sample  = ['John Doe', 'john@example.com', 'password123', 'true', 'G10,G11', 'MATH,SCI'];
-  } else if (type === 'student') {
-    headers = ['Name', 'Email', 'Password (Min 6)', 'Grade Code', 'Active (true/false)'];
-    sample  = ['Jane Smith', 'jane@example.com', 'password123', 'G10', 'true'];
-  } else if (type === 'session') {
-    headers = ['Title', 'Teacher Email', 'Grade Name', 'Subject Name', 'Date (YYYY-MM-DD)', 'Start Time (HH:MM)', 'End Time (HH:MM)', 'Class Name'];
-    sample  = ['Physics Quiz', 'john@example.com', 'Grade 10', 'Physics', '2026-05-01', '09:00', '10:00', 'Class A'];
-  }
-
-  // Sheet 1: Empty Headers
-  const ws1 = XLSX.utils.aoa_to_sheet([headers]);
-  XLSX.utils.book_append_sheet(wb, ws1, "Template");
-
-  // Sheet 2: Sample Data
-  const ws2 = XLSX.utils.aoa_to_sheet([headers, sample]);
-  XLSX.utils.book_append_sheet(wb, ws2, "Sample Data");
-
-  XLSX.writeFile(wb, `${type}_import_template.xlsx`);
-};
-
-// --- DOWNLOAD CURRENT DATA (UPDATE) ---
-window.downloadCurrentData = function(type) {
-  let data = [];
-  let headers = [];
-
-  if (type === 'grade') {
-    headers = ['ID', 'Name English', 'Name Arabic', 'Code', 'Active'];
-    data = allGrades.map(g => [g.id, g.nameEn, g.nameAr, g.code, g.active]);
-  } else if (type === 'subject') {
-    headers = ['ID', 'Name English', 'Name Arabic', 'Code', 'Active'];
-    data = allSubjects.map(s => [s.id, s.nameEn, s.nameAr, s.code, s.active]);
-  } else if (type === 'teacher') {
-    headers = ['ID', 'Name', 'Email', 'Active', 'Assigned Grades (Codes)', 'Assigned Subjects (Codes)'];
-    data = allTeachers.map(t => {
-      const gCodes = (t.assignedGrades||[]).map(id => { const g=allGrades.find(x=>x.id===id); return g?g.code:id; }).join(',');
-      const sCodes = (t.assignedSubjects||[]).map(id => { const s=allSubjects.find(x=>x.id===id); return s?s.code:id; }).join(',');
-      return [t.id, t.name, t.email, t.active, gCodes, sCodes];
-    });
-  } else if (type === 'student') {
-    headers = ['ID', 'Name', 'Email', 'Grade Code', 'Active'];
-    data = allStudents.map(s => {
-      const g = allGrades.find(x=>x.id===s.gradeId);
-      return [s.id, s.name, s.email, g?g.code:'', s.active];
-    });
-  } else if (type === 'session') {
-    headers = ['Session ID', 'Title', 'Teacher Email', 'Grade', 'Subject', 'Date', 'Start Time', 'End Time', 'Active'];
-    data = allSessions.map(s => [s.id, s.title, s.ownerTeacherId /*using ID as email might not be avail in session obj directly but we stored ownerTeacherId*/, s.grade, s.subject, s.date, s.startTime, s.endTime, s.active]);
-  }
-
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Current Data");
-  XLSX.writeFile(wb, `${type}_update_data.xlsx`);
-};
-
-// Helper to get value from row regardless of case or spaces in header
-function getVal(row, possibleKeys) {
-  // Normalize all keys in the row to lowercase without spaces
-  const normalizedRow = {};
-  Object.keys(row).forEach(key => {
-    normalizedRow[key.toLowerCase().replace(/[^a-z0-9]/g, '')] = row[key];
-  });
-
-  // Check possible variations of the target key
-  for (let key of possibleKeys) {
-    const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (normalizedRow[cleanKey] !== undefined && normalizedRow[cleanKey] !== null) {
-      return normalizedRow[cleanKey];
-    }
-  }
-  return null; // Return null if not found
-}
-
- //   window.handleBulkImport = async function(input) {
- //   const file = input.files[0];
- //   if (!file) return;
- //   
- //   const reader = new FileReader();
- //   reader.onload = async (e) => {
- //     const data = new Uint8Array(e.target.result);
- //     const workbook = XLSX.read(data, {type: 'array'});
- //     const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
- //     const json = XLSX.utils.sheet_to_json(sheet);
- //     
- //     if(!json.length) { showToast('File is empty', true); return; }
- //     
- //     let successCount = 0;
- //     let errorCount = 0;
- // 
- //     try {
- //       for(const row of json) {
- //         try {
- //           if(bulkCurrentType === 'grade') {
- //              const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
- //              const code   = getVal(row, ['Code', 'code']);
- //              
- //              if(!nameEn || !code) { errorCount++; continue; }
- // 
- //              await addDoc(collection(db, 'grades'), {
- //                nameEn: String(nameEn),
- //                nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
- //                code: String(code),
- //                active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
- //                createdAt: serverTimestamp(),
- //                createdBy: currentAdmin.uid
- //              });
- //           }
- //           else if(bulkCurrentType === 'subject') {
- //              const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
- //              const code   = getVal(row, ['Code', 'code']);
- //              
- //              if(!nameEn || !code) { errorCount++; continue; }
- // 
- //              await addDoc(collection(db, 'subjects'), {
- //                nameEn: String(nameEn),
- //                nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
- //                code: String(code),
- //                active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
- //                createdAt: serverTimestamp(),
- //                createdBy: currentAdmin.uid
- //              });
- //           }
- //           else if(bulkCurrentType === 'teacher') {
- //              const name = getVal(row, ['Name', 'name']);
- //              const email = getVal(row, ['Email', 'email']);
- //              const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
- //              
- //              if(!name || !email || !pass) { errorCount++; continue; }
- //              
- //              try {
- //                const uCred = await createUserWithEmailAndPassword(auth, email, pass);
- //                const uid = uCred.user.uid;
- //                
- //                // Resolve IDs
- //                const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codescommasep)']) || '');
- //                const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
- //                  const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
- //                }).filter(Boolean);
- //                
- //                const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codescommasep)']) || '');
- //                const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
- //                  const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
- //                }).filter(Boolean);
- // 
- //                const tRef = await addDoc(collection(db, 'teachers'), {
- //                  name, email, 
- //                  active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
- //                  assignedGrades: gIds, 
- //                  assignedSubjects: sIds,
- //                  pendingPassword: pass,
- //                  createdAt: serverTimestamp(), 
- //                  createdBy: currentAdmin.uid
- //                });
- //                
- //                await setDoc(doc(db, 'users', uid), {
- //                  role:'teacher', name, email, active:true, 
- //                  assignedGrades: gIds, assignedSubjects: sIds,
- //                  teacherDocId: tRef.id, createdAt: serverTimestamp()
- //                });
- //                successCount++;
- //              } catch(err) { console.error("Teacher Auth Error", err); errorCount++; }
- //           }
- //           else if(bulkCurrentType === 'student') {
- //              const name = getVal(row, ['Name', 'name']);
- //              const email = getVal(row, ['Email', 'email']);
- //              const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
- //              const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
- //              
- //              if(!name || !email || !pass) { errorCount++; continue; }
- //              
- //              try {
- //                const uCred = await createUserWithEmailAndPassword(auth, email, pass);
- //                const uid = uCred.user.uid;
- //                const grade = allGrades.find(g => g.code === gradeCode);
- //                
- //                await setDoc(doc(db, 'students', uid), {
- //                  name: String(name), 
- //                  email: String(email),
- //                  gradeId: grade ? grade.id : '',
- //                  active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
- //                  uid: uid, 
- //                  createdAt: serverTimestamp(), 
- //                  createdBy: currentAdmin.uid
- //                });
- //                
- //                await setDoc(doc(db, 'users', uid), {
- //                  role:'student', 
- //                  name: String(name), 
- //                  email: String(email), 
- //                  active:true,
- //                  gradeId: grade ? grade.id : '', 
- //                  studentDocId: uid,
- //                  createdAt: serverTimestamp(), 
- //                  createdBy: currentAdmin.uid
- //                });
- //                successCount++;
- //              } catch(err) { console.error("Student Auth Error", err); errorCount++; }
- //           }
- // else if(bulkCurrentType === 'session') {
- //    const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
- //    const teacher = allTeachers.find(t => t.email === tEmail);
- //    if(!teacher) { errorCount++; continue; }
- //    
- //    // Add to Firestore Collection
- //    await addDoc(collection(db, 'sessions'), {
- //      title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
- //      grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
- //      subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
- //      className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
- //      date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
- //      startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
- //      endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
- //      active: false,
- //      createdAt: serverTimestamp(),
- //      ownerTeacherId: teacher.id,
- //      ownerTeacherName: teacher.name,
- //      createdBy: currentAdmin.uid,
- //      createdByRole: 'superadmin',
- //      instructions: ''
- //    });
- //    successCount++;
- // }
- //         } catch(rowErr) {
- //           console.error("Row processing error", rowErr);
- //           errorCount++;
- //         }
- //       }
- //       showToast(`Import Done. Success: ${successCount}, Errors/Skipped: ${errorCount}`);
- //       closeModal();
- //       loadAll(); 
- //     } catch(e) {
- //       console.error(e);
- //       showToast('Bulk import failed: ' + e.message, true);
- //     }
- //   };
- //   reader.readAsArrayBuffer(file);
- // };
- 
-   window.handleBulkImport = async function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, {type: 'array'});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
-    const json = XLSX.utils.sheet_to_json(sheet);
-    
-    if(!json.length) { showToast('File is empty', true); return; }
-    
-    let successCount = 0;
-    let errorCount = 0;
-
-    try {
-      for(const row of json) {
-        try {
-          if(bulkCurrentType === 'grade') {
-             const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
-             const code   = getVal(row, ['Code', 'code']);
-             
-             if(!nameEn || !code) { errorCount++; continue; }
-
-             await addDoc(collection(db, 'grades'), {
-               nameEn: String(nameEn),
-               nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
-               code: String(code),
-               active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
-               createdAt: serverTimestamp(),
-               createdBy: currentAdmin.uid
-             });
-          }
-          else if(bulkCurrentType === 'subject') {
-             const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
-             const code   = getVal(row, ['Code', 'code']);
-             
-             if(!nameEn || !code) { errorCount++; continue; }
-
-             await addDoc(collection(db, 'subjects'), {
-               nameEn: String(nameEn),
-               nameAr: String(getVal(row, ['Name Arabic', 'NameArabic', 'namearabic']) || ''),
-               code: String(code),
-               active: String(getVal(row, ['Active', 'active', 'Active(true/false)'])).toLowerCase() === 'true',
-               createdAt: serverTimestamp(),
-               createdBy: currentAdmin.uid
-             });
-          }
-          else if(bulkCurrentType === 'teacher') {
-             const name = getVal(row, ['Name', 'name']);
-             const email = getVal(row, ['Email', 'email']);
-             const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
-             
-             if(!name || !email || !pass) { errorCount++; continue; }
-             
-             try {
-               // 1. Create Auth User
-               const uCred = await createUserWithEmailAndPassword(auth, email, pass);
-               const uid = uCred.user.uid;
-               
-               // Resolve IDs for Grades/Subjects
-               const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codescommasep)']) || '');
-               const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
-                 const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
-               }).filter(Boolean);
-               
-               const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codescommasep)']) || '');
-               const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
-                 const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
-               }).filter(Boolean);
-
-               // 2. Create Firestore Teacher Document
-               const tRef = await addDoc(collection(db, 'teachers'), {
-                 name, email, 
-                 active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
-                 assignedGrades: gIds, 
-                 assignedSubjects: sIds,
-                 pendingPassword: pass,
-                 createdAt: serverTimestamp(), 
-                 createdBy: currentAdmin.uid
-               });
-               
-               // 3. Create Firestore User Document
-               await setDoc(doc(db, 'users', uid), {
-                 role:'teacher', name, email, active:true, 
-                 assignedGrades: gIds, assignedSubjects: sIds,
-                 teacherDocId: tRef.id, createdAt: serverTimestamp()
-               });
-
-               // 🟢 RTDB: Initialize RTDB path for Teacher (Sync)
-               try {
-                 await set(ref(rtDB, `teachers/${tRef.id}`), {
-                   email: email,
-                   name: name,
-                   createdAt: Date.now()
-                 });
-               } catch (rtdbErr) {
-                 console.warn('⚠️ Could not initialize RTDB for teacher:', rtdbErr);
-               }
-
-               successCount++;
-             } catch(err) { 
-               console.error("Teacher Auth Error", err); 
-               errorCount++; 
-             }
-          }
-          else if(bulkCurrentType === 'student') {
-             const name = getVal(row, ['Name', 'name']);
-             const email = getVal(row, ['Email', 'email']);
-             const pass = getVal(row, ['Password', 'password', 'Password(Min6)', 'password(min6)']);
-             const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
-             
-             if(!name || !email || !pass) { errorCount++; continue; }
-             
-             try {
-               const uCred = await createUserWithEmailAndPassword(auth, email, pass);
-               const uid = uCred.user.uid;
-               const grade = allGrades.find(g => g.code === gradeCode);
-               
-               await setDoc(doc(db, 'students', uid), {
-                 name: String(name), 
-                 email: String(email),
-                 gradeId: grade ? grade.id : '',
-                 active: String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true',
-                 uid: uid, 
-                 createdAt: serverTimestamp(), 
-                 createdBy: currentAdmin.uid
-               });
-               
-               await setDoc(doc(db, 'users', uid), {
-                 role:'student', 
-                 name: String(name), 
-                 email: String(email), 
-                 active:true,
-                 gradeId: grade ? grade.id : '', 
-                 studentDocId: uid,
-                 createdAt: serverTimestamp(), 
-                 createdBy: currentAdmin.uid
-               });
-               successCount++;
-             } catch(err) { console.error("Student Auth Error", err); errorCount++; }
-          }
-          else if(bulkCurrentType === 'session') {
-             const tEmail = getVal(row, ['Teacher Email', 'TeacherEmail', 'teacheremail']);
-             const teacher = allTeachers.find(t => t.email === tEmail);
-             if(!teacher) { errorCount++; continue; }
-             
-             // Add to Firestore Collection
-             await addDoc(collection(db, 'sessions'), {
-               title: String(getVal(row, ['Title', 'title']) || 'Untitled'),
-               grade: String(getVal(row, ['Grade Name', 'GradeName', 'gradename']) || ''),
-               subject: String(getVal(row, ['Subject Name', 'SubjectName', 'subjectname']) || ''),
-               className: String(getVal(row, ['Class Name', 'ClassName', 'classname']) || ''),
-               date: String(getVal(row, ['Date', 'date', 'Date(YYYY-MM-DD)']) || ''),
-               startTime: String(getVal(row, ['Start Time', 'StartTime', 'starttime(hh:mm)']) || ''),
-               endTime: String(getVal(row, ['End Time', 'EndTime', 'endtime(hh:mm)']) || ''),
-               active: false,
-               createdAt: serverTimestamp(),
-               ownerTeacherId: teacher.id,
-               ownerTeacherName: teacher.name,
-               createdBy: currentAdmin.uid,
-               createdByRole: 'superadmin',
-               instructions: ''
-             });
-             successCount++;
-          }
-        } catch(rowErr) {
-          console.error("Row processing error", rowErr);
-          errorCount++;
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
+            authDomain: "eduboard-870d3.firebaseapp.com",
+            databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
+            projectId: "eduboard-870d3",
+            storageBucket: "eduboard-870d3.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
+
+        // --- GLOBAL STATE ---
+        let currentUser = null;
+        let allGrades = [];
+        let allSubjects = [];
+
+        // --- AUTHENTICATION ---
+        window.handleAdminLogin = async () => {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // Check if superadmin in Firestore
+                const userDoc = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+                if (!userDoc.empty) {
+                    const userData = userDoc.docs[0].data();
+                    if (userData.role !== 'superadmin') {
+                        alert("Access Denied: Not a Super Admin");
+                        await signOut(auth);
+                        return;
+                    }
+                } else {
+                    // Fallback for demo if user doc doesn't exist but auth works
+                    console.warn("User document not found, allowing access for demo");
+                }
+            } catch (error) {
+                alert("Login Failed: " + error.message);
+            }
+        };
+
+        window.handleLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex'; // Fix display
+                document.getElementById('admin-user-display').textContent = user.email;
+                initDashboard();
+            } else {
+                document.getElementById('login-overlay').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+            }
+        });
+
+        // --- NAVIGATION ---
+        window.showSection = (sectionId) => {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+
+            if (sectionId === 'grades') loadGrades();
+            if (sectionId === 'subjects') loadSubjects();
+            if (sectionId === 'teachers') loadTeachers();
+            if (sectionId === 'students') loadStudents();
+            if (sectionId === 'sessions') loadSessions();
+        };
+
+        // --- DASHBOARD STATS ---
+        async function initDashboard() {
+            // Load Firestore Counts
+            try {
+                const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
+                    getDocs(collection(db, "grades")),
+                    getDocs(collection(db, "subjects")),
+                    getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
+                    getDocs(query(collection(db, "users"), where("role", "==", "student")))
+                ]);
+
+                document.getElementById('dashGrades').textContent = gradesSnap.size;
+                document.getElementById('dashSubjects').textContent = subjectsSnap.size;
+                document.getElementById('dashTeachers').textContent = teachersSnap.size;
+                document.getElementById('dashStudents').textContent = studentsSnap.size;
+
+                // Store for dropdowns
+                allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                populateGradeFilter();
+
+            } catch (e) {
+                console.error("Error loading stats:", e);
+            }
+
+            // Load RTDB Live Stats
+            try {
+                // Listen to liveSessions node
+                const liveSessionsRef = ref(rtdb, 'liveSessions');
+                onValue(liveSessionsRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) {
+                        document.getElementById('cardSessions').textContent = "0";
+                        document.getElementById('cardActive').textContent = "0";
+                        return;
+                    }
+                    
+                    let sessionCount = 0;
+                    let studentCount = 0;
+
+                    Object.values(data).forEach(session => {
+                        sessionCount++;
+                        if (session.students) {
+                            studentCount += Object.keys(session.students).length;
+                        }
+                    });
+
+                    document.getElementById('cardSessions').textContent = sessionCount;
+                    document.getElementById('cardActive').textContent = studentCount;
+                }, (error) => {
+                    console.error("RTDB metrics error:", error);
+                    document.getElementById('cardSessions').textContent = "Err";
+                    document.getElementById('cardActive').textContent = "Err";
+                });
+
+            } catch (e) {
+                console.error("RTDB setup error:", e);
+            }
         }
-      }
-      showToast(`Import Done. Success: ${successCount}, Errors/Skipped: ${errorCount}`);
-      closeModal();
-      loadAll(); 
-    } catch(e) {
-      console.error(e);
-      showToast('Bulk import failed: ' + e.message, true);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-};
 
-  window.handleBulkUpdate = async function(input) {
-  const file = input.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, {type: 'array'});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(sheet);
-    
-    if(!json.length) { showToast('File is empty', true); return; }
-    
-    let successCount = 0;
-    let errorCount = 0;
-
-    try {
-      for(const row of json) {
-        // Get ID based on type
-        let id = getVal(row, ['ID', 'id', 'Session ID', 'SessionID', 'sessionid']);
-        if(!id) { errorCount++; continue; }
-
-        try {
-          if(bulkCurrentType === 'grade') {
-            const nameEn = getVal(row, ['Name English', 'NameEnglish', 'nameenglish']);
-            // Only update if fields are present in Excel, otherwise keep existing (optional logic, here we overwrite)
-            // To prevent undefined errors, we default to existing values if excel cell is empty, 
-            // BUT usually bulk update implies overwriting. 
-            // Here we assume if column exists in header, we use it. If empty string, we use empty string.
-            
-            const updateData = {};
-            if(getVal(row, ['Name English', 'NameEnglish']) !== null) updateData.nameEn = String(getVal(row, ['Name English', 'NameEnglish']));
-            if(getVal(row, ['Name Arabic', 'NameArabic']) !== null) updateData.nameAr = String(getVal(row, ['Name Arabic', 'NameArabic']));
-            if(getVal(row, ['Code', 'code']) !== null) updateData.code = String(getVal(row, ['Code', 'code']));
-            if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
-            
-            updateData.updatedAt = serverTimestamp();
-            await updateDoc(doc(db, 'grades', id), updateData);
-          }
-          else if(bulkCurrentType === 'subject') {
-            const updateData = {};
-            if(getVal(row, ['Name English', 'NameEnglish']) !== null) updateData.nameEn = String(getVal(row, ['Name English', 'NameEnglish']));
-            if(getVal(row, ['Name Arabic', 'NameArabic']) !== null) updateData.nameAr = String(getVal(row, ['Name Arabic', 'NameArabic']));
-            if(getVal(row, ['Code', 'code']) !== null) updateData.code = String(getVal(row, ['Code', 'code']));
-            if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
-            
-            updateData.updatedAt = serverTimestamp();
-            await updateDoc(doc(db, 'subjects', id), updateData);
-          }
-          else if(bulkCurrentType === 'teacher') {
-             const updateData = {};
-             if(getVal(row, ['Name', 'name']) !== null) updateData.name = String(getVal(row, ['Name', 'name']));
-             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
-             
-             // Handle Arrays
-             if(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codes)']) !== null) {
-                const gCodesStr = String(getVal(row, ['Assigned Grades', 'AssignedGrades', 'assignedgrades(codes)']));
-                const gIds = gCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
-                  const g=allGrades.find(x=>x.code===code); return g?g.id:null; 
-                }).filter(Boolean);
-                updateData.assignedGrades = gIds;
-             }
-             
-             if(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codes)']) !== null) {
-                const sCodesStr = String(getVal(row, ['Assigned Subjects', 'AssignedSubjects', 'assignedsubjects(codes)']));
-                const sIds = sCodesStr.split(',').map(s=>s.trim()).filter(Boolean).map(code => { 
-                  const s=allSubjects.find(x=>x.code===code); return s?s.id:null; 
-                }).filter(Boolean);
-                updateData.assignedSubjects = sIds;
-             }
-             
-             updateData.updatedAt = serverTimestamp();
-             await updateDoc(doc(db, 'teachers', id), updateData);
-             
-             // Update user sub-collection
-             const t = allTeachers.find(x=>x.id===id);
-             if(t?.uid) {
-               const userUpdate = {};
-               if(updateData.name) userUpdate.name = updateData.name;
-               if(updateData.active !== undefined) userUpdate.active = updateData.active;
-               if(updateData.assignedGrades) userUpdate.assignedGrades = updateData.assignedGrades;
-               if(updateData.assignedSubjects) userUpdate.assignedSubjects = updateData.assignedSubjects;
-               
-               if(Object.keys(userUpdate).length > 0) {
-                 await updateDoc(doc(db, 'users', t.uid), userUpdate);
-               }
-             }
-          }
-          else if(bulkCurrentType === 'student') {
-             const updateData = {};
-             if(getVal(row, ['Name', 'name']) !== null) updateData.name = String(getVal(row, ['Name', 'name']));
-             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
-             
-             if(getVal(row, ['Grade Code', 'GradeCode', 'gradecode']) !== null) {
-                const gradeCode = getVal(row, ['Grade Code', 'GradeCode', 'gradecode']);
-                const grade = allGrades.find(g => g.code === gradeCode);
-                updateData.gradeId = grade ? grade.id : '';
-             }
-             
-             updateData.updatedAt = serverTimestamp();
-             await updateDoc(doc(db, 'students', id), updateData);
-             
-             const s = allStudents.find(x=>x.id===id);
-             if(s?.uid) {
-               const userUpdate = {};
-               if(updateData.name) userUpdate.name = updateData.name;
-               if(updateData.active !== undefined) userUpdate.active = updateData.active;
-               if(updateData.gradeId !== undefined) userUpdate.gradeId = updateData.gradeId;
-               
-               if(Object.keys(userUpdate).length > 0) {
-                 await updateDoc(doc(db, 'users', s.uid), userUpdate);
-               }
-             }
-          }
-          else if(bulkCurrentType === 'session') {
-             const updateData = {};
-             if(getVal(row, ['Title', 'title']) !== null) updateData.title = String(getVal(row, ['Title', 'title']));
-             if(getVal(row, ['Grade', 'grade']) !== null) updateData.grade = String(getVal(row, ['Grade', 'grade']));
-             if(getVal(row, ['Subject', 'subject']) !== null) updateData.subject = String(getVal(row, ['Subject', 'subject']));
-             if(getVal(row, ['Date', 'date']) !== null) updateData.date = String(getVal(row, ['Date', 'date']));
-             if(getVal(row, ['Start Time', 'StartTime', 'starttime']) !== null) updateData.startTime = String(getVal(row, ['Start Time', 'StartTime', 'starttime']));
-             if(getVal(row, ['End Time', 'EndTime', 'endtime']) !== null) updateData.endTime = String(getVal(row, ['End Time', 'EndTime', 'endtime']));
-             if(getVal(row, ['Active', 'active']) !== null) updateData.active = String(getVal(row, ['Active', 'active'])).toLowerCase() === 'true';
-             
-             await update(ref(rtDB, `sessions/${id}/config`), updateData);
-          }
-          successCount++;
-        } catch(rowErr) {
-          console.error("Update Row Error", rowErr);
-          errorCount++;
+        // --- DATA LOADERS ---
+        async function loadGrades() {
+            const tbody = document.querySelector('#grades-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "grades"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn}</td>
+                        <td>${d.nameAr}</td>
+                        <td>${d.code}</td>
+                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('grade', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteItem('grades', '${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
-      }
-      showToast(`Update Done. Processed: ${successCount}, Errors: ${errorCount}`);
-      closeModal();
-      loadAll();
-    } catch(e) {
-      console.error(e);
-      showToast('Bulk update failed: ' + e.message, true);
-    }
-  };
-  reader.readAsArrayBuffer(file);
-};
 
-  
+        async function loadSubjects() {
+            const tbody = document.querySelector('#subjects-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "subjects"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn}</td>
+                        <td>${d.nameAr}</td>
+                        <td>${d.code}</td>
+                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('subject', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteItem('subjects', '${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
 
+        async function loadTeachers() {
+            const tbody = document.querySelector('#teachers-table tbody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
+            const q = query(collection(db, "users"), where("role", "==", "teacher"));
+            const snap = await getDocs(q);
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.displayName || 'N/A'}</td>
+                        <td>${d.email}</td>
+                        <td>${(d.assignedGrades || []).join(', ')}</td>
+                        <td>${(d.assignedSubjects || []).join(', ')}</td>
+                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
 
-// ── UTILS ──
-function showToast(msg, err=false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = err ? 'var(--red)' : 'var(--green)';
-  t.style.color = err ? '#fff' : '#0f1117';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-</script>
+        async function loadStudents() {
+            const gradeFilter = document.getElementById('student-grade-filter').value;
+            const tbody = document.querySelector('#students-table tbody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
+            
+            let q = query(collection(db, "users"), where("role", "==", "student"));
+            // Note: Firestore doesn't support simple OR/AND filtering easily without composite indexes for multiple fields. 
+            // For simplicity, we fetch all students and filter client-side if grade is selected, or use simple query if possible.
+            // Here we fetch all for simplicity given the scale.
+            
+            const snap = await getDocs(q);
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                if (gradeFilter && d.gradeLevel !== gradeFilter) return;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.displayName || 'N/A'}</td>
+                        <td>${d.email}</td>
+                        <td>${d.gradeLevel || 'N/A'}</td>
+                        <td><span class="status-badge ${d.status === 'Active' ? 'status-active' : 'status-inactive'}">${d.status}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function loadSessions() {
+            const tbody = document.querySelector('#sessions-table tbody');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "sessions"));
+            tbody.innerHTML = '';
+            
+            // Cache teacher names for display
+            const teacherCache = {};
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : 'N/A';
+                const status = d.isActive ? 'Active' : 'Closed';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.title}</td>
+                        <td>${d.ownerTeacherId.substring(0,8)}...</td>
+                        <td>${d.gradeLevel}</td>
+                        <td>${d.subject}</td>
+                        <td>${date}</td>
+                        <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- UTILS ---
+        function populateGradeFilter() {
+            const select = document.getElementById('student-grade-filter');
+            select.innerHTML = '<option value="">All Grades</option>';
+            allGrades.forEach(g => {
+                select.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`;
+            });
+        }
+
+        window.filterTable = (tableId, query) => {
+            const filter = query.toUpperCase();
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+            for (let i = 1; i < tr.length; i++) {
+                let txtValue = tr[i].textContent || tr[i].innerText;
+                tr[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+            }
+        };
+
+        window.filterStatus = (tableId, status) => {
+            const table = document.getElementById(tableId);
+            const tr = table.getElementsByTagName("tr");
+            for (let i = 1; i < tr.length; i++) {
+                const badge = tr[i].querySelector('.status-badge');
+                if (badge) {
+                    tr[i].style.display = (!status || badge.textContent === status) ? "" : "none";
+                }
+            }
+        };
+
+        // --- MODAL & FORMS ---
+        window.openModal = (type, id = null, data = null) => {
+            const modal = document.getElementById('generic-modal');
+            const title = document.getElementById('modal-title');
+            const fields = document.getElementById('modal-fields');
+            const typeInput = document.getElementById('modal-type');
+            const idInput = document.getElementById('modal-id');
+
+            typeInput.value = type;
+            idInput.value = id || '';
+            title.textContent = (id ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
+            
+            let html = '';
+            if (type === 'grade') {
+                html = `
+                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
+                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
+                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code || ''}"></div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="status">
+                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                `;
+            } else if (type === 'subject') {
+                html = `
+                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
+                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
+                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code || ''}"></div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="status">
+                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                `;
+            } else if (type === 'teacher' || type === 'student') {
+                const role = type === 'teacher' ? 'teacher' : 'student';
+                html = `
+                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
+                    <div class="form-group"><label>Display Name</label><input name="displayName" required value="${data?.displayName || ''}"></div>
+                    ${!id ? `<div class="form-group"><label>Password</label><input name="password" type="password" ${id ? '' : 'required'}></div>` : ''}
+                    <div class="form-group"><label>Status</label>
+                        <select name="status">
+                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
+                    ${type === 'student' ? `
+                    <div class="form-group"><label>Grade Level</label>
+                        <select name="gradeLevel">
+                            ${allGrades.map(g => `<option value="${g.nameEn}" ${data?.gradeLevel === g.nameEn ? 'selected' : ''}>${g.nameEn}</option>`).join('')}
+                        </select>
+                    </div>` : ''}
+                `;
+            }
+
+            fields.innerHTML = html;
+            modal.classList.add('active');
+        };
+
+        window.closeModal = () => {
+            document.getElementById('generic-modal').classList.remove('active');
+        };
+
+        window.editItem = (type, id, dataStr) => {
+            const data = JSON.parse(dataStr);
+            openModal(type, id, data);
+        };
+
+        window.handleFormSubmit = async (e) => {
+            e.preventDefault();
+            const type = document.getElementById('modal-type').value;
+            const id = document.getElementById('modal-id').value;
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                if (type === 'grade' || type === 'subject') {
+                    const col = type + 's'; // grades, subjects
+                    if (id) {
+                        await updateDoc(doc(db, col, id), data);
+                    } else {
+                        await setDoc(doc(db, col), data);
+                    }
+                } else if (type === 'teacher' || type === 'student') {
+                    const role = type === 'teacher' ? 'teacher' : 'student';
+                    const userData = { ...data, role };
+                    if (id) {
+                        // Update existing
+                        await updateDoc(doc(db, "users", id), userData);
+                    } else {
+                        // Create new (Note: This only creates Firestore doc. Auth creation requires Cloud Function or Admin SDK)
+                        // For this frontend-only demo, we warn the user.
+                        alert("Note: This creates the database record. You must manually create the Authentication account in Firebase Console for login to work.");
+                        await setDoc(doc(db, "users"), userData);
+                    }
+                }
+                closeModal();
+                // Reload current view
+                if (type === 'grade') loadGrades();
+                if (type === 'subject') loadSubjects();
+                if (type === 'teacher') loadTeachers();
+                if (type === 'student') loadStudents();
+            } catch (err) {
+                alert("Error saving: " + err.message);
+            }
+        };
+
+        window.deleteItem = async (collectionName, id) => {
+            if (confirm("Are you sure? This cannot be undone.")) {
+                try {
+                    await deleteDoc(doc(db, collectionName, id));
+                    // Reload current view
+                    if (collectionName === 'grades') loadGrades();
+                    if (collectionName === 'subjects') loadSubjects();
+                    if (collectionName === 'users') {
+                        // Check which tab is active to reload correctly
+                        if (document.getElementById('teachers').classList.contains('active')) loadTeachers();
+                        if (document.getElementById('students').classList.contains('active')) loadStudents();
+                    }
+                    if (collectionName === 'sessions') loadSessions();
+                } catch (err) {
+                    alert("Error deleting: " + err.message);
+                }
+            }
+        };
+
+    </script>
 </body>
 </html>
