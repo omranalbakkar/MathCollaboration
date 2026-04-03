@@ -1,396 +1,1415 @@
+Here is the fully revised `student.html` code that fixes the login issue by properly finding the student document using the `uid` field instead of assuming the document ID matches the auth UID.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — Student Portal</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
-<script>window.MathJax={tex:{inlineMath:[['\\(','\\)'],['$','$']]},svg:{fontCache:'global'},startup:{typeset:false}};</script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#f7f5f0;--surface:#ffffff;--surface2:#f0ede6;--border:#e0d9cf;--sage:#5a7a5e;--sage-l:rgba(90,122,94,0.1);--sage-m:rgba(90,122,94,0.2);--clay:#c4654a;--clay-l:rgba(196,101,74,0.1);--sky:#4a7aaa;--sky-l:rgba(74,122,170,0.1);--text:#2a2520;--muted:#8a7f72;--faint:#d4cdc3;--shadow:0 4px 24px rgba(42,37,32,0.08);--shadow-lg:0 12px 48px rgba(42,37,32,0.14);}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 80% 10%,rgba(90,122,94,0.06) 0%,transparent 50%),radial-gradient(ellipse at 10% 90%,rgba(196,101,74,0.05) 0%,transparent 50%);pointer-events:none;z-index:0;}
-.spinner-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:var(--bg);z-index:999;}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--sage);border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.spinner-text{font-size:13px;color:var(--muted);font-weight:600;}
-#loginScreen{min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;position:relative;z-index:1;}
-.login-card{background:var(--surface);border-radius:24px;padding:48px 44px;width:440px;max-width:100%;box-shadow:var(--shadow-lg);border:1px solid var(--border);text-align:center;}
-.school-icon{width:64px;height:64px;background:var(--sage-l);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:30px;}
-.login-brand{font-family:'Lora',serif;font-size:30px;font-weight:600;color:var(--text);letter-spacing:-0.5px;margin-bottom:6px;}
-.login-tagline{color:var(--muted);font-size:14px;margin-bottom:28px;}
-.session-info-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:24px;text-align:left;}
-.sib-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.sib-title{font-family:'Lora',serif;font-size:16px;font-weight:600;margin-bottom:6px;}
-.sib-meta{display:flex;flex-wrap:wrap;gap:8px;}
-.sib-tag{font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--muted);}
-.session-closed-box{background:rgba(196,101,74,0.08);border:1.5px solid var(--clay);border-radius:14px;padding:16px;text-align:center;color:var(--clay);font-size:14px;font-weight:700;margin-bottom:24px;}
-.session-loading{text-align:center;color:var(--muted);font-size:13px;margin-bottom:24px;padding:16px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);}
-.input-wrap{position:relative;margin-bottom:16px;text-align:left;}
-.input-wrap label{display:block;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.input-wrap input{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:13px 16px;color:var(--text);font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;outline:none;transition:border-color 0.2s,background 0.2s;}
-.input-wrap input[type=password]{font-family:'Courier New',monospace;}
-.input-wrap input:focus{border-color:var(--sage);background:var(--surface);}
-.btn-enter{width:100%;background:var(--sage);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.02em;box-shadow:0 6px 20px rgba(90,122,94,0.25);}
-.btn-enter:hover{background:#4a6a4e;transform:translateY(-1px);}
-.btn-enter:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
-.back-link{display:block;margin-top:18px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;}
-.back-link:hover{color:var(--sage);}
-.error-msg{background:var(--clay-l);border:1.5px solid var(--clay);color:var(--clay);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:12px;display:none;font-weight:600;text-align:left;}
-#app{display:none;position:relative;z-index:1;}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(42,37,32,0.06);}
-.header-brand{font-family:'Lora',serif;font-size:20px;font-weight:600;}
-.header-session{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.header-right{display:flex;align-items:center;gap:10px;}
-.user-chip{display:flex;align-items:center;gap:8px;background:var(--sage-l);border:1px solid var(--sage-m);border-radius:20px;padding:6px 14px;}
-.user-dot{width:8px;height:8px;background:var(--sage);border-radius:50%;animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
-.user-name{font-size:13px;font-weight:700;color:var(--sage);}
-.btn-exit{background:none;border:1.5px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;font-weight:600;font-family:'Nunito',sans-serif;transition:all 0.15s;}
-.btn-exit:hover{border-color:var(--clay);color:var(--clay);}
-.main{max-width:720px;margin:0 auto;padding:32px 20px 80px;}
-#welcomeScreen{text-align:center;padding:20px 0;}
-.welcome-icon{font-size:56px;margin-bottom:16px;}
-.welcome-title{font-family:'Lora',serif;font-size:28px;font-weight:600;margin-bottom:8px;}
-.welcome-sub{color:var(--muted);font-size:15px;max-width:400px;margin:0 auto 32px;line-height:1.6;}
-.session-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:24px 28px;margin-bottom:24px;text-align:left;box-shadow:var(--shadow);}
-.sc-label{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.sc-title{font-family:'Lora',serif;font-size:20px;font-weight:600;margin-bottom:12px;}
-.sc-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-.sc-meta-item{background:var(--surface2);border-radius:10px;padding:10px 12px;}
-.sc-meta-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:3px;}
-.sc-meta-val{font-size:13px;font-weight:700;color:var(--text);}
-.sc-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;}
-.sc-stat{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);font-weight:600;}
-.sc-stat .dot{width:7px;height:7px;border-radius:50%;}
-.instructions-box{background:var(--sky-l);border:1px solid rgba(74,122,170,0.2);border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--text);line-height:1.7;}
-.instructions-box strong{color:var(--sky);font-size:11px;text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:5px;}
-.btn-start{background:var(--sage);color:#fff;border:none;border-radius:14px;padding:16px 40px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:all 0.2s;letter-spacing:0.02em;box-shadow:0 6px 20px rgba(90,122,94,0.25);}
-.btn-start:hover{background:#4a6a4e;transform:translateY(-2px);}
-.no-questions{background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:48px 24px;text-align:center;color:var(--muted);font-size:15px;font-weight:600;}
-#quizScreen{display:none;}
-.progress-header{background:var(--surface);border-radius:16px;padding:18px 22px;margin-bottom:24px;border:1px solid var(--border);box-shadow:var(--shadow);}
-.progress-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.progress-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
-.progress-fraction{font-family:'Lora',serif;font-size:18px;font-weight:600;}
-.progress-track{height:8px;background:var(--surface2);border-radius:20px;overflow:hidden;}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--sage),#7aaa7e);border-radius:20px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1);}
-.q-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;}
-@keyframes slideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.q-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
-.q-badge{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:var(--sage-l);color:var(--sage);border-radius:20px;padding:5px 12px;border:1px solid var(--sage-m);}
-.q-points{font-size:12px;font-weight:700;color:var(--clay);background:var(--clay-l);padding:5px 10px;border-radius:20px;}
-.q-text{font-family:'Lora',serif;font-size:18px;font-weight:400;line-height:1.8;color:var(--text);margin-bottom:24px;direction:auto;text-align:start;}
-mjx-container{vertical-align:middle;}
-.answered-badge{display:inline-flex;align-items:center;gap:6px;background:var(--sage-l);color:var(--sage);border:1px solid var(--sage-m);border-radius:8px;font-size:12px;font-weight:700;padding:5px 10px;margin-bottom:12px;}
-.options-list{display:flex;flex-direction:column;gap:10px;}
-.option-btn{background:var(--surface2);border:2px solid var(--border);border-radius:12px;padding:14px 18px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;cursor:pointer;text-align:left;color:var(--text);transition:all 0.15s;display:flex;align-items:center;gap:12px;}
-.option-btn:hover{border-color:var(--sage);background:var(--sage-l);}
-.option-btn.selected{border-color:var(--sage);background:var(--sage-l);color:var(--sage);}
-.option-letter{width:28px;height:28px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
-.option-text{flex:1;line-height:1.5;}
-.tf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.tf-btn{background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:20px 14px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:16px;font-weight:700;text-align:center;color:var(--text);transition:all 0.15s;}
-.tf-btn:hover,.tf-btn.selected{border-color:var(--sage);background:var(--sage-l);color:var(--sage);}
-.tf-icon{font-size:28px;display:block;margin-bottom:6px;}
-.answer-textarea{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:16px 18px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:600;color:var(--text);outline:none;resize:vertical;min-height:120px;transition:border-color 0.2s;line-height:1.6;}
-.answer-textarea:focus{border-color:var(--sage);background:var(--surface);}
-.answer-number{width:100%;background:var(--surface2);border:2px solid var(--border);border-radius:14px;padding:16px 18px;font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;color:var(--text);outline:none;transition:border-color 0.2s;}
-.answer-number:focus{border-color:var(--sage);background:var(--surface);}
-.nav-footer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:14px 24px;display:flex;gap:12px;justify-content:center;z-index:50;box-shadow:0 -4px 20px rgba(42,37,32,0.08);}
-.btn-nav{background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:11px 22px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;color:var(--text);transition:all 0.15s;}
-.btn-nav:hover{border-color:var(--sage);color:var(--sage);}
-.btn-nav:disabled{opacity:0.35;cursor:not-allowed;}
-.btn-submit-answer{background:var(--sage);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;box-shadow:0 4px 12px rgba(90,122,94,0.25);}
-.btn-submit-answer:hover{background:#4a6a4e;}
-.btn-submit-answer.saved{background:#4a6a4e;cursor:default;}
-.btn-finish{background:var(--clay);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.15s;}
-.btn-finish:hover{background:#b05a40;}
-#completionScreen{display:none;text-align:center;padding:40px 0;}
-.completion-icon{font-size:72px;margin-bottom:20px;animation:pop 0.5s ease;}
-@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
-.completion-title{font-family:'Lora',serif;font-size:32px;font-weight:600;margin-bottom:10px;}
-.completion-sub{color:var(--muted);font-size:15px;max-width:380px;margin:0 auto 32px;line-height:1.7;}
-.submitted-lock-banner{display:flex;align-items:center;gap:12px;background:rgba(196,101,74,0.08);border:1.5px solid var(--clay);border-radius:14px;padding:16px 20px;margin:0 auto 32px;max-width:480px;font-size:14px;color:var(--text);line-height:1.6;text-align:left;}
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-bottom:32px;}
-.summary-item{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 16px;box-shadow:var(--shadow);}
-.summary-val{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--sage);}
-.summary-label{font-size:12px;color:var(--muted);font-weight:600;margin-top:4px;}
-.answers-review{text-align:left;}
-.answer-review-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow);}
-.ar-q{font-family:'Lora',serif;font-size:15px;margin-bottom:8px;line-height:1.8;}
-.ar-a{font-size:14px;color:var(--muted);font-weight:600;line-height:1.7;}
-.ar-a span{color:var(--text);}
-.math-content{line-height:1.9;direction:auto;}
-.grade-display{display:inline-flex;align-items:center;gap:6px;background:var(--sage-l);color:var(--sage);border:1px solid var(--sage-m);border-radius:8px;font-size:13px;font-weight:700;padding:4px 10px;margin-top:8px;}
-.feedback-display{margin-top:6px;font-size:13px;color:var(--sky);background:var(--sky-l);padding:6px 10px;border-radius:8px;border-left:3px solid var(--sky);font-weight:600;}
-.btn-retry{background:var(--surface);border:2px solid var(--border);color:var(--text);border-radius:12px;padding:12px 28px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s;}
-.btn-retry:hover{border-color:var(--sage);color:var(--sage);}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 22px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:all 0.3s;z-index:200;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.connection-warning{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--clay);color:white;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;display:none;white-space:nowrap;}
-@media(max-width:500px){.q-card{padding:22px 18px;}.q-text{font-size:17px;}.login-card{padding:36px 24px;}.sc-meta-grid{grid-template-columns:1fr;}}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBoard — Student Portal</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [
+                    ['\\(', '\\)'],
+                    ['$', '$']
+                ]
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            startup: {
+                typeset: false
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f5f0;
+            --surface: #ffffff;
+            --surface2: #f0ede6;
+            --border: #e0d9cf;
+            --sage: #5a7a5e;
+            --sage-l: rgba(90, 122, 94, 0.1);
+            --sage-m: rgba(90, 122, 94, 0.2);
+            --clay: #c4654a;
+            --clay-l: rgba(196, 101, 74, 0.1);
+            --sky: #4a7aaa;
+            --sky-l: rgba(74, 122, 170, 0.1);
+            --text: #2a2520;
+            --muted: #8a7f72;
+            --faint: #d4cdc3;
+            --shadow: 0 4px 24px rgba(42, 37, 32, 0.08);
+            --shadow-lg: 0 12px 48px rgba(42, 37, 32, 0.14);
+        }
 
-/* Add this to your existing CSS */
-.adblock-warning {
-    background: #fff3cd;
-    border: 1px solid #ffc107;
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    text-align: left;
-    font-size: 13px;
-    color: #856404;
-    display: none;
-}
-.adblock-warning strong {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 14px;
-}
-.adblock-warning ul {
-    margin: 8px 0 0 20px;
-    padding-left: 0;
-}
-.adblock-warning li {
-    margin: 4px 0;
-}
-.troubleshooting-tip {
-    margin-top: 20px;
-    padding: 12px 16px;
-    background: var(--surface2);
-    border-radius: 12px;
-    font-size: 12px;
-    color: var(--muted);
-    text-align: left;
-    border-left: 3px solid var(--sage);
-}
-.troubleshooting-tip strong {
-    color: var(--text);
-    display: block;
-    margin-bottom: 8px;
-}
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
 
-</style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 80% 10%, rgba(90, 122, 94, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 10% 90%, rgba(196, 101, 74, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .spinner-screen {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--bg);
+            z-index: 999;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--sage);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .spinner-text {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        #loginScreen {
+            min-height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 48px 44px;
+            width: 440px;
+            max-width: 100%;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .school-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--sage-l);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 30px;
+        }
+
+        .login-brand {
+            font-family: 'Lora', serif;
+            font-size: 30px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.5px;
+            margin-bottom: 6px;
+        }
+
+        .login-tagline {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .session-info-box {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .sib-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .sib-title {
+            font-family: 'Lora', serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .sib-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sib-tag {
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3px 10px;
+            color: var(--muted);
+        }
+
+        .session-closed-box {
+            background: rgba(196, 101, 74, 0.08);
+            border: 1.5px solid var(--clay);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            color: var(--clay);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .session-loading {
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: var(--surface2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .input-wrap {
+            position: relative;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .input-wrap label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .input-wrap input {
+            width: 100%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 13px 16px;
+            color: var(--text);
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .input-wrap input[type=password] {
+            font-family: 'Courier New', monospace;
+        }
+
+        .input-wrap input:focus {
+            border-color: var(--sage);
+            background: var(--surface);
+        }
+
+        .btn-enter {
+            width: 100%;
+            background: var(--sage);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+            box-shadow: 0 6px 20px rgba(90, 122, 94, 0.25);
+        }
+
+        .btn-enter:hover {
+            background: #4a6a4e;
+            transform: translateY(-1px);
+        }
+
+        .btn-enter:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 18px;
+            font-size: 13px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            color: var(--sage);
+        }
+
+        .error-msg {
+            background: var(--clay-l);
+            border: 1.5px solid var(--clay);
+            color: var(--clay);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        #app {
+            display: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 12px rgba(42, 37, 32, 0.06);
+        }
+
+        .header-brand {
+            font-family: 'Lora', serif;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-session {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--sage-l);
+            border: 1px solid var(--sage-m);
+            border-radius: 20px;
+            padding: 6px 14px;
+        }
+
+        .user-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--sage);
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.4
+            }
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--sage);
+        }
+
+        .btn-exit {
+            background: none;
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.15s;
+        }
+
+        .btn-exit:hover {
+            border-color: var(--clay);
+            color: var(--clay);
+        }
+
+        .main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+        }
+
+        #welcomeScreen {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .welcome-icon {
+            font-size: 56px;
+            margin-bottom: 16px;
+        }
+
+        .welcome-title {
+            font-family: 'Lora', serif;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .welcome-sub {
+            color: var(--muted);
+            font-size: 15px;
+            max-width: 400px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+        }
+
+        .session-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            text-align: left;
+            box-shadow: var(--shadow);
+        }
+
+        .sc-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .sc-title {
+            font-family: 'Lora', serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .sc-meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .sc-meta-item {
+            background: var(--surface2);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+
+        .sc-meta-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 3px;
+        }
+
+        .sc-meta-val {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .sc-stats {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .sc-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .sc-stat .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .instructions-box {
+            background: var(--sky-l);
+            border: 1px solid rgba(74, 122, 170, 0.2);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .instructions-box strong {
+            color: var(--sky);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .btn-start {
+            background: var(--sage);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+            box-shadow: 0 6px 20px rgba(90, 122, 94, 0.25);
+        }
+
+        .btn-start:hover {
+            background: #4a6a4e;
+            transform: translateY(-2px);
+        }
+
+        .no-questions {
+            background: var(--surface);
+            border: 1.5px dashed var(--border);
+            border-radius: 18px;
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        #quizScreen {
+            display: none;
+        }
+
+        .progress-header {
+            background: var(--surface);
+            border-radius: 16px;
+            padding: 18px 22px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .progress-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .progress-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .progress-fraction {
+            font-family: 'Lora', serif;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: var(--surface2);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage), #7aaa7e);
+            border-radius: 20px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .q-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .q-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .q-badge {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: var(--sage-l);
+            color: var(--sage);
+            border-radius: 20px;
+            padding: 5px 12px;
+            border: 1px solid var(--sage-m);
+        }
+
+        .q-points {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--clay);
+            background: var(--clay-l);
+            padding: 5px 10px;
+            border-radius: 20px;
+        }
+
+        .q-text {
+            font-family: 'Lora', serif;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.8;
+            color: var(--text);
+            margin-bottom: 24px;
+            direction: auto;
+            text-align: start;
+        }
+
+        mjx-container {
+            vertical-align: middle;
+        }
+
+        .answered-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--sage-l);
+            color: var(--sage);
+            border: 1px solid var(--sage-m);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 10px;
+            margin-bottom: 12px;
+        }
+
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            color: var(--text);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-btn:hover {
+            border-color: var(--sage);
+            background: var(--sage-l);
+        }
+
+        .option-btn.selected {
+            border-color: var(--sage);
+            background: var(--sage-l);
+            color: var(--sage);
+        }
+
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .option-text {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .tf-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .tf-btn {
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 14px;
+            cursor: pointer;
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--text);
+            transition: all 0.15s;
+        }
+
+        .tf-btn:hover,
+        .tf-btn.selected {
+            border-color: var(--sage);
+            background: var(--sage-l);
+            color: var(--sage);
+        }
+
+        .tf-icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .answer-textarea {
+            width: 100%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            outline: none;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.2s;
+            line-height: 1.6;
+        }
+
+        .answer-textarea:focus {
+            border-color: var(--sage);
+            background: var(--surface);
+        }
+
+        .answer-number {
+            width: 100%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 18px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .answer-number:focus {
+            border-color: var(--sage);
+            background: var(--surface);
+        }
+
+        .nav-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            z-index: 50;
+            box-shadow: 0 -4px 20px rgba(42, 37, 32, 0.08);
+        }
+
+        .btn-nav {
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 11px 22px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.15s;
+        }
+
+        .btn-nav:hover {
+            border-color: var(--sage);
+            color: var(--sage);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-submit-answer {
+            background: var(--sage);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 28px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 4px 12px rgba(90, 122, 94, 0.25);
+        }
+
+        .btn-submit-answer:hover {
+            background: #4a6a4e;
+        }
+
+        .btn-submit-answer.saved {
+            background: #4a6a4e;
+            cursor: default;
+        }
+
+        .btn-finish {
+            background: var(--clay);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 28px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-finish:hover {
+            background: #b05a40;
+        }
+
+        #completionScreen {
+            display: none;
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .completion-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: pop 0.5s ease;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0)
+            }
+
+            70% {
+                transform: scale(1.15)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+        .completion-title {
+            font-family: 'Lora', serif;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .completion-sub {
+            color: var(--muted);
+            font-size: 15px;
+            max-width: 380px;
+            margin: 0 auto 32px;
+            line-height: 1.7;
+        }
+
+        .submitted-lock-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(196, 101, 74, 0.08);
+            border: 1.5px solid var(--clay);
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin: 0 auto 32px;
+            max-width: 480px;
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+
+        .summary-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .summary-val {
+            font-family: 'Lora', serif;
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--sage);
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .answers-review {
+            text-align: left;
+        }
+
+        .answer-review-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .ar-q {
+            font-family: 'Lora', serif;
+            font-size: 15px;
+            margin-bottom: 8px;
+            line-height: 1.8;
+        }
+
+        .ar-a {
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 600;
+            line-height: 1.7;
+        }
+
+        .ar-a span {
+            color: var(--text);
+        }
+
+        .math-content {
+            line-height: 1.9;
+            direction: auto;
+        }
+
+        .grade-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--sage-l);
+            color: var(--sage);
+            border: 1px solid var(--sage-m);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 4px 10px;
+            margin-top: 8px;
+        }
+
+        .feedback-display {
+            margin-top: 6px;
+            font-size: 13px;
+            color: var(--sky);
+            background: var(--sky-l);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--sky);
+            font-weight: 600;
+        }
+
+        .btn-retry {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 12px 28px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-retry:hover {
+            border-color: var(--sage);
+            color: var(--sage);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text);
+            color: #fff;
+            padding: 11px 22px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 200;
+            white-space: nowrap;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .connection-warning {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--clay);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1000;
+            display: none;
+            white-space: nowrap;
+        }
+
+        @media(max-width:500px) {
+            .q-card {
+                padding: 22px 18px;
+            }
+
+            .q-text {
+                font-size: 17px;
+            }
+
+            .login-card {
+                padding: 36px 24px;
+            }
+
+            .sc-meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Add this to your existing CSS */
+        .adblock-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 13px;
+            color: #856404;
+            display: none;
+        }
+
+        .adblock-warning strong {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .adblock-warning ul {
+            margin: 8px 0 0 20px;
+            padding-left: 0;
+        }
+
+        .adblock-warning li {
+            margin: 4px 0;
+        }
+
+        .troubleshooting-tip {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: var(--surface2);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--muted);
+            text-align: left;
+            border-left: 3px solid var(--sage);
+        }
+
+        .troubleshooting-tip strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
+
 <body>
 
-<div class="spinner-screen" id="loadingScreen">
-  <div class="spinner"></div>
-  <div class="spinner-text">Loading…</div>
-</div>
-
-<div id="loginScreen">
-<div class="login-card">
-    <div class="school-icon">📚</div>
-    <div class="login-brand">EduBoard</div>
-    <div class="login-tagline">Student Portal — Sign in to join your session</div>
-    
-    <!-- Ad Blocker Warning Banner -->
-    <div class="adblock-warning" id="adblockWarning">
-        <strong>⚠️ Connection Issue Detected!</strong>
-        If you're having trouble connecting or logging in, please try one of these fixes:
-        <ul>
-            <li>🔓 <strong>Disable your ad blocker</strong> (uBlock, AdBlock, etc.) for this site</li>
-            <li>🕵️ Use <strong>Incognito/Private mode</strong> (Ctrl+Shift+N on Chrome)</li>
-            <li>🦊 Try <strong>Firefox browser</strong> (works best with EduBoard)</li>
-            <li>🔄 <strong>Refresh the page</strong> after making changes</li>
-        </ul>
-    </div>
-    
-<!-- Inside #loginScreen, inside .login-card -->
-<div id="sessionInfoBox">
-    <div class="session-loading">🔒 Sign in to view available sessions</div>
-</div>
-    <div class="input-wrap">
-      <label>Email Address</label>
-      <input type="email" id="loginEmail" autocomplete="email">
-    </div>
-    <div class="input-wrap">
-      <label>Password</label>
-      <input type="password" id="loginPass" autocomplete="current-password">
+    <div class="spinner-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <div class="spinner-text">Loading…</div>
     </div>
 
-  <div class="troubleshooting-tip">
-    <strong>💡 Having trouble logging in?</strong>
-    • Make sure you're using the correct email and password provided by your teacher<br>
-    • Try disabling your ad blocker for this site<br>
-    • Use Incognito/Private mode (Ctrl+Shift+N)<br>
-    • Contact your teacher if the problem persists
-</div>
-  
-    <button class="btn-enter" id="joinBtn" onclick="doStudentLogin()">Sign In & Join Session →</button>
-    <div class="error-msg" id="loginErr"></div>
-    <a href="index.html" class="back-link">← Back to Home</a>
-  </div>
-</div>
+    <div id="loginScreen">
+        <div class="login-card">
+            <div class="school-icon">📚</div>
+            <div class="login-brand">EduBoard</div>
+            <div class="login-tagline">Student Portal — Sign in to join your session</div>
 
-<div id="app">
-  <div class="header">
-    <div class="header-brand">EduBoard</div>
-    <div class="header-session" id="headerSession">—</div>
-    <div class="header-right">
-      <div class="user-chip"><div class="user-dot"></div><div class="user-name" id="headerName">Student</div></div>
-      <button class="btn-exit" onclick="exitSession()">Exit</button>
+            <!-- Ad Blocker Warning Banner -->
+            <div class="adblock-warning" id="adblockWarning">
+                <strong>⚠️ Connection Issue Detected!</strong>
+                If you're having trouble connecting or logging in, please try one of these fixes:
+                <ul>
+                    <li>🔓 <strong>Disable your ad blocker</strong> (uBlock, AdBlock, etc.) for this site</li>
+                    <li>🕵️ Use <strong>Incognito/Private mode</strong> (Ctrl+Shift+N on Chrome)</li>
+                    <li>🦊 Try <strong>Firefox browser</strong> (works best with EduBoard)</li>
+                    <li>🔄 <strong>Refresh the page</strong> after making changes</li>
+                </ul>
+            </div>
+
+            <!-- Inside #loginScreen, inside .login-card -->
+            <div id="sessionInfoBox">
+                <div class="session-loading">🔒 Sign in to view available sessions</div>
+            </div>
+            <div class="input-wrap">
+                <label>Email Address</label>
+                <input type="email" id="loginEmail" autocomplete="email">
+            </div>
+            <div class="input-wrap">
+                <label>Password</label>
+                <input type="password" id="loginPass" autocomplete="current-password">
+            </div>
+
+            <div class="troubleshooting-tip">
+                <strong>💡 Having trouble logging in?</strong>
+                • Make sure you're using the correct email and password provided by your teacher<br>
+                • Try disabling your ad blocker for this site<br>
+                • Use Incognito/Private mode (Ctrl+Shift+N)<br>
+                • Contact your teacher if the problem persists
+            </div>
+
+            <button class="btn-enter" id="joinBtn" onclick="doStudentLogin()">Sign In & Join Session →</button>
+            <div class="error-msg" id="loginErr"></div>
+            <a href="index.html" class="back-link">← Back to Home</a>
+        </div>
     </div>
-  </div>
-  <div class="main">
-    <div id="welcomeScreen"></div>
-    <div id="quizScreen"></div>
-    <div id="completionScreen"></div>
-  </div>
-</div>
 
-<div class="connection-warning" id="connectionWarning">
-  ⚠️ Connection issue detected. Please disable ad blockers and refresh.
-</div>
+    <div id="app">
+        <div class="header">
+            <div class="header-brand">EduBoard</div>
+            <div class="header-session" id="headerSession">—</div>
+            <div class="header-right">
+                <div class="user-chip">
+                    <div class="user-dot"></div>
+                    <div class="user-name" id="headerName">Student</div>
+                </div>
+                <button class="btn-exit" onclick="exitSession()">Exit</button>
+            </div>
+        </div>
+        <div class="main">
+            <div id="welcomeScreen"></div>
+            <div id="quizScreen"></div>
+            <div id="completionScreen"></div>
+        </div>
+    </div>
 
-<div class="nav-footer" id="navFooter" style="display:none">
-  <button class="btn-nav" id="btnPrev" onclick="prevQ()">← Prev</button>
-  <button class="btn-submit-answer" id="btnSubmit" onclick="submitAnswer()">Save Answer</button>
-  <button class="btn-nav" id="btnNext" onclick="nextQ()">Next →</button>
-  <button class="btn-finish" id="btnFinish" onclick="finishSession()" style="display:none">Submit All ✓</button>
-</div>
-<div class="toast" id="toast"></div>
+    <div class="connection-warning" id="connectionWarning">
+        ⚠️ Connection issue detected. Please disable ad blockers and refresh.
+    </div>
 
-<script type="module">
-// Import from firebase-config.js (Ensure this file exports Firestore functions)
- // import { 
- //   auth, db,
- //   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
- //   getDoc, setDoc, doc, 
- //   collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
- //   onSnapshot
- // } from './firebase-config.js';
+    <div class="nav-footer" id="navFooter" style="display:none">
+        <button class="btn-nav" id="btnPrev" onclick="prevQ()">← Prev</button>
+        <button class="btn-submit-answer" id="btnSubmit" onclick="submitAnswer()">Save Answer</button>
+        <button class="btn-nav" id="btnNext" onclick="nextQ()">Next →</button>
+        <button class="btn-finish" id="btnFinish" onclick="finishSession()" style="display:none">Submit All ✓</button>
+    </div>
+    <div class="toast" id="toast"></div>
 
+    <script type="module">
+        // Import from firebase-config.js
+        import {
+            auth,
+            db,
+            rtDB,
+            onAuthStateChanged,
+            signInWithEmailAndPassword,
+            signOut,
+            getDoc,
+            setDoc,
+            doc,
+            collection,
+            query,
+            where,
+            getDocs,
+            updateDoc,
+            addDoc,
+            serverTimestamp,
+            onSnapshot,
+            ref,
+            set,
+            remove,
+            update as rtdbUpdate
+        } from './firebase-config.js';
 
-import { 
-  auth, db, rtDB,  // ✅ ADD rtDB
-  onAuthStateChanged, signInWithEmailAndPassword, signOut, 
-  getDoc, setDoc, doc, 
-  collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
-  onSnapshot,
-  ref, set, remove, update as rtdbUpdate  // ✅ ADD RTDB functions (rename update to avoid conflict)
-} from './firebase-config.js';
+        // 🟢 RTDB: Clean up when student leaves/refreshes
+        window.addEventListener('beforeunload', async (event) => {
+            if (activeSessionId && currentStudent) {
+                try {
+                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+                    console.log('✅ Cleaned up RTDB on page exit');
+                } catch (e) {
+                    console.warn('⚠️ Could not remove from RTDB on exit:', e);
+                }
+            }
+        });
 
+        let currentStudent = null;
+        let studentProfile = null;
+        let currentQIndex = 0;
+        let questions = [];
+        let sessionData = {};
+        let activeSessionId = null;
+        let unsubSession = null;
 
-    // 🟢 RTDB: Clean up when student leaves/refreshes
-window.addEventListener('beforeunload', async (event) => {
-  if (activeSessionId && currentStudent) {
-    try {
-      await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-      console.log('✅ Cleaned up RTDB on page exit');
-    } catch (e) {
-      console.warn('⚠️ Could not remove from RTDB on exit:', e);
-      // Non-critical - doesn't break app
-    }
-  }
-});
+        // ── ROUTE GUARD ──
+        onAuthStateChanged(auth, async (user) => {
+            document.getElementById('loadingScreen').style.display = 'none';
 
-    
-let currentStudent = null;
-let studentProfile = null;
-let currentQIndex = 0;
-let questions = [];
-let sessionData = {};
-let activeSessionId = null;
-let unsubSession = null;
+            if (!user) {
+                const box = document.getElementById('sessionInfoBox');
+                if (box) {
+                    box.innerHTML = `<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>`;
+                }
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+                return;
+            }
 
-// ── ROUTE GUARD ──
-onAuthStateChanged(auth, async (user) => {
-  document.getElementById('loadingScreen').style.display = 'none';
+            try {
+                // ✅ FIX: First try to find student by uid field, then by document ID
+                let studentData = null;
+                let studentDocId = null;
 
-  if (!user) {
-    const box = document.getElementById('sessionInfoBox');
-    if (box) {
-      box.innerHTML = `<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>`;
-    }
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-    return;
-  }
+                // Method 1: Try to find by uid field in students collection
+                const studentsRef = collection(db, 'students');
+                const q = query(studentsRef, where('uid', '==', user.uid));
+                const querySnapshot = await getDocs(q);
 
-  try {
-    // ✅ FIX: Changed 'users' to 'students' to match your database structure
-    const snap = await getDoc(doc(db, 'students', user.uid));
-    
-    if (!snap.exists()) {
-      console.warn("Student profile not found in 'students' collection for UID:", user.uid);
-      await signOut(auth);
-      showErr('Student profile not found. Contact administrator.');
-      return;
-    }
+                if (!querySnapshot.empty) {
+                    // Found by uid field
+                    studentDocId = querySnapshot.docs[0].id;
+                    studentData = querySnapshot.docs[0].data();
+                    console.log('✅ Found student by uid field:', studentData);
+                } else {
+                    // Method 2: Try to find by document ID (if it matches auth UID)
+                    const docSnap = await getDoc(doc(db, 'students', user.uid));
+                    if (docSnap.exists()) {
+                        studentData = docSnap.data();
+                        studentDocId = user.uid;
+                        console.log('✅ Found student by document ID:', studentData);
+                    }
+                }
 
-    const studentData = snap.data();
+                if (!studentData) {
+                    console.error("Student profile not found for UID:", user.uid);
+                    await signOut(auth);
+                    showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
+                    return;
+                }
 
-    // Check if account is active (if you have this field)
-    if (studentData.active === false) {
-      await signOut(auth);
-      showErr('Your account has been deactivated.');
-      return;
-    }
+                // Check if account is active
+                if (studentData.status === 'inactive' || studentData.active === false) {
+                    await signOut(auth);
+                    showErr('Your account has been deactivated. Contact your teacher.');
+                    return;
+                }
 
-    // Set Global Variables
-    currentStudent = user;
-    studentProfile = studentData;
+                // Set Global Variables
+                currentStudent = user;
+                studentProfile = studentData;
 
-    // Update UI
-    document.getElementById('headerName').textContent = studentProfile.name || user.email;
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
+                // Store the student document ID for future operations
+                currentStudent.docId = studentDocId;
 
-    // Load Session
-    await findAndJoinOpenSession();
+                // Update UI
+                document.getElementById('headerName').textContent = studentProfile.name || user.email;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
 
-  } catch (e) {
-    console.error('Auth verification error:', e);
-    document.getElementById('loginScreen').style.display = 'flex';
-    showErr('Error: ' + e.message);
-  }
-});
-    
-// ── SESSION INFO ON LOGIN (FIRESTORE VERSION) ──
-async function loadLoginSessionInfo() {
-  const box = document.getElementById('sessionInfoBox');
-  const btn = document.getElementById('joinBtn');
-  box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
-  
-  try {
-    // Query Firestore for active sessions
-    const sessionsRef = collection(db, 'sessions');
-    const q = query(sessionsRef, where('active', '==', true));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-      box.innerHTML = '<div class="session-closed-box">🔒 No sessions are currently open.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open a session.</span></div>';
-      btn.disabled = false;
-      return;
-    }
+                // Load Session
+                await findAndJoinOpenSession();
 
-    // Take the first active session
-    const firstDoc = snapshot.docs[0];
-    activeSessionId = firstDoc.id;
-    sessionData = firstDoc.data();
-    
-    displaySessionInfo(sessionData, btn);
-  } catch(e) {
-    console.error('Session info error:', e);
-    box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please refresh.</div>';
-    btn.disabled = false;
-    const warning = document.getElementById('adblockWarning');
-    if (warning) warning.style.display = 'block';
-  }
-}
+            } catch (e) {
+                console.error('Auth verification error:', e);
+                document.getElementById('loginScreen').style.display = 'flex';
+                showErr('Error: ' + e.message);
+            }
+        });
 
-function displaySessionInfo(cfg, btn) {
-  const box = document.getElementById('sessionInfoBox');
-  const parts = [cfg.grade, cfg.className, cfg.subject].filter(Boolean);
-  const timeStr = cfg.startTime && cfg.endTime ? `${cfg.startTime} – ${cfg.endTime}` : (cfg.startTime||'');
-  
-  box.innerHTML = `<div class="session-info-box">
+        // ── SESSION INFO ON LOGIN (FIRESTORE VERSION) ──
+        async function loadLoginSessionInfo() {
+            const box = document.getElementById('sessionInfoBox');
+            const btn = document.getElementById('joinBtn');
+            box.innerHTML = '<div class="session-loading">⏳ Looking for open sessions…</div>';
+
+            try {
+                // Query Firestore for active sessions
+                const sessionsRef = collection(db, 'sessions');
+                const q = query(sessionsRef, where('active', '==', true));
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    box.innerHTML = '<div class="session-closed-box">🔒 No sessions are currently open.<br><span style="font-size:12px;font-weight:400;margin-top:4px;display:block">Wait for your teacher to open a session.</span></div>';
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Take the first active session
+                const firstDoc = snapshot.docs[0];
+                activeSessionId = firstDoc.id;
+                sessionData = firstDoc.data();
+
+                displaySessionInfo(sessionData, btn);
+            } catch (e) {
+                console.error('Session info error:', e);
+                box.innerHTML = '<div class="session-closed-box">⚠️ Unable to connect. Please refresh.</div>';
+                btn.disabled = false;
+                const warning = document.getElementById('adblockWarning');
+                if (warning) warning.style.display = 'block';
+            }
+        }
+
+        function displaySessionInfo(cfg, btn) {
+            const box = document.getElementById('sessionInfoBox');
+            const parts = [cfg.grade, cfg.className, cfg.subject].filter(Boolean);
+            const timeStr = cfg.startTime && cfg.endTime ? `${cfg.startTime} – ${cfg.endTime}` : (cfg.startTime || '');
+
+            box.innerHTML = `<div class="session-info-box">
     <div class="sib-label">Open Session</div>
     <div class="sib-title">${esc(cfg.title||'Quiz Session')}</div>
     <div class="sib-meta">
@@ -400,240 +1419,196 @@ function displaySessionInfo(cfg, btn) {
       ${cfg.ownerTeacherName?`<span class="sib-tag">👩‍ ${esc(cfg.ownerTeacherName)}</span>`:''}
     </div>
   </div>`;
-  btn.disabled = false;
-}
+            btn.disabled = false;
+        }
 
-// ── STUDENT LOGIN ──
-window.doStudentLogin = async function() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const btn = document.getElementById('joinBtn');
-  const err = document.getElementById('loginErr');
-  err.style.display = 'none';
-  if (!email || !pass) { showErr('Email and password are required.'); return; }
-  btn.disabled = true; btn.textContent = 'Signing in…';
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    console.error('Login error:', e);
-    showErr('Invalid email or password.');
-    btn.disabled = false; btn.textContent = 'Sign In & Join Session →';
-  }
-};
+        // ── STUDENT LOGIN ──
+        window.doStudentLogin = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const btn = document.getElementById('joinBtn');
+            const err = document.getElementById('loginErr');
+            err.style.display = 'none';
+            if (!email || !pass) {
+                showErr('Email and password are required.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Signing in…';
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch (e) {
+                console.error('Login error:', e);
+                showErr('Invalid email or password.');
+                btn.disabled = false;
+                btn.textContent = 'Sign In & Join Session →';
+            }
+        };
 
-document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doStudentLogin(); });
+        document.getElementById('loginPass')?.addEventListener('keydown', e => {
+            if (e.key === 'Enter') doStudentLogin();
+        });
 
-// ── FIND AND JOIN OPEN SESSION (FIRESTORE VERSION) ──
- // async function findAndJoinOpenSession() {
- //   try {
- //     // If we already have an ID from login screen, use it. Otherwise query.
- //     if (!activeSessionId) {
- //       const sessionsRef = collection(db, 'sessions');
- //       const q = query(sessionsRef, where('active', '==', true));
- //       const snapshot = await getDocs(q);
- //       
- //       if (snapshot.empty) {
- //         showNoSessions();
- //         return;
- //       }
- //       activeSessionId = snapshot.docs[0].id;
- //       sessionData = snapshot.docs[0].data();
- //     } else {
- //       // Re-fetch latest data for the known session ID
- //       const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
- //       if (!sessDoc.exists() || !sessDoc.data().active) {
- //         showNoSessions();
- //         return;
- //       }
- //       sessionData = sessDoc.data();
- //     }
- // 
- //     const studentKey = currentStudent.uid;
- //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
- //     
- //     // ✅ CRITICAL FIX: Use setDoc with { merge: true }
- //     // This CREATES the document if it doesn't exist, or UPDATES it if it does.
- //     // This ensures the document exists before submitAnswer tries to update it.
- //     await setDoc(studentRef, {
- //       name: studentProfile.name || currentStudent.email,
- //       uid: currentStudent.uid,
- //       online: true,
- //       loginTime: Date.now(),
- //       submitted: false, 
- //       answers: {},      
- //       grades: {},       
- //       feedback: {}      
- //     }, { merge: true });
- // 
- //     document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
- //     document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
- //     
- //     // Listen for real-time updates on this student's grade/feedback
- //     if (unsubSession) unsubSession();
- //     unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
- //       if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
- //         refreshCompletion(sd.data());
- //       }
- //     });
- // 
- //     await loadAndShowWelcome();
- //   } catch(e) {
- //     console.error('Join session error:', e);
- //     showConnectionWarning(true);
- //     document.getElementById('welcomeScreen').innerHTML = `
- //       <div style="text-align:center;padding:60px 0">
- //         <div style="font-size:56px;margin-bottom:16px">⚠️</div>
- //         <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
- //         <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
- //         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
- //       </div>`;
- //     document.getElementById('welcomeScreen').style.display = 'block';
- //   }
- // }
- 
- async function findAndJoinOpenSession() {
-  try {
-    // If we already have an ID from login screen, use it. Otherwise query.
-    if (!activeSessionId) {
-      const sessionsRef = collection(db, 'sessions');
-      const q = query(sessionsRef, where('active', '==', true));
-      const snapshot = await getDocs(q);
-      
-      if (snapshot.empty) {
-        showNoSessions();
-        return;
-      }
-      activeSessionId = snapshot.docs[0].id;
-      sessionData = snapshot.docs[0].data();
-    } else {
-      // Re-fetch latest data for the known session ID
-      const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-      if (!sessDoc.exists() || !sessDoc.data().active) {
-        showNoSessions();
-        return;
-      }
-      sessionData = sessDoc.data();
-    }
+        // ── FIND AND JOIN OPEN SESSION (FIRESTORE VERSION) ──
+        async function findAndJoinOpenSession() {
+            try {
+                // If we already have an ID from login screen, use it. Otherwise query.
+                if (!activeSessionId) {
+                    const sessionsRef = collection(db, 'sessions');
+                    const q = query(sessionsRef, where('active', '==', true));
+                    const snapshot = await getDocs(q);
 
-    const studentKey = currentStudent.uid;
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-    
-    await setDoc(studentRef, {
-      name: studentProfile.name || currentStudent.email,
-      uid: currentStudent.uid,
-      online: true,
-      loginTime: Date.now(),
-      submitted: false, 
-      answers: {},      
-      grades: {},       
-      feedback: {}      
-    }, { merge: true });
+                    if (snapshot.empty) {
+                        showNoSessions();
+                        return;
+                    }
+                    activeSessionId = snapshot.docs[0].id;
+                    sessionData = snapshot.docs[0].data();
+                } else {
+                    // Re-fetch latest data for the known session ID
+                    const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+                    if (!sessDoc.exists() || !sessDoc.data().active) {
+                        showNoSessions();
+                        return;
+                    }
+                    sessionData = sessDoc.data();
+                }
 
-    // 🟢 RTDB: Mark student as present in live session
-    try {
-      await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-        name: studentProfile.name || currentStudent.email,
-        uid: currentStudent.uid,
-        joinedAt: new Date().toISOString(),
-        status: 'active'
-      });
-      console.log('✅ Student marked present in RTDB');
-    } catch (e) {
-      console.warn('⚠️ Could not mark present in RTDB:', e);
-    }
+                // ✅ Use the correct student ID (from the students collection)
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
-    document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
-    document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
-    
-    // Listen for real-time updates on this student's grade/feedback
-    if (unsubSession) unsubSession();
-    unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
-      if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
-        refreshCompletion(sd.data());
-      }
-    });
+                await setDoc(studentRef, {
+                    name: studentProfile.name || currentStudent.email,
+                    uid: currentStudent.uid,
+                    studentDocId: currentStudent.docId,
+                    online: true,
+                    loginTime: Date.now(),
+                    submitted: false,
+                    answers: {},
+                    grades: {},
+                    feedback: {}
+                }, {
+                    merge: true
+                });
 
-    await loadAndShowWelcome();
-  } catch(e) {
-    console.error('Join session error:', e);
-    showConnectionWarning(true);
-    document.getElementById('welcomeScreen').innerHTML = `
+                // 🟢 RTDB: Mark student as present in live session
+                try {
+                    await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                        name: studentProfile.name || currentStudent.email,
+                        uid: currentStudent.uid,
+                        studentDocId: currentStudent.docId,
+                        joinedAt: new Date().toISOString(),
+                        status: 'active'
+                    });
+                    console.log('✅ Student marked present in RTDB');
+                } catch (e) {
+                    console.warn('⚠️ Could not mark present in RTDB:', e);
+                }
+
+                document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
+                document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
+
+                // Listen for real-time updates on this student's grade/feedback
+                if (unsubSession) unsubSession();
+                unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
+                    if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
+                        refreshCompletion(sd.data());
+                    }
+                });
+
+                await loadAndShowWelcome();
+            } catch (e) {
+                console.error('Join session error:', e);
+                showConnectionWarning(true);
+                document.getElementById('welcomeScreen').innerHTML = `
       <div style="text-align:center;padding:60px 0">
         <div style="font-size:56px;margin-bottom:16px">⚠️</div>
         <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
         <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
       </div>`;
-    document.getElementById('welcomeScreen').style.display = 'block';
-  }
-}
-    
+                document.getElementById('welcomeScreen').style.display = 'block';
+            }
+        }
 
-    
-function showNoSessions() {
-  document.getElementById('app').style.display = 'block';
-  document.getElementById('welcomeScreen').innerHTML = `
+        function showNoSessions() {
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('welcomeScreen').innerHTML = `
     <div style="text-align:center;padding:60px 0">
       <div style="font-size:56px;margin-bottom:16px">⏳</div>
       <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
       <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet.</div>
       <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
     </div>`;
-  document.getElementById('welcomeScreen').style.display = 'block';
-}
+            document.getElementById('welcomeScreen').style.display = 'block';
+        }
 
-window.exitSession = async function() {
-  if (activeSessionId && currentStudent) {
-    try {
-      await updateDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid), { online: false });
-    } catch(e) {}
-  }
-  if (unsubSession) unsubSession();
-  await signOut(auth);
-  window.location.href = 'index.html';
-};
+        window.exitSession = async function() {
+            if (activeSessionId && currentStudent) {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                try {
+                    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey), {
+                        online: false
+                    });
+                    // 🟢 RTDB: Remove from live tracking
+                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+                } catch (e) {}
+            }
+            if (unsubSession) unsubSession();
+            await signOut(auth);
+            window.location.href = 'index.html';
+        };
 
-// ── WELCOME ──
-async function loadAndShowWelcome() {
-  try {
-    // Load Questions from Firestore Sub-collection
-    const qRef = collection(db, 'sessions', activeSessionId, 'questions');
-    const qSnap = await getDocs(qRef);
-    questions = [];
-    qSnap.forEach(d => questions.push({ id: d.id, ...d.data() }));
-    questions.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+        // ── WELCOME ──
+        async function loadAndShowWelcome() {
+            try {
+                // Load Questions from Firestore Sub-collection
+                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
+                const qSnap = await getDocs(qRef);
+                questions = [];
+                qSnap.forEach(d => questions.push({
+                    id: d.id,
+                    ...d.data()
+                }));
+                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
 
-    // Load Student Data
-    const sRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
-    const sSnap = await getDoc(sRef);
-    const s = sSnap.exists() ? sSnap.data() : {};
+                // Load Student Data
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                const sSnap = await getDoc(sRef);
+                const s = sSnap.exists() ? sSnap.data() : {};
 
-    if (s.submitted) { showCompletion(); return; }
-    showWelcome();
-  } catch(e) {
-    console.error('Load welcome error:', e);
-    showConnectionWarning(true);
-  }
-}
+                if (s.submitted) {
+                    showCompletion();
+                    return;
+                }
+                showWelcome();
+            } catch (e) {
+                console.error('Load welcome error:', e);
+                showConnectionWarning(true);
+            }
+        }
 
-function showWelcome() {
-  document.getElementById('quizScreen').style.display='none';
-  document.getElementById('completionScreen').style.display='none';
-  document.getElementById('navFooter').style.display='none';
-  const ws = document.getElementById('welcomeScreen');
-  ws.style.display='block';
-  
-  if (!questions.length) {
-    ws.innerHTML=`<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet.</div></div>`;
-    return;
-  }
+        function showWelcome() {
+            document.getElementById('quizScreen').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('navFooter').style.display = 'none';
+            const ws = document.getElementById('welcomeScreen');
+            ws.style.display = 'block';
 
-  // Fetch fresh student data for stats
-  getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid)).then(sSnap=>{
-    const s=sSnap.exists()?sSnap.data():{};
-    const answered=s.answers?Object.keys(s.answers).length:0;
-    const instrHtml=sessionData.instructions?`<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>`:'';
-    ws.innerHTML=`<div style="text-align:center;padding:20px 0">
+            if (!questions.length) {
+                ws.innerHTML = `<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn't added questions yet.</div></div>`;
+                return;
+            }
+
+            // Fetch fresh student data for stats
+            const studentKey = currentStudent.docId || currentStudent.uid;
+            getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
+                const s = sSnap.exists() ? sSnap.data() : {};
+                const answered = s.answers ? Object.keys(s.answers).length : 0;
+                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${esc(sessionData.instructions)}</div>` : '';
+                ws.innerHTML = `<div style="text-align:center;padding:20px 0">
       <div class="welcome-icon">🎓</div>
       <div class="welcome-title">Welcome, ${esc((studentProfile.name||'').split(' ')[0]||'Student')}!</div>
       <div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
@@ -657,52 +1632,66 @@ function showWelcome() {
     <div style="text-align:center">
       <button class="btn-start" onclick="startQuiz()">${answered>0?'Continue Quiz →':'Start Quiz →'}</button>
     </div>`;
-  }).catch(e=>console.warn('Welcome error:',e));
-}
+            }).catch(e => console.warn('Welcome error:', e));
+        }
 
-// ── QUIZ ──
-window.startQuiz = async function() {
-  if (!questions.length) return;
-  try {
-    const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
-    const s = sSnap.exists() ? sSnap.data() : {};
-    let start=0;
-    for(let i=0;i<questions.length;i++){if(!s.answers||s.answers[questions[i].id]===undefined){start=i;break;}}
-    currentQIndex=start;
-    document.getElementById('welcomeScreen').style.display='none';
-    document.getElementById('quizScreen').style.display='block';
-    document.getElementById('navFooter').style.display='flex';
-    renderQuestion();
-  } catch(e) {
-    console.error('Start quiz error:', e);
-    showToast('Error loading quiz.', true);
-  }
-};
+        // ── QUIZ ──
+        window.startQuiz = async function() {
+            if (!questions.length) return;
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const s = sSnap.exists() ? sSnap.data() : {};
+                let start = 0;
+                for (let i = 0; i < questions.length; i++) {
+                    if (!s.answers || s.answers[questions[i].id] === undefined) {
+                        start = i;
+                        break;
+                    }
+                }
+                currentQIndex = start;
+                document.getElementById('welcomeScreen').style.display = 'none';
+                document.getElementById('quizScreen').style.display = 'block';
+                document.getElementById('navFooter').style.display = 'flex';
+                renderQuestion();
+            } catch (e) {
+                console.error('Start quiz error:', e);
+                showToast('Error loading quiz.', true);
+            }
+        };
 
-async function renderQuestion() {
-  try {
-    // Re-fetch questions to ensure sync
-    const qRef = collection(db, 'sessions', activeSessionId, 'questions');
-    const qsSnap = await getDocs(qRef);
-    questions = [];
-    qsSnap.forEach(d => questions.push({ id: d.id, ...d.data() }));
-    questions.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-    
-    if(!questions.length)return;
-    const q=questions[currentQIndex];
-    
-    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
-    const s=sSnap.exists()?sSnap.data():{};
-    const existing=s.answers&&s.answers[q.id]!==undefined?s.answers[q.id]:null;
-    
-    const total=questions.length;
-    const pct=Math.round((currentQIndex+1)/total*100);
-    const btnSubmit=document.getElementById('btnSubmit');
-    btnSubmit.textContent='Save Answer';btnSubmit.classList.remove('saved');btnSubmit.disabled=false;
-    
-    function mathSafe(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-    const qscreen=document.getElementById('quizScreen');
-    qscreen.innerHTML=`
+        async function renderQuestion() {
+            try {
+                // Re-fetch questions to ensure sync
+                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
+                const qsSnap = await getDocs(qRef);
+                questions = [];
+                qsSnap.forEach(d => questions.push({
+                    id: d.id,
+                    ...d.data()
+                }));
+                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+
+                if (!questions.length) return;
+                const q = questions[currentQIndex];
+
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const s = sSnap.exists() ? sSnap.data() : {};
+                const existing = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
+
+                const total = questions.length;
+                const pct = Math.round((currentQIndex + 1) / total * 100);
+                const btnSubmit = document.getElementById('btnSubmit');
+                btnSubmit.textContent = 'Save Answer';
+                btnSubmit.classList.remove('saved');
+                btnSubmit.disabled = false;
+
+                function mathSafe(str) {
+                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                }
+                const qscreen = document.getElementById('quizScreen');
+                qscreen.innerHTML = `
       <div class="progress-header">
         <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex+1} / ${total}</span></div>
         <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -713,225 +1702,207 @@ async function renderQuestion() {
         ${existing!==null?'<div class="answered-badge">✓ Answer Saved</div>':''}
         ${buildInput(q,existing)}
       </div>`;
-      
-    document.getElementById('btnPrev').disabled=currentQIndex===0;
-    document.getElementById('btnNext').style.display=currentQIndex<total-1?'inline-flex':'none';
-    document.getElementById('btnFinish').style.display=currentQIndex===total-1?'inline-flex':'none';
-    renderMath(qscreen);
-  } catch(e) {
-    console.error('Render question error:', e);
-    showToast('Error loading question.', true);
-  }
-}
 
-function renderMath(el){if(window.MathJax&&MathJax.typesetPromise)MathJax.typesetPromise(el?[el]:[document.body]).catch(err=>console.warn('MathJax error:',err));}
+                document.getElementById('btnPrev').disabled = currentQIndex === 0;
+                document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
+                document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
+                renderMath(qscreen);
+            } catch (e) {
+                console.error('Render question error:', e);
+                showToast('Error loading question.', true);
+            }
+        }
 
-function buildInput(q,existing){
-  function mathSafe(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  function escA(s){return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-  if(q.type==='mcq'&&q.options&&q.options.length){
-    const L='ABCDEFGHIJ';
-    return`<div class="options-list">${q.options.map((o,i)=>`<button class="option-btn ${existing===o?'selected':''}" onclick="selectOption(this)" data-val="${escA(o)}"><span class="option-letter">${L[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
-  }
-  if(q.type==='truefalse')return`<div class="tf-row"><button class="tf-btn ${existing==='True'?'selected':''}" onclick="selectTF(this,'True')"><span class="tf-icon">✅</span>True</button><button class="tf-btn ${existing==='False'?'selected':''}" onclick="selectTF(this,'False')"><span class="tf-icon">❌</span>False</button></div>`;
-  if(q.type==='number')return`<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing!==null?esc(String(existing)):''}">`;
-  return`<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing!==null?esc(String(existing)):''}</textarea>`;
-}
+        function renderMath(el) {
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
+        }
 
-window.selectOption=function(btn){document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
-window.selectTF=function(btn,val){document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');};
+        function buildInput(q, existing) {
+            function mathSafe(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
 
-function getCurrentAnswer(){
-  const q=questions[currentQIndex];
-  if(q.type==='mcq'){const s=document.querySelector('.option-btn.selected');return s?s.getAttribute('data-val'):null;}
-  if(q.type==='truefalse'){const s=document.querySelector('.tf-btn.selected');return s?s.textContent.trim():null;}
-  const el=document.getElementById('answerInput');return el&&el.value.trim()?el.value.trim():null;
-}
+            function escA(s) {
+                return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+            if (q.type === 'mcq' && q.options && q.options.length) {
+                const L = 'ABCDEFGHIJ';
+                return `<div class="options-list">${q.options.map((o,i)=>`<button class="option-btn ${existing===o?'selected':''}" onclick="selectOption(this)" data-val="${escA(o)}"><span class="option-letter">${L[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
+            }
+            if (q.type === 'truefalse') return `<div class="tf-row"><button class="tf-btn ${existing==='True'?'selected':''}" onclick="selectTF(this,'True')"><span class="tf-icon">✅</span>True</button><button class="tf-btn ${existing==='False'?'selected':''}" onclick="selectTF(this,'False')"><span class="tf-icon">❌</span>False</button></div>`;
+            if (q.type === 'number') return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing!==null?esc(String(existing)):''}">`;
+            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing!==null?esc(String(existing)):''}</textarea>`;
+        }
 
- // window.submitAnswer = async function() {
- //   const ans = getCurrentAnswer();
- //   if (ans === null) {
- //     showToast('Please provide an answer first');
- //     return;
- //   }
- //   
- //   const btn = document.getElementById('btnSubmit');
- //   btn.textContent = 'Saving…';
- //   btn.disabled = true;
- //   
- //   const q = questions[currentQIndex];
- //   
- //   try {
- //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
- //     
- //     // ✅ Update the specific answer field using dot notation
- //     // This works now because findAndJoinOpenSession guaranteed the parent doc exists
- //     await updateDoc(studentRef, {
- //       [`answers.${q.id}`]: ans
- //     });
- //     
- //     showToast('Answer saved ✓');
- //     btn.textContent = 'Saved ✓';
- //     btn.classList.add('saved');
- //     
- //     // Re-render to show the "Answered" badge
- //     renderQuestion();
- //     
- //   } catch (e) {
- //     console.error('Submit error:', e);
- //     showToast('Failed to save. Please try again.', true);
- //     btn.textContent = 'Save Answer';
- //     btn.disabled = false;
- //   }
- // };
- 
- window.submitAnswer = async function() {
-  const ans = getCurrentAnswer();
-  if (ans === null) {
-    showToast('Please provide an answer first');
-    return;
-  }
-  
-  const btn = document.getElementById('btnSubmit');
-  btn.textContent = 'Saving…';
-  btn.disabled = true;
-  
-  const q = questions[currentQIndex];
-  
-  try {
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
-    
-    // 📝 Firestore: Save answer
-    await updateDoc(studentRef, {
-      [`answers.${q.id}`]: ans
-    });
-    
-    // 🟢 RTDB: Update activity timestamp (optional - for metrics)
-    try {
-      await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-        lastActivity: Date.now(),
-        questionsAnswered: currentQIndex + 1
-      });
-    } catch (e) {
-      console.warn('⚠️ Could not update RTDB activity:', e);
-    }
-    
-    showToast('Answer saved ✓');
-    btn.textContent = 'Saved ✓';
-    btn.classList.add('saved');
-    
-    renderQuestion();
-    
-  } catch (e) {
-    console.error('Submit error:', e);
-    showToast('Failed to save. Please try again.', true);
-    btn.textContent = 'Save Answer';
-    btn.disabled = false;
-  }
-};
+        window.selectOption = function(btn) {
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        };
+        window.selectTF = function(btn, val) {
+            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        };
 
-async function canNavigate(){
-  const ans=getCurrentAnswer();
-  if(ans===null){
-    const q=questions[currentQIndex];
-    try {
-      const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
-      if(!sSnap.exists() || sSnap.data()?.answers?.[q.id] === undefined){showToast('Please save your answer first');return false;}
-    } catch(e) {
-      return true;
-    }
-  }
-  return true;
-}
+        function getCurrentAnswer() {
+            const q = questions[currentQIndex];
+            if (q.type === 'mcq') {
+                const s = document.querySelector('.option-btn.selected');
+                return s ? s.getAttribute('data-val') : null;
+            }
+            if (q.type === 'truefalse') {
+                const s = document.querySelector('.tf-btn.selected');
+                return s ? s.textContent.trim() : null;
+            }
+            const el = document.getElementById('answerInput');
+            return el && el.value.trim() ? el.value.trim() : null;
+        }
 
-window.prevQ=async function(){if(await canNavigate()&&currentQIndex>0){currentQIndex--;renderQuestion();}};
-window.nextQ=async function(){if(await canNavigate()&&currentQIndex<questions.length-1){currentQIndex++;renderQuestion();}};
+        window.submitAnswer = async function() {
+            const ans = getCurrentAnswer();
+            if (ans === null) {
+                showToast('Please provide an answer first');
+                return;
+            }
 
- // window.finishSession = async function() {
- //   const ans=getCurrentAnswer();
- //   if(ans!==null){
- //     const q=questions[currentQIndex];
- //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
- //     await updateDoc(studentRef, {[`answers.${q.id}`]: ans});
- //   }
- //   try {
- //     const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
- //     const savedAnswers=sSnap.exists()?sSnap.data()?.answers||{}:{};
- //     for(let i=0;i<questions.length;i++){
- //       if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
- //         showToast(`Question ${i+1} is missing an answer!`);
- //         currentQIndex=i;renderQuestion();return;
- //       }
- //     }
- //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
- //     await updateDoc(studentRef, {submitted:true});
- //     showCompletion();
- //   } catch(e) {
- //     console.error('Finish error:', e);
- //     showToast('Error submitting.', true);
- //   }
- // };
+            const btn = document.getElementById('btnSubmit');
+            btn.textContent = 'Saving…';
+            btn.disabled = true;
 
-window.finishSession = async function() {
-  const ans=getCurrentAnswer();
-  if(ans!==null){
-    const q=questions[currentQIndex];
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
-    await updateDoc(studentRef, {[`answers.${q.id}`]: ans});
-  }
-  try {
-    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
-    const savedAnswers=sSnap.exists()?sSnap.data()?.answers||{}:{};
-    for(let i=0;i<questions.length;i++){
-      if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
-        showToast(`Question ${i+1} is missing an answer!`);
-        currentQIndex=i;renderQuestion();return;
-      }
-    }
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
-    
-    // 📝 Firestore: Mark as submitted
-    await updateDoc(studentRef, {submitted:true});
-    
-    // 🟢 RTDB: Remove from live tracking (cleanup)
-    try {
-      await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-      console.log('✅ Student removed from RTDB live tracking');
-    } catch (e) {
-      console.warn('⚠️ Could not remove from RTDB:', e);
-    }
-    
-    showCompletion();
-  } catch(e) {
-    console.error('Finish error:', e);
-    showToast('Error submitting.', true);
-  }
-};
+            const q = questions[currentQIndex];
 
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
+                // 📝 Firestore: Save answer
+                await updateDoc(studentRef, {
+                    [`answers.${q.id}`]: ans
+                });
 
-// ── COMPLETION ──
-async function showCompletion(){
-  document.getElementById('quizScreen').style.display='none';
-  document.getElementById('welcomeScreen').style.display='none';
-  document.getElementById('navFooter').style.display='none';
-  document.getElementById('completionScreen').style.display='block';
-  try {
-    const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
-    renderCompletionScreen(sSnap.exists()?sSnap.data():{});
-  } catch(e) {
-    console.error('Completion error:', e);
-  }
-}
-async function refreshCompletion(s){renderCompletionScreen(s);}
+                // 🟢 RTDB: Update activity timestamp (optional - for metrics)
+                try {
+                    await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                        lastActivity: Date.now(),
+                        questionsAnswered: currentQIndex + 1
+                    });
+                } catch (e) {
+                    console.warn('⚠️ Could not update RTDB activity:', e);
+                }
 
-function renderCompletionScreen(s){
-  const answered=s.answers?Object.keys(s.answers).length:0;
-  const graded=s.grades?Object.keys(s.grades).length:0;
-  const score=s.grades?Object.values(s.grades).reduce((n,v)=>n+(parseFloat(v)||0),0):0;
-  const maxScore=questions.reduce((n,q)=>n+q.points,0);
-  const cs=document.getElementById('completionScreen');
-  cs.innerHTML=`
+                showToast('Answer saved ✓');
+                btn.textContent = 'Saved ✓';
+                btn.classList.add('saved');
+
+                renderQuestion();
+
+            } catch (e) {
+                console.error('Submit error:', e);
+                showToast('Failed to save. Please try again.', true);
+                btn.textContent = 'Save Answer';
+                btn.disabled = false;
+            }
+        };
+
+        async function canNavigate() {
+            const ans = getCurrentAnswer();
+            if (ans === null) {
+                const q = questions[currentQIndex];
+                try {
+                    const studentKey = currentStudent.docId || currentStudent.uid;
+                    const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                    if (!sSnap.exists() || sSnap.data()?.answers?.[q.id] === undefined) {
+                        showToast('Please save your answer first');
+                        return false;
+                    }
+                } catch (e) {
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        window.prevQ = async function() {
+            if (await canNavigate() && currentQIndex > 0) {
+                currentQIndex--;
+                renderQuestion();
+            }
+        };
+        window.nextQ = async function() {
+            if (await canNavigate() && currentQIndex < questions.length - 1) {
+                currentQIndex++;
+                renderQuestion();
+            }
+        };
+
+        window.finishSession = async function() {
+            const ans = getCurrentAnswer();
+            if (ans !== null) {
+                const q = questions[currentQIndex];
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                await updateDoc(studentRef, {
+                    [`answers.${q.id}`]: ans
+                });
+            }
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
+                for (let i = 0; i < questions.length; i++) {
+                    if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
+                        showToast(`Question ${i+1} is missing an answer!`);
+                        currentQIndex = i;
+                        renderQuestion();
+                        return;
+                    }
+                }
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+
+                // 📝 Firestore: Mark as submitted
+                await updateDoc(studentRef, {
+                    submitted: true
+                });
+
+                // 🟢 RTDB: Remove from live tracking (cleanup)
+                try {
+                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+                    console.log('✅ Student removed from RTDB live tracking');
+                } catch (e) {
+                    console.warn('⚠️ Could not remove from RTDB:', e);
+                }
+
+                showCompletion();
+            } catch (e) {
+                console.error('Finish error:', e);
+                showToast('Error submitting.', true);
+            }
+        };
+
+        // ── COMPLETION ──
+        async function showCompletion() {
+            document.getElementById('quizScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('navFooter').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'block';
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                renderCompletionScreen(sSnap.exists() ? sSnap.data() : {});
+            } catch (e) {
+                console.error('Completion error:', e);
+            }
+        }
+        async function refreshCompletion(s) {
+            renderCompletionScreen(s);
+        }
+
+        function renderCompletionScreen(s) {
+            const answered = s.answers ? Object.keys(s.answers).length : 0;
+            const graded = s.grades ? Object.keys(s.grades).length : 0;
+            const score = s.grades ? Object.values(s.grades).reduce((n, v) => n + (parseFloat(v) || 0), 0) : 0;
+            const maxScore = questions.reduce((n, q) => n + q.points, 0);
+            const cs = document.getElementById('completionScreen');
+            cs.innerHTML = `
     <div class="completion-icon">🌟</div>
     <div class="completion-title">All Done!</div>
     <div class="submitted-lock-banner">
@@ -949,40 +1920,60 @@ function renderCompletionScreen(s){
       const grade=s.grades&&s.grades[q.id]!==undefined?s.grades[q.id]:null;
       const fb=s.feedback&&s.feedback[q.id]?s.feedback[q.id]:null;
       function mh(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-      return`<div class="answer-review-item">
-        <div class="ar-q math-content"><strong>Q${i+1}.</strong> ${mh(q.text)}</div>
-        <div class="ar-a">Your answer: <span class="math-content">${ans!==null?mh(String(ans)):'<em>Not answered</em>'}</span></div>
-        ${grade!==null?`<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>`:''}
-        ${fb?`<div class="feedback-display">💬 ${esc(fb)}</div>`:''}
-      </div>`;
-    }).join('')}
-    </div>
-    <button class="btn-retry" onclick="exitSession()" style="margin-top:24px">← Sign Out</button>`;
-  renderMath(cs);
-}
+      return` < div class = "answer-review-item" >
+                <
+                div class = "ar-q math-content" > < strong > Q$ {
+                    i + 1
+                }. < /strong> ${mh(q.text)}</div >
+                <
+                div class = "ar-a" > Your answer: < span class = "math-content" > $ {
+                    ans !== null ? mh(String(ans)) : '<em>Not answered</em>'
+                } < /span></div >
+                $ {
+                    grade !== null ? `<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>` : ''
+                }
+            $ {
+                fb ? `<div class="feedback-display">💬 ${esc(fb)}</div>` : ''
+            } <
+            /div>`;
+        }).join('')
+        } <
+        /div> <
+        button class = "btn-retry"
+        onclick = "exitSession()"
+        style = "margin-top:24px" > ←Sign Out < /button>`;
+        renderMath(cs);
+        }
 
-// ── UTILS ──
-function showErr(msg) {
-    const e = document.getElementById('loginErr');
-    e.textContent = msg;
-    e.style.display = 'block';
-    if (msg.includes('network') || msg.includes('connection')) {
-        const warning = document.getElementById('adblockWarning');
-        if (warning) warning.style.display = 'block';
-    }
-}
-function showConnectionWarning(show = true) {
-  const warning = document.getElementById('connectionWarning');
-  if (warning) warning.style.display = show ? 'block' : 'none';
-}
-function showToast(msg, isError = false){
-    const t=document.getElementById('toast');
-    t.textContent=msg;
-    t.style.background = isError ? 'var(--clay)' : 'var(--text)';
-    t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2200);
-}
-function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-</script>
+        // ── UTILS ──
+        function showErr(msg) {
+            const e = document.getElementById('loginErr');
+            e.textContent = msg;
+            e.style.display = 'block';
+            if (msg.includes('network') || msg.includes('connection')) {
+                const warning = document.getElementById('adblockWarning');
+                if (warning) warning.style.display = 'block';
+            }
+        }
+
+        function showConnectionWarning(show = true) {
+            const warning = document.getElementById('connectionWarning');
+            if (warning) warning.style.display = show ? 'block' : 'none';
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? 'var(--clay)' : 'var(--text)';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function esc(s) {
+            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+    </script>
 </body>
+
 </html>
+```
