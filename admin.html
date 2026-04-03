@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,127 +25,409 @@
             --radius: 12px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); line-height: 1.6; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
 
         /* Login */
         #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.98); z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
         .login-box {
-            background: var(--surface); padding: 2.5rem; border-radius: var(--radius);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); width: 100%; max-width: 420px; text-align: center;
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
             border: 1px solid var(--border);
         }
-        .form-group { margin-bottom: 1.25rem; text-align: left; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
-        .form-group input, .form-group select {
-            width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 1rem;
+
+        .form-group {
+            margin-bottom: 1.25rem;
+            text-align: left;
         }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
         .btn {
-            background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem;
-            border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;
-            display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
             transition: all 0.2s;
         }
-        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
-        .btn-secondary { background: white; color: var(--text-light); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: #f8fafc; color: var(--text); }
-        .btn-success { background: var(--success); }
-        .btn-success:hover { background: #059669; }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
-        .btn-danger { background: var(--danger); }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+            color: var(--text);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
 
         /* Layout */
-        #app-container { display: none; min-height: 100vh; display: flex; flex-direction: column; }
-        header {
-            background: var(--surface); border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+        #app-container {
+            display: none;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-        .brand { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
-        
-        nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; }
-        .nav-tabs { display: flex; gap: 0.5rem; }
-        .nav-tab {
-            padding: 1rem 1.25rem; background: none; border: none; cursor: pointer;
-            color: var(--text-light); font-weight: 500; border-bottom: 2px solid transparent;
-        }
-        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #eff6ff; }
-        
-        main { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .section { display: none; animation: fadeIn 0.3s ease; }
-        .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h2 { margin-bottom: 1.5rem; color: var(--text); font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-        
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            overflow-x: auto;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.25rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-light);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
         /* Dashboard Cards */
         .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem; margin-bottom: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
         }
+
         .stat-card {
-            background: var(--surface); padding: 1.5rem; border-radius: var(--radius);
-            box-shadow: var(--shadow); border: 1px solid var(--border);
-            text-align: center; cursor: pointer; transition: all 0.2s;
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
         }
-        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
-        .stat-val { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.25rem; }
-        .stat-label { color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 600; }
-        .stat-val.green { color: var(--success); }
-        .stat-val.blue { color: var(--primary); }
-        .stat-val.purple { color: #8b5cf6; }
-        .stat-val.amber { color: var(--warning); }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .stat-val {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-val.green {
+            color: var(--success);
+        }
+
+        .stat-val.blue {
+            color: var(--primary);
+        }
+
+        .stat-val.purple {
+            color: #8b5cf6;
+        }
+
+        .stat-val.amber {
+            color: var(--warning);
+        }
 
         /* Tables */
         .controls {
-            background: var(--surface); padding: 1rem; border-radius: var(--radius);
-            margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
-            box-shadow: var(--shadow); border: 1px solid var(--border);
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
-        .search-box { flex: 1; min-width: 250px; padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; }
-        
-        .table-container {
-            background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
-            overflow-x: auto; border: 1px solid var(--border);
-        }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; }
-        tr:hover { background: #f8fafc; }
-        
-        .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-        }
-        .status-active { background: #dcfce7; color: #166534; }
-        .status-inactive { background: #fee2e2; color: #991b1b; }
 
-        .action-btns { display: flex; gap: 0.5rem; }
-        .icon-btn {
-            background: white; border: 1px solid var(--border); cursor: pointer; padding: 0.4rem 0.6rem;
-            border-radius: 6px; color: var(--text-light); transition: all 0.2s;
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
         }
-        .icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
-        .icon-btn.delete:hover { background: var(--danger); border-color: var(--danger); }
-        .icon-btn.reset:hover { background: var(--warning); border-color: var(--warning); color: white; }
+
+        .table-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th,
+        td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: white;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            color: var(--text-light);
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .icon-btn.delete:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .icon-btn.reset:hover {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: white;
+        }
 
         /* Modal */
         .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
         }
-        .modal.active { display: flex; }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
-            background: var(--surface); padding: 2rem; border-radius: var(--radius);
-            width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 550px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; align-items: center; }
-        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
     </style>
 </head>
+
 <body>
 
     <!-- Login -->
@@ -233,7 +516,18 @@
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('grades-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="grades-table"><thead><tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+                    <table id="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -253,7 +547,18 @@
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('subjects-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="subjects-table"><thead><tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+                    <table id="subjects-table">
+                        <thead>
+                            <tr>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
+                                <th>Code</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -273,7 +578,19 @@
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('teachers-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="teachers-table"><thead><tr><th>Name</th><th>Email</th><th>Assigned Grades</th><th>Assigned Subjects</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+                    <table id="teachers-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Assigned Grades</th>
+                                <th>Assigned Subjects</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -296,7 +613,18 @@
                     </select>
                 </div>
                 <div class="table-container">
-                    <table id="students-table"><thead><tr><th>Name</th><th>Email</th><th>Grade</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+                    <table id="students-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Grade</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
 
@@ -315,7 +643,20 @@
                     <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('sessions-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="sessions-table"><thead><tr><th>Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
+                    <table id="sessions-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Teacher</th>
+                                <th>Grade</th>
+                                <th>Subject</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
         </main>
@@ -341,10 +682,35 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import {
+            getAuth,
+            signInWithEmailAndPassword,
+            signOut,
+            onAuthStateChanged,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            getDocs,
+            doc,
+            setDoc,
+            deleteDoc,
+            query,
+            where,
+            updateDoc,
+            addDoc,
+            writeBatch,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import {
+            getDatabase,
+            ref,
+            onValue
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
@@ -370,10 +736,13 @@
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
-            try { await signInWithEmailAndPassword(auth, email, password); } 
-            catch (error) { alert("Login Failed: " + error.message); }
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                alert("Login Failed: " + error.message);
+            }
         };
-        
+
         window.handleLogout = async () => {
             try {
                 await signOut(auth);
@@ -404,8 +773,15 @@
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
             const tabs = document.querySelectorAll('.nav-tab');
-            const map = {'dashboard':0, 'grades':1, 'subjects':2, 'teachers':3, 'students':4, 'sessions':5};
-            if(tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
+            const map = {
+                'dashboard': 0,
+                'grades': 1,
+                'subjects': 2,
+                'teachers': 3,
+                'students': 4,
+                'sessions': 5
+            };
+            if (tabs[map[sectionId]]) tabs[map[sectionId]].classList.add('active');
 
             if (sectionId === 'grades') loadGrades();
             if (sectionId === 'subjects') loadSubjects();
@@ -416,12 +792,12 @@
 
         // Helper to refresh only the current view without full reload
         window.refreshCurrentSection = () => {
-            if(currentSection === 'grades') loadGrades();
-            else if(currentSection === 'subjects') loadSubjects();
-            else if(currentSection === 'teachers') loadTeachers();
-            else if(currentSection === 'students') loadStudents();
-            else if(currentSection === 'sessions') loadSessions();
-            else if(currentSection === 'dashboard') initDashboard();
+            if (currentSection === 'grades') loadGrades();
+            else if (currentSection === 'subjects') loadSubjects();
+            else if (currentSection === 'teachers') loadTeachers();
+            else if (currentSection === 'students') loadStudents();
+            else if (currentSection === 'sessions') loadSessions();
+            else if (currentSection === 'dashboard') initDashboard();
         };
 
         // --- DASHBOARD ---
@@ -438,10 +814,18 @@
                 document.getElementById('dashTeachers').textContent = teachersSnap.size;
                 document.getElementById('dashStudents').textContent = studentsSnap.size;
 
-                allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                allGrades = gradesSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
+                allSubjects = subjectsSnap.docs.map(d => ({
+                    id: d.id,
+                    ...d.data()
+                }));
                 populateGradeFilter();
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error(e);
+            }
 
             onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
                 const data = snapshot.val();
@@ -450,7 +834,8 @@
                     document.getElementById('cardActive').textContent = "0";
                     return;
                 }
-                let sCount = 0, stCount = 0;
+                let sCount = 0,
+                    stCount = 0;
                 Object.values(data).forEach(s => {
                     sCount++;
                     if (s.students) stCount += Object.keys(s.students).length;
@@ -461,12 +846,16 @@
         }
 
         // --- HELPERS ---
-        function getDisplayName(d) { return d.name || d.displayName || "Unnamed"; }
+        function getDisplayName(d) {
+            return d.name || d.displayName || "Unnamed";
+        }
+
         function getNameById(id, list) {
             if (!id) return 'N/A';
             const item = list.find(i => i.id === id);
             return item ? (item.nameEn || item.code || id) : id;
         }
+
         function populateGradeFilter() {
             const sel = document.getElementById('student-grade-filter');
             sel.innerHTML = '<option value="">All Grades</option>';
@@ -521,12 +910,12 @@
             snap.forEach(doc => {
                 const d = doc.data();
                 const cleanEmail = (d.email || '').toLowerCase().trim();
-                if(!cleanEmail || seenEmails.has(cleanEmail)) return;
+                if (!cleanEmail || seenEmails.has(cleanEmail)) return;
                 seenEmails.add(cleanEmail);
 
                 const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
                 const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
-                
+
                 tbody.innerHTML += `
                     <tr>
                         <td>${getDisplayName(d)}</td><td>${d.email}</td>
@@ -551,15 +940,15 @@
             snap.forEach(doc => {
                 const d = doc.data();
                 const cleanEmail = (d.email || '').toLowerCase().trim();
-                if(!cleanEmail || seenEmails.has(cleanEmail)) return;
+                if (!cleanEmail || seenEmails.has(cleanEmail)) return;
                 seenEmails.add(cleanEmail);
 
                 let gName = "N/A";
-                if(d.gradeLevel) {
+                if (d.gradeLevel) {
                     const g = allGrades.find(x => x.id === d.gradeLevel);
-                    if(g) gName = g.nameEn;
+                    if (g) gName = g.nameEn;
                 }
-                if(filter && gName !== filter) return;
+                if (filter && gName !== filter) return;
 
                 tbody.innerHTML += `
                     <tr>
@@ -581,7 +970,7 @@
             tbody.innerHTML = '';
             snap.forEach(doc => {
                 const d = doc.data();
-                const date = d.startTime ? new Date(d.startTime.seconds*1000).toLocaleDateString() : '-';
+                const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : '-';
                 tbody.innerHTML += `
                     <tr>
                         <td>${d.title}</td><td>${d.ownerTeacherId?.substring(0,8)}...</td><td>${d.gradeLevel}</td><td>${d.subject}</td><td>${date}</td>
@@ -597,7 +986,8 @@
 
         window.downloadTemplate = (type) => {
             const wb = XLSX.utils.book_new();
-            let headers = [], sampleRow = [];
+            let headers = [],
+                sampleRow = [];
 
             if (type === 'grades') {
                 headers = ["nameEn", "nameAr", "code", "status"];
@@ -606,12 +996,12 @@
                 headers = ["nameEn", "nameAr", "code", "status"];
                 sampleRow = ["Mathematics", "الرياضيات", "MATH", "Active"];
             } else if (type === 'teachers') {
-    headers = ["name", "email", "status", "assignedGrades (Names or IDs)", "assignedSubjects (Names or IDs)"];
-    sampleRow = ["John Doe", "john@school.com", "Active", "Grade 9, Grade 10", "Math, Physics"];
-} else if (type === 'students') {
-    headers = ["name", "email", "gradeLevel (Name or ID)", "status"];
-    sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "Active"];
-} else if (type === 'sessions') {
+                headers = ["name", "email", "status", "assignedGrades (Names or IDs)", "assignedSubjects (Names or IDs)"];
+                sampleRow = ["John Doe", "john@school.com", "Active", "Grade 9, Grade 10", "Math, Physics"];
+            } else if (type === 'students') {
+                headers = ["name", "email", "gradeLevel (Name or ID)", "status"];
+                sampleRow = ["Jane Smith", "jane@school.com", "Grade 9", "Active"];
+            } else if (type === 'sessions') {
                 headers = ["title", "ownerTeacherId (Email or ID)", "gradeLevel", "subject", "startTime (YYYY-MM-DD HH:MM)", "endTime (YYYY-MM-DD HH:MM)", "isActive"];
                 sampleRow = ["Mock Exam", "teacher@school.com", "Grade 9", "Math", "2023-10-25 09:00", "2023-10-25 10:30", "TRUE"];
             }
@@ -625,7 +1015,8 @@
 
         window.exportCurrentData = async (type) => {
             let rawData = [];
-            let collectionRef = null, queryRef = null;
+            let collectionRef = null,
+                queryRef = null;
 
             if (type === 'grades') collectionRef = collection(db, "grades");
             else if (type === 'subjects') collectionRef = collection(db, "subjects");
@@ -637,22 +1028,33 @@
             if (queryRef) snap = await getDocs(queryRef);
             else if (collectionRef) snap = await getDocs(collectionRef);
 
-            rawData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            rawData = snap.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
             const cleanData = rawData.map(row => {
                 // Remove audit fields for export cleanliness
-                const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
-                
+                const {
+                    createdAt,
+                    updatedAt,
+                    createdBy,
+                    updatedBy,
+                    ...cleanRow
+                } = row;
+
                 if (type === 'teachers') {
                     if (row.assignedGrades) {
                         cleanRow['assignedGrades (Names or IDs)'] = row.assignedGrades.map(id => {
-                            const g = allGrades.find(x => x.id === id); return g ? g.nameEn : id;
+                            const g = allGrades.find(x => x.id === id);
+                            return g ? g.nameEn : id;
                         }).join(', ');
                         delete cleanRow.assignedGrades;
                     }
                     if (row.assignedSubjects) {
                         cleanRow['assignedSubjects (Names or IDs)'] = row.assignedSubjects.map(id => {
-                            const s = allSubjects.find(x => x.id === id); return s ? s.nameEn : id;
+                            const s = allSubjects.find(x => x.id === id);
+                            return s ? s.nameEn : id;
                         }).join(', ');
                         delete cleanRow.assignedSubjects;
                     }
@@ -683,14 +1085,16 @@
             XLSX.writeFile(wb, `${type}_update_data.xlsx`);
         };
 
-          window.processImport = async (type, input) => {
+        window.processImport = async (type, input) => {
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const workbook = XLSX.read(e.target.result, { type: 'array' });
-                    
+                    const workbook = XLSX.read(e.target.result, {
+                        type: 'array'
+                    });
+
                     // FIX: Find the first sheet that actually contains data
                     let sheetName = workbook.SheetNames[0];
                     for (let name of workbook.SheetNames) {
@@ -705,14 +1109,15 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (jsonData.length === 0) { 
-                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows."); 
-                        return; 
+                    if (jsonData.length === 0) {
+                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows.");
+                        return;
                     }
 
                     const batch = writeBatch(db);
-                    let countInsert = 0, countUpdate = 0;
-                    
+                    let countInsert = 0,
+                        countUpdate = 0;
+
                     // Audit Info
                     const now = serverTimestamp();
                     const adminUid = currentUser.uid;
@@ -728,34 +1133,34 @@
 
                         // Construct Data based on Type
                         if (type === 'grades' || type === 'subjects') {
-                            docData = { 
-                                nameEn: row.nameEn, 
-                                nameAr: row.nameAr, 
-                                code: row.code, 
-                                status: row.status || 'Active' 
+                            docData = {
+                                nameEn: row.nameEn,
+                                nameAr: row.nameAr,
+                                code: row.code,
+                                status: row.status || 'Active'
                             };
                         } else if (type === 'teachers') {
                             const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
                             const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
-              // NEW (Teachers)
-docData = { 
-    name: row.name, 
-    email: row.email, 
-    role: 'teacher', 
-    status: row.status || 'Active', // ✅ String
-    assignedGrades: gradeIds, 
-    assignedSubjects: subjectIds 
-};
+                            // NEW (Teachers)
+                            docData = {
+                                name: row.name,
+                                email: row.email,
+                                role: 'teacher',
+                                status: row.status || 'Active', // ✅ String
+                                assignedGrades: gradeIds,
+                                assignedSubjects: subjectIds
+                            };
                             targetId = row.id;
                         } else if (type === 'students') {
                             const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
-// NEW (Students)
-docData = { 
-    name: row.name, 
-    email: row.email, 
-    gradeLevel: gradeId, 
-    status: row.status || 'Active' // ✅ String
-};
+                            // NEW (Students)
+                            docData = {
+                                name: row.name,
+                                email: row.email,
+                                gradeLevel: gradeId,
+                                status: row.status || 'Active' // ✅ String
+                            };
                             targetId = row.id;
                         } else if (type === 'sessions') {
                             let teacherId = row['ownerTeacherId (Email or ID)'];
@@ -763,18 +1168,23 @@ docData = {
                                 const tSnap = await getDocs(query(collection(db, "users"), where("email", "==", teacherId), where("role", "==", "teacher")));
                                 if (!tSnap.empty) teacherId = tSnap.docs[0].id;
                             }
-                            let startSecs = null, endSecs = null;
+                            let startSecs = null,
+                                endSecs = null;
                             if (row['startTime (YYYY-MM-DD HH:MM)']) startSecs = Math.floor(new Date(row['startTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
-                            
-                            docData = { 
-                                title: row.title, 
-                                ownerTeacherId: teacherId, 
-                                gradeLevel: row.gradeLevel, 
-                                subject: row.subject, 
-                                startTime: startSecs ? { seconds: startSecs } : null, 
-                                endTime: endSecs ? { seconds: endSecs } : null, 
-                                isActive: String(row.isActive).toLowerCase() === 'true' 
+
+                            docData = {
+                                title: row.title,
+                                ownerTeacherId: teacherId,
+                                gradeLevel: row.gradeLevel,
+                                subject: row.subject,
+                                startTime: startSecs ? {
+                                    seconds: startSecs
+                                } : null,
+                                endTime: endSecs ? {
+                                    seconds: endSecs
+                                } : null,
+                                isActive: String(row.isActive).toLowerCase() === 'true'
                             };
                             targetId = row.id;
                         }
@@ -784,7 +1194,7 @@ docData = {
                         docData.updatedBy = adminUid;
 
                         const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
-                        
+
                         // Logic to Find Existing Document if ID is missing
                         if (!targetId) {
                             let q;
@@ -795,7 +1205,7 @@ docData = {
                                 // Match by Email
                                 q = query(collection(db, colName), where("email", "==", row.email));
                             } else {
-                                q = null; 
+                                q = null;
                             }
 
                             if (q) {
@@ -817,9 +1227,9 @@ docData = {
 
                             if (type === 'teachers' || type === 'students') {
                                 const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
-                                if (!existing.empty) { 
-                                    console.warn(`Skip duplicate: ${row.email}`); 
-                                    continue; 
+                                if (!existing.empty) {
+                                    console.warn(`Skip duplicate: ${row.email}`);
+                                    continue;
                                 }
                             }
                             const newRef = doc(collection(db, colName));
@@ -827,23 +1237,23 @@ docData = {
                             countInsert++;
                         }
                     }
-                    
+
                     if (countInsert === 0 && countUpdate === 0) {
-                         alert("No valid records found to import. Check your column headers match the template.");
+                        alert("No valid records found to import. Check your column headers match the template.");
                     } else {
                         await batch.commit();
                         alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
                         refreshCurrentSection();
                     }
-                    
-                } catch (err) { 
-                    alert("Import Failed: " + err.message); 
-                    console.error(err); 
+
+                } catch (err) {
+                    alert("Import Failed: " + err.message);
+                    console.error(err);
                 }
             };
             reader.readAsArrayBuffer(file);
         };
-        
+
 
         function resolveNamesToIds(inputString, list) {
             if (!inputString) return [];
@@ -856,6 +1266,7 @@ docData = {
             });
             return ids;
         }
+
         function resolveNameToId(inputString, list) {
             if (!inputString) return null;
             const found = list.find(l => l.nameEn.toLowerCase() === String(inputString).toLowerCase() || l.nameAr === inputString);
@@ -864,58 +1275,81 @@ docData = {
 
         // --- CRUD ACTIONS ---
         window.resetPassword = async (email) => {
-            if(confirm(`Send reset link to ${email}?`)) {
-                try { await sendPasswordResetEmail(auth, email); alert("Email sent!"); }
-                catch(e) { alert(e.message); }
+            if (confirm(`Send reset link to ${email}?`)) {
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    alert("Email sent!");
+                } catch (e) {
+                    alert(e.message);
+                }
             }
         };
         window.deleteTeacher = async (uid) => {
-            if(!confirm("Delete teacher?")) return;
+            if (!confirm("Delete teacher?")) return;
             await deleteDoc(doc(db, "users", uid));
             loadTeachers();
         };
         window.deleteStudent = async (id) => {
-            if(!confirm("Delete student?")) return;
+            if (!confirm("Delete student?")) return;
             await deleteDoc(doc(db, "students", id));
             loadStudents();
         };
         window.deleteItem = async (col, id) => {
-            if(confirm("Delete?")) {
+            if (confirm("Delete?")) {
                 await deleteDoc(doc(db, col, id));
-                if(col==='grades') loadGrades();
-                if(col==='subjects') loadSubjects();
-                if(col==='sessions') loadSessions();
+                if (col === 'grades') loadGrades();
+                if (col === 'subjects') loadSubjects();
+                if (col === 'sessions') loadSessions();
             }
         };
 
         // --- MODAL ---
-        window.openModal = (type, id=null, data=null) => {
+              window.openModal = (type, id = null, data = null) => {
             const m = document.getElementById('generic-modal');
             const f = document.getElementById('modal-fields');
             document.getElementById('modal-type').value = type;
             document.getElementById('modal-id').value = id || '';
-            document.getElementById('modal-title').textContent = (id?'Edit ':'Add ') + type;
-            
+            document.getElementById('modal-title').textContent = (id ? 'Edit ' : 'Add ') + type;
+
             let html = '';
-            if(type === 'grade' || type === 'subject') {
-                html = `<div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn||''}"></div>
-                        <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr||''}"></div>
-                        <div class="form-group"><label>Code</label><input name="code" required value="${data?.code||''}"></div>
-                        <div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>`;
-            } else if (type === 'teacher') {
-                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
+            
+            // GRADES & SUBJECTS
+            if (type === 'grade' || type === 'subject') {
+                html = `<div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
+                        <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
+                        <div class="form-group"><label>Code</label><input name="code" required value="${data?.code || ''}"></div>
+                        <div class="form-group"><label>Status</label><select name="status">
+                            <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select></div>`;
+            } 
+            // TEACHERS
+            else if (type === 'teacher') {
+                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
                         <div class="form-group"><label>Name</label><input name="name" required value="${getDisplayName(data)}"></div>
-<div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>
-} else if (type === 'student') {
-                const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
-                        <div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div>
+                        <div class="form-group"><label>Status</label><select name="status">
+                            <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select></div>`;
+            } 
+            // STUDENTS
+            else if (type === 'student') {
+                // Generate Grade Options safely
+                const opts = allGrades.map(g => `<option value="${g.id}" ${data && data.gradeLevel === g.id ? 'selected' : ''}>${g.nameEn}</option>`).join('');
+                
+                html = `<div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
+                        <div class="form-group"><label>Name</label><input name="name" required value="${data?.name || ''}"></div>
                         <div class="form-group"><label>Grade</label><select name="gradeLevel">${opts}</select></div>
-<div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>
-}
+                        <div class="form-group"><label>Status</label><select name="status">
+                            <option value="Active" ${data && data.status === 'Active' ? 'selected' : ''}>Active</option>
+                            <option value="Inactive" ${data && data.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        </select></div>`;
+            }
+
             f.innerHTML = html;
             m.classList.add('active');
         };
+        
         window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
         window.editItem = (t, id, str) => openModal(t, id, JSON.parse(str));
 
@@ -967,4 +1401,5 @@ docData = {
         };
     </script>
 </body>
+
 </html>
