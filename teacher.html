@@ -2053,51 +2053,64 @@
         }
 
         // UPDATED: Fixed My Profile Data to resolve IDs to Names
-        async function populateTeacherProfile() {
-            const assignedGradeIds = currentTeacher.assignedGrades || [];
-            const assignedSubjectIds = currentTeacher.assignedSubjects || [];
+async function populateTeacherProfile() {
+    const assignedGradeIds = currentTeacher.assignedGrades || [];
+    const assignedSubjectIds = currentTeacher.assignedSubjects || [];
 
-            let gradeNames = [];
-            let subjectNames = [];
+    let gradeNames = [];
+    let subjectNames = [];
 
-            // Resolve Grade Names
-            if (assignedGradeIds.length > 0) {
-                for (const gradeId of assignedGradeIds) {
-                    try {
-                        const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
-                        if (gradeDoc.exists()) {
-                            gradeNames.push(gradeDoc.data().nameEn);
-                        }
-                    } catch (e) {
-                        console.warn(`Could not fetch grade ${gradeId}`, e);
-                    }
+    // Resolve Grade Names
+    if (assignedGradeIds.length > 0) {
+        for (const gradeId of assignedGradeIds) {
+            try {
+                const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
+                if (gradeDoc.exists()) {
+                    gradeNames.push(gradeDoc.data().nameEn);
                 }
+            } catch (e) {
+                console.warn(`Could not fetch grade ${gradeId}`, e);
             }
-
-            // Resolve Subject Names
-            if (assignedSubjectIds.length > 0) {
-                for (const subjectId of assignedSubjectIds) {
-                    try {
-                        const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
-                        if (subjectDoc.exists()) {
-                            subjectNames.push(subjectDoc.data().nameEn);
-                        }
-                    } catch (e) {
-                        console.warn(`Could not fetch subject ${subjectId}`, e);
-                    }
-                }
-            }
-
-            const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
-            const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
-
-            document.getElementById('teacherProfileInfo').innerHTML = `
-    <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(currentTeacher.name || '')}</span></div>
-    <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
-    <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
-    <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
-  `;
         }
+    }
+
+    // Resolve Subject Names
+    if (assignedSubjectIds.length > 0) {
+        for (const subjectId of assignedSubjectIds) {
+            try {
+                const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
+                if (subjectDoc.exists()) {
+                    subjectNames.push(subjectDoc.data().nameEn);
+                }
+            } catch (e) {
+                console.warn(`Could not fetch subject ${subjectId}`, e);
+            }
+        }
+    }
+
+    const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
+    const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
+
+    // Get the teacher's name from the teachers collection if available
+    let teacherDisplayName = currentTeacher.name || '';
+    if (!teacherDisplayName && currentTeacher.firestoreId) {
+        try {
+            const teacherDoc = await getDoc(doc(db, 'teachers', currentTeacher.firestoreId));
+            if (teacherDoc.exists()) {
+                teacherDisplayName = teacherDoc.data().name || teacherDoc.data().displayName || currentTeacher.email || '';
+            }
+        } catch (err) {
+            console.error('Error fetching teacher details:', err);
+        }
+    }
+
+    document.getElementById('teacherProfileInfo').innerHTML = `
+        <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
+        <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
+        <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
+        <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
+    `;
+}            
 
         async function loadSessions() {
             console.log('Loading sessions for teacher:', currentTeacher);
@@ -2276,17 +2289,36 @@ async function loadActiveSession() {
             return '';
         };
 
+        // Fetch teacher name from teachers collection using ownerTeacherId
+        let teacherName = '';
+        if (config.ownerTeacherId) {
+            try {
+                const teacherDoc = await getDoc(doc(db, 'teachers', config.ownerTeacherId));
+                if (teacherDoc.exists()) {
+                    teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
+                    console.log('📚 Found teacher name:', teacherName);
+                } else {
+                    console.warn('⚠️ Teacher document not found for ID:', config.ownerTeacherId);
+                    teacherName = currentTeacher.name || 'Teacher';
+                }
+            } catch (err) {
+                console.error('❌ Error fetching teacher:', err);
+                teacherName = currentTeacher.name || 'Teacher';
+            }
+        } else {
+            teacherName = currentTeacher.name || 'Teacher';
+        }
+
         // Populate form fields
         document.getElementById('cfTitle').value = config.title || '';
         document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
         document.getElementById('cfClass').value = config.className || config.class || '';
         document.getElementById('cfSubject').value = config.subject || '';
         
-        // Fix: Use currentTeacher.name properly
-        const teacherName = currentTeacher.name || currentTeacher.displayName || 'Teacher';
+        // Set the teacher name (now properly fetched)
         document.getElementById('cfTeacher').value = teacherName;
         
-        // Fix: Format dates and times correctly
+        // Format dates and times
         document.getElementById('cfDate').value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
         document.getElementById('cfStart').value = formatTime(config.startTime);
         document.getElementById('cfEnd').value = formatTime(config.endTime);
@@ -2309,7 +2341,9 @@ async function loadActiveSession() {
         console.error('❌ Error loading session:', error);
         showToast('Error loading session: ' + error.message, true);
     }
-}        
+}
+        
+        
         async function loadQuestions() {
             if (!activeSessionId) return;
 
@@ -2792,29 +2826,51 @@ window.saveSessionConfig = async function() {
         return;
     }
 
+    // Fetch the current teacher name from the teachers collection
+    let teacherName = currentTeacher.name || '';
+    
+    // If we have ownerTeacherId but name is missing, fetch it
+    if (currentSessionData && currentSessionData.ownerTeacherId && !teacherName) {
+        try {
+            const teacherDoc = await getDoc(doc(db, 'teachers', currentSessionData.ownerTeacherId));
+            if (teacherDoc.exists()) {
+                teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
+            }
+        } catch (err) {
+            console.error('Error fetching teacher name:', err);
+        }
+    }
+
     const gradeValue = document.getElementById('cfGrade').value;
     const subjectValue = document.getElementById('cfSubject').value;
 
     const config = {
         title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
         grade: gradeValue,
-        gradeLevel: gradeValue,          // sync both field names
+        gradeLevel: gradeValue,
         className: document.getElementById('cfClass').value.trim(),
         subject: subjectValue,
-        teacher: currentTeacher.name || '',
+        teacher: teacherName, // Save the fetched teacher name
+        teacherName: teacherName, // Also save as teacherName for compatibility
         date: document.getElementById('cfDate').value,
         startTime: document.getElementById('cfStart').value,
         endTime: document.getElementById('cfEnd').value,
         instructions: document.getElementById('cfInstructions').value.trim(),
         active: !!(document.getElementById('sessionToggle').classList.contains('on')),
-        isActive: !!(document.getElementById('sessionToggle').classList.contains('on')), // sync both
-        updatedAt: serverTimestamp()
+        isActive: !!(document.getElementById('sessionToggle').classList.contains('on')),
+        updatedAt: serverTimestamp(),
+        updatedBy: currentTeacher.uid
     };
 
     await updateDoc(doc(db, 'sessions', activeSessionId), config);
     updateSessionChip(config);
     showToast('Configuration saved!');
+    
+    // Reload to refresh the teacher name display
+    await loadActiveSession();
 };
+
+    
         // window.toggleSession = async function() {
         //   if (!activeSessionId) return;
         //   
