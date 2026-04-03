@@ -683,18 +683,32 @@
             XLSX.writeFile(wb, `${type}_update_data.xlsx`);
         };
 
-        window.processImport = async (type, input) => {
+          window.processImport = async (type, input) => {
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const workbook = XLSX.read(e.target.result, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
+                    
+                    // FIX: Find the first sheet that actually contains data
+                    let sheetName = workbook.SheetNames[0];
+                    for (let name of workbook.SheetNames) {
+                        const worksheet = workbook.Sheets[name];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        if (jsonData && jsonData.length > 0) {
+                            sheetName = name;
+                            break;
+                        }
+                    }
+
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (jsonData.length === 0) { alert("File empty"); return; }
+                    if (jsonData.length === 0) { 
+                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows."); 
+                        return; 
+                    }
 
                     const batch = writeBatch(db);
                     let countInsert = 0, countUpdate = 0;
@@ -704,6 +718,9 @@
                     const adminUid = currentUser.uid;
 
                     for (const row of jsonData) {
+                        // Skip empty rows often created by Excel formatting
+                        if (!row.nameEn && !row.code && !row.email && !row.title) continue;
+
                         if ((type === 'teachers' || type === 'students') && !row.email) continue;
 
                         let docData = {};
@@ -776,7 +793,7 @@
                                 // Match by Email
                                 q = query(collection(db, colName), where("email", "==", row.email));
                             } else {
-                                q = null; // Sessions usually need explicit ID or create new
+                                q = null; 
                             }
 
                             if (q) {
@@ -789,18 +806,14 @@
 
                         if (targetId) {
                             // UPDATE
-                            // For Updates, we don't want to overwrite createdAt if it exists, 
-                            // but we ensure updatedBy is set.
                             batch.update(doc(db, colName, targetId), docData);
                             countUpdate++;
                         } else {
                             // CREATE
-                            // Add creation audit fields
                             docData.createdAt = now;
                             docData.createdBy = adminUid;
 
                             if (type === 'teachers' || type === 'students') {
-                                // Double check duplicate just in case
                                 const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
                                 if (!existing.empty) { 
                                     console.warn(`Skip duplicate: ${row.email}`); 
@@ -813,11 +826,13 @@
                         }
                     }
                     
-                    await batch.commit();
-                    alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
-                    
-                    // Refresh View instead of Reload
-                    refreshCurrentSection();
+                    if (countInsert === 0 && countUpdate === 0) {
+                         alert("No valid records found to import. Check your column headers match the template.");
+                    } else {
+                        await batch.commit();
+                        alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
+                        refreshCurrentSection();
+                    }
                     
                 } catch (err) { 
                     alert("Import Failed: " + err.message); 
@@ -826,6 +841,7 @@
             };
             reader.readAsArrayBuffer(file);
         };
+        
 
         function resolveNamesToIds(inputString, list) {
             if (!inputString) return [];
