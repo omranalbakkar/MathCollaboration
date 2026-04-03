@@ -4,349 +4,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduBoard — Super Admin Portal | Enhanced UI/UX</title>
+    <title>EduBoard | Super Admin Portal - Modern Dashboard</title>
+    <!-- Bootstrap 5 + Icons + Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-        }
-
         :root {
-            --bg: #f0f4f8;
-            --surface: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --border: #e2e8f0;
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --radius-lg: 1rem;
-            --radius-md: 0.75rem;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+            --primary-gradient: linear-gradient(135deg, #3b82f6, #1e40af);
+            --sidebar-width: 280px;
         }
 
         body {
-            background: var(--bg);
-            color: var(--text-primary);
-            line-height: 1.5;
+            background: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto;
+            overflow-x: hidden;
         }
 
-        /* Login */
-        #login-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
+        /* Sidebar & Layout */
+        .wrapper {
             display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-box {
-            background: var(--surface);
-            padding: 2rem 2rem 2.5rem;
-            border-radius: var(--radius-lg);
             width: 100%;
-            max-width: 440px;
-            box-shadow: var(--shadow-lg);
-            text-align: center;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            animation: fadeUp 0.3s ease;
-        }
-
-        .login-icon {
-            font-size: 3rem;
-            color: var(--primary);
-            margin-bottom: 0.75rem;
-        }
-
-        /* App header & nav */
-        #app-container {
-            display: none;
             min-height: 100vh;
-            flex-direction: column;
         }
 
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
+        #sidebar {
+            width: var(--sidebar-width);
+            background: #0f172a;
+            color: #e2e8f0;
+            transition: all 0.3s;
+            position: fixed;
+            height: 100vh;
+            z-index: 999;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+
+        #sidebar .sidebar-header {
+            padding: 1.5rem 1.2rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        #sidebar ul.components {
+            padding: 1rem 0;
+        }
+
+        #sidebar ul li a {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            backdrop-filter: blur(4px);
+            gap: 12px;
+            color: #cbd5e1;
+            transition: 0.2s;
+            text-decoration: none;
         }
 
-        .brand {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), #1e40af);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
+        #sidebar ul li a i {
+            width: 24px;
+            font-size: 1.1rem;
         }
 
-        nav {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0 1.5rem;
-            overflow-x: auto;
-            scrollbar-width: thin;
+        #sidebar ul li a:hover,
+        #sidebar ul li.active a {
+            background: #1e293b;
+            color: white;
+            border-left: 3px solid #3b82f6;
         }
 
-        .nav-tabs {
-            display: flex;
-            gap: 0.25rem;
+        #content {
+            width: calc(100% - var(--sidebar-width));
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s;
         }
 
-        .nav-tab {
-            padding: 0.9rem 1.25rem;
-            background: transparent;
-            border: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            white-space: nowrap;
-        }
-
-        .nav-tab i {
-            font-size: 1rem;
-        }
-
-        .nav-tab:hover {
-            color: var(--primary);
-            background: #eff6ff;
-        }
-
-        .nav-tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: #eff6ff;
-        }
-
-        main {
-            flex: 1;
-            padding: 2rem;
-            max-width: 1440px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .section {
-            display: none;
-            animation: fadeIn 0.25s ease;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* Stats Cards with Icons */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+        .navbar-custom {
+            background: white;
+            padding: 0.75rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .stat-card {
-            background: var(--surface);
-            padding: 1.5rem;
-            border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            transition: all 0.2s;
+            border-radius: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
+            border: none;
+            background: white;
         }
 
         .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-md);
-            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-icon {
+        .card-icon {
             width: 48px;
             height: 48px;
             background: #eef2ff;
-            border-radius: 60px;
+            border-radius: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
-            color: var(--primary);
+            font-size: 1.5rem;
+            color: #3b82f6;
         }
 
-        .stat-info {
-            flex: 1;
-        }
-
-        .stat-val {
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .stat-val.green {
-            color: var(--success);
-        }
-
-        .stat-val.blue {
-            color: var(--primary);
-        }
-
-        .stat-val.purple {
-            color: #8b5cf6;
-        }
-
-        .stat-val.amber {
-            color: var(--warning);
-        }
-
-        .stat-val.orange {
-            color: #f97316;
-        }
-
-        /* Live cards */
-        .live-details-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-            gap: 1.5rem;
-            margin-top: 1rem;
-        }
-
-        .live-card {
-            background: var(--surface);
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
+        .table-responsive-custom {
+            border-radius: 1rem;
             overflow: hidden;
-            box-shadow: var(--shadow-sm);
+            background: white;
         }
 
-        .live-card-header {
-            padding: 1rem 1.5rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            color: white;
+        .btn-icon {
+            margin: 0 2px;
         }
 
-        .live-card-header.sessions {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-        }
-
-        .live-card-header.students {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        .live-list {
-            max-height: 380px;
-            overflow-y: auto;
-        }
-
-        .live-item {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .toast-container {
+            z-index: 1055;
         }
 
         .live-badge {
-            background: var(--success);
+            background: #10b981;
             color: white;
-            padding: 0.25rem 0.8rem;
+            padding: 0.2rem 0.6rem;
             border-radius: 30px;
             font-size: 0.7rem;
-            font-weight: 700;
-        }
-
-        /* Tables & Buttons */
-        .controls {
-            background: var(--surface);
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .search-box {
-            flex: 2;
-            min-width: 220px;
-            padding: 0.6rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 40px;
-            font-size: 0.9rem;
-        }
-
-        .table-container {
-            background: var(--surface);
-            border-radius: var(--radius-md);
-            overflow-x: auto;
-            box-shadow: var(--shadow-sm);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f8fafc;
-            padding: 1rem 1rem;
             font-weight: 600;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid var(--border);
         }
 
         .status-badge {
             padding: 0.2rem 0.7rem;
             border-radius: 30px;
             font-size: 0.7rem;
-            font-weight: 700;
+            font-weight: 600;
         }
 
         .status-active {
@@ -359,358 +149,320 @@
             color: #991b1b;
         }
 
-        .action-btns {
-            display: flex;
-            gap: 0.5rem;
+        @media (max-width: 768px) {
+            #sidebar {
+                margin-left: -280px;
+            }
+
+            #content {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            #sidebar.active {
+                margin-left: 0;
+            }
         }
 
-        .icon-btn {
+        footer {
             background: white;
-            border: 1px solid var(--border);
-            padding: 0.4rem 0.65rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            color: var(--text-secondary);
+            border-top: 1px solid #e2e8f0;
         }
 
-        .icon-btn:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .icon-btn.delete:hover {
-            background: var(--danger);
-        }
-
-        .icon-btn.reset:hover {
-            background: var(--warning);
-        }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.6rem 1.2rem;
-            border-radius: 40px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-sm {
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-        }
-
-        .btn-secondary {
-            background: white;
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(3px);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 1.5rem;
-            max-width: 600px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 1.5rem 2rem;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(255, 255, 255, 0.85);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e2e8f0;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .info-banner {
-            background: #eef2ff;
-            border-radius: 60px;
-            padding: 0.5rem 1rem;
-            font-size: 0.8rem;
-            color: #1e40af;
-            margin-bottom: 1rem;
-        }
-
-        select[multiple] {
-            border-radius: 12px;
-            padding: 0.5rem;
+        .login-wrapper {
+            min-height: 100vh;
+            background: linear-gradient(130deg, #2563eb, #1e40af);
         }
     </style>
 </head>
 
 <body>
-    <div id="loading-overlay" class="loading-overlay">
-        <div class="spinner"></div>
-    </div>
-    <div id="login-overlay">
-        <div class="login-box">
-            <div class="login-icon"><i class="fas fa-shield-alt"></i></div>
-            <h2 style="color:var(--primary);">Super Admin</h2>
-            <p style="margin-bottom: 1.5rem; color:var(--text-secondary);">EduBoard Intelligence Hub</p>
-            <div class="form-group"><label><i class="fas fa-envelope"></i> Email</label><input type="email" id="admin-email" placeholder="admin@eduboard.com"></div>
-            <div class="form-group"><label><i class="fas fa-lock"></i> Password</label><input type="password" id="admin-password" placeholder="••••••"></div>
-            <button class="btn" onclick="handleAdminLogin()"><i class="fas fa-sign-in-alt"></i> Access Portal</button>
+
+    <!-- LOGIN OVERLAY (initially visible) -->
+    <div id="loginOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(15,23,42,0.92); backdrop-filter: blur(10px); z-index: 9999;">
+        <div class="card shadow-lg border-0 rounded-4" style="width: 100%; max-width: 450px;">
+            <div class="card-body p-4 p-lg-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-graduation-cap fa-3x text-primary"></i>
+                    <h3 class="fw-bold mt-2">EduBoard Admin</h3>
+                    <p class="text-muted">Super Admin Portal</p>
+                </div>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="fas fa-envelope me-1"></i> Email</label>
+                        <input type="email" id="adminEmail" class="form-control form-control-lg" placeholder="admin@eduboard.com" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label"><i class="fas fa-lock me-1"></i> Password</label>
+                        <input type="password" id="adminPassword" class="form-control form-control-lg" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill"><i class="fas fa-sign-in-alt me-2"></i> Sign In</button>
+                </form>
+            </div>
         </div>
     </div>
 
-    <div id="app-container">
-        <header>
-            <div class="brand"><i class="fas fa-graduation-cap"></i> EduBoard Central</div>
-            <div style="display:flex; gap:1rem; align-items:center;"><span id="admin-user-display" style="font-weight:500;"></span><button class="btn btn-sm btn-secondary" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-        </header>
-        <nav>
-            <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showSection('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
-                <button class="nav-tab" onclick="showSection('grades')"><i class="fas fa-layer-group"></i> Grades</button>
-                <button class="nav-tab" onclick="showSection('subjects')"><i class="fas fa-book-open"></i> Subjects</button>
-                <button class="nav-tab" onclick="showSection('teachers')"><i class="fas fa-chalkboard-user"></i> Teachers</button>
-                <button class="nav-tab" onclick="showSection('students')"><i class="fas fa-user-graduate"></i> Students</button>
-                <button class="nav-tab" onclick="showSection('sessions')"><i class="fas fa-video"></i> Live Sessions</button>
-            </div>
-        </nav>
-        <main>
-            <div id="dashboard" class="section active">
-                <h2 style="display:flex; gap:0.5rem;"><i class="fas fa-tachometer-alt"></i> Overview</h2>
-                <div class="stats-grid">
-                    <div class="stat-card" onclick="showSection('grades')">
-                        <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val amber" id="dashGrades">—</div>
-                            <div class="stat-label">Grades</div>
+    <!-- MAIN APP (hidden until login) -->
+    <div id="appContainer" style="display: none;">
+        <div class="wrapper">
+            <!-- Sidebar -->
+            <nav id="sidebar">
+                <div class="sidebar-header d-flex align-items-center gap-2">
+                    <i class="fas fa-chalkboard-user fa-2x text-primary"></i>
+                    <h4 class="mb-0 fw-bold">EduBoard</h4>
+                </div>
+                <ul class="list-unstyled components">
+                    <li class="active" data-section="dashboard"><a href="#" onclick="switchSection('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li data-section="grades"><a href="#" onclick="switchSection('grades')"><i class="fas fa-layer-group"></i> Grades</a></li>
+                    <li data-section="subjects"><a href="#" onclick="switchSection('subjects')"><i class="fas fa-book-open"></i> Subjects</a></li>
+                    <li data-section="teachers"><a href="#" onclick="switchSection('teachers')"><i class="fas fa-chalkboard-user"></i> Teachers</a></li>
+                    <li data-section="students"><a href="#" onclick="switchSection('students')"><i class="fas fa-user-graduate"></i> Students</a></li>
+                    <li data-section="sessions"><a href="#" onclick="switchSection('sessions')"><i class="fas fa-video"></i> Live Sessions</a></li>
+                </ul>
+            </nav>
+
+            <!-- Page Content -->
+            <div id="content">
+                <nav class="navbar navbar-custom">
+                    <div class="container-fluid">
+                        <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarCollapse"><i class="fas fa-bars"></i></button>
+                        <div class="ms-auto d-flex align-items-center gap-3">
+                            <span id="adminUserBadge" class="text-secondary"><i class="fas fa-user-shield"></i> Admin</span>
+                            <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
                         </div>
                     </div>
-                    <div class="stat-card" onclick="showSection('subjects')">
-                        <div class="stat-icon"><i class="fas fa-book"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val blue" id="dashSubjects">—</div>
-                            <div class="stat-label">Subjects</div>
+                </nav>
+                <main class="p-3 p-md-4">
+                    <!-- Dashboard Section -->
+                    <div id="dashboardSection" class="section-content">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3><i class="fas fa-chart-line text-primary me-2"></i>Executive Dashboard</h3>
+                            <button class="btn btn-sm btn-outline-info" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Live Monitor</button>
+                        </div>
+                        <div class="row g-4" id="statsRow">
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="switchSection('grades')">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-warning" id="dashGrades">—</div><span>Grades</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-layer-group"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="switchSection('subjects')">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-primary" id="dashSubjects">—</div><span>Subjects</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-book"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="switchSection('teachers')">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-success" id="dashTeachers">—</div><span>Teachers</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-chalkboard-user"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="switchSection('students')">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-purple" id="dashStudents">—</div><span>Students</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-users"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="toggleLivePanel()">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-success" id="liveStudentCount">—</div><span>🟢 Live Students</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-wifi"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <div class="stat-card card p-3" onclick="toggleLivePanel()">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <div class="stat-val fw-bold fs-2 text-warning" id="liveSessionCount">—</div><span>⚡ Active Sessions</span>
+                                        </div>
+                                        <div class="card-icon"><i class="fas fa-play-circle"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="liveDetailsPanel" class="mt-4" style="display: none;">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm border-0">
+                                        <div class="card-header bg-warning text-white"><i class="fas fa-video me-2"></i> Active Sessions</div>
+                                        <div class="card-body p-0" id="liveSessionsList" style="max-height: 300px; overflow-y: auto;">
+                                            <div class="text-center p-4 text-muted">Loading...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card shadow-sm border-0">
+                                        <div class="card-header bg-success text-white"><i class="fas fa-user-check me-2"></i> Students Online</div>
+                                        <div class="card-body p-0" id="liveStudentsList" style="max-height: 300px; overflow-y: auto;">
+                                            <div class="text-center p-4 text-muted">No live data</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card" onclick="showSection('teachers')">
-                        <div class="stat-icon"><i class="fas fa-chalkboard-user"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val green" id="dashTeachers">—</div>
-                            <div class="stat-label">Teachers</div>
+
+                    <!-- Grades / Subjects / Teachers / Students / Sessions sections (simplified dynamic) -->
+                    <div id="gradesSection" class="section-content" style="display:none;">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h3><i class="fas fa-layer-group"></i> Grades</h3>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('grades')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button></div>
+                        </div>
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover align-middle" id="gradesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name (EN)</th>
+                                        <th>Name (AR)</th>
+                                        <th>Code</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="gradesTbody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="stat-card" onclick="showSection('students')">
-                        <div class="stat-icon"><i class="fas fa-users"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val purple" id="dashStudents">—</div>
-                            <div class="stat-label">Students</div>
+                    <div id="subjectsSection" class="section-content" style="display:none;">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h3><i class="fas fa-book-open"></i> Subjects</h3>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('subjects')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button></div>
+                        </div>
+                        <div class="table-responsive-custom">
+                            <table class="table table-hover" id="subjectsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name (EN)</th>
+                                        <th>Name (AR)</th>
+                                        <th>Code</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subjectsTbody"></tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="stat-card" onclick="toggleLiveDetails()">
-                        <div class="stat-icon"><i class="fas fa-wifi"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val green" id="cardActive">—</div>
-                            <div class="stat-label">🟢 Live Students</div>
+                    <div id="teachersSection" class="section-content" style="display:none;">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h3><i class="fas fa-chalkboard-user"></i> Teachers</h3>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('teachers')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button></div>
+                        </div>
+                        <div class="alert alert-info"><i class="fas fa-sync-alt"></i> Auto-sync with Firebase Auth & users collection.</div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="teachersTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Grades</th>
+                                        <th>Subjects</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teachersTbody"></tbody>
+                            </table>
                         </div>
                     </div>
-                    <div class="stat-card" onclick="toggleLiveDetails()">
-                        <div class="stat-icon"><i class="fas fa-play-circle"></i></div>
-                        <div class="stat-info">
-                            <div class="stat-val orange" id="cardSessions">—</div>
-                            <div class="stat-label">⚡ Active Sessions</div>
+                    <div id="studentsSection" class="section-content" style="display:none;">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h3><i class="fas fa-user-graduate"></i> Students</h3>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('students')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button></div>
+                        </div>
+                        <div class="alert alert-info"><i class="fas fa-sync-alt"></i> Auto-sync with Firebase Auth.</div>
+                        <div class="row mb-3">
+                            <div class="col-md-4"><select id="gradeFilter" class="form-select" onchange="loadStudentsData()">
+                                    <option value="">All Grades</option>
+                                </select></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="studentsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Grade</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsTbody"></tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
-                <div id="live-details" style="display:none;">
-                    <div class="live-details-container">
-                        <div class="live-card">
-                            <div class="live-card-header sessions"><i class="fas fa-video"></i> Active Sessions</div>
-                            <div class="live-list" id="live-sessions-list"></div>
+                    <div id="sessionsSection" class="section-content" style="display:none;">
+                        <div class="d-flex justify-content-between mb-3">
+                            <h3><i class="fas fa-video"></i> Sessions</h3>
+                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportTableData('sessions')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus-circle"></i> Create Session</button></div>
                         </div>
-                        <div class="live-card">
-                            <div class="live-card-header students"><i class="fas fa-user-check"></i> Students Online</div>
-                            <div class="live-list" id="live-students-list"></div>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="sessionsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Teacher</th>
+                                        <th>Grade</th>
+                                        <th>Subject</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessionsTbody"></tbody>
+                            </table>
                         </div>
                     </div>
-                </div>
+                </main>
+                <footer class="text-center text-muted py-3 small">© 2025 EduBoard — Secure Admin Panel</footer>
             </div>
-            <div id="grades" class="section">
-                <h2><i class="fas fa-layer-group"></i> Grade Management <div style="display:flex;gap:0.5rem;"><button class="btn btn-sm btn-secondary" onclick="exportCurrentData('grades')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add Grade</button></div>
-                </h2>
-                <div class="controls"><input class="search-box" placeholder="🔍 Search grade..." onkeyup="filterTable('grades-table',this.value)"></div>
-                <div class="table-container">
-                    <table id="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Name (EN)</th>
-                                <th>Name (AR)</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="subjects" class="section">
-                <h2><i class="fas fa-book-open"></i> Subject Management <div><button class="btn btn-sm btn-secondary" onclick="exportCurrentData('subjects')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add Subject</button></div>
-                </h2>
-                <div class="controls"><input class="search-box" placeholder="🔍 Search subject..." onkeyup="filterTable('subjects-table',this.value)"></div>
-                <div class="table-container">
-                    <table id="subjects-table">
-                        <thead>
-                            <tr>
-                                <th>Name (EN)</th>
-                                <th>Name (AR)</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="teachers" class="section">
-                <h2><i class="fas fa-chalkboard-user"></i> Teacher Registry <div><button class="btn btn-sm btn-secondary" onclick="exportCurrentData('teachers')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button></div>
-                </h2>
-                <div class="info-banner"><i class="fas fa-sync-alt"></i> Auto‑sync: Firebase Auth + Firestore “users” collection.</div>
-                <div class="controls"><input class="search-box" placeholder="🔍 Search teacher..." onkeyup="filterTable('teachers-table',this.value)"></div>
-                <div class="table-container">
-                    <table id="teachers-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Grades</th>
-                                <th>Subjects</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="students" class="section">
-                <h2><i class="fas fa-user-graduate"></i> Student Body <div><button class="btn btn-sm btn-secondary" onclick="exportCurrentData('students')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-user-plus"></i> Add Student</button></div>
-                </h2>
-                <div class="info-banner"><i class="fas fa-sync-alt"></i> Auto‑sync: Firebase Auth + users collection.</div>
-                <div class="controls"><input class="search-box" placeholder="🔍 Search student..." onkeyup="filterTable('students-table',this.value)"><select id="student-grade-filter" class="filter-select" onchange="loadStudents()">
-                        <option value="">All Grades</option>
-                    </select></div>
-                <div class="table-container">
-                    <table id="students-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Grade</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="sessions" class="section">
-                <h2><i class="fas fa-video"></i> Session Library <div><button class="btn btn-sm btn-secondary" onclick="exportCurrentData('sessions')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-success" onclick="openModal('session')"><i class="fas fa-plus-circle"></i> Create Session</button></div>
-                </h2>
-                <div class="controls"><input class="search-box" placeholder="🔍 Search session..." onkeyup="filterTable('sessions-table',this.value)"></div>
-                <div class="table-container">
-                    <table id="sessions-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Teacher</th>
-                                <th>Grade</th>
-                                <th>Subject</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
-    <div id="generic-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-title">Add Item</h3><button class="close-modal" onclick="closeModal()">×</button>
-            </div>
-            <form id="modal-form" onsubmit="handleFormSubmit(event)"><input type="hidden" id="modal-type"><input type="hidden" id="modal-id">
-                <div id="modal-fields"></div>
-                <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;"><button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button><button type="submit" class="btn">Save changes</button></div>
-            </form>
         </div>
     </div>
 
+    <!-- Global Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <!-- Modal Form (dynamic) -->
+    <div class="modal fade" id="universalModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Add Item</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dynamicForm"></form>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="modalSaveBtn">Save changes</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
         import {
             initializeApp
@@ -759,233 +511,195 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
-        let currentUser = null,
-            allGrades = [],
-            allSubjects = [],
-            allTeachers = [],
-            currentSection = 'dashboard',
-            liveDataCache = {};
-        let adminTempEmail = null,
-            adminTempPassword = null;
 
-        function showLoading(show) {
-            document.getElementById('loading-overlay').classList.toggle('active', show);
+        let currentAdmin = null;
+        let adminCreds = {
+            email: '',
+            password: ''
+        };
+        let allGrades = [],
+            allSubjects = [],
+            allTeachers = [];
+        let liveSessionsData = {};
+
+        function showToast(msg, type = 'success') {
+            const toastHtml = `<div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 show" role="alert"><div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+            document.querySelector('.toast-container').innerHTML += toastHtml;
+            setTimeout(() => document.querySelector('.toast')?.remove(), 3000);
         }
-        window.handleAdminLogin = async () => {
-            const email = document.getElementById('admin-email').value,
-                pwd = document.getElementById('admin-password').value;
-            showLoading(true);
+
+        // Login
+        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('adminEmail').value,
+                pwd = document.getElementById('adminPassword').value;
             try {
                 await signInWithEmailAndPassword(auth, email, pwd);
-                adminTempEmail = email;
-                adminTempPassword = pwd;
-            } catch (e) {
-                alert("Login Failed: " + e.message);
-                showLoading(false);
+                adminCreds = {
+                    email,
+                    password: pwd
+                };
+            } catch (err) {
+                showToast("Login failed: " + err.message, 'danger');
             }
-        };
+        });
+
         window.handleLogout = async () => {
-            try {
-                await signOut(auth);
-                adminTempEmail = adminTempPassword = null;
-            } catch (e) {
-                alert(e.message);
-            }
+            await signOut(auth);
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('appContainer').style.display = 'none';
+            adminCreds = {
+                email: '',
+                password: ''
+            };
         };
 
         onAuthStateChanged(auth, async (user) => {
-            showLoading(true);
             if (user) {
-                const docSnap = await getDoc(doc(db, "users", user.uid));
-                if (!docSnap.exists() || docSnap.data().role !== 'superadmin') {
-                    alert("No admin rights");
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (!userDoc.exists() || userDoc.data().role !== 'superadmin') {
                     await signOut(auth);
-                    showLoading(false);
+                    showToast("No admin privileges", 'danger');
                     return;
                 }
-                currentUser = user;
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                document.getElementById('admin-user-display').textContent = user.email;
-                await initDashboard();
+                currentAdmin = user;
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                document.getElementById('adminUserBadge').innerHTML = `<i class="fas fa-user-shield"></i> ${user.email}`;
+                await loadCoreData();
+                initLiveMonitor();
+                switchSection('dashboard');
             } else {
-                currentUser = null;
-                document.getElementById('login-overlay').style.display = 'flex';
-                document.getElementById('app-container').style.display = 'none';
+                currentAdmin = null;
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('appContainer').style.display = 'none';
             }
-            showLoading(false);
         });
 
-        async function initDashboard() {
-            if (!currentUser) return;
-            const [g, s, t, st] = await Promise.all([getDocs(collection(db, "grades")), getDocs(collection(db, "subjects")), getDocs(collection(db, "teachers")), getDocs(collection(db, "students"))]);
-            document.getElementById('dashGrades').textContent = g.size;
-            document.getElementById('dashSubjects').textContent = s.size;
-            document.getElementById('dashTeachers').textContent = t.size;
-            document.getElementById('dashStudents').textContent = st.size;
-            allGrades = g.docs.map(d => ({
+        async function loadCoreData() {
+            const [gradesSnap, subjectsSnap, teachersSnap] = await Promise.all([getDocs(collection(db, "grades")), getDocs(collection(db, "subjects")), getDocs(collection(db, "teachers"))]);
+            allGrades = gradesSnap.docs.map(d => ({
                 id: d.id,
                 ...d.data()
             }));
-            allSubjects = s.docs.map(d => ({
+            allSubjects = subjectsSnap.docs.map(d => ({
                 id: d.id,
                 ...d.data()
             }));
+            allTeachers = teachersSnap.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            document.getElementById('dashGrades').innerText = allGrades.length;
+            document.getElementById('dashSubjects').innerText = allSubjects.length;
+            document.getElementById('dashTeachers').innerText = allTeachers.length;
+            const studentsSnap = await getDocs(collection(db, "students"));
+            document.getElementById('dashStudents').innerText = studentsSnap.size;
             populateGradeFilter();
-            onValue(ref(rtdb, 'liveSessions'), (snap) => {
-                const data = snap.val();
-                liveDataCache.sessions = data;
-                if (!data) {
-                    document.getElementById('cardSessions').textContent = "0";
-                    document.getElementById('cardActive').textContent = "0";
-                    updateLiveDetails();
-                    return;
-                }
-                let sCount = 0,
-                    stCount = 0;
-                Object.values(data).forEach(s => {
-                    sCount++;
-                    if (s.students) stCount += Object.keys(s.students).length;
-                });
-                document.getElementById('cardSessions').textContent = sCount;
-                document.getElementById('cardActive').textContent = stCount;
-                if (document.getElementById('live-details').style.display === 'block') updateLiveDetails();
-            });
+            loadGradesTable();
+            loadSubjectsTable();
+            loadTeachersTable();
+            loadStudentsData();
+            loadSessionsTable();
         }
-
-        function updateLiveDetails() {
-            const sList = document.getElementById('live-sessions-list'),
-                stuList = document.getElementById('live-students-list');
-            if (!liveDataCache?.sessions) {
-                sList.innerHTML = '<div class="empty-state"><i class="fas fa-video-slash"></i><p>No active sessions</p></div>';
-                stuList.innerHTML = '<div class="empty-state"><i class="fas fa-user-slash"></i><p>No students online</p></div>';
-                return;
-            }
-            const sessions = Object.entries(liveDataCache.sessions || {});
-            sList.innerHTML = sessions.length ? sessions.map(([id, s]) => `<div class="live-item"><div><div class="live-item-title">${s.title||'Untitled'}</div><div class="live-item-sub">Teacher: ${s.teacherName||s.ownerTeacherId?.slice(0,8)}</div></div><span class="live-badge">${s.students?Object.keys(s.students).length:0}</span></div>`).join('') : '<div class="empty-state">No active sessions</div>';
-            let online = [];
-            sessions.forEach(([, s]) => {
-                if (s.students) Object.values(s.students).forEach(st => online.push(st));
-            });
-            stuList.innerHTML = online.length ? online.map(st => `<div class="live-item"><div><div class="live-item-title">${st.name||st.displayName||'Learner'}</div><div class="live-item-sub">Session: ${st.sessionTitle||'live'}</div></div><span class="live-badge">Online</span></div>`).join('') : '<div class="empty-state">No students online</div>';
-        }
-
-        window.showSection = (id) => {
-            currentSection = id;
-            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            const map = {
-                dashboard: 0,
-                grades: 1,
-                subjects: 2,
-                teachers: 3,
-                students: 4,
-                sessions: 5
-            };
-            document.querySelectorAll('.nav-tab').forEach((el, i) => el.classList.toggle('active', i === map[id]));
-            if (id === 'grades') loadGrades();
-            if (id === 'subjects') loadSubjects();
-            if (id === 'teachers') loadTeachers();
-            if (id === 'students') loadStudents();
-            if (id === 'sessions') loadSessions();
-        };
-        window.refreshCurrentSection = () => {
-            if (currentSection === 'grades') loadGrades();
-            else if (currentSection === 'subjects') loadSubjects();
-            else if (currentSection === 'teachers') loadTeachers();
-            else if (currentSection === 'students') loadStudents();
-            else if (currentSection === 'sessions') loadSessions();
-            else initDashboard();
-        };
-        window.toggleLiveDetails = () => {
-            const d = document.getElementById('live-details');
-            d.style.display = d.style.display === 'none' ? 'block' : 'none';
-            if (d.style.display === 'block') updateLiveDetails();
-        };
 
         function populateGradeFilter() {
-            const sel = document.getElementById('student-grade-filter');
-            if (!sel) return;
-            sel.innerHTML = '<option value="">All Grades</option>' + allGrades.map(g => `<option value="${g.id}">${g.nameEn}</option>`).join('');
+            const sel = document.getElementById('gradeFilter');
+            if (sel) sel.innerHTML = '<option value="">All Grades</option>' + allGrades.map(g => `<option value="${g.id}">${g.nameEn}</option>`).join('');
         }
 
-        async function loadGrades() {
-            const tbody = document.querySelector('#grades-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        async function loadGradesTable() {
+            const tbody = document.getElementById('gradesTbody');
+            tbody.innerHTML = '';
             const snap = await getDocs(collection(db, "grades"));
-            tbody.innerHTML = '';
-            snap.forEach(d => {
-                const data = d.data();
-                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="action-btns"><button class="icon-btn" onclick='editItem("grade","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="icon-btn delete" onclick="deleteItem('grades','${d.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            snap.forEach(docSnap => {
+                const d = docSnap.data();
+                tbody.innerHTML += `<tr><td>${d.nameEn||''}</td><td>${d.nameAr||''}</td><td>${d.code||''}</td><td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td><td class="text-center"><button class="btn btn-sm btn-outline-secondary me-1" onclick='editItem("grade","${docSnap.id}",${JSON.stringify(d).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick='deleteItem("grades","${docSnap.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5">No grades found</td></tr>';
+            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No grades</td></tr>';
         }
-        async function loadSubjects() {
-            const tbody = document.querySelector('#subjects-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        async function loadSubjectsTable() {
+            const tbody = document.getElementById('subjectsTbody');
+            tbody.innerHTML = '';
             const snap = await getDocs(collection(db, "subjects"));
-            tbody.innerHTML = '';
             snap.forEach(d => {
                 const data = d.data();
-                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="action-btns"><button class="icon-btn" onclick='editItem("subject","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="icon-btn delete" onclick="deleteItem('subjects','${d.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("subject","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteItem("subjects","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5">No subjects found</td></tr>';
         }
-        async function loadTeachers() {
-            const tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "teachers"));
-            allTeachers = [];
+        async function loadTeachersTable() {
+            const tbody = document.getElementById('teachersTbody');
             tbody.innerHTML = '';
+            const snap = await getDocs(collection(db, "teachers"));
             snap.forEach(d => {
                 const data = d.data();
-                allTeachers.push({
-                    id: d.id,
-                    ...data
-                });
                 const gNames = data.assignedGrades?.map(id => allGrades.find(g => g.id === id)?.nameEn || id).join(', ') || 'None';
                 const sNames = data.assignedSubjects?.map(id => allSubjects.find(s => s.id === id)?.nameEn || id).join(', ') || 'None';
-                tbody.innerHTML += `<tr><td>${data.name||'Unnamed'}</td><td>${data.email||''}</td><td>${gNames}</td><td>${sNames}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="action-btns"><button class="icon-btn" onclick='editItem("teacher","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="icon-btn reset" onclick="resetPassword('${data.email}')"><i class="fas fa-key"></i></button><button class="icon-btn delete" onclick="deleteTeacherRecord('${d.id}','${data.uid||''}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${data.name||'Unnamed'}</td><td>${data.email}</td><td>${gNames}</td><td>${sNames}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("teacher","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-warning" onclick='resetUserPassword("${data.email}")'><i class="fas fa-key"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteTeacherFull("${d.id}","${data.uid||''}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="6">No teachers found</td></tr>';
         }
-        window.loadStudents = async () => {
-            const filter = document.getElementById('student-grade-filter').value;
-            const tbody = document.querySelector('#students-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "students"));
+        window.loadStudentsData = async () => {
+            const filter = document.getElementById('gradeFilter')?.value || '';
+            const tbody = document.getElementById('studentsTbody');
             tbody.innerHTML = '';
+            const snap = await getDocs(collection(db, "students"));
             snap.forEach(d => {
                 const data = d.data();
                 if (filter && data.gradeLevel !== filter) return;
                 const gradeName = allGrades.find(g => g.id === data.gradeLevel)?.nameEn || data.gradeLevel || '-';
-                tbody.innerHTML += `<tr><td>${data.name||''}</td><td>${data.email||''}</td><td>${gradeName}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="action-btns"><button class="icon-btn" onclick='editItem("student","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="icon-btn reset" onclick="resetPassword('${data.email}')"><i class="fas fa-key"></i></button><button class="icon-btn delete" onclick="deleteStudentRecord('${d.id}','${data.uid||''}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                tbody.innerHTML += `<tr><td>${data.name||''}</td><td>${data.email||''}</td><td>${gradeName}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("student","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-warning" onclick='resetUserPassword("${data.email}")'><i class="fas fa-key"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteStudentFull("${d.id}","${data.uid||''}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5">No students found</td></tr>';
+            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No students</td></tr>';
         };
-        async function loadSessions() {
-            const tbody = document.querySelector('#sessions-table tbody');
-            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
-            const snap = await getDocs(collection(db, "sessions"));
+        async function loadSessionsTable() {
+            const tbody = document.getElementById('sessionsTbody');
             tbody.innerHTML = '';
+            const snap = await getDocs(collection(db, "sessions"));
             snap.forEach(d => {
                 const data = d.data();
                 const date = data.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toLocaleDateString() : '-';
                 const teacher = allTeachers.find(t => t.id === data.ownerTeacherId);
-                const teacherName = teacher ? teacher.name : data.ownerTeacherId?.slice(0, 8) || '?';
-                tbody.innerHTML += `<tr><td>${data.title||''}</td><td>${teacherName}</td><td>${data.gradeLevel||''}</td><td>${data.subject||''}</td><td>${date}</td><td><span class="status-badge ${data.isActive?'status-active':'status-inactive'}">${data.isActive?'Active':'Closed'}</span></td><td class="action-btns"><button class="icon-btn" onclick='editItem("session","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="icon-btn delete" onclick="deleteItem('sessions','${d.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+                const teacherName = teacher ? teacher.name : (data.ownerTeacherId?.slice(0, 8) || '?');
+                tbody.innerHTML += `<tr><td>${data.title||''}</td><td>${teacherName}</td><td>${data.gradeLevel||''}</td><td>${data.subject||''}</td><td>${date}</td><td><span class="badge ${data.isActive?'bg-success':'bg-secondary'}">${data.isActive?'Active':'Closed'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("session","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteItem("sessions","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="7">No sessions found</td></tr>';
         }
 
-        async function syncToUsers(uid, data, role) {
-            if (!uid) return;
-            await setDoc(doc(db, "users", uid), {
+        // fix create user record with re-auth
+        async function createUserRecordWithReauth(collectionName, role, data, password) {
+            if (!currentAdmin) throw new Error("No admin");
+            let newAuthUser = null;
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, data.email, password);
+                newAuthUser = cred.user;
+                await updateProfile(newAuthUser, {
+                    displayName: data.name
+                });
+            } catch (e) {
+                console.warn(e);
+            }
+            const uid = newAuthUser ? newAuthUser.uid : null;
+            const docData = {
+                ...data,
                 uid,
+                createdAt: serverTimestamp(),
+                createdBy: currentAdmin.uid
+            };
+            let refDoc;
+            if (uid) {
+                refDoc = doc(db, collectionName, uid);
+                await setDoc(refDoc, docData);
+            } else {
+                refDoc = await addDoc(collection(db, collectionName), docData);
+                await updateDoc(refDoc, {
+                    uid: refDoc.id
+                });
+            }
+            await setDoc(doc(db, "users", uid || refDoc.id), {
+                uid: uid || refDoc.id,
                 email: data.email,
-                name: data.name || '',
+                name: data.name,
                 role,
-                status: data.status || 'Active',
+                status: data.status,
                 assignedGrades: data.assignedGrades || [],
                 assignedSubjects: data.assignedSubjects || [],
                 gradeLevel: data.gradeLevel || '',
@@ -993,128 +707,79 @@
             }, {
                 merge: true
             });
-        }
-
-        async function createUserRecord(collection_name, role, data, password) {
-            if (!currentUser) throw new Error("Not authenticated");
-            let newAuthUser = null;
-            try {
-                const cred = await createUserWithEmailAndPassword(auth, data.email, password);
-                newAuthUser = cred.user;
-                await updateProfile(newAuthUser, {
-                    displayName: data.name || data.email
-                });
-            } catch (e) {
-                console.warn("Auth create warning:", e.message);
-            }
-            let uid = newAuthUser ? newAuthUser.uid : null;
-            const docData = {
-                ...data,
-                uid,
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid
-            };
-            let primaryRef;
-            if (uid) {
-                primaryRef = doc(db, collection_name, uid);
-                await setDoc(primaryRef, docData);
-            } else {
-                primaryRef = await addDoc(collection(db, collection_name), docData);
-                uid = primaryRef.id;
-                docData.uid = uid;
-                await updateDoc(primaryRef, {
-                    uid
-                });
-            }
-            await syncToUsers(uid, docData, role);
-            if (adminTempEmail && adminTempPassword) {
-                try {
-                    await signInWithEmailAndPassword(auth, adminTempEmail, adminTempPassword);
-                    currentUser = auth.currentUser;
-                } catch (e) {
-                    alert("Admin re-auth needed. Please refresh and login again.");
-                    document.getElementById('login-overlay').style.display = 'flex';
-                    document.getElementById('app-container').style.display = 'none';
-                }
-            }
+            // Re-authenticate admin
+            if (adminCreds.email && adminCreds.password) await signInWithEmailAndPassword(auth, adminCreds.email, adminCreds.password);
             return uid;
         }
 
-        window.deleteTeacherRecord = async (docId, uid) => {
-            if (confirm("Permanently delete teacher?")) {
-                showLoading(true);
+        window.deleteItem = async (col, id) => {
+            if (confirm("Delete permanently?")) {
+                await deleteDoc(doc(db, col, id));
+                loadGradesTable();
+                loadSubjectsTable();
+                loadSessionsTable();
+                showToast("Deleted");
+            }
+        };
+        window.deleteTeacherFull = async (docId, uid) => {
+            if (confirm("Delete teacher?")) {
                 await deleteDoc(doc(db, "teachers", docId));
                 if (uid) await deleteDoc(doc(db, "users", uid)).catch(() => {});
-                await loadTeachers();
-                showLoading(false);
+                loadTeachersTable();
+                showToast("Teacher deleted");
             }
         };
-        window.deleteStudentRecord = async (docId, uid) => {
-            if (confirm("Permanently delete student?")) {
-                showLoading(true);
+        window.deleteStudentFull = async (docId, uid) => {
+            if (confirm("Delete student?")) {
                 await deleteDoc(doc(db, "students", docId));
                 if (uid) await deleteDoc(doc(db, "users", uid)).catch(() => {});
-                await loadStudents();
-                showLoading(false);
+                loadStudentsData();
+                showToast("Student deleted");
             }
         };
-        window.deleteItem = async (col, id) => {
-            if (confirm("Delete entry?")) {
-                showLoading(true);
-                await deleteDoc(doc(db, col, id));
-                if (col === 'grades') loadGrades();
-                if (col === 'subjects') loadSubjects();
-                if (col === 'sessions') loadSessions();
-                showLoading(false);
-            }
-        };
-        window.resetPassword = async (email) => {
-            if (confirm(`Send reset link to ${email}?`)) {
-                try {
-                    await sendPasswordResetEmail(auth, email);
-                    alert("Reset email sent.");
-                } catch (e) {
-                    alert(e.message);
-                }
+        window.resetUserPassword = async (email) => {
+            if (confirm(`Send reset to ${email}?`)) {
+                await sendPasswordResetEmail(auth, email);
+                showToast("Reset email sent");
             }
         };
 
-        window.openModal = (type, id = null, data = null) => {
-            document.getElementById('modal-type').value = type;
-            document.getElementById('modal-id').value = id || '';
-            document.getElementById('modal-title').textContent = (id ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
+        // Modal handling
+        window.openModalForm = (type, id = null, data = null) => {
+            document.getElementById('modalTitle').innerText = (id ? 'Edit ' : 'Add ') + type;
+            const form = document.getElementById('dynamicForm');
             let html = '';
             if (type === 'grade' || type === 'subject') {
-                html = `<div class="form-group"><label>Name (EN) *</label><input name="nameEn" required value="${data?.nameEn||''}"></div><div class="form-group"><label>Name (AR)</label><input name="nameAr" value="${data?.nameAr||''}"></div><div class="form-group"><label>Code *</label><input name="code" required value="${data?.code||''}"></div><div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
+                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Name (EN)</label><input class="form-control" name="nameEn" value="${data?.nameEn||''}" required></div><div class="mb-3"><label>Name (AR)</label><input class="form-control" name="nameAr" value="${data?.nameAr||''}"></div><div class="mb-3"><label>Code</label><input class="form-control" name="code" value="${data?.code||''}" required></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
             } else if (type === 'teacher') {
                 const gradeOpts = allGrades.map(g => `<option value="${g.id}" ${data?.assignedGrades?.includes(g.id)?'selected':''}>${g.nameEn}</option>`).join('');
                 const subOpts = allSubjects.map(s => `<option value="${s.id}" ${data?.assignedSubjects?.includes(s.id)?'selected':''}>${s.nameEn}</option>`).join('');
-                html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div><div class="form-group"><label>Name *</label><input name="name" required value="${data?.name||''}"></div>${!id?`<div class="form-group"><label>Password *</label><input name="password" type="password" required placeholder="Min 6 chars"></div>`:''}<div class="form-group"><label>Assigned Grades (Ctrl+click)</label><select name="assignedGrades" multiple style="height:100px">${gradeOpts}</select></div><div class="form-group"><label>Assigned Subjects</label><select name="assignedSubjects" multiple style="height:100px">${subOpts}</select></div><div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status!=='Inactive'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
+                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Email</label><input class="form-control" name="email" ${id?'disabled':''} value="${data?.email||''}" required></div><div class="mb-3"><label>Full Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div>${!id?`<div class="mb-3"><label>Password</label><input class="form-control" name="password" type="password" required placeholder="min 6 chars"></div>`:''}<div class="mb-3"><label>Assigned Grades (Ctrl+Click)</label><select multiple class="form-select" name="assignedGrades" size="4">${gradeOpts}</select></div><div class="mb-3"><label>Assigned Subjects</label><select multiple class="form-select" name="assignedSubjects" size="4">${subOpts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" selected>Active</option><option value="Inactive">Inactive</option></select></div>`;
             } else if (type === 'student') {
                 const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                html = `<div class="form-group"><label>Email *</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div><div class="form-group"><label>Name *</label><input name="name" required value="${data?.name||''}"></div>${!id?`<div class="form-group"><label>Password *</label><input name="password" type="password" required placeholder="Min 6 chars"></div>`:''}<div class="form-group"><label>Grade *</label><select name="gradeLevel" required>${opts||'<option>No grades</option>'}</select></div><div class="form-group"><label>Status</label><select name="status"><option value="Active" selected>Active</option><option value="Inactive">Inactive</option></select></div>`;
+                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Email</label><input class="form-control" name="email" ${id?'disabled':''} value="${data?.email||''}" required></div><div class="mb-3"><label>Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div>${!id?`<div class="mb-3"><label>Password</label><input class="form-control" name="password" type="password" required></div>`:''}<div class="mb-3"><label>Grade</label><select class="form-select" name="gradeLevel">${opts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" selected>Active</option><option value="Inactive">Inactive</option></select></div>`;
             } else if (type === 'session') {
                 const teacherOpts = allTeachers.map(t => `<option value="${t.id}" ${data?.ownerTeacherId===t.id?'selected':''}>${t.name||t.email}</option>`).join('');
-                html = `<div class="form-group"><label>Title *</label><input name="title" required value="${data?.title||''}"></div><div class="form-group"><label>Teacher *</label><select name="ownerTeacherId">${teacherOpts}</select></div><div class="form-group"><label>Grade *</label><input name="gradeLevel" value="${data?.gradeLevel||''}"></div><div class="form-group"><label>Subject *</label><input name="subject" value="${data?.subject||''}"></div><div class="form-group"><label>Start Time</label><input name="startTime" type="datetime-local"></div><div class="form-group"><label>End Time</label><input name="endTime" type="datetime-local"></div><div class="form-group"><label>Active</label><select name="isActive"><option value="true">Active</option><option value="false">Closed</option></select></div>`;
+                html = `<input type="hidden" id="editId" value="${id||''}"><div class="mb-3"><label>Title</label><input class="form-control" name="title" value="${data?.title||''}" required></div><div class="mb-3"><label>Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div><div class="mb-3"><label>Grade Level</label><input class="form-control" name="gradeLevel" value="${data?.gradeLevel||''}"></div><div class="mb-3"><label>Subject</label><input class="form-control" name="subject" value="${data?.subject||''}"></div><div class="mb-3"><label>Start Time</label><input class="form-control" name="startTime" type="datetime-local"></div><div class="mb-3"><label>End Time</label><input class="form-control" name="endTime" type="datetime-local"></div><div class="mb-3"><label>Active</label><select class="form-select" name="isActive"><option value="true">Active</option><option value="false">Closed</option></select></div>`;
             }
-            document.getElementById('modal-fields').innerHTML = html;
-            document.getElementById('generic-modal').classList.add('active');
+            form.innerHTML = html;
+            const modal = new bootstrap.Modal(document.getElementById('universalModal'));
+            modal.show();
+            document.getElementById('modalSaveBtn').onclick = async () => {
+                await submitDynamicForm(type, id);
+                modal.hide();
+            };
         };
-        window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
-        window.editItem = (t, id, data) => openModal(t, id, data);
-        window.handleFormSubmit = async (e) => {
-            e.preventDefault();
-            const type = document.getElementById('modal-type').value,
-                id = document.getElementById('modal-id').value;
-            const form = new FormData(e.target);
+        window.submitDynamicForm = async (type, id) => {
+            const formEl = document.getElementById('dynamicForm');
+            const formData = new FormData(formEl);
             const data = {};
-            for (let [k, v] of form.entries()) {
+            for (let [k, v] of formData.entries()) {
                 if (k === 'assignedGrades' || k === 'assignedSubjects') {
                     if (!data[k]) data[k] = [];
                     data[k].push(v);
                 } else data[k] = v;
             }
-            showLoading(true);
             try {
                 if (type === 'grade' || type === 'subject') {
                     const col = type + 's';
@@ -1122,8 +787,11 @@
                     else await addDoc(collection(db, col), {
                         ...data,
                         createdAt: serverTimestamp(),
-                        createdBy: currentUser.uid
+                        createdBy: currentAdmin.uid
                     });
+                    showToast(`${type} saved`);
+                    loadGradesTable();
+                    loadSubjectsTable();
                 } else if (type === 'teacher') {
                     if (id) {
                         const upd = {
@@ -1132,19 +800,19 @@
                         delete upd.email;
                         delete upd.password;
                         await updateDoc(doc(db, "teachers", id), upd);
-                        const snap = await getDoc(doc(db, "teachers", id));
-                        if (snap.exists() && snap.data().uid) await syncToUsers(snap.data().uid, {
+                        const tSnap = await getDoc(doc(db, "teachers", id));
+                        if (tSnap.exists() && tSnap.data().uid) await setDoc(doc(db, "users", tSnap.data().uid), {
                             ...upd,
-                            email: snap.data().email
-                        }, 'teacher');
+                            email: tSnap.data().email,
+                            role: 'teacher'
+                        }, {
+                            merge: true
+                        });
                     } else {
-                        if (!data.password || data.password.length < 6) throw new Error("Password min 6 chars");
-                        await createUserRecord("teachers", "teacher", data, data.password);
-                        closeModal();
-                        refreshCurrentSection();
-                        showLoading(false);
-                        return;
+                        if (!data.password || data.password.length < 6) throw new Error("Password min 6");
+                        await createUserRecordWithReauth("teachers", "teacher", data, data.password);
                     }
+                    loadTeachersTable();
                 } else if (type === 'student') {
                     if (id) {
                         const upd = {
@@ -1153,19 +821,19 @@
                         delete upd.email;
                         delete upd.password;
                         await updateDoc(doc(db, "students", id), upd);
-                        const snap = await getDoc(doc(db, "students", id));
-                        if (snap.exists() && snap.data().uid) await syncToUsers(snap.data().uid, {
+                        const sSnap = await getDoc(doc(db, "students", id));
+                        if (sSnap.exists() && sSnap.data().uid) await setDoc(doc(db, "users", sSnap.data().uid), {
                             ...upd,
-                            email: snap.data().email
-                        }, 'student');
+                            email: sSnap.data().email,
+                            role: 'student'
+                        }, {
+                            merge: true
+                        });
                     } else {
-                        if (!data.password || data.password.length < 6) throw new Error("Password min 6 chars");
-                        await createUserRecord("students", "student", data, data.password);
-                        closeModal();
-                        refreshCurrentSection();
-                        showLoading(false);
-                        return;
+                        if (!data.password || data.password.length < 6) throw new Error("Password min 6");
+                        await createUserRecordWithReauth("students", "student", data, data.password);
                     }
+                    loadStudentsData();
                 } else if (type === 'session') {
                     if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
                     if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
@@ -1174,45 +842,76 @@
                     else await addDoc(collection(db, "sessions"), {
                         ...data,
                         createdAt: serverTimestamp(),
-                        createdBy: currentUser.uid
+                        createdBy: currentAdmin.uid
                     });
+                    loadSessionsTable();
                 }
-                closeModal();
-                refreshCurrentSection();
-                alert("✅ Saved successfully!");
+                showToast("Operation completed");
             } catch (err) {
-                alert("Error: " + err.message);
-            } finally {
-                showLoading(false);
+                showToast(err.message, 'danger');
             }
         };
-        window.exportCurrentData = async (type) => {
-            showLoading(true);
-            try {
-                const snap = await getDocs(collection(db, type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type));
-                const data = snap.docs.map(d => d.data());
-                const ws = XLSX.utils.json_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, "Data");
-                XLSX.writeFile(wb, `${type}_export.xlsx`);
-            } catch (e) {
-                alert("Export failed");
-            } finally {
-                showLoading(false);
+        window.editItem = (type, id, data) => openModalForm(type, id, data);
+        window.switchSection = (section) => {
+            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
+            document.getElementById(`${section}Section`).style.display = 'block';
+            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
+            document.querySelector(`#sidebar ul li[data-section="${section}"]`)?.classList.add('active');
+            if (section === 'dashboard') {
+                loadCoreData();
             }
         };
-        window.filterTable = (id, q) => {
-            const table = document.getElementById(id);
-            if (!table) return;
-            const val = q.toUpperCase();
-            Array.from(table.rows).slice(1).forEach(row => {
-                row.style.display = row.innerText.toUpperCase().includes(val) ? '' : 'none';
+        window.toggleLivePanel = () => {
+            const panel = document.getElementById('liveDetailsPanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') updateLiveUI();
+        };
+
+        function initLiveMonitor() {
+            onValue(ref(rtdb, 'liveSessions'), (snap) => {
+                liveSessionsData = snap.val() || {};
+                let sessionCount = 0,
+                    studentCount = 0;
+                Object.values(liveSessionsData).forEach(s => {
+                    sessionCount++;
+                    if (s.students) studentCount += Object.keys(s.students).length;
+                });
+                document.getElementById('liveStudentCount').innerText = studentCount;
+                document.getElementById('liveSessionCount').innerText = sessionCount;
+                updateLiveUI();
             });
+        }
+
+        function updateLiveUI() {
+            const sessionsDiv = document.getElementById('liveSessionsList');
+            const studentsDiv = document.getElementById('liveStudentsList');
+            if (!liveSessionsData || Object.keys(liveSessionsData).length === 0) {
+                sessionsDiv.innerHTML = '<div class="text-center p-4 text-muted">No active sessions</div>';
+                studentsDiv.innerHTML = '<div class="text-center p-4 text-muted">No students online</div>';
+                return;
+            }
+            let sessionsHtml = '';
+            let studentsList = [];
+            Object.entries(liveSessionsData).forEach(([id, s]) => {
+                sessionsHtml += `<div class="border-bottom p-3 d-flex justify-content-between"><div><strong>${s.title||'Untitled'}</strong><div class="small text-muted">Teacher: ${s.teacherName||s.ownerTeacherId?.slice(0,8)}</div></div><span class="live-badge">${s.students?Object.keys(s.students).length:0}</span></div>`;
+                if (s.students) Object.values(s.students).forEach(st => studentsList.push(st));
+            });
+            sessionsDiv.innerHTML = sessionsHtml || '<div class="p-3 text-muted">None</div>';
+            studentsDiv.innerHTML = studentsList.map(st => `<div class="border-bottom p-3"><i class="fas fa-user-circle me-2"></i>${st.name||st.displayName||'Student'}</div>`).join('') || '<div class="p-3 text-muted">No students</div>';
+        }
+        window.exportTableData = async (type) => {
+            const col = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
+            const snap = await getDocs(collection(db, col));
+            const data = snap.docs.map(d => d.data());
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `${type}_export.xlsx`);
+            showToast("Exported");
         };
-        window.downloadTemplate = (t) => {
-            alert("Template generation: use export to see format");
-        };
-        window.processImport = () => alert("Import via CSV/Excel ready - use export as template");
+        document.getElementById('sidebarCollapse')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('active'));
+        window.resetUserPassword = resetUserPassword;
+        window.deleteItem = deleteItem;
     </script>
 </body>
 
