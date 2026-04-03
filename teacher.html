@@ -278,10 +278,10 @@ tr:hover td{background:var(--surface2);}
       <div class="section-header">
         <div><div class="section-title">Session Configuration</div><div class="section-sub">Edit settings for the loaded session</div></div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <div class="toggle-wrap" id="toggleWrap">
-            <div class="toggle-track" id="sessionToggle" onclick="toggleSession()"><div class="toggle-thumb"></div></div>
-            <span class="toggle-label" id="sessionToggleLabel">Session Closed</span>
-          </div>
+<div class="toggle-wrap" id="toggleWrap">
+  <div class="toggle-track" id="sessionToggle" onclick="toggleSessionOpen()"><div class="toggle-thumb"></div></div>
+  <span class="toggle-label" id="sessionToggleLabel">Session Closed</span>
+</div>
           <button class="btn btn-amber" onclick="saveSessionConfig()">💾 Save Config</button>
         </div>
       </div>
@@ -452,13 +452,21 @@ tr:hover td{background:var(--surface2);}
 <div class="toast" id="toast"></div>
 
 <script type="module">
-// Import from firebase-config.js
 import { 
-  auth, db,
+  auth, db, rtDB,  // ✅ ADD rtDB
   onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
   doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, getDocs, serverTimestamp,
   ref, set, push, onValue, update, remove, child, get
 } from './firebase-config.js';
+
+
+// Import from firebase-config.js
+//import { 
+//  auth, db,
+//  onAuthStateChanged, signInWithEmailAndPassword, signOut, updatePassword, EmailAuthProvider, reauthenticateWithCredential,
+//  doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, getDocs, serverTimestamp,
+//  ref, set, push, onValue, update, remove, child, get
+//} from './firebase-config.js';
 
 let currentTeacher = null;
 let activeSessionId = null;
@@ -821,7 +829,19 @@ async function loadQuestions() {
   renderQuestions();
 }
 
-async function loadStudents() {
+ // async function loadStudents() {
+ //   if (!activeSessionId) return;
+ //   
+ //   const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+ //   const querySnapshot = await getDocs(studentsRef);
+ //   currentStudents = [];
+ //   querySnapshot.forEach(doc => {
+ //     currentStudents.push({ id: doc.id, ...doc.data() });
+ //   });
+ //   renderStudentCards();
+ // }
+ 
+ async function loadStudents() {
   if (!activeSessionId) return;
   
   const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
@@ -830,8 +850,35 @@ async function loadStudents() {
   querySnapshot.forEach(doc => {
     currentStudents.push({ id: doc.id, ...doc.data() });
   });
+
+  // 🟢 RTDB: Sync live student data to RTDB (optional - for real-time metrics)
+  try {
+    for (const student of currentStudents) {
+      const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
+      
+      // Only update if student is marked as online in Firestore
+      if (student.online) {
+        await set(rtdbRef, {
+          name: student.name,
+          uid: student.id,
+          status: 'active',
+          loginTime: student.loginTime || Date.now()
+        });
+      } else {
+        // Optional: Remove from RTDB if they are offline in Firestore to keep it clean
+        await remove(rtdbRef);
+      }
+    }
+    console.log(`🟢 Synced ${currentStudents.length} students to RTDB`);
+  } catch (e) {
+    console.warn('⚠️ Error syncing to RTDB:', e);
+  }
+  
   renderStudentCards();
 }
+ 
+
+    
 
 // --- UPDATED FUNCTION FOR CLASS STATUS TAB ---
 async function loadClassStatus() {
@@ -966,14 +1013,43 @@ function updateClassStats(present, absent, total) {
   document.getElementById('csTotalStudents').textContent = total;
 }
     
+// function setupRealtimeListeners() {
+//   if (activeSessionId) {
+//     const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
+//     onValue(ref(db), () => {});
+//     const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+//     onValue(ref(db), () => {});
+//   }
+// }
+
 function setupRealtimeListeners() {
-  if (activeSessionId) {
-    const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
-    onValue(ref(db), () => {});
-    const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-    onValue(ref(db), () => {});
+  if (!activeSessionId) return;
+  
+  console.log('🟢 Setting up RTDB real-time listeners...');
+  
+  // 🟢 RTDB: Listen to live student count
+  const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
+  
+  try {
+    onValue(liveStudentsRef, (snapshot) => {
+      const students = snapshot.val();
+      const liveCount = students ? Object.keys(students).length : 0;
+      
+      // Update UI with live count
+      const liveChip = document.querySelector('.live-count');
+      if (liveChip) {
+        liveChip.textContent = `${liveCount} online`;
+      }
+      
+      console.log(`🟢 Active students in RTDB: ${liveCount}`);
+    }, (error) => {
+      console.warn('⚠️ RTDB listener error:', error);
+    });
+  } catch (e) {
+    console.warn('⚠️ Could not set up RTDB listener:', e);
   }
 }
+    
 
 function renderQuestions() {
   const list = document.getElementById('questionsList');
@@ -1143,14 +1219,68 @@ window.saveSessionConfig = async function() {
   showToast('Configuration saved!');
 };
 
-window.toggleSession = async function() {
-  if (!activeSessionId) return;
+// window.toggleSession = async function() {
+//   if (!activeSessionId) return;
+//   
+//   const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
+//   await updateDoc(doc(db, 'sessions', activeSessionId), { active: !currentStatus });
+//   setToggle(!currentStatus);
+//   showToast(!currentStatus ? '✅ Session is OPEN — students can join!' : 'Session closed');
+// };
+
+
+window.toggleSessionOpen = async function() {
+  if (!activeSessionId || !currentSessionData) return;
   
+  // Determine current status from the UI toggle state
   const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
-  await updateDoc(doc(db, 'sessions', activeSessionId), { active: !currentStatus });
-  setToggle(!currentStatus);
-  showToast(!currentStatus ? '✅ Session is OPEN — students can join!' : 'Session closed');
+  const newStatus = !currentStatus;
+  
+  try {
+    console.log(`Toggling session to ${newStatus}`);
+    
+    // 📝 Firestore: Update session status
+    await updateDoc(doc(db, 'sessions', activeSessionId), {
+      active: newStatus // Note: Your HTML toggle checks for 'active' class, so we update 'active' field
+    });
+    
+    // 🟢 RTDB: Create/remove live session tracking
+    if (newStatus) {
+      // Session opening - initialize live tracking
+      await set(ref(rtDB, `liveSessions/${activeSessionId}`), {
+        createdAt: Date.now(),
+        status: 'active',
+        students: {}
+      });
+      console.log('✅ Session opened - RTDB live tracking initialized');
+      
+      // Set up real-time listeners
+      setupRealtimeListeners();
+      
+      showToast('✅ Session is now OPEN to students');
+    } else {
+      // Session closing - clean up live tracking
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
+      console.log('✅ Session closed - RTDB cleaned up');
+      
+      showToast('✅ Session is now CLOSED');
+    }
+    
+    // Update UI state
+    // We manually call setToggle to update the visual switch
+    setToggle(newStatus);
+    
+    // Update local data object to match
+    if(currentSessionData) currentSessionData.active = newStatus;
+    
+  } catch (error) {
+    console.error('❌ Error toggling session:', error);
+    showToast('Failed to update session', true);
+  }
 };
+
+
+    
 
 function setToggle(on) {
   const track = document.getElementById('sessionToggle');
@@ -1415,11 +1545,35 @@ window.saveGrade = async function(studentId, questionId, maxPoints) {
 
 // --- DELETE STUDENT RECORD LOGIC ---
 
-window.deleteStudentRecord = async function(studentId) {
+ // window.deleteStudentRecord = async function(studentId) {
+ //   if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
+ //   
+ //   try {
+ //     await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
+ //     showToast('Student record deleted. They can rejoin now.');
+ //     await loadStudents(); // Refresh list
+ //     updateStats();
+ //   } catch (err) {
+ //     console.error(err);
+ //     showToast('Error deleting student record', true);
+ //   }
+ // };
+ 
+ window.deleteStudentRecord = async function(studentId) {
   if (!confirm('Are you sure you want to DELETE this student\'s record? \n\nThis will remove them from the session completely. They will have to rejoin using their code/link.')) return;
   
   try {
+    // 📝 Firestore: Delete student record
     await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
+    
+    // 🟢 RTDB: Remove student from live tracking
+    try {
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
+      console.log(`✅ Student ${studentId} removed from RTDB`);
+    } catch (e) {
+      console.warn('⚠️ Could not remove from RTDB:', e);
+    }
+    
     showToast('Student record deleted. They can rejoin now.');
     await loadStudents(); // Refresh list
     updateStats();
@@ -1428,6 +1582,7 @@ window.deleteStudentRecord = async function(studentId) {
     showToast('Error deleting student record', true);
   }
 };
+    
 
 // --- RESULTS & EXPORT LOGIC ---
 
@@ -1530,6 +1685,43 @@ window.renderResults = async function() {
   }
 };
 
+// window.exportData = async function() {
+//   if (!activeSessionId) {
+//     showToast('No active session', true);
+//     return;
+//   }
+//   
+//   showToast('Preparing JSON export...');
+//   
+//   const exportObj = {
+//     version: "1.0",
+//     exportedAt: new Date().toISOString(),
+//     session: currentSessionData,
+//     questions: currentQuestions,
+//     students: currentStudents.map(s => ({
+//       id: s.id,
+//       name: s.name,
+//       submitted: s.submitted,
+//       loginTime: s.loginTime,
+//       answers: s.answers,
+//       grades: s.grades,
+//       feedback: s.feedback
+//     }))
+//   };
+//   
+//   const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+//   const url = URL.createObjectURL(blob);
+//   const a = document.createElement('a');
+//   a.href = url;
+//   a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+//   a.click();
+//   URL.revokeObjectURL(url);
+//   
+//   showToast('JSON Export Complete');
+// };
+
+
+
 window.exportData = async function() {
   if (!activeSessionId) {
     showToast('No active session', true);
@@ -1562,8 +1754,22 @@ window.exportData = async function() {
   a.click();
   URL.revokeObjectURL(url);
   
+  // 🟢 RTDB: Log export event (optional - for audit trail)
+  try {
+    const timestamp = Date.now();
+    await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
+      exportedBy: currentTeacher.email,
+      timestamp: new Date().toISOString(),
+      studentsCount: currentStudents.length
+    });
+    console.log('✅ Export logged to RTDB');
+  } catch (e) {
+    console.warn('⚠️ Could not log export to RTDB:', e);
+  }
+
   showToast('JSON Export Complete');
 };
+    
 
 window.exportReports = async function() {
   if (!activeSessionId) {
