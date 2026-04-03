@@ -491,33 +491,61 @@
 
         async function loadTeachers() {
             const tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
-            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
-            tbody.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem;">Loading...</td></tr>';
             
-            const seenEmails = new Set();
-            snap.forEach(doc => {
-                const d = doc.data();
-                if(seenEmails.has(d.email)) return;
-                seenEmails.add(d.email);
-
-                const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
-                const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
+            try {
+                // Strictly query users with role 'teacher'
+                const q = query(collection(db, "users"), where("role", "==", "teacher"));
+                const snap = await getDocs(q);
                 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${getDisplayName(d)}</td><td>${d.email}</td>
-                        <td style="font-size:0.85rem">${gNames}</td><td style="font-size:0.85rem">${sNames}</td>
-                        <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
-                        <td class="action-btns">
-                            <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
-                            <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-        }
+                tbody.innerHTML = '';
+                
+                // Use a Set to track LOWERCASE emails to prevent case-sensitive duplicates
+                const seenEmails = new Set();
+                let count = 0;
 
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    
+                    // Normalize email to lowercase for comparison
+                    const cleanEmail = (d.email || '').toLowerCase().trim();
+                    
+                    if (!cleanEmail) return; // Skip if no email
+                    if (seenEmails.has(cleanEmail)) {
+                        console.warn(`Duplicate teacher skipped: ${d.email} (ID: ${doc.id})`);
+                        return; 
+                    }
+                    
+                    seenEmails.add(cleanEmail);
+                    count++;
+
+                    const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
+                    const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
+                    
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${getDisplayName(d)}</td>
+                            <td>${d.email}</td>
+                            <td style="font-size:0.85rem; color:#666;">${gNames}</td>
+                            <td style="font-size:0.85rem; color:#666;">${sNames}</td>
+                            <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
+                            <td class="action-btns">
+                                <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                                <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>`;
+                });
+
+                if(count === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #999;">No teachers found.</td></tr>';
+                }
+
+            } catch (e) { 
+                console.error("Error loading teachers:", e);
+                tbody.innerHTML = `<tr><td colspan="6" style="color:red; text-align:center;">Error: ${e.message}</td></tr>`; 
+            }
+        }
         async function loadStudents() {
             const filter = document.getElementById('student-grade-filter').value;
             const tbody = document.querySelector('#students-table tbody');
