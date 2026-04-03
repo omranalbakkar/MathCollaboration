@@ -2023,10 +2023,8 @@
                     </div>
                     <button class="btn btn-amber" onclick="exportClassStatusExcel()">📊 Export Excel (.xlsx)</button>
                 </div>
-
                 <!-- Kanban Board Container -->
                 <div class="kanban-board">
-
                     <!-- Column 1: Absent -->
                     <div class="kanban-col col-absent">
                         <div class="kanban-header">
@@ -2043,7 +2041,6 @@
                             <!-- Cards injected via JS -->
                         </div>
                     </div>
-
                     <!-- Column 2: Not Started -->
                     <div class="kanban-col col-not-started">
                         <div class="kanban-header">
@@ -2060,7 +2057,6 @@
                             <!-- Cards injected via JS -->
                         </div>
                     </div>
-
                     <!-- Column 3: In Progress -->
                     <div class="kanban-col col-in-progress">
                         <div class="kanban-header">
@@ -2077,7 +2073,6 @@
                             <!-- Cards injected via JS -->
                         </div>
                     </div>
-
                     <!-- Column 4: Completed -->
                     <div class="kanban-col col-completed">
                         <div class="kanban-header">
@@ -2094,7 +2089,6 @@
                             <!-- Cards injected via JS -->
                         </div>
                     </div>
-
                 </div>
             </div>
             <!-- RESULTS TAB -->
@@ -2162,6 +2156,7 @@
             </div>
         </div>
     </div>
+    </div>
     <div class="overlay" id="overlay" onclick="closeReview()"></div>
     <div id="reviewPanel">
         <div class="panel-header">
@@ -2201,8 +2196,10 @@
             update,
             remove,
             child,
-            get
+            get,
+            onSnapshot
         } from './firebase-config.js';
+
         let currentTeacher = null;
         let activeSessionId = null;
         let editingId = null;
@@ -2211,6 +2208,7 @@
         let currentQuestions = [];
         let currentStudents = [];
         let allAssignedStudents = [];
+
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingOverlay').style.display = 'none';
             if (!user) {
@@ -2260,6 +2258,7 @@
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('app').style.display = 'block';
         }
+
         window.doLogin = async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
@@ -2282,26 +2281,30 @@
                 btn.textContent = 'Sign In →';
             }
         };
+
         window.doLogout = async function() {
             await signOut(auth);
             window.location.href = 'index.html';
         };
+
         async function loadTeacherData() {
             await populateAssignedDropdowns();
             await populateTeacherProfile();
             await loadSessions();
-            setupRealtimeListeners();
+            // Note: Realtime listeners are set up when a session is activated
             const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
             if (savedId) {
                 activeSessionId = savedId;
                 await loadActiveSession();
             }
         }
+
         async function populateAssignedDropdowns() {
             const gradeSelect = document.getElementById('cfGrade');
             const subjectSelect = document.getElementById('cfSubject');
             const assignedGrades = currentTeacher.assignedGrades || [];
             const assignedSubjects = currentTeacher.assignedSubjects || [];
+
             if (assignedGrades.length) {
                 gradeSelect.innerHTML = '<option value="">Select grade…</option>';
                 for (const gradeId of assignedGrades) {
@@ -2316,6 +2319,7 @@
             } else {
                 gradeSelect.innerHTML = '<option value="">Select grade…</option>';
             }
+
             if (assignedSubjects.length) {
                 subjectSelect.innerHTML = '<option value="">Select subject…</option>';
                 for (const subjectId of assignedSubjects) {
@@ -2332,11 +2336,13 @@
             }
             document.getElementById('cfTeacher').value = currentTeacher.name || '';
         }
+
         async function populateTeacherProfile() {
             const assignedGradeIds = currentTeacher.assignedGrades || [];
             const assignedSubjectIds = currentTeacher.assignedSubjects || [];
             let gradeNames = [];
             let subjectNames = [];
+
             if (assignedGradeIds.length > 0) {
                 for (const gradeId of assignedGradeIds) {
                     try {
@@ -2349,6 +2355,7 @@
                     }
                 }
             }
+
             if (assignedSubjectIds.length > 0) {
                 for (const subjectId of assignedSubjects) {
                     try {
@@ -2361,8 +2368,10 @@
                     }
                 }
             }
+
             const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
             const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
+
             let teacherDisplayName = currentTeacher.name || '';
             if (!teacherDisplayName && currentTeacher.firestoreId) {
                 try {
@@ -2374,6 +2383,7 @@
                     console.error('Error fetching teacher details:', err);
                 }
             }
+
             document.getElementById('teacherProfileInfo').innerHTML = `
 <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
 <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
@@ -2381,6 +2391,7 @@
 <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
 `;
         }
+
         async function loadSessions() {
             console.log('Loading sessions for teacher:', currentTeacher);
             console.log('Teacher ID to match:', currentTeacher.firestoreId || currentTeacher.uid);
@@ -2401,7 +2412,7 @@
             } catch (error) {
                 console.error('Error loading sessions:', error);
                 showToast('Error loading sessions: ' + error.message, true);
-                console.log('Trying fallback - loading all sessions');
+                // Fallback just in case
                 const allSessionsSnapshot = await getDocs(sessionsRef);
                 const allSessions = [];
                 allSessionsSnapshot.forEach(doc => {
@@ -2435,6 +2446,7 @@
 </div>`;
             }).join('');
         }
+
         window.createNewSession = async function() {
             if (!currentTeacher) return;
             const sessionData = {
@@ -2467,11 +2479,13 @@
                 showToast('Error creating session: ' + error.message, true);
             }
         };
+
         window.activateSession = async function(id) {
             activeSessionId = id;
             localStorage.setItem('teacher_active_session_' + currentTeacher.uid, id);
             await loadActiveSession();
         };
+
         window.deleteSession = async function(id) {
             if (!confirm('Delete this session and all its student data? This cannot be undone.')) return;
             const questionsRef = collection(db, 'sessions', id, 'questions');
@@ -2492,6 +2506,7 @@
             await loadSessions();
             showToast('Session deleted');
         };
+
         async function loadActiveSession() {
             if (!activeSessionId) return;
             try {
@@ -2509,6 +2524,7 @@
                 const config = currentSessionData;
                 console.log('Loading session config:', config);
                 console.log('Owner Teacher ID:', config.ownerTeacherId);
+
                 const formatTime = (timestamp) => {
                     if (!timestamp) return '';
                     if (typeof timestamp === 'string') return timestamp.slice(0, 5);
@@ -2522,6 +2538,7 @@
                     }
                     return '';
                 };
+
                 const formatDate = (timestamp) => {
                     if (!timestamp) return '';
                     if (typeof timestamp === 'string') return timestamp.slice(0, 10);
@@ -2535,6 +2552,7 @@
                     }
                     return '';
                 };
+
                 let teacherName = config.teacherName || config.teacher || '';
                 if (!teacherName && config.ownerTeacherId) {
                     try {
@@ -2548,6 +2566,7 @@
                         console.error('Error fetching teacher:', err);
                     }
                 }
+
                 if (!teacherName && config.ownerTeacherId) {
                     try {
                         const teachersRef = collection(db, 'teachers');
@@ -2561,12 +2580,15 @@
                         console.error('Error querying teacher:', err);
                     }
                 }
+
                 if (!teacherName && currentTeacher) {
                     teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
                 }
+
                 if (!teacherName) {
                     teacherName = 'Teacher Name Not Found';
                 }
+
                 const titleField = document.getElementById('cfTitle');
                 if (titleField) titleField.value = config.title || '';
                 const gradeField = document.getElementById('cfGrade');
@@ -2598,6 +2620,7 @@
                 if (instructionsField) {
                     instructionsField.value = config.instructions || '';
                 }
+
                 const isSessionActive = !!(config.isActive || config.active);
                 setToggle(isSessionActive);
                 updateSessionChip(config);
@@ -2610,6 +2633,7 @@
                 showToast('Error loading session: ' + error.message, true);
             }
         }
+
         async function loadQuestions() {
             if (!activeSessionId) return;
             const questionsRef = collection(db, 'sessions', activeSessionId, 'questions');
@@ -2624,6 +2648,7 @@
             currentQuestions.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
             renderQuestions();
         }
+
         async function loadStudents() {
             if (!activeSessionId) {
                 console.log('No active session ID, cannot load students');
@@ -2642,6 +2667,8 @@
                     console.log('Student loaded:', studentData.id, studentData.name || 'Unnamed', 'Online:', studentData.online);
                     currentStudents.push(studentData);
                 });
+
+                // Sync online status to RTDB for live monitor
                 try {
                     for (const student of currentStudents) {
                         const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
@@ -2663,14 +2690,17 @@
                 } catch (e) {
                     console.warn('Error syncing to RTDB:', e);
                 }
+
                 renderStudentCards();
                 const onlineCount = currentStudents.filter(s => s.online === true).length;
                 const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
                 const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+
                 document.getElementById('statOnline').textContent = onlineCount;
                 document.getElementById('statAnswers').textContent = answersCount;
                 document.getElementById('statGraded').textContent = gradedCount;
                 document.getElementById('liveCount').textContent = `● ${onlineCount} online`;
+
                 const activeTab = document.querySelector('.tab-pane.active')?.id;
                 if (activeTab === 'tab-class-status') {
                     await loadClassStatus();
@@ -2678,6 +2708,7 @@
                 if (activeTab === 'tab-results') {
                     await renderResults();
                 }
+
                 console.log(`Students loaded: ${currentStudents.length} total, ${onlineCount} online`);
             } catch (error) {
                 console.error('Error loading students:', error);
@@ -2692,11 +2723,13 @@
                 }
             }
         }
+
         async function loadClassStatus() {
             if (!activeSessionId || !currentSessionData) return;
             const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
             console.log('Session grade value:', sessionGradeName);
             console.log('Full session data:', currentSessionData);
+
             const gradeDisplayElement = document.getElementById('csGradeName');
             if (gradeDisplayElement) {
                 gradeDisplayElement.textContent = sessionGradeName || 'No Grade Assigned';
@@ -2709,6 +2742,7 @@
                 inProgress: document.getElementById('list-in-progress'),
                 completed: document.getElementById('list-completed')
             };
+
             const counts = {
                 absent: {
                     total: 0,
@@ -2742,6 +2776,7 @@
                     let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
                     let gradeSnap = await getDocs(q);
                     let targetGradeId = null;
+
                     if (!gradeSnap.empty) {
                         targetGradeId = gradeSnap.docs[0].id;
                         console.log('Found grade by nameEn:', targetGradeId);
@@ -2760,22 +2795,26 @@
                             }
                         }
                     }
+
                     if (targetGradeId) {
                         const studentsRef = collection(db, 'students');
                         // FIXED: Try both 'gradeLevel' and 'gradeId' field names
                         let studentQuery = query(studentsRef, where('gradeLevel', '==', targetGradeId));
                         let studentSnap = await getDocs(studentQuery);
+
                         if (studentSnap.empty) {
                             console.log('No students found with gradeLevel, trying gradeId...');
                             studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
                             studentSnap = await getDocs(studentQuery);
                         }
-                        // Also try matching by grade name directly
+
+                        // Also try matching by grade name directly if ID lookup fails
                         if (studentSnap.empty) {
                             console.log('No students found with gradeId, trying gradeLevel as name...');
                             studentQuery = query(studentsRef, where('gradeLevel', '==', sessionGradeName));
                             studentSnap = await getDocs(studentQuery);
                         }
+
                         studentSnap.forEach(doc => {
                             assignedStudents.push({
                                 id: doc.id,
@@ -2800,7 +2839,6 @@
             });
 
             const totalQs = currentQuestions.length;
-
             assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             assignedStudents.forEach(student => {
@@ -2875,31 +2913,30 @@
                 card.onclick = (e) => {
                     if (!e.target.closest('button')) openReview(student.id);
                 };
-
                 card.innerHTML = `
-        <div class="k-card-top">
-            <div class="k-student-info">
-                <div class="k-avatar">${(student.name || 'S').charAt(0).toUpperCase()}</div>
-                <div class="k-name">
-                    ${escapeHtml(student.name || 'Unknown')}
-                    <span class="conn-dot ${isOnline ? 'online' : 'offline'}" style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${isOnline ? 'var(--green)' : 'var(--muted)'}"></span>
-                </div>
-            </div>
-            <span class="k-status-badge ${badgeClass}">${badgeText}</span>
-        </div>
-        <div class="k-progress-wrap">
-            <div class="k-progress-bar-bg">
-                <div class="k-progress-bar-fill" style="width:${pct}%;background:${barColor || 'var(--muted)'}"></div>
-            </div>
-            <div class="k-progress-text">
-                <span>${answeredCount}/${totalQs} Answered</span>
-                <span>${pct}%</span>
-            </div>
-        </div>
-        <div class="k-actions">
-            ${actionsHtml}
-        </div>
-    `;
+<div class="k-card-top">
+<div class="k-student-info">
+<div class="k-avatar">${(student.name || 'S').charAt(0).toUpperCase()}</div>
+<div class="k-name">
+${escapeHtml(student.name || 'Unknown')}
+<span class="conn-dot ${isOnline ? 'online' : 'offline'}" style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${isOnline ? 'var(--green)' : 'var(--muted)'}"></span>
+</div>
+</div>
+<span class="k-status-badge ${badgeClass}">${badgeText}</span>
+</div>
+<div class="k-progress-wrap">
+<div class="k-progress-bar-bg">
+<div class="k-progress-bar-fill" style="width:${pct}%;background:${barColor || 'var(--muted)'}"></div>
+</div>
+<div class="k-progress-text">
+<span>${answeredCount}/${totalQs} Answered</span>
+<span>${pct}%</span>
+</div>
+</div>
+<div class="k-actions">
+${actionsHtml}
+</div>
+`;
 
                 if (columns[status]) {
                     columns[status].appendChild(card);
@@ -3015,6 +3052,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 MathJax.typesetPromise([list]).catch(err => console.log('MathJax error:', err));
             }
         }
+
         window.openForm = function(id = null) {
             editingId = id;
             document.getElementById('questionForm').classList.add('open');
@@ -3045,10 +3083,12 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 behavior: 'smooth'
             });
         };
+
         window.closeForm = function() {
             document.getElementById('questionForm').classList.remove('open');
             editingId = null;
         };
+
         window.toggleOptionsBuilder = function() {
             const type = document.getElementById('fType').value;
             const wrap = document.getElementById('optionsBuilderWrap');
@@ -3062,6 +3102,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 wrap.style.display = 'none';
             }
         };
+
         window.addOption = function(val = '') {
             const builder = document.getElementById('optionsBuilder');
             const row = document.createElement('div');
@@ -3069,6 +3110,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             row.innerHTML = `<input type="text" placeholder="Option text" value="${escapeHtml(val)}"><button class="btn-rm-opt" onclick="this.parentElement.remove()">×</button>`;
             builder.appendChild(row);
         };
+
         window.saveQuestion = async function() {
             if (!activeSessionId) {
                 showToast('No active session', true);
@@ -3105,6 +3147,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             await loadQuestions();
             updateStats();
         };
+
         window.deleteQuestion = async function(id) {
             if (!confirm('Delete this question?')) return;
             await deleteDoc(doc(db, 'sessions', activeSessionId, 'questions', id));
@@ -3112,6 +3155,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             updateStats();
             showToast('Deleted');
         };
+
         window.saveSessionConfig = async function() {
             if (!activeSessionId) {
                 showToast('No active session', true);
@@ -3131,8 +3175,10 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                     console.error('Error fetching teacher:', err);
                 }
             }
+
             const gradeValue = document.getElementById('cfGrade').value;
             const subjectValue = document.getElementById('cfSubject').value;
+
             const config = {
                 title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
                 grade: gradeValue,
@@ -3150,11 +3196,13 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 updatedAt: serverTimestamp(),
                 updatedBy: currentTeacher?.uid || ''
             };
+
             await updateDoc(doc(db, 'sessions', activeSessionId), config);
             updateSessionChip(config);
             showToast('Configuration saved!');
             await loadActiveSession();
         };
+
         window.toggleSessionOpen = async function() {
             if (!activeSessionId || !currentSessionData) return;
             const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
@@ -3211,24 +3259,34 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
             const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
             const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+
             const liveCountEl = document.getElementById('liveCount');
             if (liveCountEl) liveCountEl.textContent = `● ${onlineCount} online`;
+
             const prevQuestionsEl = document.getElementById('prevQuestions');
             if (prevQuestionsEl) prevQuestionsEl.textContent = currentQuestions.length;
+
             const prevStudentsEl = document.getElementById('prevStudents');
             if (prevStudentsEl) prevStudentsEl.textContent = onlineCount;
+
             const prevAnswersEl = document.getElementById('prevAnswers');
             if (prevAnswersEl) prevAnswersEl.textContent = answersCount;
+
             const prevTotalEl = document.getElementById('prevTotal');
             if (prevTotalEl) prevTotalEl.textContent = totalPoints;
+
             const statOnlineEl = document.getElementById('statOnline');
             if (statOnlineEl) statOnlineEl.textContent = onlineCount;
+
             const statAnswersEl = document.getElementById('statAnswers');
             if (statAnswersEl) statAnswersEl.textContent = answersCount;
+
             const statQuestionsEl = document.getElementById('statQuestions');
             if (statQuestionsEl) statQuestionsEl.textContent = currentQuestions.length;
+
             const statGradedEl = document.getElementById('statGraded');
             if (statGradedEl) statGradedEl.textContent = gradedCount;
+
             console.log(`Stats updated: ${onlineCount} online, ${answersCount} answers, ${gradedCount} graded`);
         }
 
@@ -3236,6 +3294,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             const online = currentStudents.filter(s => s.online === true);
             const grid = document.getElementById('studentsGrid');
             const qcount = currentQuestions.length;
+
             if (!currentStudents.length) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
 <p style="font-size:15px">No students have joined this session yet</p>
@@ -3247,6 +3306,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
 </div>`;
                 return;
             }
+
             if (!online.length) {
                 grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
 <p style="font-size:15px">All students are offline</p>
@@ -3257,12 +3317,14 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
 </div>`;
                 return;
             }
+
             const colors = ['#f5a623', '#60a5fa', '#4ade80', '#f87171', '#c084fc', '#fb923c', '#34d399', '#fbbf24'];
             grid.innerHTML = online.map((student, i) => {
                 const answered = student.answers ? Object.keys(student.answers).length : 0;
                 const pct = qcount ? Math.round(answered / qcount * 100) : 0;
                 const color = colors[i % colors.length];
                 const displayName = student.name || student.id || 'Student';
+
                 return `<div class="student-card">
 <div class="student-header">
 <div class="avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
@@ -3283,6 +3345,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
 </div>`;
             }).join('');
         }
+
         window.exportClassStatusExcel = function() {
             if (!currentSessionData) {
                 showToast('No active session loaded', true);
@@ -3297,11 +3360,14 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 ["Date", currentSessionData.date || ""],
                 ["Export Time", new Date().toLocaleString()]
             ];
+
             const headerRow = ["Student Name", "Status", "Login Time", "Progress (%)", "Answers Submitted", "Total Questions"];
+
             const sessionStudentsMap = {};
             currentStudents.forEach(s => {
                 sessionStudentsMap[s.id] = s;
             });
+
             const totalQs = currentQuestions.length;
             const dataRows = allAssignedStudents.map(student => {
                 const sData = sessionStudentsMap[student.id];
@@ -3310,6 +3376,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                 const loginTime = isOnline && sData.loginTime ? new Date(sData.loginTime).toLocaleTimeString() : "N/A";
                 const answers = isOnline && sData.answers ? Object.keys(sData.answers).length : 0;
                 const pct = isOnline && totalQs ? Math.round((answers / totalQs) * 100) + "%" : "0%";
+
                 return [
                     student.name || student.id,
                     status,
@@ -3319,6 +3386,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                     totalQs
                 ];
             });
+
             const wb = XLSX.utils.book_new();
             const wsData = [...sessionInfo, [],
                 ["--- Student Attendance & Status ---"], headerRow, ...dataRows
@@ -3342,12 +3410,14 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
             XLSX.writeFile(wb, fileName);
             showToast('Excel file downloaded!');
         };
+
         window.openReview = async function(studentId) {
             const student = currentStudents.find(s => s.id === studentId);
             if (!student) return;
             const panel = document.getElementById('reviewPanel');
             const overlay = document.getElementById('overlay');
             const content = document.getElementById('reviewContent');
+
             let html = `
 <div class="panel-student-info">
 <div class="avatar" style="background:var(--amber-dim);color:var(--amber)">${(student.name || 'S').charAt(0).toUpperCase()}</div>
@@ -3358,10 +3428,12 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
 <button class="btn btn-sm btn-delete" onclick="deleteStudentRecord('${student.id}'); closeReview();">🗑 Delete Record</button>
 </div>
 `;
+
             for (const q of currentQuestions) {
                 const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
                 const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '';
                 const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+
                 let statusColor = 'var(--muted)';
                 let statusIcon = '○';
                 if (score !== '') {
@@ -3377,6 +3449,7 @@ ${q.options ? `<div class="q-opts">${q.options.map(o => `<span class="q-opt math
                         statusIcon = '✕';
                     }
                 }
+
                 html += `
 <div class="review-item">
 <div class="review-q">
@@ -3396,6 +3469,7 @@ ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>
 </div>
 `;
             }
+
             content.innerHTML = html;
             panel.classList.add('open');
             overlay.classList.add('show');
@@ -3403,15 +3477,18 @@ ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>
                 MathJax.typesetPromise([content]).catch(err => console.log('MathJax error:', err));
             }
         };
+
         window.closeReview = function() {
             document.getElementById('reviewPanel').classList.remove('open');
             document.getElementById('overlay').classList.remove('show');
         };
+
         window.saveGrade = async function(studentId, questionId, maxPoints) {
             const scoreInput = document.getElementById(`grade-${questionId}`);
             const feedbackInput = document.getElementById(`feedback-${questionId}`);
             let score = scoreInput.value;
             const feedback = feedbackInput.value;
+
             if (score !== '') {
                 score = parseFloat(score);
                 if (isNaN(score)) {
@@ -3420,6 +3497,7 @@ ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>
                 }
                 if (score < 0) score = 0;
             }
+
             try {
                 const updates = {};
                 updates[`grades.${questionId}`] = score === '' ? null : score;
@@ -3435,67 +3513,78 @@ ${answer ? mathHtml(answer) : '<span class="no-answer">No answer provided</span>
                 showToast('Failed to save grade', true);
             }
         };
+
         window.deleteStudentRecord = async function(studentId) {
-                    if (!confirm('Are you sure you want to DELETE this student\'s record?
-                            This will remove them from the session completely.They will have to rejoin using their code / link.
-                            ')) return;
-                            try {
-                                await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
-                                try {
-                                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
-                                    console.log(`Student ${studentId} removed from RTDB`);
-                                } catch (e) {
-                                    console.warn('Could not remove from RTDB:', e);
-                                }
-                                showToast('Student record deleted. They can rejoin now.');
-                                await loadStudents();
-                                updateStats();
-                            } catch (err) {
-                                console.error(err);
-                                showToast('Error deleting student record', true);
-                            }
-                        }; window.renderResults = async function() {
-                            if (!activeSessionId) return;
-                            await loadStudents();
-                            const tbody = document.getElementById('resultsBody');
-                            const filterStudent = document.getElementById('filterStudent').value;
-                            const filterQuestion = document.getElementById('filterQuestion').value;
-                            const studentSelect = document.getElementById('filterStudent');
-                            if (studentSelect.options.length <= 1) {
-                                currentStudents.forEach(s => {
-                                    const opt = document.createElement('option');
-                                    opt.value = s.id;
-                                    opt.textContent = s.name || s.id;
-                                    studentSelect.appendChild(opt);
-                                });
-                            }
-                            const questionSelect = document.getElementById('filterQuestion');
-                            if (questionSelect.options.length <= 1) {
-                                currentQuestions.forEach((q, i) => {
-                                    const opt = document.createElement('option');
-                                    opt.value = q.id;
-                                    opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
-                                    questionSelect.appendChild(opt);
-                                });
-                            }
-                            tbody.innerHTML = '';
-                            let hasData = false;
-                            for (const student of currentStudents) {
-                                if (filterStudent && student.id !== filterStudent) continue;
-                                for (const q of currentQuestions) {
-                                    if (filterQuestion && q.id !== filterQuestion) continue;
-                                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
-                                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
-                                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-                                    hasData = true;
-                                    let scoreClass = '';
-                                    if (score !== '-') {
-                                        const num = parseFloat(score);
-                                        if (num >= q.points) scoreClass = 'color:var(--green)';
-                                        else if (num > 0) scoreClass = 'color:var(--amber)';
-                                        else scoreClass = 'color:var(--red)';
-                                    }
-                                    const row = `
+            if (!confirm('Are you sure you want to DELETE this student\'s record?\nThis will remove them from the session completely.\nThey will have to rejoin using their code/link.')) return;
+            try {
+                await deleteDoc(doc(db, 'sessions', activeSessionId, 'students', studentId));
+                try {
+                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${studentId}`));
+                    console.log(`Student ${studentId} removed from RTDB`);
+                } catch (e) {
+                    console.warn('Could not remove from RTDB:', e);
+                }
+                showToast('Student record deleted. They can rejoin now.');
+                await loadStudents();
+                updateStats();
+            } catch (err) {
+                console.error(err);
+                showToast('Error deleting student record', true);
+            }
+        };
+
+        window.renderResults = async function() {
+            if (!activeSessionId) return;
+            // Ensure students are loaded before rendering
+            if (currentStudents.length === 0) {
+                await loadStudents();
+            }
+
+            const tbody = document.getElementById('resultsBody');
+            const filterStudent = document.getElementById('filterStudent').value;
+            const filterQuestion = document.getElementById('filterQuestion').value;
+
+            const studentSelect = document.getElementById('filterStudent');
+            if (studentSelect.options.length <= 1) {
+                currentStudents.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.name || s.id;
+                    studentSelect.appendChild(opt);
+                });
+            }
+
+            const questionSelect = document.getElementById('filterQuestion');
+            if (questionSelect.options.length <= 1) {
+                currentQuestions.forEach((q, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = q.id;
+                    opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
+                    questionSelect.appendChild(opt);
+                });
+            }
+
+            tbody.innerHTML = '';
+            let hasData = false;
+
+            for (const student of currentStudents) {
+                if (filterStudent && student.id !== filterStudent) continue;
+                for (const q of currentQuestions) {
+                    if (filterQuestion && q.id !== filterQuestion) continue;
+                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
+                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
+                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+
+                    hasData = true;
+                    let scoreClass = '';
+                    if (score !== '-') {
+                        const num = parseFloat(score);
+                        if (num >= q.points) scoreClass = 'color:var(--green)';
+                        else if (num > 0) scoreClass = 'color:var(--amber)';
+                        else scoreClass = 'color:var(--red)';
+                    }
+
+                    const row = `
 <tr>
 <td>
 <div style="font-weight:600">${escapeHtml(student.name || student.id)}</div>
@@ -3523,73 +3612,80 @@ ${escapeHtml(feedback) || '-'}
 </td>
 </tr>
 `;
-                                    tbody.innerHTML += row;
-                                }
-                            }
-                            if (!hasData) {
-                                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
-                            }
-                            if (window.MathJax && MathJax.typesetPromise) {
-                                MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
-                            }
-                        }; window.exportData = async function() {
-                            if (!activeSessionId) {
-                                showToast('No active session', true);
-                                return;
-                            }
-                            showToast('Preparing JSON export...');
-                            const exportObj = {
-                                version: "1.0",
-                                exportedAt: new Date().toISOString(),
-                                session: currentSessionData,
-                                questions: currentQuestions,
-                                students: currentStudents.map(s => ({
-                                    id: s.id,
-                                    name: s.name,
-                                    submitted: s.submitted,
-                                    loginTime: s.loginTime,
-                                    answers: s.answers,
-                                    grades: s.grades,
-                                    feedback: s.feedback
-                                }))
-                            };
-                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                                type: 'application/json'
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            try {
-                                const timestamp = Date.now();
-                                await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
-                                    exportedBy: currentTeacher.email,
-                                    timestamp: new Date().toISOString(),
-                                    studentsCount: currentStudents.length
-                                });
-                                console.log('Export logged to RTDB');
-                            } catch (e) {
-                                console.warn('Could not log export to RTDB:', e);
-                            }
-                            showToast('JSON Export Complete');
-                        }; window.exportReports = async function() {
-                            if (!activeSessionId) {
-                                showToast('No active session', true);
-                                return;
-                            }
-                            if (!currentStudents.length) {
-                                showToast('No students to export', true);
-                                return;
-                            }
-                            showToast('Generating PDF reports... This may take a moment.');
-                            const {
-                                jsPDF
-                            } = window.jspdf;
-                            const printContainer = document.getElementById('print-container');
-                            for (const student of currentStudents) {
-                                let html = `
+                    tbody.innerHTML += row;
+                }
+            }
+
+            if (!hasData) {
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No results found for selected filters.</td></tr>`;
+            }
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+            }
+        };
+
+        window.exportData = async function() {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
+            }
+            showToast('Preparing JSON export...');
+            const exportObj = {
+                version: "1.0",
+                exportedAt: new Date().toISOString(),
+                session: currentSessionData,
+                questions: currentQuestions,
+                students: currentStudents.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    submitted: s.submitted,
+                    loginTime: s.loginTime,
+                    answers: s.answers,
+                    grades: s.grades,
+                    feedback: s.feedback
+                }))
+            };
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `eduboard_results_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            try {
+                const timestamp = Date.now();
+                await set(ref(rtDB, `sessionMetrics/${activeSessionId}/exports/${timestamp}`), {
+                    exportedBy: currentTeacher.email,
+                    timestamp: new Date().toISOString(),
+                    studentsCount: currentStudents.length
+                });
+                console.log('Export logged to RTDB');
+            } catch (e) {
+                console.warn('Could not log export to RTDB:', e);
+            }
+            showToast('JSON Export Complete');
+        };
+
+        window.exportReports = async function() {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
+            }
+            if (!currentStudents.length) {
+                showToast('No students to export', true);
+                return;
+            }
+            showToast('Generating PDF reports... This may take a moment.');
+            const {
+                jsPDF
+            } = window.jspdf;
+            const printContainer = document.getElementById('print-container');
+
+            for (const student of currentStudents) {
+                let html = `
 <div class="print-page">
 <div class="print-header">
 <div>
@@ -3602,15 +3698,15 @@ ${escapeHtml(feedback) || '-'}
 </div>
 </div>
 `;
-                                let totalScore = 0;
-                                let maxTotal = 0;
-                                currentQuestions.forEach((q, idx) => {
-                                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : 'No Answer';
-                                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : 0;
-                                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-                                    totalScore += parseFloat(score) || 0;
-                                    maxTotal += q.points;
-                                    html += `
+                let totalScore = 0;
+                let maxTotal = 0;
+                currentQuestions.forEach((q, idx) => {
+                    const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : 'No Answer';
+                    const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : 0;
+                    const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+                    totalScore += parseFloat(score) || 0;
+                    maxTotal += q.points;
+                    html += `
 <div class="print-q-item">
 <div class="print-q-text">${idx+1}. ${mathHtml(q.text)}</div>
 <div class="print-a-label">Student Answer:</div>
@@ -3620,420 +3716,438 @@ ${feedback ? `<div style="font-size:12px;color:#666;margin-top:4px;"><em>Feedbac
 <div style="clear:both;"></div>
 </div>
 `;
-                                });
-                                html += `
+                });
+                html += `
 <div style="margin-top:30px;border-top:1px solid #000;padding-top:10px;display:flex;justify-content:space-between;font-weight:bold;font-size:16px;">
 <span>Total Score:</span>
 <span>${totalScore} / ${maxTotal}</span>
 </div>
 </div>
 `;
-                                printContainer.innerHTML = html;
-                                if (window.MathJax && MathJax.typesetPromise) {
-                                    await MathJax.typesetPromise([printContainer]);
-                                }
-                                try {
-                                    const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
-                                        scale: 2,
-                                        useCORS: true,
-                                        allowTaint: true
-                                    });
-                                    const imgData = canvas.toDataURL('image/png');
-                                    const pdf = new jsPDF('p', 'mm', 'a4');
-                                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                                    pdf.save(`${student.name || 'Student'}_Report.pdf`);
-                                } catch (err) {
-                                    console.error("PDF Generation Error:", err);
-                                }
-                                await new Promise(r => setTimeout(r, 500));
-                            }
-                            printContainer.innerHTML = '';
-                            showToast('PDF Reports Generated');
-                        }; window.clearStudentAnswers = async function(studentId) {
-                            if (!confirm('Clear all answers for this student?')) return;
-                            await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), {
-                                answers: {},
-                                submitted: false,
-                                grades: {},
-                                feedback: {}
-                            });
-                            await loadStudents();
-                            showToast('Answers cleared');
-                        }; window.clearSessionAnswers = async function() {
-                            if (!confirm('Clear ALL student answers? This cannot be undone.')) return;
-                            for (const student of currentStudents) {
-                                await updateDoc(doc(db, 'sessions', activeSessionId, 'students', student.id), {
-                                    answers: {},
-                                    submitted: false,
-                                    grades: {},
-                                    feedback: {}
-                                });
-                            }
-                            await loadStudents();
-                            showToast('All answers cleared');
-                        }; window.exportQuestionToJSON = async function(questionId) {
-                            if (!activeSessionId) return;
-                            const question = currentQuestions.find(q => q.id === questionId);
-                            if (!question) {
-                                showToast('Question not found', true);
-                                return;
-                            }
-                            const exportObj = {
-                                version: "1.0",
-                                type: "question",
-                                exportedAt: new Date().toISOString(),
-                                question: {
-                                    text: question.text,
-                                    type: question.type,
-                                    points: question.points,
-                                    correct: question.correct || "",
-                                    tag: question.tag || "",
-                                    options: question.options || null
-                                }
-                            };
-                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                                type: 'application/json'
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `question_${question.id}_${Date.now()}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            showToast('Question exported to JSON!');
-                        }; window.exportAllQuestionsToJSON = async function() {
-                            if (!activeSessionId) {
-                                showToast('No active session', true);
-                                return;
-                            }
-                            if (!currentQuestions.length) {
-                                showToast('No questions to export', true);
-                                return;
-                            }
-                            const exportObj = {
-                                version: "1.0",
-                                type: "questions_batch",
-                                exportedAt: new Date().toISOString(),
-                                sessionId: activeSessionId,
-                                sessionTitle: currentSessionData?.title || "Untitled",
-                                totalQuestions: currentQuestions.length,
-                                questions: currentQuestions.map(q => ({
-                                    id: q.id,
-                                    text: q.text,
-                                    type: q.type,
-                                    points: q.points,
-                                    correct: q.correct || "",
-                                    tag: q.tag || "",
-                                    options: q.options || null,
-                                    createdAt: q.createdAt
-                                }))
-                            };
-                            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
-                                type: 'application/json'
-                            });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `questions_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            showToast(`Exported ${currentQuestions.length} questions to JSON!`);
-                        }; window.importFromJSON = async function(event) {
-                            if (!activeSessionId) {
-                                showToast('No active session', true);
-                                return;
-                            }
-                            const file = event.target.files[0];
-                            if (!file) return;
-                            event.target.value = '';
-                            showToast('Processing JSON file...');
-                            const reader = new FileReader();
-                            reader.onload = async function(e) {
-                                try {
-                                    const jsonData = JSON.parse(e.target.result);
-                                    let imported = 0;
-                                    let skipped = 0;
-                                    if (jsonData.type === 'question' && jsonData.question) {
-                                        const q = jsonData.question;
-                                        const questionData = {
-                                            text: q.text || '',
-                                            type: q.type || 'text',
-                                            points: q.points || 10,
-                                            correct: q.correct || '',
-                                            tag: q.tag || 'Imported',
-                                            options: q.options || null,
-                                            createdAt: Date.now(),
-                                            importedFrom: 'JSON'
-                                        };
-                                        if (!questionData.text) {
-                                            showToast('Question text is required', true);
-                                            return;
-                                        }
-                                        const qId = 'q_' + Date.now();
-                                        await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                                        imported = 1;
-                                    } else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
-                                        for (let i = 0; i < jsonData.questions.length; i++) {
-                                            const q = jsonData.questions[i];
-                                            if (!q.text || !q.text.trim()) {
-                                                skipped++;
-                                                continue;
-                                            }
-                                            const questionData = {
-                                                text: q.text.trim(),
-                                                type: q.type || 'text',
-                                                points: q.points || 10,
-                                                correct: q.correct || '',
-                                                tag: q.tag || jsonData.sessionTitle || 'Imported',
-                                                options: q.options || null,
-                                                createdAt: Date.now() + i,
-                                                importedFrom: 'JSON'
-                                            };
-                                            const qId = q.id || `q_${Date.now()}_${i}`;
-                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                                            imported++;
-                                            await new Promise(r => setTimeout(r, 50));
-                                        }
-                                    } else if (Array.isArray(jsonData)) {
-                                        for (let i = 0; i < jsonData.length; i++) {
-                                            const q = jsonData[i];
-                                            if (!q.text || !q.text.trim()) {
-                                                skipped++;
-                                                continue;
-                                            }
-                                            const questionData = {
-                                                text: q.text.trim(),
-                                                type: q.type || 'text',
-                                                points: q.points || 10,
-                                                correct: q.correct || '',
-                                                tag: q.tag || 'Imported',
-                                                options: q.options || null,
-                                                createdAt: Date.now() + i,
-                                                importedFrom: 'JSON'
-                                            };
-                                            const qId = `q_${Date.now()}_${i}`;
-                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                                            imported++;
-                                            await new Promise(r => setTimeout(r, 50));
-                                        }
-                                    } else {
-                                        showToast('Invalid JSON format. Expected question object or array.', true);
-                                        return;
-                                    }
-                                    await loadQuestions();
-                                    updateStats();
-                                    if (imported > 0) {
-                                        showToast(`✅ Imported ${imported} question(s) from JSON${skipped ? ` (${skipped} skipped)` : ''}`);
-                                    } else {
-                                        showToast('No valid questions found in JSON file', true);
-                                    }
-                                } catch (err) {
-                                    console.error('JSON import failed:', err);
-                                    showToast('Invalid JSON file: ' + err.message, true);
-                                }
-                            };
-                            reader.readAsText(file);
-                        }; window.importFromHTML = async function(event) {
-                            if (!activeSessionId) {
-                                showToast('No active session', true);
-                                return;
-                            }
-                            const file = event.target.files[0];
-                            if (!file) return;
-                            event.target.value = '';
-                            showToast('Processing HTML file...');
-                            const reader = new FileReader();
-                            reader.onload = async function(e) {
-                                try {
-                                    const parser = new DOMParser();
-                                    const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
-                                    let questionCards = htmlDoc.querySelectorAll('.question-card');
-                                    if (!questionCards.length) {
-                                        questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
-                                    }
-                                    if (!questionCards.length) {
-                                        showToast('No questions found in the HTML file. Make sure the file contains .question-card elements.', true);
-                                        return;
-                                    }
-                                    let imported = 0;
-                                    let errors = [];
-                                    for (const card of questionCards) {
-                                        try {
-                                            let questionText = '';
-                                            const mainInput = card.querySelector('.main-q-input');
-                                            if (mainInput) {
-                                                questionText = mainInput.value || mainInput.getAttribute('value') || '';
-                                            }
-                                            if (!questionText.trim()) {
-                                                const qTextDiv = card.querySelector('.q-text');
-                                                if (qTextDiv) questionText = qTextDiv.innerText;
-                                            }
-                                            if (!questionText.trim()) {
-                                                errors.push('Skipped a question with no text');
-                                                continue;
-                                            }
-                                            let questionType = 'text';
-                                            const typeSelector = card.querySelector('.q-type-selector');
-                                            if (typeSelector) {
-                                                const selectedOption = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
-                                                if (selectedOption) {
-                                                    const typeValue = selectedOption.value;
-                                                    if (typeValue === 'mcq') questionType = 'mcq';
-                                                    else if (typeValue === 'tf') questionType = 'truefalse';
-                                                    else if (typeValue === 'matching') questionType = 'matching';
-                                                    else if (typeValue === 'fill') questionType = 'fill';
-                                                    else if (typeValue === 'paragraph') questionType = 'paragraph';
-                                                }
-                                            }
-                                            let points = 10;
-                                            const marksInput = card.querySelector('.mark-input-field, .marks-input');
-                                            if (marksInput) {
-                                                const marksValue = parseFloat(marksInput.value);
-                                                if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
-                                            }
-                                            let options = null;
-                                            let correctAnswer = '';
-                                            if (questionType === 'mcq') {
-                                                const mcqOptions = card.querySelectorAll('.mcq-option input');
-                                                if (mcqOptions.length) {
-                                                    options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
-                                                }
-                                                const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
-                                                if (checkedOption) {
-                                                    const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
-                                                    if (optionText) correctAnswer = optionText;
-                                                }
-                                            } else if (questionType === 'truefalse') {
-                                                const correctTF = card.querySelector('input[value="true"]:checked, input[value="True"]:checked, input[value="صح"]:checked');
-                                                if (correctTF) correctAnswer = correctTF.value;
-                                            }
-                                            let tag = 'Imported';
-                                            const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
-                                            if (headerTitle) {
-                                                tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
-                                            }
-                                            const questionData = {
-                                                text: questionText.trim(),
-                                                type: questionType,
-                                                points: points,
-                                                correct: correctAnswer,
-                                                tag: tag,
-                                                options: options,
-                                                createdAt: Date.now() + imported,
-                                                importedFrom: 'HTML'
-                                            };
-                                            const qId = 'q_' + Date.now() + '_' + imported;
-                                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
-                                            imported++;
-                                            await new Promise(r => setTimeout(r, 50));
-                                        } catch (err) {
-                                            console.error('Error importing question:', err);
-                                            errors.push(`Error: ${err.message}`);
-                                        }
-                                    }
-                                    await loadQuestions();
-                                    updateStats();
-                                    if (imported > 0) {
-                                        showToast(`✅ Successfully imported ${imported} question(s) from HTML!${errors.length ? ` (${errors.length} issues)` : ''}`);
-                                    } else {
-                                        showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
-                                    }
-                                    if (errors.length) {
-                                        console.warn('Import errors:', errors);
-                                    }
-                                } catch (err) {
-                                    console.error('Import failed:', err);
-                                    showToast('Import failed: ' + err.message, true);
-                                }
-                            };
-                            reader.readAsText(file);
-                        }; window.changePassword = async function() {
-                            const currentPass = document.getElementById('currentPass').value;
-                            const newPass = document.getElementById('newPass').value;
-                            const confirmPass = document.getElementById('confirmPass').value;
-                            if (!currentPass || !newPass) {
-                                showToast('All fields required', true);
-                                return;
-                            }
-                            if (newPass !== confirmPass) {
-                                showToast('Passwords do not match', true);
-                                return;
-                            }
-                            if (newPass.length < 6) {
-                                showToast('Password must be at least 6 characters', true);
-                                return;
-                            }
-                            try {
-                                const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
-                                await reauthenticateWithCredential(auth.currentUser, credential);
-                                await updatePassword(auth.currentUser, newPass);
-                                showToast('Password updated successfully!');
-                                document.getElementById('currentPass').value = '';
-                                document.getElementById('newPass').value = '';
-                                document.getElementById('confirmPass').value = '';
-                            } catch (e) {
-                                showToast('Error: ' + e.message, true);
-                            }
-                        }; window.switchTab = function(id, btn) {
-                            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-                            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                            document.getElementById('tab-' + id).classList.add('active');
-                            btn.classList.add('active');
-                            if (!activeSessionId && !['manage', 'settings'].includes(id)) {
-                                showToast('Please select or create a session first', true);
-                                switchTab('manage', document.querySelector('.nav-btn'));
-                                return;
-                            }
-                            // FIXED: Ensure data is loaded before rendering results
-                            if (id === 'results') {
-                                loadStudents().then(() => renderResults());
-                            } else if (id === 'questions') {
-                                loadQuestions();
-                            } else if (id === 'monitor') {
-                                loadStudents();
-                            } else if (id === 'class-status') {
-                                loadClassStatus();
-                            }
+                printContainer.innerHTML = html;
+                if (window.MathJax && MathJax.typesetPromise) {
+                    await MathJax.typesetPromise([printContainer]);
+                }
+                try {
+                    const canvas = await html2canvas(printContainer.querySelector('.print-page'), {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true
+                    });
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save(`${student.name || 'Student'}_Report.pdf`);
+                } catch (err) {
+                    console.error("PDF Generation Error:", err);
+                }
+                await new Promise(r => setTimeout(r, 500));
+            }
+            printContainer.innerHTML = '';
+            showToast('PDF Reports Generated');
+        };
+
+        window.clearStudentAnswers = async function(studentId) {
+            if (!confirm('Clear all answers for this student?')) return;
+            await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), {
+                answers: {},
+                submitted: false,
+                grades: {},
+                feedback: {}
+            });
+            await loadStudents();
+            showToast('Answers cleared');
+        };
+
+        window.clearSessionAnswers = async function() {
+            if (!confirm('Clear ALL student answers? This cannot be undone.')) return;
+            for (const student of currentStudents) {
+                await updateDoc(doc(db, 'sessions', activeSessionId, 'students', student.id), {
+                    answers: {},
+                    submitted: false,
+                    grades: {},
+                    feedback: {}
+                });
+            }
+            await loadStudents();
+            showToast('All answers cleared');
+        };
+
+        window.exportQuestionToJSON = async function(questionId) {
+            if (!activeSessionId) return;
+            const question = currentQuestions.find(q => q.id === questionId);
+            if (!question) {
+                showToast('Question not found', true);
+                return;
+            }
+            const exportObj = {
+                version: "1.0",
+                type: "question",
+                exportedAt: new Date().toISOString(),
+                question: {
+                    text: question.text,
+                    type: question.type,
+                    points: question.points,
+                    correct: question.correct || "",
+                    tag: question.tag || "",
+                    options: question.options || null
+                }
+            };
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `question_${question.id}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Question exported to JSON!');
+        };
+
+        window.exportAllQuestionsToJSON = async function() {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
+            }
+            if (!currentQuestions.length) {
+                showToast('No questions to export', true);
+                return;
+            }
+            const exportObj = {
+                version: "1.0",
+                type: "questions_batch",
+                exportedAt: new Date().toISOString(),
+                sessionId: activeSessionId,
+                sessionTitle: currentSessionData?.title || "Untitled",
+                totalQuestions: currentQuestions.length,
+                questions: currentQuestions.map(q => ({
+                    id: q.id,
+                    text: q.text,
+                    type: q.type,
+                    points: q.points,
+                    correct: q.correct || "",
+                    tag: q.tag || "",
+                    options: q.options || null,
+                    createdAt: q.createdAt
+                }))
+            };
+            const blob = new Blob([JSON.stringify(exportObj, null, 2)], {
+                type: 'application/json'
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `questions_${currentSessionData?.title || 'session'}_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Exported ${currentQuestions.length} questions to JSON!`);
+        };
+
+        window.importFromJSON = async function(event) {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
+            }
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = '';
+            showToast('Processing JSON file...');
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const jsonData = JSON.parse(e.target.result);
+                    let imported = 0;
+                    let skipped = 0;
+
+                    if (jsonData.type === 'question' && jsonData.question) {
+                        const q = jsonData.question;
+                        const questionData = {
+                            text: q.text || '',
+                            type: q.type || 'text',
+                            points: q.points || 10,
+                            correct: q.correct || '',
+                            tag: q.tag || 'Imported',
+                            options: q.options || null,
+                            createdAt: Date.now(),
+                            importedFrom: 'JSON'
                         };
-
-                        function showToast(msg, isError = false) {
-                            const toast = document.getElementById('toast');
-                            toast.textContent = msg;
-                            toast.style.background = isError ? 'var(--red)' : 'var(--green)';
-                            toast.style.color = isError ? '#fff' : '#0f1117';
-                            toast.classList.add('show');
-                            setTimeout(() => toast.classList.remove('show'), 2800);
+                        if (!questionData.text) {
+                            showToast('Question text is required', true);
+                            return;
                         }
-
-                        function escapeHtml(str) {
-                            if (!str) return '';
-                            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                        const qId = 'q_' + Date.now();
+                        await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                        imported = 1;
+                    } else if (jsonData.type === 'questions_batch' && Array.isArray(jsonData.questions)) {
+                        for (let i = 0; i < jsonData.questions.length; i++) {
+                            const q = jsonData.questions[i];
+                            if (!q.text || !q.text.trim()) {
+                                skipped++;
+                                continue;
+                            }
+                            const questionData = {
+                                text: q.text.trim(),
+                                type: q.type || 'text',
+                                points: q.points || 10,
+                                correct: q.correct || '',
+                                tag: q.tag || jsonData.sessionTitle || 'Imported',
+                                options: q.options || null,
+                                createdAt: Date.now() + i,
+                                importedFrom: 'JSON'
+                            };
+                            const qId = q.id || `q_${Date.now()}_${i}`;
+                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                            imported++;
+                            await new Promise(r => setTimeout(r, 50));
                         }
-
-                        function mathHtml(str) {
-                            if (!str) return '';
-                            let result = String(str);
-                            const mathBlocks = [];
-                            result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
-                                mathBlocks.push(math);
-                                return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
-                            });
-                            result = result.replace(/\$([^$]+)\$/g, (match, math) => {
-                                mathBlocks.push(math);
-                                return `%%MATHINLINE${mathBlocks.length - 1}%%`;
-                            });
-                            result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
-                                mathBlocks.push(math);
-                                return `%%MATHPAREN${mathBlocks.length - 1}%%`;
-                            });
-                            result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                            result = result.replace(/%%MATHBLOCK(\d+)%%/g, (match, idx) => `$$${mathBlocks[parseInt(idx)]}$$`);
-                            result = result.replace(/%%MATHINLINE(\d+)%%/g, (match, idx) => `$${mathBlocks[parseInt(idx)]}$`);
-                            result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
-                            return result;
+                    } else if (Array.isArray(jsonData)) {
+                        for (let i = 0; i < jsonData.length; i++) {
+                            const q = jsonData[i];
+                            if (!q.text || !q.text.trim()) {
+                                skipped++;
+                                continue;
+                            }
+                            const questionData = {
+                                text: q.text.trim(),
+                                type: q.type || 'text',
+                                points: q.points || 10,
+                                correct: q.correct || '',
+                                tag: q.tag || 'Imported',
+                                options: q.options || null,
+                                createdAt: Date.now() + i,
+                                importedFrom: 'JSON'
+                            };
+                            const qId = `q_${Date.now()}_${i}`;
+                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                            imported++;
+                            await new Promise(r => setTimeout(r, 50));
                         }
+                    } else {
+                        showToast('Invalid JSON format. Expected question object or array.', true);
+                        return;
+                    }
+
+                    await loadQuestions();
+                    updateStats();
+                    if (imported > 0) {
+                        showToast(`✅ Imported ${imported} question(s) from JSON${skipped ? ` (${skipped} skipped)` : ''}`);
+                    } else {
+                        showToast('No valid questions found in JSON file', true);
+                    }
+                } catch (err) {
+                    console.error('JSON import failed:', err);
+                    showToast('Invalid JSON file: ' + err.message, true);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        window.importFromHTML = async function(event) {
+            if (!activeSessionId) {
+                showToast('No active session', true);
+                return;
+            }
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = '';
+            showToast('Processing HTML file...');
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parser = new DOMParser();
+                    const htmlDoc = parser.parseFromString(e.target.result, 'text/html');
+                    let questionCards = htmlDoc.querySelectorAll('.question-card');
+                    if (!questionCards.length) {
+                        questionCards = htmlDoc.querySelectorAll('.standalone-q, .master-q');
+                    }
+                    if (!questionCards.length) {
+                        showToast('No questions found in the HTML file. Make sure the file contains .question-card elements.', true);
+                        return;
+                    }
+                    let imported = 0;
+                    let errors = [];
+                    for (const card of questionCards) {
+                        try {
+                            let questionText = '';
+                            const mainInput = card.querySelector('.main-q-input');
+                            if (mainInput) {
+                                questionText = mainInput.value || mainInput.getAttribute('value') || '';
+                            }
+                            if (!questionText.trim()) {
+                                const qTextDiv = card.querySelector('.q-text');
+                                if (qTextDiv) questionText = qTextDiv.innerText;
+                            }
+                            if (!questionText.trim()) {
+                                errors.push('Skipped a question with no text');
+                                continue;
+                            }
+                            let questionType = 'text';
+                            const typeSelector = card.querySelector('.q-type-selector');
+                            if (typeSelector) {
+                                const selectedOption = typeSelector.querySelector('option[selected]') || typeSelector.querySelector('option:checked');
+                                if (selectedOption) {
+                                    const typeValue = selectedOption.value;
+                                    if (typeValue === 'mcq') questionType = 'mcq';
+                                    else if (typeValue === 'tf') questionType = 'truefalse';
+                                    else if (typeValue === 'matching') questionType = 'matching';
+                                    else if (typeValue === 'fill') questionType = 'fill';
+                                    else if (typeValue === 'paragraph') questionType = 'paragraph';
+                                }
+                            }
+                            let points = 10;
+                            const marksInput = card.querySelector('.mark-input-field, .marks-input');
+                            if (marksInput) {
+                                const marksValue = parseFloat(marksInput.value);
+                                if (!isNaN(marksValue) && marksValue > 0) points = marksValue;
+                            }
+                            let options = null;
+                            let correctAnswer = '';
+                            if (questionType === 'mcq') {
+                                const mcqOptions = card.querySelectorAll('.mcq-option input');
+                                if (mcqOptions.length) {
+                                    options = Array.from(mcqOptions).map(opt => opt.value || opt.getAttribute('value') || '').filter(v => v.trim());
+                                }
+                                const checkedOption = card.querySelector('.mcq-option input[checked], .mcq-option input[data-correct="true"]');
+                                if (checkedOption) {
+                                    const optionText = checkedOption.value || checkedOption.getAttribute('value') || '';
+                                    if (optionText) correctAnswer = optionText;
+                                }
+                            } else if (questionType === 'truefalse') {
+                                const correctTF = card.querySelector('input[value="true"]:checked, input[value="True"]:checked, input[value="صح"]:checked');
+                                if (correctTF) correctAnswer = correctTF.value;
+                            }
+                            let tag = 'Imported';
+                            const headerTitle = htmlDoc.querySelector('#hdr-title, .header-title-input');
+                            if (headerTitle) {
+                                tag = headerTitle.innerText || headerTitle.textContent || 'Worksheet';
+                            }
+                            const questionData = {
+                                text: questionText.trim(),
+                                type: questionType,
+                                points: points,
+                                correct: correctAnswer,
+                                tag: tag,
+                                options: options,
+                                createdAt: Date.now() + imported,
+                                importedFrom: 'HTML'
+                            };
+                            const qId = 'q_' + Date.now() + '_' + imported;
+                            await setDoc(doc(db, 'sessions', activeSessionId, 'questions', qId), questionData);
+                            imported++;
+                            await new Promise(r => setTimeout(r, 50));
+                        } catch (err) {
+                            console.error('Error importing question:', err);
+                            errors.push(`Error: ${err.message}`);
+                        }
+                    }
+                    await loadQuestions();
+                    updateStats();
+                    if (imported > 0) {
+                        showToast(`✅ Successfully imported ${imported} question(s) from HTML!${errors.length ? ` (${errors.length} issues)` : ''}`);
+                    } else {
+                        showToast(`No questions were imported. ${errors.length ? errors[0] : 'Check file format.'}`, true);
+                    }
+                    if (errors.length) {
+                        console.warn('Import errors:', errors);
+                    }
+                } catch (err) {
+                    console.error('Import failed:', err);
+                    showToast('Import failed: ' + err.message, true);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        window.changePassword = async function() {
+            const currentPass = document.getElementById('currentPass').value;
+            const newPass = document.getElementById('newPass').value;
+            const confirmPass = document.getElementById('confirmPass').value;
+            if (!currentPass || !newPass) {
+                showToast('All fields required', true);
+                return;
+            }
+            if (newPass !== confirmPass) {
+                showToast('Passwords do not match', true);
+                return;
+            }
+            if (newPass.length < 6) {
+                showToast('Password must be at least 6 characters', true);
+                return;
+            }
+            try {
+                const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+                await reauthenticateWithCredential(auth.currentUser, credential);
+                await updatePassword(auth.currentUser, newPass);
+                showToast('Password updated successfully!');
+                document.getElementById('currentPass').value = '';
+                document.getElementById('newPass').value = '';
+                document.getElementById('confirmPass').value = '';
+            } catch (e) {
+                showToast('Error: ' + e.message, true);
+            }
+        };
+
+        window.switchTab = function(id, btn) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+            btn.classList.add('active');
+            if (!activeSessionId && !['manage', 'settings'].includes(id)) {
+                showToast('Please select or create a session first', true);
+                switchTab('manage', document.querySelector('.nav-btn'));
+                return;
+            }
+            // FIXED: Ensure data is loaded before rendering results
+            if (id === 'results') {
+                loadStudents().then(() => renderResults());
+            } else if (id === 'questions') {
+                loadQuestions();
+            } else if (id === 'monitor') {
+                loadStudents();
+            } else if (id === 'class-status') {
+                loadClassStatus();
+            }
+        };
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.background = isError ? 'var(--red)' : 'var(--green)';
+            toast.style.color = isError ? '#fff' : '#0f1117';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2800);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function mathHtml(str) {
+            if (!str) return '';
+            let result = String(str);
+            const mathBlocks = [];
+            result = result.replace(/\$\$([\s\S]*?)\$\$/g, (match, math) => {
+                mathBlocks.push(math);
+                return `%%MATHBLOCK${mathBlocks.length - 1}%%`;
+            });
+            result = result.replace(/\$([^$]+)\$/g, (match, math) => {
+                mathBlocks.push(math);
+                return `%%MATHINLINE${mathBlocks.length - 1}%%`;
+            });
+            result = result.replace(/\\\(([\s\S]*?)\\\)/g, (match, math) => {
+                mathBlocks.push(math);
+                return `%%MATHPAREN${mathBlocks.length - 1}%%`;
+            });
+            result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            result = result.replace(/%%MATHBLOCK(\d+)%%/g, (match, idx) => `$$${mathBlocks[parseInt(idx)]}$$`);
+            result = result.replace(/%%MATHINLINE(\d+)%%/g, (match, idx) => `$${mathBlocks[parseInt(idx)]}$`);
+            result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
+            return result;
+        }
     </script>
 </body>
 
