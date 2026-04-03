@@ -258,14 +258,39 @@ mjx-container{vertical-align:middle;}
 
 <script type="module">
 // Import from firebase-config.js (Ensure this file exports Firestore functions)
+ // import { 
+ //   auth, db,
+ //   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
+ //   getDoc, setDoc, doc, 
+ //   collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
+ //   onSnapshot
+ // } from './firebase-config.js';
+
+
 import { 
-  auth, db,
+  auth, db, rtDB,  // ✅ ADD rtDB
   onAuthStateChanged, signInWithEmailAndPassword, signOut, 
   getDoc, setDoc, doc, 
   collection, query, where, getDocs, updateDoc, addDoc, serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  ref, set, remove, update as rtdbUpdate  // ✅ ADD RTDB functions (rename update to avoid conflict)
 } from './firebase-config.js';
 
+
+    // 🟢 RTDB: Clean up when student leaves/refreshes
+window.addEventListener('beforeunload', async (event) => {
+  if (activeSessionId && currentStudent) {
+    try {
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+      console.log('✅ Cleaned up RTDB on page exit');
+    } catch (e) {
+      console.warn('⚠️ Could not remove from RTDB on exit:', e);
+      // Non-critical - doesn't break app
+    }
+  }
+});
+
+    
 let currentStudent = null;
 let studentProfile = null;
 let currentQIndex = 0;
@@ -399,7 +424,74 @@ window.doStudentLogin = async function() {
 document.getElementById('loginPass')?.addEventListener('keydown', e => { if(e.key==='Enter') doStudentLogin(); });
 
 // ── FIND AND JOIN OPEN SESSION (FIRESTORE VERSION) ──
-async function findAndJoinOpenSession() {
+ // async function findAndJoinOpenSession() {
+ //   try {
+ //     // If we already have an ID from login screen, use it. Otherwise query.
+ //     if (!activeSessionId) {
+ //       const sessionsRef = collection(db, 'sessions');
+ //       const q = query(sessionsRef, where('active', '==', true));
+ //       const snapshot = await getDocs(q);
+ //       
+ //       if (snapshot.empty) {
+ //         showNoSessions();
+ //         return;
+ //       }
+ //       activeSessionId = snapshot.docs[0].id;
+ //       sessionData = snapshot.docs[0].data();
+ //     } else {
+ //       // Re-fetch latest data for the known session ID
+ //       const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+ //       if (!sessDoc.exists() || !sessDoc.data().active) {
+ //         showNoSessions();
+ //         return;
+ //       }
+ //       sessionData = sessDoc.data();
+ //     }
+ // 
+ //     const studentKey = currentStudent.uid;
+ //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+ //     
+ //     // ✅ CRITICAL FIX: Use setDoc with { merge: true }
+ //     // This CREATES the document if it doesn't exist, or UPDATES it if it does.
+ //     // This ensures the document exists before submitAnswer tries to update it.
+ //     await setDoc(studentRef, {
+ //       name: studentProfile.name || currentStudent.email,
+ //       uid: currentStudent.uid,
+ //       online: true,
+ //       loginTime: Date.now(),
+ //       submitted: false, 
+ //       answers: {},      
+ //       grades: {},       
+ //       feedback: {}      
+ //     }, { merge: true });
+ // 
+ //     document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
+ //     document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
+ //     
+ //     // Listen for real-time updates on this student's grade/feedback
+ //     if (unsubSession) unsubSession();
+ //     unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
+ //       if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
+ //         refreshCompletion(sd.data());
+ //       }
+ //     });
+ // 
+ //     await loadAndShowWelcome();
+ //   } catch(e) {
+ //     console.error('Join session error:', e);
+ //     showConnectionWarning(true);
+ //     document.getElementById('welcomeScreen').innerHTML = `
+ //       <div style="text-align:center;padding:60px 0">
+ //         <div style="font-size:56px;margin-bottom:16px">⚠️</div>
+ //         <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
+ //         <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
+ //         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
+ //       </div>`;
+ //     document.getElementById('welcomeScreen').style.display = 'block';
+ //   }
+ // }
+ 
+ async function findAndJoinOpenSession() {
   try {
     // If we already have an ID from login screen, use it. Otherwise query.
     if (!activeSessionId) {
@@ -426,9 +518,6 @@ async function findAndJoinOpenSession() {
     const studentKey = currentStudent.uid;
     const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
     
-    // ✅ CRITICAL FIX: Use setDoc with { merge: true }
-    // This CREATES the document if it doesn't exist, or UPDATES it if it does.
-    // This ensures the document exists before submitAnswer tries to update it.
     await setDoc(studentRef, {
       name: studentProfile.name || currentStudent.email,
       uid: currentStudent.uid,
@@ -439,6 +528,19 @@ async function findAndJoinOpenSession() {
       grades: {},       
       feedback: {}      
     }, { merge: true });
+
+    // 🟢 RTDB: Mark student as present in live session
+    try {
+      await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+        name: studentProfile.name || currentStudent.email,
+        uid: currentStudent.uid,
+        joinedAt: new Date().toISOString(),
+        status: 'active'
+      });
+      console.log('✅ Student marked present in RTDB');
+    } catch (e) {
+      console.warn('⚠️ Could not mark present in RTDB:', e);
+    }
 
     document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
     document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
@@ -465,6 +567,7 @@ async function findAndJoinOpenSession() {
     document.getElementById('welcomeScreen').style.display = 'block';
   }
 }
+    
 
     
 function showNoSessions() {
@@ -645,7 +748,44 @@ function getCurrentAnswer(){
   const el=document.getElementById('answerInput');return el&&el.value.trim()?el.value.trim():null;
 }
 
-window.submitAnswer = async function() {
+ // window.submitAnswer = async function() {
+ //   const ans = getCurrentAnswer();
+ //   if (ans === null) {
+ //     showToast('Please provide an answer first');
+ //     return;
+ //   }
+ //   
+ //   const btn = document.getElementById('btnSubmit');
+ //   btn.textContent = 'Saving…';
+ //   btn.disabled = true;
+ //   
+ //   const q = questions[currentQIndex];
+ //   
+ //   try {
+ //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+ //     
+ //     // ✅ Update the specific answer field using dot notation
+ //     // This works now because findAndJoinOpenSession guaranteed the parent doc exists
+ //     await updateDoc(studentRef, {
+ //       [`answers.${q.id}`]: ans
+ //     });
+ //     
+ //     showToast('Answer saved ✓');
+ //     btn.textContent = 'Saved ✓';
+ //     btn.classList.add('saved');
+ //     
+ //     // Re-render to show the "Answered" badge
+ //     renderQuestion();
+ //     
+ //   } catch (e) {
+ //     console.error('Submit error:', e);
+ //     showToast('Failed to save. Please try again.', true);
+ //     btn.textContent = 'Save Answer';
+ //     btn.disabled = false;
+ //   }
+ // };
+ 
+ window.submitAnswer = async function() {
   const ans = getCurrentAnswer();
   if (ans === null) {
     showToast('Please provide an answer first');
@@ -661,17 +801,25 @@ window.submitAnswer = async function() {
   try {
     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
     
-    // ✅ Update the specific answer field using dot notation
-    // This works now because findAndJoinOpenSession guaranteed the parent doc exists
+    // 📝 Firestore: Save answer
     await updateDoc(studentRef, {
       [`answers.${q.id}`]: ans
     });
+    
+    // 🟢 RTDB: Update activity timestamp (optional - for metrics)
+    try {
+      await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+        lastActivity: Date.now(),
+        questionsAnswered: currentQIndex + 1
+      });
+    } catch (e) {
+      console.warn('⚠️ Could not update RTDB activity:', e);
+    }
     
     showToast('Answer saved ✓');
     btn.textContent = 'Saved ✓';
     btn.classList.add('saved');
     
-    // Re-render to show the "Answered" badge
     renderQuestion();
     
   } catch (e) {
@@ -699,6 +847,31 @@ async function canNavigate(){
 window.prevQ=async function(){if(await canNavigate()&&currentQIndex>0){currentQIndex--;renderQuestion();}};
 window.nextQ=async function(){if(await canNavigate()&&currentQIndex<questions.length-1){currentQIndex++;renderQuestion();}};
 
+ // window.finishSession = async function() {
+ //   const ans=getCurrentAnswer();
+ //   if(ans!==null){
+ //     const q=questions[currentQIndex];
+ //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+ //     await updateDoc(studentRef, {[`answers.${q.id}`]: ans});
+ //   }
+ //   try {
+ //     const sSnap=await getDoc(doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid));
+ //     const savedAnswers=sSnap.exists()?sSnap.data()?.answers||{}:{};
+ //     for(let i=0;i<questions.length;i++){
+ //       if(savedAnswers[questions[i].id]===undefined||savedAnswers[questions[i].id]===null){
+ //         showToast(`Question ${i+1} is missing an answer!`);
+ //         currentQIndex=i;renderQuestion();return;
+ //       }
+ //     }
+ //     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+ //     await updateDoc(studentRef, {submitted:true});
+ //     showCompletion();
+ //   } catch(e) {
+ //     console.error('Finish error:', e);
+ //     showToast('Error submitting.', true);
+ //   }
+ // };
+
 window.finishSession = async function() {
   const ans=getCurrentAnswer();
   if(ans!==null){
@@ -716,13 +889,26 @@ window.finishSession = async function() {
       }
     }
     const studentRef = doc(db, 'sessions', activeSessionId, 'students', currentStudent.uid);
+    
+    // 📝 Firestore: Mark as submitted
     await updateDoc(studentRef, {submitted:true});
+    
+    // 🟢 RTDB: Remove from live tracking (cleanup)
+    try {
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+      console.log('✅ Student removed from RTDB live tracking');
+    } catch (e) {
+      console.warn('⚠️ Could not remove from RTDB:', e);
+    }
+    
     showCompletion();
   } catch(e) {
     console.error('Finish error:', e);
     showToast('Error submitting.', true);
   }
 };
+
+
 
 // ── COMPLETION ──
 async function showCompletion(){
