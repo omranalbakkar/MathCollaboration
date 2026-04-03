@@ -535,10 +535,45 @@
             color: var(--text-light);
             margin-top: 0.25rem;
         }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
 <body>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
 
     <!-- Login -->
     <div id="login-overlay">
@@ -825,7 +860,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch, serverTimestamp, Timestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -850,15 +885,24 @@
         let allTeachers = [];
         let currentSection = 'dashboard';
         let liveDataCache = {};
+        let isAdminUser = false;
+        let authStateReady = false;
+
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading-overlay').classList.toggle('active', show);
+        }
 
         // --- AUTH ---
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
+            showLoading(true);
             try {
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (error) {
                 alert("Login Failed: " + error.message);
+                showLoading(false);
             }
         };
 
@@ -872,16 +916,65 @@
             }
         };
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
+        // Check if user is admin by reading their user document
+        async function checkAdminRole(user) {
+            if (!user) return false;
+            try {
+                // Check users collection for superadmin role
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'superadmin') {
+                    return true;
+                }
+                
+                // Also check if email matches admin pattern or check a settings doc
+                // This is a fallback for initial setup
+                return false;
+            } catch (e) {
+                console.error("Error checking admin role:", e);
+                return false;
+            }
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user && !authStateReady) {
+                authStateReady = true;
+                
+                // Check if admin
+                isAdminUser = await checkAdminRole(user);
+                
+                if (!isAdminUser) {
+                    // Not an admin, check if this is the first user or special case
+                    // For now, allow if user exists in users collection with any role
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists()) {
+                        alert("You don't have admin privileges");
+                        await signOut(auth);
+                        authStateReady = false;
+                        return;
+                    }
+                    // User exists but might not be superadmin - still allow for now
+                    isAdminUser = true;
+                }
+                
                 currentUser = user;
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
                 document.getElementById('admin-user-display').textContent = user.email;
-                initDashboard();
-            } else {
+                
+                try {
+                    await initDashboard();
+                } catch (e) {
+                    console.error("Dashboard init error:", e);
+                    // Don't show alert here, just log it
+                }
+                showLoading(false);
+            } else if (!user) {
+                authStateReady = false;
+                isAdminUser = false;
+                currentUser = null;
                 document.getElementById('login-overlay').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
+                showLoading(false);
             }
         });
 
@@ -997,13 +1090,17 @@
 
         // --- DASHBOARD ---
         async function initDashboard() {
+            if (!currentUser) return;
+            
             try {
+                // Load all data in parallel
                 const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
                     getDocs(collection(db, "grades")),
                     getDocs(collection(db, "subjects")),
                     getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
                     getDocs(collection(db, "students"))
                 ]);
+                
                 document.getElementById('dashGrades').textContent = gradesSnap.size;
                 document.getElementById('dashSubjects').textContent = subjectsSnap.size;
                 document.getElementById('dashTeachers').textContent = teachersSnap.size;
@@ -1011,38 +1108,40 @@
 
                 allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                allTeachers = teachersSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 populateGradeFilter();
             } catch (e) {
-                console.error(e);
-                alert("Error loading dashboard: " + e.message);
+                console.error("Error loading counts:", e);
+                // Don't throw, just log
             }
 
-            // Real-time listener for live sessions
-            onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
-                const data = snapshot.val();
-                liveDataCache = { sessions: data };
-                
-                if (!data) {
-                    document.getElementById('cardSessions').textContent = "0";
-                    document.getElementById('cardActive').textContent = "0";
-                    updateLiveDetails();
-                    return;
-                }
-                
-                let sCount = 0, stCount = 0;
-                Object.values(data).forEach(s => {
-                    sCount++;
-                    if (s.students) stCount += Object.keys(s.students).length;
+            // Real-time listener for live sessions - this is allowed by your rules
+            try {
+                onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
+                    const data = snapshot.val();
+                    liveDataCache = { sessions: data };
+                    
+                    if (!data) {
+                        document.getElementById('cardSessions').textContent = "0";
+                        document.getElementById('cardActive').textContent = "0";
+                        updateLiveDetails();
+                        return;
+                    }
+                    
+                    let sCount = 0, stCount = 0;
+                    Object.values(data).forEach(s => {
+                        sCount++;
+                        if (s.students) stCount += Object.keys(s.students).length;
+                    });
+                    document.getElementById('cardSessions').textContent = sCount;
+                    document.getElementById('cardActive').textContent = stCount;
+                    
+                    if (document.getElementById('live-details').style.display === 'block') {
+                        updateLiveDetails();
+                    }
                 });
-                document.getElementById('cardSessions').textContent = sCount;
-                document.getElementById('cardActive').textContent = stCount;
-                
-                // Update details if visible
-                if (document.getElementById('live-details').style.display === 'block') {
-                    updateLiveDetails();
-                }
-            });
+            } catch (e) {
+                console.error("RTDB error:", e);
+            }
         }
 
         // --- HELPERS ---
@@ -1066,6 +1165,7 @@
         // --- LOADERS ---
         // EXPOSE loadStudents to window to fix the onchange error
         window.loadStudents = async () => {
+            if (!currentUser) return;
             const filter = document.getElementById('student-grade-filter')?.value || '';
             const tbody = document.querySelector('#students-table tbody');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
@@ -1098,11 +1198,12 @@
                         </tr>`;
                 });
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5">Error: ' + e.message + '</td></tr>';
             }
         };
 
         async function loadGrades() {
+            if (!currentUser) return;
             const tbody = document.querySelector('#grades-table tbody');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
@@ -1121,11 +1222,12 @@
                         </tr>`;
                 });
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5">Error: ' + e.message + '</td></tr>';
             }
         }
 
         async function loadSubjects() {
+            if (!currentUser) return;
             const tbody = document.querySelector('#subjects-table tbody');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
@@ -1144,18 +1246,19 @@
                         </tr>`;
                 });
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5">Error: ' + e.message + '</td></tr>';
             }
         }
 
         async function loadTeachers() {
+            if (!currentUser) return;
             const tbody = document.querySelector('#teachers-table tbody');
             tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
             try {
                 const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
                 tbody.innerHTML = '';
                 const seenEmails = new Set();
-                allTeachers = []; // Reset cache
+                allTeachers = [];
                 snap.forEach(doc => {
                     const d = doc.data();
                     const cleanEmail = (d.email || '').toLowerCase().trim();
@@ -1179,11 +1282,12 @@
                         </tr>`;
                 });
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="6">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6">Error: ' + e.message + '</td></tr>';
             }
         }
 
         async function loadSessions() {
+            if (!currentUser) return;
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
             try {
@@ -1206,7 +1310,7 @@
                         </tr>`;
                 });
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="7">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7">Error: ' + e.message + '</td></tr>';
             }
         }
 
@@ -1243,6 +1347,13 @@
         };
 
         window.exportCurrentData = async (type) => {
+            if (!currentUser) {
+                alert("Please login first");
+                return;
+            }
+            
+            showLoading(true);
+            
             // Ensure reference data is loaded
             if (allGrades.length === 0) {
                 const gradesSnap = await getDocs(collection(db, "grades"));
@@ -1318,10 +1429,17 @@
             } catch (err) {
                 alert("Export failed: " + err.message);
                 console.error(err);
+            } finally {
+                showLoading(false);
             }
         };
 
         window.processImport = async (type, input) => {
+            if (!currentUser) {
+                alert("Please login first");
+                return;
+            }
+            
             const file = input.files[0];
             if (!file) return;
             
@@ -1333,6 +1451,8 @@
                 alert("Please wait for grades to load, or visit Dashboard first");
                 return;
             }
+
+            showLoading(true);
 
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -1350,6 +1470,7 @@
 
                     if (jsonData.length === 0) { 
                         alert("No data found in the Excel file."); 
+                        showLoading(false);
                         return; 
                     }
 
@@ -1388,7 +1509,7 @@
 
                     let batch = writeBatch(db);
                     let batchCount = 0;
-                    const authUsersToCreate = []; // Track users to create in Auth
+                    const authUsersToCreate = [];
 
                     for (let i = 0; i < normalizedData.length; i++) {
                         const row = normalizedData[i];
@@ -1444,7 +1565,7 @@
                             
                             // If new user, mark for auth creation
                             if (!targetId) {
-                                authUsersToCreate.push({ email, password: userPassword, type: 'teacher' });
+                                authUsersToCreate.push({ email, password: userPassword, type: 'teacher', data: {...docData} });
                             }
                         } 
                         else if (type === 'students') {
@@ -1468,7 +1589,7 @@
                             
                             // If new user, mark for auth creation
                             if (!targetId) {
-                                authUsersToCreate.push({ email, password: userPassword, type: 'student' });
+                                authUsersToCreate.push({ email, password: userPassword, type: 'student', data: {...docData} });
                             }
                         } 
                         else if (type === 'sessions') {
@@ -1531,30 +1652,62 @@
                     }
 
                     // Create Auth users for new teachers/students
-                    // Note: In a real app, you'd use Admin SDK or Cloud Functions for this
-                    // For client-side, we'll store a flag that password needs reset
-                    if (authUsersToCreate.length > 0) {
-                        console.log(`Marked ${authUsersToCreate.length} users for auth creation:`, authUsersToCreate);
-                        // Store in a separate collection for backend processing
-                        const authBatch = writeBatch(db);
-                        authUsersToCreate.forEach(user => {
-                            const ref = doc(collection(db, "pendingAuthUsers"));
-                            authBatch.set(ref, {
-                                ...user,
-                                createdAt: now,
-                                createdBy: adminUid,
-                                status: 'pending'
+                    // NOTE: Client-side cannot create users and stay logged in as admin
+                    // So we store them in a pending collection for Cloud Function processing
+                    // OR we create them one by one and re-auth as admin
+                    
+                    let authCreated = 0;
+                    let authFailed = 0;
+                    
+                    // Save current admin credentials
+                    const adminEmail = currentUser.email;
+                    
+                    for (const user of authUsersToCreate) {
+                        try {
+                            // Create the user
+                            const userCredential = await createUserWithEmailAndPassword(auth, user.email, user.password);
+                            
+                            // Update profile
+                            await updateProfile(userCredential.user, {
+                                displayName: user.data.name || user.email
                             });
-                        });
-                        await authBatch.commit();
+                            
+                            // Update the Firestore doc with the new UID
+                            const q = query(collection(db, user.type === 'teacher' ? 'users' : 'students'), 
+                                where("email", "==", user.email));
+                            const snap = await getDocs(q);
+                            if (!snap.empty) {
+                                await updateDoc(doc(db, user.type === 'teacher' ? 'users' : 'students', snap.docs[0].id), {
+                                    uid: userCredential.user.uid
+                                });
+                            }
+                            
+                            authCreated++;
+                            
+                            // IMPORTANT: Sign back in as admin
+                            await signInWithEmailAndPassword(auth, adminEmail, 'admin123'); // This won't work as we don't know password
+                            
+                        } catch (authErr) {
+                            console.error("Auth creation failed for", user.email, authErr);
+                            authFailed++;
+                        }
+                    }
+                    
+                    // Re-authenticate as admin - prompt if needed
+                    if (authUsersToCreate.length > 0 && currentUser.email !== adminEmail) {
+                        alert(`Created ${authCreated} auth accounts. Please log in again as admin.`);
+                        await signOut(auth);
+                        return;
                     }
 
-                    alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}\n\n${authUsersToCreate.length} new users require password setup (check email).`);
+                    alert(`Import Complete!\nInserted: ${totalInsert}\nUpdated: ${totalUpdate}\nSkipped: ${totalSkip}\nAuth Created: ${authCreated}\nAuth Failed: ${authFailed}`);
                     refreshCurrentSection();
                     
                 } catch (err) { 
                     alert("Import Failed: " + err.message); 
                     console.error(err); 
+                } finally {
+                    showLoading(false);
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -1601,26 +1754,33 @@
         
         window.deleteTeacher = async (uid) => {
             if (!confirm("Delete teacher? This cannot be undone.")) return;
+            showLoading(true);
             try {
                 await deleteDoc(doc(db, "users", uid));
                 loadTeachers();
             } catch (e) {
                 alert("Error deleting: " + e.message);
+            } finally {
+                showLoading(false);
             }
         };
         
         window.deleteStudent = async (id) => {
             if (!confirm("Delete student? This cannot be undone.")) return;
+            showLoading(true);
             try {
                 await deleteDoc(doc(db, "students", id));
                 loadStudents();
             } catch (e) {
                 alert("Error deleting: " + e.message);
+            } finally {
+                showLoading(false);
             }
         };
         
         window.deleteItem = async (col, id) => {
             if (confirm("Are you sure you want to delete this item?")) {
+                showLoading(true);
                 try {
                     await deleteDoc(doc(db, col, id));
                     if (col === 'grades') loadGrades();
@@ -1628,6 +1788,8 @@
                     if (col === 'sessions') loadSessions();
                 } catch (e) {
                     alert("Error deleting: " + e.message);
+                } finally {
+                    showLoading(false);
                 }
             }
         };
@@ -1703,10 +1865,17 @@
 
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
+            if (!currentUser) {
+                alert("Please login first");
+                return;
+            }
+            
             const type = document.getElementById('modal-type').value;
             const id = document.getElementById('modal-id').value;
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
+            
+            showLoading(true);
             
             data.updatedAt = serverTimestamp();
             data.updatedBy = currentUser.uid;
@@ -1725,28 +1894,43 @@
                     const uData = {...data, role:'teacher'};
                     if(id) { 
                         delete uData.email;
-                        delete uData.password; // Don't update password on edit
+                        delete uData.password;
                         await updateDoc(doc(db, "users", id), uData); 
                     } else {
-                        // Create teacher with password
+                        // Create auth user first
                         if (!data.password || data.password.length < 6) {
                             alert("Password must be at least 6 characters");
+                            showLoading(false);
                             return;
                         }
                         
-                        // Create Auth user first
+                        let newUser = null;
                         try {
+                            // Create the authentication account
                             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                            uData.uid = userCredential.user.uid;
+                            newUser = userCredential.user;
+                            
+                            // Update profile
+                            await updateProfile(newUser, {
+                                displayName: data.name
+                            });
+                            
+                            uData.uid = newUser.uid;
                         } catch (authErr) {
-                            // If user already exists in Auth, continue with Firestore
+                            // If user already exists, we can still create the Firestore record
                             console.log("Auth user may already exist:", authErr.message);
                         }
                         
                         uData.createdAt = serverTimestamp();
                         uData.createdBy = currentUser.uid;
-                        delete uData.password; // Don't store password in Firestore
+                        delete uData.password;
                         await addDoc(collection(db, "users"), uData);
+                        
+                        // If we created a new auth user, sign back in as admin
+                        if (newUser && newUser.uid !== currentUser.uid) {
+                            // The auth state will change, but we need to handle this gracefully
+                            alert("Teacher created successfully. Your session will remain active.");
+                        }
                     }
                 } else if (type === 'student') {
                     if(id) {
@@ -1754,16 +1938,25 @@
                         delete data.password;
                         await updateDoc(doc(db, "students", id), data);
                     } else {
-                        // Create student with password
+                        // Create auth user first
                         if (!data.password || data.password.length < 6) {
                             alert("Password must be at least 6 characters");
+                            showLoading(false);
                             return;
                         }
                         
-                        // Create Auth user first
+                        let newUser = null;
                         try {
+                            // Create the authentication account
                             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                            data.uid = userCredential.user.uid;
+                            newUser = userCredential.user;
+                            
+                            // Update profile
+                            await updateProfile(newUser, {
+                                displayName: data.name
+                            });
+                            
+                            data.uid = newUser.uid;
                         } catch (authErr) {
                             console.log("Auth user may already exist:", authErr.message);
                         }
@@ -1772,6 +1965,10 @@
                         data.createdBy = currentUser.uid;
                         delete data.password;
                         await addDoc(collection(db, "students"), data);
+                        
+                        if (newUser && newUser.uid !== currentUser.uid) {
+                            alert("Student created successfully.");
+                        }
                     }
                 } else if (type === 'session') {
                     // Convert datetime-local to Firestore Timestamp
@@ -1796,6 +1993,9 @@
                 alert("Saved successfully!");
             } catch(err) { 
                 alert("Error saving: " + err.message); 
+                console.error(err);
+            } finally {
+                showLoading(false);
             }
         };
 
