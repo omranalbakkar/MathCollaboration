@@ -4,53 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduBoard — Super Admin Portal</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #f8fafc;
+            --bg: #f1f5f9;
             --surface: #ffffff;
-            --text: #1e293b;
+            --text: #0f172a;
             --text-light: #64748b;
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --green: #10b981;
-            --orange: #f59e0b;
-            --red: #ef4444;
-            --purple: #8b5cf6;
-            --amber: #f59e0b;
-            --blue: #3b82f6;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
             --border: #e2e8f0;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 12px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
         
-        body { background-color: var(--bg); color: var(--text); line-height: 1.5; }
+        body { background-color: var(--bg); color: var(--text); line-height: 1.6; }
 
         /* Login Overlay */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); z-index: 1000;
+            background: rgba(255,255,255,0.98); z-index: 1000;
             display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
         }
         .login-box {
-            background: var(--surface); padding: 2rem; border-radius: 12px;
-            box-shadow: var(--shadow); width: 100%; max-width: 400px; text-align: center;
+            background: var(--surface); padding: 2.5rem; border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); width: 100%; max-width: 420px; text-align: center;
+            border: 1px solid var(--border);
         }
-        .login-box h2 { margin-bottom: 1.5rem; color: var(--primary); }
-        .form-group { margin-bottom: 1rem; text-align: left; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-light); }
-        .form-group input {
+        .login-box h2 { margin-bottom: 0.5rem; color: var(--primary); font-weight: 800; }
+        .form-group { margin-bottom: 1.25rem; text-align: left; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text); }
+        .form-group input, .form-group select {
             width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-            border-radius: 6px; font-size: 1rem;
+            border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s;
         }
+        .form-group input:focus { outline: none; border-color: var(--primary); ring: 2px solid var(--primary); }
+        
         .btn {
             background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem;
-            border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: 600;
-            transition: background 0.2s; width: 100%;
+            border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600;
+            transition: all 0.2s; width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem;
         }
-        .btn:hover { background: var(--primary-hover); }
-        .btn-secondary { background: var(--text-light); margin-top: 1rem; }
-        .btn-secondary:hover { background: #475569; }
+        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-secondary { background: white; color: var(--text-light); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #f8fafc; color: var(--text); }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
 
         /* Main Layout */
         #app-container { display: none; min-height: 100vh; display: flex; flex-direction: column; }
@@ -58,23 +66,23 @@
         header {
             background: var(--surface); border-bottom: 1px solid var(--border);
             padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
         }
-        .brand { font-size: 1.5rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .brand { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
         .user-info { display: flex; align-items: center; gap: 1rem; }
-        .logout-btn { background: transparent; color: var(--red); border: 1px solid var(--red); padding: 0.5rem 1rem; }
-        .logout-btn:hover { background: var(--red); color: white; }
-
+        
         nav {
             background: var(--surface); border-bottom: 1px solid var(--border);
-            padding: 0 2rem; overflow-x: auto; white-space: nowrap;
+            padding: 0 2rem; overflow-x: auto;
         }
-        .nav-tabs { display: flex; gap: 1rem; }
+        .nav-tabs { display: flex; gap: 0.5rem; }
         .nav-tab {
-            padding: 1rem 0.5rem; background: none; border: none; cursor: pointer;
+            padding: 1rem 1.25rem; background: none; border: none; cursor: pointer;
             color: var(--text-light); font-weight: 500; border-bottom: 2px solid transparent;
+            transition: all 0.2s;
         }
-        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-        .nav-tab:hover { color: var(--text); }
+        .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #eff6ff; }
+        .nav-tab:hover { color: var(--text); background: #f8fafc; }
 
         main { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
 
@@ -83,7 +91,7 @@
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        h2 { margin-bottom: 1.5rem; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
+        h2 { margin-bottom: 1.5rem; color: var(--text); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
         
         /* Stats Grid */
         .stats-grid {
@@ -91,81 +99,77 @@
             gap: 1.5rem; margin-bottom: 2rem;
         }
         .stat-card {
-            background: var(--surface); padding: 1.5rem; border-radius: 12px;
-            box-shadow: var(--shadow); border-left: 4px solid var(--border);
-            text-align: center;
+            background: var(--surface); padding: 1.5rem; border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+            text-align: center; transition: transform 0.2s;
         }
-        .stat-val { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
-        .stat-label { color: var(--text-light); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-val { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .stat-label { color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
         
-        .stat-val.green { color: var(--green); }
-        .stat-val.blue { color: var(--blue); }
-        .stat-val.purple { color: var(--purple); }
-        .stat-val.amber { color: var(--amber); }
-        .stat-val.orange { color: var(--orange); }
+        .stat-val.green { color: var(--success); }
+        .stat-val.blue { color: var(--primary); }
+        .stat-val.purple { color: #8b5cf6; }
+        .stat-val.amber { color: var(--warning); }
 
         /* Tables & Controls */
         .controls {
-            background: var(--surface); padding: 1rem; border-radius: 8px;
-            margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
-            box-shadow: var(--shadow);
+            background: var(--surface); padding: 1rem; border-radius: var(--radius);
+            margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
         }
         .search-box {
-            flex: 1; min-width: 200px; padding: 0.5rem; border: 1px solid var(--border);
-            border-radius: 6px;
+            flex: 1; min-width: 250px; padding: 0.6rem 1rem; border: 1px solid var(--border);
+            border-radius: 8px; font-size: 0.95rem;
         }
-        .filter-select {
-            padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;
-            background: white;
-        }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.9rem; width: auto; }
-        .btn-success { background: var(--green); }
-        .btn-success:hover { background: #059669; }
-
+        
         .table-container {
-            background: var(--surface); border-radius: 8px; box-shadow: var(--shadow);
-            overflow-x: auto;
+            background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+            overflow-x: auto; border: 1px solid var(--border);
         }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f1f5f9; font-weight: 600; color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        tr:last-child td { border-bottom: none; }
         tr:hover { background: #f8fafc; }
         
         .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600;
+            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase;
         }
         .status-active { background: #dcfce7; color: #166534; }
         .status-inactive { background: #fee2e2; color: #991b1b; }
 
         .action-btns { display: flex; gap: 0.5rem; }
         .icon-btn {
-            background: none; border: none; cursor: pointer; padding: 0.25rem;
-            color: var(--text-light); transition: color 0.2s;
+            background: white; border: 1px solid var(--border); cursor: pointer; padding: 0.4rem 0.6rem;
+            border-radius: 6px; color: var(--text-light); transition: all 0.2s; font-size: 0.9rem;
         }
-        .icon-btn:hover { color: var(--primary); }
-        .icon-btn.delete:hover { color: var(--red); }
+        .icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .icon-btn.delete:hover { background: var(--danger); border-color: var(--danger); }
+        .icon-btn.reset:hover { background: var(--warning); border-color: var(--warning); color: white; }
 
         /* Modal */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;
+            backdrop-filter: blur(4px);
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: var(--surface); padding: 2rem; border-radius: 12px;
-            width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+            background: var(--surface); padding: 2rem; border-radius: var(--radius);
+            width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
         }
-        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
-        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; align-items: center; }
+        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
         
-        /* Loading */
-        .loading-spinner {
-            border: 3px solid #f3f3f3; border-top: 3px solid var(--primary);
-            border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
-            display: inline-block; vertical-align: middle; margin-right: 5px;
+        /* File Input Styling */
+        .file-upload {
+            border: 2px dashed var(--border); padding: 1.5rem; text-align: center;
+            border-radius: 8px; margin-bottom: 1rem; cursor: pointer;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .file-upload:hover { border-color: var(--primary); background: #eff6ff; }
 
     </style>
 </head>
@@ -174,8 +178,8 @@
     <!-- Login Overlay -->
     <div id="login-overlay">
         <div class="login-box">
-            <h2>🛡️ Super Admin Access</h2>
-            <p style="margin-bottom: 1.5rem; color: var(--text-light);">EduBoard Secure Administration Portal</p>
+            <h2><i class="fas fa-shield-halved"></i> Super Admin</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-light);">EduBoard Secure Portal</p>
             <div class="form-group">
                 <label>Email Address</label>
                 <input type="email" id="admin-email" placeholder="admin@eduboard.com">
@@ -184,8 +188,8 @@
                 <label>Password</label>
                 <input type="password" id="admin-password" placeholder="••••••••">
             </div>
-            <button class="btn" onclick="handleAdminLogin()">Sign In →</button>
-            <a href="index.html" class="btn btn-secondary" style="display:block; text-decoration:none;">← Back to Home</a>
+            <button class="btn" onclick="handleAdminLogin()">Sign In <i class="fas fa-arrow-right"></i></button>
+            <a href="index.html" class="btn btn-secondary" style="display:block; text-decoration:none; margin-top:1rem;">← Back to Home</a>
         </div>
     </div>
 
@@ -193,22 +197,22 @@
     <div id="app-container" style="display:none;">
         <header>
             <div class="brand">
-                <span>🛡️</span> EduBoard Super Admin
+                <i class="fas fa-graduation-cap"></i> EduBoard Admin
             </div>
             <div class="user-info">
-                <span id="admin-user-display">Admin</span>
-                <button class="btn logout-btn" onclick="handleLogout()">Sign Out</button>
+                <span id="admin-user-display" style="font-weight:500; color:var(--text-light);">Admin</span>
+                <button class="btn btn-sm btn-secondary" onclick="handleLogout()" style="width:auto; padding:0.4rem 1rem;"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
             </div>
         </header>
 
         <nav>
             <div class="nav-tabs">
-                <button class="nav-tab active" onclick="showSection('dashboard')">Dashboard</button>
-                <button class="nav-tab" onclick="showSection('grades')">Grades</button>
-                <button class="nav-tab" onclick="showSection('subjects')">Subjects</button>
-                <button class="nav-tab" onclick="showSection('teachers')">Teachers</button>
-                <button class="nav-tab" onclick="showSection('students')">Students</button>
-                <button class="nav-tab" onclick="showSection('sessions')">Sessions</button>
+                <button class="nav-tab active" onclick="showSection('dashboard')"><i class="fas fa-chart-line"></i> Dashboard</button>
+                <button class="nav-tab" onclick="showSection('grades')"><i class="fas fa-layer-group"></i> Grades</button>
+                <button class="nav-tab" onclick="showSection('subjects')"><i class="fas fa-book"></i> Subjects</button>
+                <button class="nav-tab" onclick="showSection('teachers')"><i class="fas fa-chalkboard-teacher"></i> Teachers</button>
+                <button class="nav-tab" onclick="showSection('students')"><i class="fas fa-user-graduate"></i> Students</button>
+                <button class="nav-tab" onclick="showSection('sessions')"><i class="fas fa-video"></i> Sessions</button>
             </div>
         </nav>
 
@@ -218,48 +222,50 @@
                 <h2>System Overview</h2>
                 
                 <div class="stats-grid">
-                    <!-- Existing Firestore Stats -->
                     <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
                     <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
                     <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
                     <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
                     
-                    <!-- 🟢 NEW: RTDB Real-time Stats -->
-                    <div class="stat-card" style="border-color:var(--green);">
-                        <div class="stat-val green loading" id="cardActive">—</div>
-                        <div class="stat-label">🟢 Active Students (Live)</div>
+                    <div class="stat-card" style="border-top: 4px solid var(--success);">
+                        <div class="stat-val green" id="cardActive">—</div>
+                        <div class="stat-label">🟢 Live Students</div>
                     </div>
-                    <div class="stat-card" style="border-color:var(--orange);">
-                        <div class="stat-val orange loading" id="cardSessions">—</div>
-                        <div class="stat-label">⚡ Live Sessions</div>
+                    <div class="stat-card" style="border-top: 4px solid var(--warning);">
+                        <div class="stat-val orange" id="cardSessions">—</div>
+                        <div class="stat-label">⚡ Active Sessions</div>
                     </div>
                 </div>
 
+                <div class="table-container" style="padding: 3rem; text-align: center;">
+                    <i class="fas fa-server" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
+                    <h3 style="color: var(--text-light); font-weight: 400;">Select a module above to manage data</h3>
+                </div>
             </div>
 
             <!-- GRADES SECTION -->
             <div id="grades" class="section">
                 <h2>
                     Grade Master
-                    <button class="btn btn-sm btn-success" onclick="openModal('grade')">＋ Add Grade</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('grades')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-grades" hidden onchange="importData('grades', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add Grade</button>
+                    </div>
                 </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search grades..." onkeyup="filterTable('grades-table', this.value)">
-                    <select class="filter-select" onchange="filterStatus('grades-table', this.value)">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
                 </div>
                 <div class="table-container">
                     <table id="grades-table">
                         <thead>
                             <tr>
-                                <th>Grade Name (English)</th>
-                                <th>Grade Name (Arabic)</th>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
                                 <th>Code</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody><!-- Populated by JS --></tbody>
@@ -271,25 +277,25 @@
             <div id="subjects" class="section">
                 <h2>
                     Subjects Master
-                    <button class="btn btn-sm btn-success" onclick="openModal('subject')">＋ Add Subject</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('subjects')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-subjects" hidden onchange="importData('subjects', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add Subject</button>
+                    </div>
                 </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search subjects..." onkeyup="filterTable('subjects-table', this.value)">
-                    <select class="filter-select" onchange="filterStatus('subjects-table', this.value)">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
                 </div>
                 <div class="table-container">
                     <table id="subjects-table">
                         <thead>
                             <tr>
-                                <th>Subject Name (English)</th>
-                                <th>Subject Name (Arabic)</th>
+                                <th>Name (EN)</th>
+                                <th>Name (AR)</th>
                                 <th>Code</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="width: 120px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody><!-- Populated by JS --></tbody>
@@ -301,26 +307,26 @@
             <div id="teachers" class="section">
                 <h2>
                     Teachers Master
-                    <button class="btn btn-sm btn-success" onclick="openModal('teacher')">＋ Add Teacher</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('teachers')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-teachers" hidden onchange="importData('teachers', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add Teacher</button>
+                    </div>
                 </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search teachers..." onkeyup="filterTable('teachers-table', this.value)">
-                    <select class="filter-select" onchange="filterStatus('teachers-table', this.value)">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
                 </div>
                 <div class="table-container">
                     <table id="teachers-table">
                         <thead>
                             <tr>
-                                <th>Teacher Name</th>
+                                <th>Name</th>
                                 <th>Email</th>
                                 <th>Assigned Grades</th>
                                 <th>Assigned Subjects</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="width: 150px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody><!-- Populated by JS --></tbody>
@@ -332,28 +338,28 @@
             <div id="students" class="section">
                 <h2>
                     Students Master
-                    <button class="btn btn-sm btn-success" onclick="openModal('student')">＋ Add Student</button>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="exportData('students')"><i class="fas fa-download"></i> Export</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import</button>
+                        <input type="file" id="import-file-students" hidden onchange="importData('students', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add Student</button>
+                    </div>
                 </h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search students..." onkeyup="filterTable('students-table', this.value)">
-                    <select class="filter-select" id="student-grade-filter" onchange="loadStudents()">
+                    <select class="filter-select" id="student-grade-filter" onchange="loadStudents()" style="padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
                         <option value="">All Grades</option>
-                    </select>
-                    <select class="filter-select" onchange="filterStatus('students-table', this.value)">
-                        <option value="">All Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
                     </select>
                 </div>
                 <div class="table-container">
                     <table id="students-table">
                         <thead>
                             <tr>
-                                <th>Student Name</th>
+                                <th>Name</th>
                                 <th>Email</th>
                                 <th>Grade</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="width: 150px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody><!-- Populated by JS --></tbody>
@@ -363,10 +369,7 @@
 
             <!-- SESSIONS SECTION -->
             <div id="sessions" class="section">
-                <h2>
-                    All Sessions
-                    <button class="btn btn-sm btn-success" onclick="alert('Create session via Teacher Portal')">＋ Create Session</button>
-                </h2>
+                <h2>All Sessions</h2>
                 <div class="controls">
                     <input type="text" class="search-box" placeholder="Search sessions..." onkeyup="filterTable('sessions-table', this.value)">
                 </div>
@@ -374,13 +377,13 @@
                     <table id="sessions-table">
                         <thead>
                             <tr>
-                                <th>Session Title</th>
+                                <th>Title</th>
                                 <th>Teacher</th>
                                 <th>Grade</th>
                                 <th>Subject</th>
                                 <th>Date</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th style="width: 80px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody><!-- Populated by JS --></tbody>
@@ -395,15 +398,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-title">Add Item</h3>
-                <button class="close-modal" onclick="closeModal()">×</button>
+                <button class="close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <form id="modal-form" onsubmit="handleFormSubmit(event)">
                 <input type="hidden" id="modal-type">
                 <input type="hidden" id="modal-id">
                 <div id="modal-fields"></div>
-                <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
-                    <button type="submit" class="btn">Save</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="background: #cbd5e1; color: #334155;">Cancel</button>
+                <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()" style="width:auto;">Cancel</button>
+                    <button type="submit" class="btn" style="width:auto;"><i class="fas fa-save"></i> Save Changes</button>
                 </div>
             </form>
         </div>
@@ -412,8 +415,8 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // --- CONFIGURATION ---
@@ -443,7 +446,6 @@
             const password = document.getElementById('admin-password').value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // Security is now enforced by Firestore Rules
             } catch (error) {
                 alert("Login Failed: " + error.message);
             }
@@ -470,7 +472,7 @@
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
             
             document.getElementById(sectionId).classList.add('active');
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
 
             if (sectionId === 'grades') loadGrades();
             if (sectionId === 'subjects') loadSubjects();
@@ -486,7 +488,7 @@
                     getDocs(collection(db, "grades")),
                     getDocs(collection(db, "subjects")),
                     getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
-                    getDocs(query(collection(db, "users"), where("role", "==", "student")))
+                    getDocs(collection(db, "students")) // Read from students collection
                 ]);
 
                 document.getElementById('dashGrades').textContent = gradesSnap.size;
@@ -500,8 +502,6 @@
                 populateGradeFilter();
             } catch (e) {
                 console.error("Error loading stats:", e);
-                document.getElementById('dashGrades').textContent = "!";
-                document.getElementById('dashSubjects').textContent = "!";
             }
 
             try {
@@ -513,27 +513,21 @@
                         document.getElementById('cardActive').textContent = "0";
                         return;
                     }
-                    
                     let sessionCount = 0;
                     let studentCount = 0;
                     Object.values(data).forEach(session => {
                         sessionCount++;
-                        if (session.students) {
-                            studentCount += Object.keys(session.students).length;
-                        }
+                        if (session.students) studentCount += Object.keys(session.students).length;
                     });
                     document.getElementById('cardSessions').textContent = sessionCount;
                     document.getElementById('cardActive').textContent = studentCount;
                 });
-            } catch (e) {
-                console.error("RTDB setup error:", e);
-            }
+            } catch (e) { console.error("RTDB error:", e); }
         }
 
         // --- HELPERS ---
-        // FIXED: Checks 'name' first (your DB structure), then 'displayName'
         function getDisplayName(userDoc) {
-            return userDoc.name || userDoc.displayName || "Unnamed User";
+            return userDoc.name || userDoc.displayName || "Unnamed";
         }
 
         function getNameById(id, list) {
@@ -561,22 +555,12 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     const status = d.status || 'Active';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${d.nameEn || 'N/A'}</td>
-                            <td>${d.nameAr || 'N/A'}</td>
-                            <td>${d.code || 'N/A'}</td>
-                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('grade', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteItem('grades', '${doc.id}')">🗑️</button>
-                            </td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += createRow('grade', doc.id, d, [
+                        d.nameEn, d.nameAr, d.code, 
+                        `<span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span>`
+                    ]);
                 });
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
-            }
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
         }
 
         async function loadSubjects() {
@@ -588,22 +572,12 @@
                 snap.forEach(doc => {
                     const d = doc.data();
                     const status = d.status || 'Active';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${d.nameEn || 'N/A'}</td>
-                            <td>${d.nameAr || 'N/A'}</td>
-                            <td>${d.code || 'N/A'}</td>
-                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('subject', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteItem('subjects', '${doc.id}')">🗑️</button>
-                            </td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += createRow('subject', doc.id, d, [
+                        d.nameEn, d.nameAr, d.code,
+                        `<span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span>`
+                    ]);
                 });
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
-            }
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
         }
 
         async function loadTeachers() {
@@ -614,19 +588,18 @@
                 const snap = await getDocs(q);
                 tbody.innerHTML = '';
                 
+                // Use a Set to track unique emails and prevent duplicates in UI
+                const seenEmails = new Set();
+
                 snap.forEach(doc => {
                     const d = doc.data();
-                    const status = d.status || 'Active';
-                    
-                    let gradeNames = 'None';
-                    if (d.assignedGrades && Array.isArray(d.assignedGrades)) {
-                        gradeNames = d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ');
-                    }
+                    if(seenEmails.has(d.email)) return; // Skip duplicates
+                    seenEmails.add(d.email);
 
-                    let subjectNames = 'None';
-                    if (d.assignedSubjects && Array.isArray(d.assignedSubjects)) {
-                        subjectNames = d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ');
-                    }
+                    const status = d.active ? 'Active' : 'Inactive'; // Check 'active' field
+                    
+                    let gradeNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
+                    let subjectNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
 
                     tbody.innerHTML += `
                         <tr>
@@ -634,17 +607,16 @@
                             <td>${d.email}</td>
                             <td style="font-size:0.85rem; color:#666;">${gradeNames}</td>
                             <td style="font-size:0.85rem; color:#666;">${subjectNames}</td>
-                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
                             <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                                <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')" title="Edit"><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')" title="Reset Password"><i class="fas fa-key"></i></button>
+                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error: ${e.message}</td></tr>`;
-            }
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error: ${e.message}</td></tr>`; }
         }
 
         async function loadStudents() {
@@ -653,46 +625,45 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
             
             try {
-                // FIX 1: Read from the 'students' collection, not 'users'
+                // Load from 'students' collection
                 const snap = await getDocs(collection(db, "students"));
                 tbody.innerHTML = '';
                 
+                const seenEmails = new Set();
+
                 snap.forEach(doc => {
                     const d = doc.data();
-                    
-                    // Filter logic (optional, keeps the dropdown working)
-                    // Note: Since we are now using gradeId, we might need to resolve the name first to filter by name
+                    if(seenEmails.has(d.email)) return;
+                    seenEmails.add(d.email);
+
+                    // Filter logic
                     let currentGradeName = "N/A";
                     if(d.gradeId) {
                         const gradeObj = allGrades.find(g => g.id === d.gradeId);
                         if(gradeObj) currentGradeName = gradeObj.nameEn;
                     }
-
                     if (gradeFilter && currentGradeName !== gradeFilter) return;
                     
-                    const status = d.active ? 'Active' : 'Inactive'; // Your DB uses 'active', not 'status'
-                    
-                    // FIX 2: Resolve gradeId to Name
+                    const status = d.active ? 'Active' : 'Inactive';
                     const gradeDisplay = getNameById(d.gradeId, allGrades);
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${d.name || 'Unnamed Student'}</td>
+                            <td>${d.name || 'Unnamed'}</td>
                             <td>${d.email}</td>
                             <td>${gradeDisplay}</td>
-                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
                             <td class="action-btns">
-                                <!-- Note: Editing students requires mapping fields carefully since 'students' collection differs from 'users' -->
-                                <button class="icon-btn" onclick="alert('Edit functionality for standalone students collection needs specific mapping')">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteItem('students', '${doc.id}')">🗑️</button>
+                                <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')" title="Edit"><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')" title="Reset Password"><i class="fas fa-key"></i></button>
+                                <button class="icon-btn delete" onclick="deleteItem('students', '${doc.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
-            }
-        }        
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
+        }
+        
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
@@ -710,16 +681,27 @@
                             <td>${d.gradeLevel}</td>
                             <td>${d.subject}</td>
                             <td>${date}</td>
-                            <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
+                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
                             <td class="action-btns">
-                                <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')">🗑️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `;
                 });
-            } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error: ${e.message}</td></tr>`;
-            }
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error: ${e.message}</td></tr>`; }
+        }
+
+        // Helper to create table rows consistently
+        function createRow(type, id, data, cells) {
+            return `
+                <tr>
+                    ${cells.map(c => `<td>${c}</td>`).join('')}
+                    <td class="action-btns">
+                        <button class="icon-btn" onclick="editItem('${type}', '${id}', '${JSON.stringify(data).replace(/"/g, '&quot;')}')"><i class="fas fa-pen"></i></button>
+                        <button class="icon-btn delete" onclick="deleteItem('${type}s', '${id}')"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
         }
 
         // --- UTILS ---
@@ -733,14 +715,56 @@
             }
         };
 
-        window.filterStatus = (tableId, status) => {
-            const table = document.getElementById(tableId);
-            const tr = table.getElementsByTagName("tr");
-            for (let i = 1; i < tr.length; i++) {
-                const badge = tr[i].querySelector('.status-badge');
-                if (badge) {
-                    tr[i].style.display = (!status || badge.textContent === status) ? "" : "none";
+        // --- IMPORT / EXPORT ---
+        window.exportData = async (collectionName) => {
+            try {
+                const snap = await getDocs(collection(db, collectionName));
+                const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${collectionName}_export.json`;
+                a.click();
+            } catch (e) { alert("Export failed: " + e.message); }
+        };
+
+        window.importData = async (collectionName, input) => {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) throw new Error("Invalid JSON format");
+                    
+                    let count = 0;
+                    for (const item of data) {
+                        const id = item.id;
+                        delete item.id; // Remove ID to let Firestore generate new one or handle update
+                        if(id) {
+                            await setDoc(doc(db, collectionName, id), item);
+                        } else {
+                            await addDoc(collection(db, collectionName), item);
+                        }
+                        count++;
+                    }
+                    alert(`Successfully imported ${count} records.`);
+                    location.reload();
+                } catch (err) {
+                    alert("Import failed: " + err.message);
                 }
+            };
+            reader.readAsText(file);
+        };
+
+        window.resetPassword = async (email) => {
+            if(!confirm(`Send password reset email to ${email}?`)) return;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("Password reset email sent!");
+            } catch (e) {
+                alert("Error: " + e.message);
             }
         };
 
@@ -757,7 +781,7 @@
             title.textContent = (id ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
             
             let html = '';
-            if (type === 'grade') {
+            if (type === 'grade' || type === 'subject') {
                 html = `
                     <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
                     <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
@@ -769,39 +793,35 @@
                         </select>
                     </div>
                 `;
-            } else if (type === 'subject') {
-                html = `
-                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
-                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
-                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code || ''}"></div>
-                    <div class="form-group"><label>Status</label>
-                        <select name="status">
-                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
-                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    </div>
-                `;
-            } else if (type === 'teacher' || type === 'student') {
-                const role = type === 'teacher' ? 'teacher' : 'student';
-                // FIXED: Use 'name' field primarily, fallback to 'displayName'
+            } else if (type === 'teacher') {
                 const userName = data?.name || data?.displayName || '';
-                
                 html = `
                     <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
-                    <div class="form-group"><label>Display Name</label><input name="displayName" required value="${userName}"></div>
+                    <div class="form-group"><label>Display Name</label><input name="name" required value="${userName}"></div>
                     ${!id ? `<div class="form-group"><label>Password</label><input name="password" type="password" ${id ? '' : 'required'}></div>` : ''}
                     <div class="form-group"><label>Status</label>
-                        <select name="status">
-                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
-                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
+                        <select name="active">
+                            <option value="true" ${data?.active !== false ? 'selected' : ''}>Active</option>
+                            <option value="false" ${data?.active === false ? 'selected' : ''}>Inactive</option>
                         </select>
                     </div>
-                    ${type === 'student' ? `
+                `;
+            } else if (type === 'student') {
+                const userName = data?.name || '';
+                html = `
+                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
+                    <div class="form-group"><label>Student Name</label><input name="name" required value="${userName}"></div>
                     <div class="form-group"><label>Grade Level</label>
-                        <select name="gradeLevel">
-                            ${allGrades.map(g => `<option value="${g.nameEn}" ${data?.gradeLevel === g.nameEn ? 'selected' : ''}>${g.nameEn}</option>`).join('')}
+                        <select name="gradeId">
+                            ${allGrades.map(g => `<option value="${g.id}" ${data?.gradeId === g.id ? 'selected' : ''}>${g.nameEn}</option>`).join('')}
                         </select>
-                    </div>` : ''}
+                    </div>
+                    <div class="form-group"><label>Status</label>
+                        <select name="active">
+                            <option value="true" ${data?.active !== false ? 'selected' : ''}>Active</option>
+                            <option value="false" ${data?.active === false ? 'selected' : ''}>Inactive</option>
+                        </select>
+                    </div>
                 `;
             }
 
@@ -825,27 +845,39 @@
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
 
+            // Convert string booleans
+            if(data.active) data.active = (data.active === 'true');
+
             try {
                 if (type === 'grade' || type === 'subject') {
                     const col = type + 's';
                     if (id) {
                         await updateDoc(doc(db, col, id), data);
                     } else {
-                        await setDoc(doc(db, col), data);
+                        // FIX: Use addDoc or setDoc with generated ID
+                        await addDoc(collection(db, col), data);
                     }
-                } else if (type === 'teacher' || type === 'student') {
-                    const role = type === 'teacher' ? 'teacher' : 'student';
-                    const userData = { ...data, role };
-                    
+                } else if (type === 'teacher') {
+                    const userData = { ...data, role: 'teacher' };
                     if (id) {
                         delete userData.role; 
+                        delete userData.password;
                         await updateDoc(doc(db, "users", id), userData);
                     } else {
-                        alert("Note: This creates the database record. You must manually create the Authentication account in Firebase Console for login to work.");
-                        await setDoc(doc(db, "users"), userData);
+                        alert("Note: This creates the database record. You must manually create the Authentication account in Firebase Console.");
+                        await addDoc(collection(db, "users"), userData);
+                    }
+                } else if (type === 'student') {
+                    const userData = { ...data, role: 'student' }; // Keep role for consistency if needed elsewhere
+                    if (id) {
+                        delete userData.role;
+                        await updateDoc(doc(db, "students", id), userData);
+                    } else {
+                        await addDoc(collection(db, "students"), userData);
                     }
                 }
                 closeModal();
+                // Reload
                 if (type === 'grade') loadGrades();
                 if (type === 'subject') loadSubjects();
                 if (type === 'teacher') loadTeachers();
@@ -861,10 +893,8 @@
                     await deleteDoc(doc(db, collectionName, id));
                     if (collectionName === 'grades') loadGrades();
                     if (collectionName === 'subjects') loadSubjects();
-                    if (collectionName === 'users') {
-                        if (document.getElementById('teachers').classList.contains('active')) loadTeachers();
-                        if (document.getElementById('students').classList.contains('active')) loadStudents();
-                    }
+                    if (collectionName === 'users') loadTeachers();
+                    if (collectionName === 'students') loadStudents();
                     if (collectionName === 'sessions') loadSessions();
                 } catch (err) {
                     alert("Error deleting: " + err.message);
