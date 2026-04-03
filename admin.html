@@ -1093,10 +1093,8 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const workbook = XLSX.read(e.target.result, {
-                        type: 'array'
-                    });
-
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    
                     // FIX: Find the first sheet that actually contains data
                     let sheetName = workbook.SheetNames[0];
                     for (let name of workbook.SheetNames) {
@@ -1111,15 +1109,14 @@
                     const worksheet = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (jsonData.length === 0) {
-                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows.");
-                        return;
+                    if (jsonData.length === 0) { 
+                        alert("No data found in the Excel file. Please ensure you are using the 'Sample_Data' sheet or have filled in rows."); 
+                        return; 
                     }
 
                     const batch = writeBatch(db);
-                    let countInsert = 0,
-                        countUpdate = 0;
-
+                    let countInsert = 0, countUpdate = 0;
+                    
                     // Audit Info
                     const now = serverTimestamp();
                     const adminUid = currentUser.uid;
@@ -1131,35 +1128,37 @@
                         if ((type === 'teachers' || type === 'students') && !row.email) continue;
 
                         let docData = {};
-                        let targetId = null; // 👈 START WITH NULL, NOT row.id
+                        let targetId = row.id || null;
 
                         // Construct Data based on Type
                         if (type === 'grades' || type === 'subjects') {
-                            docData = {
-                                nameEn: row.nameEn,
-                                nameAr: row.nameAr,
-                                code: row.code,
-                                status: row.status || 'Active'
+                            docData = { 
+                                nameEn: row.nameEn, 
+                                nameAr: row.nameAr, 
+                                code: row.code, 
+                                status: row.status || 'Active' 
                             };
                         } else if (type === 'teachers') {
                             const gradeIds = resolveNamesToIds(row['assignedGrades (Names or IDs)'], allGrades);
                             const subjectIds = resolveNamesToIds(row['assignedSubjects (Names or IDs)'], allSubjects);
-                            docData = {
-                                name: row.name,
-                                email: row.email,
-                                role: 'teacher',
-                                status: row.status || 'Active',
-                                assignedGrades: gradeIds,
-                                assignedSubjects: subjectIds
+                            docData = { 
+                                name: row.name, 
+                                email: row.email, 
+                                role: 'teacher', 
+                                status: row.status || 'Active', // ✅ String
+                                assignedGrades: gradeIds, 
+                                assignedSubjects: subjectIds 
                             };
+                            targetId = row.id;
                         } else if (type === 'students') {
                             const gradeId = resolveNameToId(row['gradeLevel (Name or ID)'], allGrades);
-                            docData = {
-                                name: row.name,
-                                email: row.email,
-                                gradeLevel: gradeId,
-                                status: row.status || 'Active'
+                            docData = { 
+                                name: row.name, 
+                                email: row.email, 
+                                gradeLevel: gradeId, 
+                                status: row.status || 'Active' // ✅ String
                             };
+                            targetId = row.id;
                         } else if (type === 'sessions') {
                             let teacherId = row['ownerTeacherId (Email or ID)'];
                             if (teacherId && teacherId.includes('@')) {
@@ -1169,16 +1168,17 @@
                             let startSecs = null, endSecs = null;
                             if (row['startTime (YYYY-MM-DD HH:MM)']) startSecs = Math.floor(new Date(row['startTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
                             if (row['endTime (YYYY-MM-DD HH:MM)']) endSecs = Math.floor(new Date(row['endTime (YYYY-MM-DD HH:MM)']).getTime() / 1000);
-
-                            docData = {
-                                title: row.title,
-                                ownerTeacherId: teacherId,
-                                gradeLevel: row.gradeLevel,
-                                subject: row.subject,
-                                startTime: startSecs ? { seconds: startSecs } : null,
-                                endTime: endSecs ? { seconds: endSecs } : null,
-                                isActive: String(row.isActive).toLowerCase() === 'true'
+                            
+                            docData = { 
+                                title: row.title, 
+                                ownerTeacherId: teacherId, 
+                                gradeLevel: row.gradeLevel, 
+                                subject: row.subject, 
+                                startTime: startSecs ? { seconds: startSecs } : null, 
+                                endTime: endSecs ? { seconds: endSecs } : null, 
+                                isActive: String(row.isActive).toLowerCase() === 'true' 
                             };
+                            targetId = row.id;
                         }
 
                         // Add Audit Fields
@@ -1186,20 +1186,18 @@
                         docData.updatedBy = adminUid;
 
                         const colName = type === 'teachers' ? 'users' : (type === 'sessions' ? 'sessions' : type + 's');
-
+                        
                         // Logic to Find Existing Document if ID is missing
-                        // ONLY use row.id if it's explicitly provided and looks like a Firestore ID
-                        if (row.id && typeof row.id === 'string' && row.id.length > 10) {
-                            targetId = row.id;
-                        } else {
-                            // Otherwise, search by unique key
+                        if (!targetId) {
                             let q;
                             if (type === 'grades' || type === 'subjects') {
+                                // Match by Code
                                 q = query(collection(db, colName), where("code", "==", row.code));
                             } else if (type === 'teachers' || type === 'students') {
+                                // Match by Email
                                 q = query(collection(db, colName), where("email", "==", row.email));
                             } else {
-                                q = null;
+                                q = null; 
                             }
 
                             if (q) {
@@ -1221,9 +1219,9 @@
 
                             if (type === 'teachers' || type === 'students') {
                                 const existing = await getDocs(query(collection(db, colName), where("email", "==", row.email)));
-                                if (!existing.empty) {
-                                    console.warn(`Skip duplicate: ${row.email}`);
-                                    continue;
+                                if (!existing.empty) { 
+                                    console.warn(`Skip duplicate: ${row.email}`); 
+                                    continue; 
                                 }
                             }
                             const newRef = doc(collection(db, colName));
@@ -1231,18 +1229,18 @@
                             countInsert++;
                         }
                     }
-
+                    
                     if (countInsert === 0 && countUpdate === 0) {
-                        alert("No valid records found to import. Check your column headers match the template.");
+                         alert("No valid records found to import. Check your column headers match the template.");
                     } else {
                         await batch.commit();
                         alert(`Success!\nInserted: ${countInsert}\nUpdated: ${countUpdate}`);
                         refreshCurrentSection();
                     }
-
-                } catch (err) {
-                    alert("Import Failed: " + err.message);
-                    console.error(err);
+                    
+                } catch (err) { 
+                    alert("Import Failed: " + err.message); 
+                    console.error(err); 
                 }
             };
             reader.readAsArrayBuffer(file);
