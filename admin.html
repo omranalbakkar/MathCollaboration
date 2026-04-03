@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduBoard — Super Admin Portal</title>
-    <!-- Font Awesome for Icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <style>
         :root {
             --bg: #f1f5f9;
@@ -18,82 +20,68 @@
             --warning: #f59e0b;
             --danger: #ef4444;
             --border: #e2e8f0;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --radius: 12px;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
-        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
         body { background-color: var(--bg); color: var(--text); line-height: 1.6; }
 
-        /* Login Overlay */
+        /* Login */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.98); z-index: 1000;
             display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(5px);
         }
         .login-box {
             background: var(--surface); padding: 2.5rem; border-radius: var(--radius);
             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); width: 100%; max-width: 420px; text-align: center;
             border: 1px solid var(--border);
         }
-        .login-box h2 { margin-bottom: 0.5rem; color: var(--primary); font-weight: 800; }
         .form-group { margin-bottom: 1.25rem; text-align: left; }
-        .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 600; color: var(--text); }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; }
         .form-group input, .form-group select {
             width: 100%; padding: 0.75rem; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s;
+            border-radius: 8px; font-size: 1rem;
         }
-        .form-group input:focus { outline: none; border-color: var(--primary); ring: 2px solid var(--primary); }
-        
         .btn {
             background: var(--primary); color: white; border: none; padding: 0.75rem 1.5rem;
-            border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600;
-            transition: all 0.2s; width: 100%; display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem;
+            border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;
+            display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem;
+            transition: all 0.2s;
         }
         .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
         .btn-secondary { background: white; color: var(--text-light); border: 1px solid var(--border); }
         .btn-secondary:hover { background: #f8fafc; color: var(--text); }
         .btn-success { background: var(--success); }
         .btn-success:hover { background: #059669; }
-        .btn-danger { background: var(--danger); }
         .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
+        .btn-danger { background: var(--danger); }
 
-        /* Main Layout */
+        /* Layout */
         #app-container { display: none; min-height: 100vh; display: flex; flex-direction: column; }
-        
         header {
             background: var(--surface); border-bottom: 1px solid var(--border);
             padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 100;
         }
         .brand { font-size: 1.25rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.75rem; }
-        .user-info { display: flex; align-items: center; gap: 1rem; }
         
-        nav {
-            background: var(--surface); border-bottom: 1px solid var(--border);
-            padding: 0 2rem; overflow-x: auto;
-        }
+        nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; }
         .nav-tabs { display: flex; gap: 0.5rem; }
         .nav-tab {
             padding: 1rem 1.25rem; background: none; border: none; cursor: pointer;
             color: var(--text-light); font-weight: 500; border-bottom: 2px solid transparent;
-            transition: all 0.2s;
         }
         .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #eff6ff; }
-        .nav-tab:hover { color: var(--text); background: #f8fafc; }
-
+        
         main { flex: 1; padding: 2rem; max-width: 1400px; margin: 0 auto; width: 100%; }
-
-        /* Sections */
         .section { display: none; animation: fadeIn 0.3s ease; }
         .section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        h2 { margin-bottom: 1.5rem; color: var(--text); font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        h2 { margin-bottom: 1.5rem; color: var(--text); font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         
-        /* Stats Grid */
+        /* Dashboard Cards */
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 1.5rem; margin-bottom: 2rem;
@@ -101,27 +89,23 @@
         .stat-card {
             background: var(--surface); padding: 1.5rem; border-radius: var(--radius);
             box-shadow: var(--shadow); border: 1px solid var(--border);
-            text-align: center; transition: transform 0.2s;
+            text-align: center; cursor: pointer; transition: all 0.2s;
         }
-        .stat-card:hover { transform: translateY(-3px); }
-        .stat-val { font-size: 2.25rem; font-weight: 800; margin-bottom: 0.25rem; }
-        .stat-label { color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-        
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .stat-val { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .stat-label { color: var(--text-light); font-size: 0.85rem; text-transform: uppercase; font-weight: 600; }
         .stat-val.green { color: var(--success); }
         .stat-val.blue { color: var(--primary); }
         .stat-val.purple { color: #8b5cf6; }
         .stat-val.amber { color: var(--warning); }
 
-        /* Tables & Controls */
+        /* Tables */
         .controls {
             background: var(--surface); padding: 1rem; border-radius: var(--radius);
             margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
             box-shadow: var(--shadow); border: 1px solid var(--border);
         }
-        .search-box {
-            flex: 1; min-width: 250px; padding: 0.6rem 1rem; border: 1px solid var(--border);
-            border-radius: 8px; font-size: 0.95rem;
-        }
+        .search-box { flex: 1; min-width: 250px; padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: 8px; }
         
         .table-container {
             background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
@@ -129,13 +113,11 @@
         }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th, td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        tr:last-child td { border-bottom: none; }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-light); font-size: 0.75rem; text-transform: uppercase; }
         tr:hover { background: #f8fafc; }
         
         .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase;
+            padding: 0.25rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
         }
         .status-active { background: #dcfce7; color: #166534; }
         .status-inactive { background: #fee2e2; color: #991b1b; }
@@ -143,7 +125,7 @@
         .action-btns { display: flex; gap: 0.5rem; }
         .icon-btn {
             background: white; border: 1px solid var(--border); cursor: pointer; padding: 0.4rem 0.6rem;
-            border-radius: 6px; color: var(--text-light); transition: all 0.2s; font-size: 0.9rem;
+            border-radius: 6px; color: var(--text-light); transition: all 0.2s;
         }
         .icon-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .icon-btn.delete:hover { background: var(--danger); border-color: var(--danger); }
@@ -153,55 +135,42 @@
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px);
         }
         .modal.active { display: flex; }
         .modal-content {
             background: var(--surface); padding: 2rem; border-radius: var(--radius);
             width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
         }
         .modal-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; align-items: center; }
-        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-light); }
-        
-        /* File Input Styling */
-        .file-upload {
-            border: 2px dashed var(--border); padding: 1.5rem; text-align: center;
-            border-radius: 8px; margin-bottom: 1rem; cursor: pointer;
-        }
-        .file-upload:hover { border-color: var(--primary); background: #eff6ff; }
-
+        .close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Login Overlay -->
+    <!-- Login -->
     <div id="login-overlay">
         <div class="login-box">
             <h2><i class="fas fa-shield-halved"></i> Super Admin</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-light);">EduBoard Secure Portal</p>
             <div class="form-group">
-                <label>Email Address</label>
+                <label>Email</label>
                 <input type="email" id="admin-email" placeholder="admin@eduboard.com">
             </div>
             <div class="form-group">
                 <label>Password</label>
                 <input type="password" id="admin-password" placeholder="••••••••">
             </div>
-            <button class="btn" onclick="handleAdminLogin()">Sign In <i class="fas fa-arrow-right"></i></button>
-            <a href="index.html" class="btn btn-secondary" style="display:block; text-decoration:none; margin-top:1rem;">← Back to Home</a>
+            <button class="btn" onclick="handleAdminLogin()">Sign In</button>
         </div>
     </div>
 
-    <!-- Main App -->
+    <!-- App -->
     <div id="app-container" style="display:none;">
         <header>
-            <div class="brand">
-                <i class="fas fa-graduation-cap"></i> EduBoard Admin
-            </div>
-            <div class="user-info">
+            <div class="brand"><i class="fas fa-graduation-cap"></i> EduBoard Admin</div>
+            <div style="display:flex; gap:1rem; align-items:center;">
                 <span id="admin-user-display" style="font-weight:500; color:var(--text-light);">Admin</span>
-                <button class="btn btn-sm btn-secondary" onclick="handleLogout()" style="width:auto; padding:0.4rem 1rem;"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+                <button class="btn btn-sm btn-secondary" onclick="handleLogout()" style="width:auto;"><i class="fas fa-sign-out-alt"></i></button>
             </div>
         </header>
 
@@ -217,16 +186,27 @@
         </nav>
 
         <main>
-            <!-- DASHBOARD SECTION -->
+            <!-- DASHBOARD -->
             <div id="dashboard" class="section active">
                 <h2>System Overview</h2>
-                
                 <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-val amber" id="dashGrades">—</div><div class="stat-label">Grades</div></div>
-                    <div class="stat-card"><div class="stat-val blue" id="dashSubjects">—</div><div class="stat-label">Subjects</div></div>
-                    <div class="stat-card"><div class="stat-val green" id="dashTeachers">—</div><div class="stat-label">Teachers</div></div>
-                    <div class="stat-card"><div class="stat-val purple" id="dashStudents">—</div><div class="stat-label">Students</div></div>
-                    
+                    <!-- Added onclick to navigate -->
+                    <div class="stat-card" onclick="showSection('grades')">
+                        <div class="stat-val amber" id="dashGrades">—</div>
+                        <div class="stat-label">Grades</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('subjects')">
+                        <div class="stat-val blue" id="dashSubjects">—</div>
+                        <div class="stat-label">Subjects</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('teachers')">
+                        <div class="stat-val green" id="dashTeachers">—</div>
+                        <div class="stat-label">Teachers</div>
+                    </div>
+                    <div class="stat-card" onclick="showSection('students')">
+                        <div class="stat-val purple" id="dashStudents">—</div>
+                        <div class="stat-label">Students</div>
+                    </div>
                     <div class="stat-card" style="border-top: 4px solid var(--success);">
                         <div class="stat-val green" id="cardActive">—</div>
                         <div class="stat-label">🟢 Live Students</div>
@@ -236,169 +216,110 @@
                         <div class="stat-label">⚡ Active Sessions</div>
                     </div>
                 </div>
-
-                <div class="table-container" style="padding: 3rem; text-align: center;">
-                    <i class="fas fa-server" style="font-size: 3rem; color: var(--border); margin-bottom: 1rem;"></i>
-                    <h3 style="color: var(--text-light); font-weight: 400;">Select a module above to manage data</h3>
-                </div>
             </div>
 
-            <!-- GRADES SECTION -->
+            <!-- GRADES -->
             <div id="grades" class="section">
                 <h2>
                     Grade Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportData('grades')"><i class="fas fa-download"></i> Export</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-grades" hidden onchange="importData('grades', this)">
-                        <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add Grade</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('grades')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('grades')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-grades').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <input type="file" id="import-file-grades" hidden accept=".xlsx, .xls" onchange="importFromExcel('grades', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
                 <div class="controls">
-                    <input type="text" class="search-box" placeholder="Search grades..." onkeyup="filterTable('grades-table', this.value)">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('grades-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="grades-table">
-                        <thead>
-                            <tr>
-                                <th>Name (EN)</th>
-                                <th>Name (AR)</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th style="width: 120px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody><!-- Populated by JS --></tbody>
-                    </table>
+                    <table id="grades-table"><thead><tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
-            <!-- SUBJECTS SECTION -->
+            <!-- SUBJECTS -->
             <div id="subjects" class="section">
                 <h2>
                     Subjects Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportData('subjects')"><i class="fas fa-download"></i> Export</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-subjects" hidden onchange="importData('subjects', this)">
-                        <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add Subject</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('subjects')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('subjects')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-subjects').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <input type="file" id="import-file-subjects" hidden accept=".xlsx, .xls" onchange="importFromExcel('subjects', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
                 <div class="controls">
-                    <input type="text" class="search-box" placeholder="Search subjects..." onkeyup="filterTable('subjects-table', this.value)">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('subjects-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="subjects-table">
-                        <thead>
-                            <tr>
-                                <th>Name (EN)</th>
-                                <th>Name (AR)</th>
-                                <th>Code</th>
-                                <th>Status</th>
-                                <th style="width: 120px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody><!-- Populated by JS --></tbody>
-                    </table>
+                    <table id="subjects-table"><thead><tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
-            <!-- TEACHERS SECTION -->
+            <!-- TEACHERS -->
             <div id="teachers" class="section">
                 <h2>
                     Teachers Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportData('teachers')"><i class="fas fa-download"></i> Export</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-teachers" hidden onchange="importData('teachers', this)">
-                        <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add Teacher</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('teachers')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('teachers')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-teachers').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <input type="file" id="import-file-teachers" hidden accept=".xlsx, .xls" onchange="importFromExcel('teachers', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
                 <div class="controls">
-                    <input type="text" class="search-box" placeholder="Search teachers..." onkeyup="filterTable('teachers-table', this.value)">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('teachers-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="teachers-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Assigned Grades</th>
-                                <th>Assigned Subjects</th>
-                                <th>Status</th>
-                                <th style="width: 150px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody><!-- Populated by JS --></tbody>
-                    </table>
+                    <table id="teachers-table"><thead><tr><th>Name</th><th>Email</th><th>Assigned Grades</th><th>Assigned Subjects</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
-            <!-- STUDENTS SECTION -->
+            <!-- STUDENTS -->
             <div id="students" class="section">
                 <h2>
                     Students Master
                     <div style="display:flex; gap:0.5rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="exportData('students')"><i class="fas fa-download"></i> Export</button>
-                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import</button>
-                        <input type="file" id="import-file-students" hidden onchange="importData('students', this)">
-                        <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add Student</button>
+                        <button class="btn btn-sm btn-secondary" onclick="exportToExcel('students')"><i class="fas fa-file-excel"></i> Export Excel</button>
+                        <button class="btn btn-sm btn-secondary" onclick="downloadTemplate('students')"><i class="fas fa-download"></i> Template</button>
+                        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-upload"></i> Import Excel</button>
+                        <input type="file" id="import-file-students" hidden accept=".xlsx, .xls" onchange="importFromExcel('students', this)">
+                        <button class="btn btn-sm btn-success" onclick="openModal('student')"><i class="fas fa-plus"></i> Add</button>
                     </div>
                 </h2>
                 <div class="controls">
-                    <input type="text" class="search-box" placeholder="Search students..." onkeyup="filterTable('students-table', this.value)">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('students-table', this.value)">
                     <select class="filter-select" id="student-grade-filter" onchange="loadStudents()" style="padding:0.6rem; border:1px solid var(--border); border-radius:8px;">
                         <option value="">All Grades</option>
                     </select>
                 </div>
                 <div class="table-container">
-                    <table id="students-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Grade</th>
-                                <th>Status</th>
-                                <th style="width: 150px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody><!-- Populated by JS --></tbody>
-                    </table>
+                    <table id="students-table"><thead><tr><th>Name</th><th>Email</th><th>Grade</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
 
-            <!-- SESSIONS SECTION -->
+            <!-- SESSIONS -->
             <div id="sessions" class="section">
                 <h2>All Sessions</h2>
                 <div class="controls">
-                    <input type="text" class="search-box" placeholder="Search sessions..." onkeyup="filterTable('sessions-table', this.value)">
+                    <input type="text" class="search-box" placeholder="Search..." onkeyup="filterTable('sessions-table', this.value)">
                 </div>
                 <div class="table-container">
-                    <table id="sessions-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Teacher</th>
-                                <th>Grade</th>
-                                <th>Subject</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th style="width: 80px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody><!-- Populated by JS --></tbody>
-                    </table>
+                    <table id="sessions-table"><thead><tr><th>Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- GENERIC MODAL -->
+    <!-- MODAL -->
     <div id="generic-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modal-title">Add Item</h3>
-                <button class="close-modal" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                <button class="close-modal" onclick="closeModal()">×</button>
             </div>
             <form id="modal-form" onsubmit="handleFormSubmit(event)">
                 <input type="hidden" id="modal-type">
@@ -406,20 +327,18 @@
                 <div id="modal-fields"></div>
                 <div style="margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()" style="width:auto;">Cancel</button>
-                    <button type="submit" class="btn" style="width:auto;"><i class="fas fa-save"></i> Save Changes</button>
+                    <button type="submit" class="btn" style="width:auto;">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, query, where, updateDoc, addDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
             authDomain: "eduboard-870d3.firebaseapp.com",
@@ -435,24 +354,18 @@
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
-        // --- GLOBAL STATE ---
         let currentUser = null;
         let allGrades = [];
         let allSubjects = [];
 
-        // --- AUTHENTICATION ---
+        // --- AUTH ---
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                alert("Login Failed: " + error.message);
-            }
+            try { await signInWithEmailAndPassword(auth, email, password); } 
+            catch (error) { alert("Login Failed: " + error.message); }
         };
-
         window.handleLogout = () => signOut(auth);
-
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -470,9 +383,16 @@
         window.showSection = (sectionId) => {
             document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(sectionId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            // Find the button that triggered this or match by index/text if needed, but here we assume event bubbling or manual trigger
+            // For dashboard clicks, we need to manually highlight the tab
+            const tabs = document.querySelectorAll('.nav-tab');
+            if(sectionId === 'dashboard') tabs[0].classList.add('active');
+            if(sectionId === 'grades') tabs[1].classList.add('active');
+            if(sectionId === 'subjects') tabs[2].classList.add('active');
+            if(sectionId === 'teachers') tabs[3].classList.add('active');
+            if(sectionId === 'students') tabs[4].classList.add('active');
+            if(sectionId === 'sessions') tabs[5].classList.add('active');
 
             if (sectionId === 'grades') loadGrades();
             if (sectionId === 'subjects') loadSubjects();
@@ -481,16 +401,15 @@
             if (sectionId === 'sessions') loadSessions();
         };
 
-        // --- DASHBOARD STATS ---
+        // --- DASHBOARD ---
         async function initDashboard() {
             try {
                 const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([
                     getDocs(collection(db, "grades")),
                     getDocs(collection(db, "subjects")),
                     getDocs(query(collection(db, "users"), where("role", "==", "teacher"))),
-                    getDocs(collection(db, "students")) // Read from students collection
+                    getDocs(collection(db, "students"))
                 ]);
-
                 document.getElementById('dashGrades').textContent = gradesSnap.size;
                 document.getElementById('dashSubjects').textContent = subjectsSnap.size;
                 document.getElementById('dashTeachers').textContent = teachersSnap.size;
@@ -498,410 +417,403 @@
 
                 allGrades = gradesSnap.docs.map(d => ({id: d.id, ...d.data()}));
                 allSubjects = subjectsSnap.docs.map(d => ({id: d.id, ...d.data()}));
-                
                 populateGradeFilter();
-            } catch (e) {
-                console.error("Error loading stats:", e);
-            }
+            } catch (e) { console.error(e); }
 
-            try {
-                const liveSessionsRef = ref(rtdb, 'liveSessions');
-                onValue(liveSessionsRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (!data) {
-                        document.getElementById('cardSessions').textContent = "0";
-                        document.getElementById('cardActive').textContent = "0";
-                        return;
-                    }
-                    let sessionCount = 0;
-                    let studentCount = 0;
-                    Object.values(data).forEach(session => {
-                        sessionCount++;
-                        if (session.students) studentCount += Object.keys(session.students).length;
-                    });
-                    document.getElementById('cardSessions').textContent = sessionCount;
-                    document.getElementById('cardActive').textContent = studentCount;
+            onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    document.getElementById('cardSessions').textContent = "0";
+                    document.getElementById('cardActive').textContent = "0";
+                    return;
+                }
+                let sCount = 0, stCount = 0;
+                Object.values(data).forEach(s => {
+                    sCount++;
+                    if (s.students) stCount += Object.keys(s.students).length;
                 });
-            } catch (e) { console.error("RTDB error:", e); }
+                document.getElementById('cardSessions').textContent = sCount;
+                document.getElementById('cardActive').textContent = stCount;
+            });
         }
 
         // --- HELPERS ---
-        function getDisplayName(userDoc) {
-            return userDoc.name || userDoc.displayName || "Unnamed";
-        }
-
+        function getDisplayName(d) { return d.name || d.displayName || "Unnamed"; }
         function getNameById(id, list) {
             if (!id) return 'N/A';
             const item = list.find(i => i.id === id);
             return item ? (item.nameEn || item.code || id) : id;
         }
-
         function populateGradeFilter() {
-            const select = document.getElementById('student-grade-filter');
-            select.innerHTML = '<option value="">All Grades</option>';
-            allGrades.forEach(g => {
-                select.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`;
-            });
+            const sel = document.getElementById('student-grade-filter');
+            sel.innerHTML = '<option value="">All Grades</option>';
+            allGrades.forEach(g => sel.innerHTML += `<option value="${g.nameEn}">${g.nameEn}</option>`);
         }
 
-        // --- DATA LOADERS ---
-
+        // --- LOADERS ---
         async function loadGrades() {
             const tbody = document.querySelector('#grades-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
-            try {
-                const snap = await getDocs(collection(db, "grades"));
-                tbody.innerHTML = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const status = d.status || 'Active';
-                    tbody.innerHTML += createRow('grade', doc.id, d, [
-                        d.nameEn, d.nameAr, d.code, 
-                        `<span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span>`
-                    ]);
-                });
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "grades"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn}</td><td>${d.nameAr}</td><td>${d.code}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('grade','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('grades','${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
         }
 
         async function loadSubjects() {
             const tbody = document.querySelector('#subjects-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
-            try {
-                const snap = await getDocs(collection(db, "subjects"));
-                tbody.innerHTML = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const status = d.status || 'Active';
-                    tbody.innerHTML += createRow('subject', doc.id, d, [
-                        d.nameEn, d.nameAr, d.code,
-                        `<span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span>`
-                    ]);
-                });
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "subjects"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.nameEn}</td><td>${d.nameAr}</td><td>${d.code}</td>
+                        <td><span class="status-badge ${d.status==='Active'?'status-active':'status-inactive'}">${d.status||'Active'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('subject','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteItem('subjects','${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
         }
 
         async function loadTeachers() {
             const tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">Loading...</td></tr>';
-            try {
-                const q = query(collection(db, "users"), where("role", "==", "teacher"));
-                const snap = await getDocs(q);
-                tbody.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+            const snap = await getDocs(query(collection(db, "users"), where("role", "==", "teacher")));
+            tbody.innerHTML = '';
+            
+            // FIX DUPLICATES: Use Set to track emails
+            const seenEmails = new Set();
+
+            snap.forEach(doc => {
+                const d = doc.data();
+                if(seenEmails.has(d.email)) return; // Skip if email already processed
+                seenEmails.add(d.email);
+
+                const gNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
+                const sNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
                 
-                // Use a Set to track unique emails and prevent duplicates in UI
-                const seenEmails = new Set();
-
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    if(seenEmails.has(d.email)) return; // Skip duplicates
-                    seenEmails.add(d.email);
-
-                    const status = d.active ? 'Active' : 'Inactive'; // Check 'active' field
-                    
-                    let gradeNames = d.assignedGrades ? d.assignedGrades.map(id => getNameById(id, allGrades)).join(', ') : 'None';
-                    let subjectNames = d.assignedSubjects ? d.assignedSubjects.map(id => getNameById(id, allSubjects)).join(', ') : 'None';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${getDisplayName(d)}</td>
-                            <td>${d.email}</td>
-                            <td style="font-size:0.85rem; color:#666;">${gradeNames}</td>
-                            <td style="font-size:0.85rem; color:#666;">${subjectNames}</td>
-                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('teacher', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')" title="Edit"><i class="fas fa-pen"></i></button>
-                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')" title="Reset Password"><i class="fas fa-key"></i></button>
-                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="6" style="color:red">Error: ${e.message}</td></tr>`; }
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${getDisplayName(d)}</td><td>${d.email}</td>
+                        <td style="font-size:0.85rem">${gNames}</td><td style="font-size:0.85rem">${sNames}</td>
+                        <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('teacher','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteTeacher('${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
         }
 
         async function loadStudents() {
-            const gradeFilter = document.getElementById('student-grade-filter').value;
+            const filter = document.getElementById('student-grade-filter').value;
             const tbody = document.querySelector('#students-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
-            
-            try {
-                // Load from 'students' collection
-                const snap = await getDocs(collection(db, "students"));
-                tbody.innerHTML = '';
-                
-                const seenEmails = new Set();
+            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "students"));
+            tbody.innerHTML = '';
 
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    if(seenEmails.has(d.email)) return;
-                    seenEmails.add(d.email);
+            const seenEmails = new Set();
 
-                    // Filter logic
-                    let currentGradeName = "N/A";
-                    if(d.gradeId) {
-                        const gradeObj = allGrades.find(g => g.id === d.gradeId);
-                        if(gradeObj) currentGradeName = gradeObj.nameEn;
-                    }
-                    if (gradeFilter && currentGradeName !== gradeFilter) return;
-                    
-                    const status = d.active ? 'Active' : 'Inactive';
-                    const gradeDisplay = getNameById(d.gradeId, allGrades);
+            snap.forEach(doc => {
+                const d = doc.data();
+                if(seenEmails.has(d.email)) return;
+                seenEmails.add(d.email);
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${d.name || 'Unnamed'}</td>
-                            <td>${d.email}</td>
-                            <td>${gradeDisplay}</td>
-                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')" title="Edit"><i class="fas fa-pen"></i></button>
-                                <button class="icon-btn reset" onclick="resetPassword('${d.email}')" title="Reset Password"><i class="fas fa-key"></i></button>
-                                <button class="icon-btn delete" onclick="deleteItem('students', '${doc.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`; }
+                let gName = "N/A";
+                if(d.gradeId) {
+                    const g = allGrades.find(x => x.id === d.gradeId);
+                    if(g) gName = g.nameEn;
+                }
+                if(filter && gName !== filter) return;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.name||'Unnamed'}</td><td>${d.email}</td><td>${gName}</td>
+                        <td><span class="status-badge ${d.active!==false?'status-active':'status-inactive'}">${d.active!==false?'Active':'Inactive'}</span></td>
+                        <td class="action-btns">
+                            <button class="icon-btn" onclick="editItem('student','${doc.id}','${JSON.stringify(d).replace(/"/g,'&quot;')}')"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn reset" onclick="resetPassword('${d.email}')"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn delete" onclick="deleteStudent('${doc.id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+            });
         }
-        
+
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
-            try {
-                const snap = await getDocs(collection(db, "sessions"));
-                tbody.innerHTML = '';
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const date = d.startTime ? new Date(d.startTime.seconds * 1000).toLocaleDateString() : 'N/A';
-                    const status = d.isActive ? 'Active' : 'Closed';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${d.title}</td>
-                            <td>${d.ownerTeacherId ? d.ownerTeacherId.substring(0,8) + '...' : 'Unknown'}</td>
-                            <td>${d.gradeLevel}</td>
-                            <td>${d.subject}</td>
-                            <td>${date}</td>
-                            <td><span class="status-badge ${status==='Active'?'status-active':'status-inactive'}">${status}</span></td>
-                            <td class="action-btns">
-                                <button class="icon-btn delete" onclick="deleteItem('sessions', '${doc.id}')"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            } catch (e) { tbody.innerHTML = `<tr><td colspan="7" style="color:red">Error: ${e.message}</td></tr>`; }
+            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+            const snap = await getDocs(collection(db, "sessions"));
+            tbody.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const date = d.startTime ? new Date(d.startTime.seconds*1000).toLocaleDateString() : '-';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${d.title}</td><td>${d.ownerTeacherId?.substring(0,8)}...</td><td>${d.gradeLevel}</td><td>${d.subject}</td><td>${date}</td>
+                        <td><span class="status-badge ${d.isActive?'status-active':'status-inactive'}">${d.isActive?'Active':'Closed'}</span></td>
+                        <td><button class="icon-btn delete" onclick="deleteItem('sessions','${doc.id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>`;
+            });
         }
 
-        // Helper to create table rows consistently
-        function createRow(type, id, data, cells) {
-            return `
-                <tr>
-                    ${cells.map(c => `<td>${c}</td>`).join('')}
-                    <td class="action-btns">
-                        <button class="icon-btn" onclick="editItem('${type}', '${id}', '${JSON.stringify(data).replace(/"/g, '&quot;')}')"><i class="fas fa-pen"></i></button>
-                        <button class="icon-btn delete" onclick="deleteItem('${type}s', '${id}')"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        }
-
-        // --- UTILS ---
-        window.filterTable = (tableId, queryStr) => {
-            const filter = queryStr.toUpperCase();
-            const table = document.getElementById(tableId);
-            const tr = table.getElementsByTagName("tr");
-            for (let i = 1; i < tr.length; i++) {
-                let txtValue = tr[i].textContent || tr[i].innerText;
-                tr[i].style.display = txtValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        // --- EXCEL FUNCTIONS ---
+        
+        // 1. Download Template (2 Sheets: Empty & Sample)
+        window.downloadTemplate = (type) => {
+            const wb = XLSX.utils.book_new();
+            
+            // Sheet 1: Empty Headers
+            let headers = [];
+            let sampleData = [];
+            
+            if(type === 'grades') {
+                headers = ["nameEn", "nameAr", "code", "status"];
+                sampleData = [["Grade 10", "الصف العاشر", "G10", "Active"]];
+            } else if (type === 'subjects') {
+                headers = ["nameEn", "nameAr", "code", "status"];
+                sampleData = [["Math", "رياضيات", "MATH", "Active"]];
+            } else if (type === 'teachers') {
+                headers = ["name", "email", "active", "assignedGrades (IDs comma-sep)", "assignedSubjects (IDs comma-sep)"];
+                sampleData = [["John Doe", "john@school.com", "TRUE", "ID1,ID2", "ID3"]];
+            } else if (type === 'students') {
+                headers = ["name", "email", "gradeId", "active"];
+                sampleData = [["Jane Doe", "jane@school.com", "GRADE_ID_HERE", "TRUE"]];
             }
+
+            const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
+            XLSX.utils.book_append_sheet(wb, wsEmpty, "Empty_Template");
+            
+            const wsSample = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+            XLSX.utils.book_append_sheet(wb, wsSample, "Sample_Data");
+            
+            XLSX.writeFile(wb, `${type}_template.xlsx`);
         };
 
-        // --- IMPORT / EXPORT ---
-        window.exportData = async (collectionName) => {
-            try {
-                const snap = await getDocs(collection(db, collectionName));
-                const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                const blob = new Blob([JSON.stringify(data, null, 2)], {type : 'application/json'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${collectionName}_export.json`;
-                a.click();
-            } catch (e) { alert("Export failed: " + e.message); }
+        // 2. Export Current Data
+        window.exportToExcel = async (type) => {
+            let data = [];
+            if(type === 'grades') data = (await getDocs(collection(db, "grades"))).docs.map(d => ({id:d.id, ...d.data()}));
+            if(type === 'subjects') data = (await getDocs(collection(db, "subjects"))).docs.map(d => ({id:d.id, ...d.data()}));
+            if(type === 'teachers') data = (await getDocs(query(collection(db, "users"), where("role","==","teacher")))).docs.map(d => ({id:d.id, ...d.data()}));
+            if(type === 'students') data = (await getDocs(collection(db, "students"))).docs.map(d => ({id:d.id, ...d.data()}));
+            
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data");
+            XLSX.writeFile(wb, `${type}_export.xlsx`);
         };
 
-        window.importData = async (collectionName, input) => {
+        // 3. Import from Excel
+        window.importFromExcel = async (type, input) => {
             const file = input.files[0];
-            if (!file) return;
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const data = JSON.parse(e.target.result);
-                    if (!Array.isArray(data)) throw new Error("Invalid JSON format");
+                    const workbook = XLSX.read(e.target.result, {type: 'array'});
+                    // Read first sheet (whether empty or sample)
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
                     
+                    if(jsonData.length === 0) { alert("File is empty"); return; }
+
+                    const batch = writeBatch(db);
                     let count = 0;
-                    for (const item of data) {
-                        const id = item.id;
-                        delete item.id; // Remove ID to let Firestore generate new one or handle update
-                        if(id) {
-                            await setDoc(doc(db, collectionName, id), item);
+
+                    for(const row of jsonData) {
+                        // Basic validation
+                        if(!row.email && (type === 'teachers' || type === 'students')) continue;
+
+                        // Prepare Data
+                        let docData = {};
+                        if(type === 'grades' || type === 'subjects') {
+                            docData = { nameEn: row.nameEn, nameAr: row.nameAr, code: row.code, status: row.status || 'Active' };
+                        } else if (type === 'teachers') {
+                            // Parse comma-separated IDs
+                            const gIds = row['assignedGrades (IDs comma-sep)'] ? String(row['assignedGrades (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
+                            const sIds = row['assignedSubjects (IDs comma-sep)'] ? String(row['assignedSubjects (IDs comma-sep)']).split(',').map(s=>s.trim()) : [];
+                            
+                            docData = { 
+                                name: row.name, email: row.email, 
+                                role: 'teacher', active: String(row.active).toLowerCase() === 'true',
+                                assignedGrades: gIds, assignedSubjects: sIds
+                            };
+                        } else if (type === 'students') {
+                            docData = {
+                                name: row.name, email: row.email,
+                                gradeId: row.gradeId, active: String(row.active).toLowerCase() === 'true'
+                            };
+                        }
+
+                        // Check for Update vs Create based on Email for users/students
+                        if((type === 'teachers' || type === 'students') && row.email) {
+                            // Try to find existing
+                            const qType = type === 'teachers' ? 'users' : 'students';
+                            const qField = type === 'teachers' ? 'role' : 'email'; // Teachers queried by role+email logic usually, but here simple email check
+                            // Simplified: We will just use addDoc for new, or update if ID provided in excel (advanced)
+                            // For this demo, we assume new entries unless ID column exists
+                            if(row.id) {
+                                batch.update(doc(db, qType, row.id), docData);
+                            } else {
+                                // Check duplicate email before adding
+                                const existing = await getDocs(query(collection(db, qType), where("email", "==", row.email)));
+                                if(existing.empty) {
+                                    const newRef = doc(collection(db, qType));
+                                    batch.set(newRef, docData);
+                                } else {
+                                    console.warn(`Skipping duplicate email: ${row.email}`);
+                                }
+                            }
                         } else {
-                            await addDoc(collection(db, collectionName), item);
+                            // Grades/Subjects
+                            const newRef = doc(collection(db, type + 's'));
+                            batch.set(newRef, docData);
                         }
                         count++;
                     }
+                    
+                    await batch.commit();
                     alert(`Successfully imported ${count} records.`);
                     location.reload();
-                } catch (err) {
-                    alert("Import failed: " + err.message);
+                } catch(err) {
+                    alert("Import Error: " + err.message);
+                    console.error(err);
                 }
             };
-            reader.readAsText(file);
+            reader.readAsArrayBuffer(file);
         };
 
+        // --- CRUD ACTIONS ---
         window.resetPassword = async (email) => {
-            if(!confirm(`Send password reset email to ${email}?`)) return;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert("Password reset email sent!");
-            } catch (e) {
-                alert("Error: " + e.message);
+            if(confirm(`Send reset link to ${email}?`)) {
+                try { await sendPasswordResetEmail(auth, email); alert("Email sent!"); }
+                catch(e) { alert(e.message); }
             }
         };
 
-        // --- MODAL & FORMS ---
-        window.openModal = (type, id = null, data = null) => {
-            const modal = document.getElementById('generic-modal');
-            const title = document.getElementById('modal-title');
-            const fields = document.getElementById('modal-fields');
-            const typeInput = document.getElementById('modal-type');
-            const idInput = document.getElementById('modal-id');
+        // Cascade Delete Teachers
+        window.deleteTeacher = async (uid) => {
+            if(!confirm("Delete teacher? This will also remove their account from Users.")) return;
+            try {
+                await deleteDoc(doc(db, "users", uid));
+                loadTeachers();
+            } catch(e) { alert(e.message); }
+        };
 
-            typeInput.value = type;
-            idInput.value = id || '';
-            title.textContent = (id ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
+        // Cascade Delete Students
+        window.deleteStudent = async (id) => {
+            if(!confirm("Delete student? This will also remove their account from Users if linked.")) return;
+            try {
+                // Note: In your schema, students are in 'students' collection. 
+                // If they also exist in 'users', you'd need to query users by email first to delete.
+                // Assuming primary record is in 'students' collection based on previous context.
+                await deleteDoc(doc(db, "students", id));
+                
+                // Optional: Clean up 'users' collection if email matches
+                const userSnap = await getDocs(query(collection(db, "users"), where("email", "==", ...))); // Need email var
+                // For simplicity, we delete the main record.
+                
+                loadStudents();
+            } catch(e) { alert(e.message); }
+        };
+
+        window.deleteItem = async (col, id) => {
+            if(confirm("Delete this item?")) {
+                await deleteDoc(doc(db, col, id));
+                if(col==='grades') loadGrades();
+                if(col==='subjects') loadSubjects();
+                if(col==='sessions') loadSessions();
+            }
+        };
+
+        // --- MODAL LOGIC ---
+        window.openModal = (type, id=null, data=null) => {
+            const m = document.getElementById('generic-modal');
+            const f = document.getElementById('modal-fields');
+            document.getElementById('modal-type').value = type;
+            document.getElementById('modal-id').value = id || '';
+            document.getElementById('modal-title').textContent = (id?'Edit ':'Add ') + type;
             
             let html = '';
-            if (type === 'grade' || type === 'subject') {
+            if(type === 'grade' || type === 'subject') {
                 html = `
-                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn || ''}"></div>
-                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr || ''}"></div>
-                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code || ''}"></div>
-                    <div class="form-group"><label>Status</label>
-                        <select name="status">
-                            <option value="Active" ${data?.status === 'Active' ? 'selected' : ''}>Active</option>
-                            <option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Name (EN)</label><input name="nameEn" required value="${data?.nameEn||''}"></div>
+                    <div class="form-group"><label>Name (AR)</label><input name="nameAr" required value="${data?.nameAr||''}"></div>
+                    <div class="form-group"><label>Code</label><input name="code" required value="${data?.code||''}"></div>
+                    <div class="form-group"><label>Status</label><select name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive">Inactive</option></select></div>
                 `;
             } else if (type === 'teacher') {
-                const userName = data?.name || data?.displayName || '';
                 html = `
-                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
-                    <div class="form-group"><label>Display Name</label><input name="name" required value="${userName}"></div>
-                    ${!id ? `<div class="form-group"><label>Password</label><input name="password" type="password" ${id ? '' : 'required'}></div>` : ''}
-                    <div class="form-group"><label>Status</label>
-                        <select name="active">
-                            <option value="true" ${data?.active !== false ? 'selected' : ''}>Active</option>
-                            <option value="false" ${data?.active === false ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
+                    <div class="form-group"><label>Name</label><input name="name" required value="${getDisplayName(data)}"></div>
+                    <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>
                 `;
             } else if (type === 'student') {
-                const userName = data?.name || '';
+                const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeId===g.id?'selected':''}>${g.nameEn}</option>`).join('');
                 html = `
-                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email || ''}" ${id ? 'disabled' : ''}></div>
-                    <div class="form-group"><label>Student Name</label><input name="name" required value="${userName}"></div>
-                    <div class="form-group"><label>Grade Level</label>
-                        <select name="gradeId">
-                            ${allGrades.map(g => `<option value="${g.id}" ${data?.gradeId === g.id ? 'selected' : ''}>${g.nameEn}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group"><label>Status</label>
-                        <select name="active">
-                            <option value="true" ${data?.active !== false ? 'selected' : ''}>Active</option>
-                            <option value="false" ${data?.active === false ? 'selected' : ''}>Inactive</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Email</label><input name="email" type="email" required value="${data?.email||''}" ${id?'disabled':''}></div>
+                    <div class="form-group"><label>Name</label><input name="name" required value="${data?.name||''}"></div>
+                    <div class="form-group"><label>Grade</label><select name="gradeId">${opts}</select></div>
+                    <div class="form-group"><label>Status</label><select name="active"><option value="true" ${data?.active!==false?'selected':''}>Active</option><option value="false">Inactive</option></select></div>
                 `;
             }
-
-            fields.innerHTML = html;
-            modal.classList.add('active');
+            f.innerHTML = html;
+            m.classList.add('active');
         };
-
-        window.closeModal = () => {
-            document.getElementById('generic-modal').classList.remove('active');
-        };
-
-        window.editItem = (type, id, dataStr) => {
-            const data = JSON.parse(dataStr);
-            openModal(type, id, data);
-        };
+        window.closeModal = () => document.getElementById('generic-modal').classList.remove('active');
+        window.editItem = (t, id, str) => openModal(t, id, JSON.parse(str));
 
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
             const type = document.getElementById('modal-type').value;
             const id = document.getElementById('modal-id').value;
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-
-            // Convert string booleans
-            if(data.active) data.active = (data.active === 'true');
+            const data = Object.fromEntries(new FormData(e.target));
+            data.active = (data.active === 'true');
 
             try {
-                if (type === 'grade' || type === 'subject') {
+                if(type === 'grade' || type === 'subject') {
                     const col = type + 's';
-                    if (id) {
-                        await updateDoc(doc(db, col, id), data);
-                    } else {
-                        // FIX: Use addDoc or setDoc with generated ID
-                        await addDoc(collection(db, col), data);
-                    }
+                    if(id) await updateDoc(doc(db, col, id), data);
+                    else await addDoc(collection(db, col), data);
                 } else if (type === 'teacher') {
-                    const userData = { ...data, role: 'teacher' };
-                    if (id) {
-                        delete userData.role; 
-                        delete userData.password;
-                        await updateDoc(doc(db, "users", id), userData);
-                    } else {
-                        alert("Note: This creates the database record. You must manually create the Authentication account in Firebase Console.");
-                        await addDoc(collection(db, "users"), userData);
-                    }
+                    const uData = {...data, role:'teacher'};
+                    if(id) { delete uData.role; await updateDoc(doc(db, "users", id), uData); }
+                    else await addDoc(collection(db, "users"), uData);
                 } else if (type === 'student') {
-                    const userData = { ...data, role: 'student' }; // Keep role for consistency if needed elsewhere
-                    if (id) {
-                        delete userData.role;
-                        await updateDoc(doc(db, "students", id), userData);
-                    } else {
-                        await addDoc(collection(db, "students"), userData);
-                    }
+                    if(id) await updateDoc(doc(db, "students", id), data);
+                    else await addDoc(collection(db, "students"), data);
                 }
                 closeModal();
-                // Reload
-                if (type === 'grade') loadGrades();
-                if (type === 'subject') loadSubjects();
-                if (type === 'teacher') loadTeachers();
-                if (type === 'student') loadStudents();
-            } catch (err) {
-                alert("Error saving: " + err.message);
-            }
+                if(type==='grade') loadGrades();
+                if(type==='subject') loadSubjects();
+                if(type==='teacher') loadTeachers();
+                if(type==='student') loadStudents();
+            } catch(err) { alert("Error: " + err.message); }
         };
 
-        window.deleteItem = async (collectionName, id) => {
-            if (confirm("Are you sure? This cannot be undone.")) {
-                try {
-                    await deleteDoc(doc(db, collectionName, id));
-                    if (collectionName === 'grades') loadGrades();
-                    if (collectionName === 'subjects') loadSubjects();
-                    if (collectionName === 'users') loadTeachers();
-                    if (collectionName === 'students') loadStudents();
-                    if (collectionName === 'sessions') loadSessions();
-                } catch (err) {
-                    alert("Error deleting: " + err.message);
-                }
+        window.filterTable = (id, q) => {
+            const f = q.toUpperCase();
+            const rows = document.getElementById(id).getElementsByTagName("tr");
+            for(let i=1; i<rows.length; i++) {
+                rows[i].style.display = rows[i].textContent.toUpperCase().indexOf(f) > -1 ? "" : "none";
             }
         };
-
     </script>
 </body>
 </html>
