@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduBoard — Teacher Portal Enhanced</title>
+    <title>EduBoard — Teacher Portal</title>
     <link rel="icon" href="image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
     <script>
         window.MathJax = {
@@ -1913,34 +1913,6 @@
         // New variable to store all assigned students for the grade
         let allAssignedStudents = [];
 
-        let activeSessionMemory = null;
-
-        async function safeTypeset(root = document.body) {
-            try {
-                if (window.MathJax && window.MathJax.typesetPromise) {
-                    await window.MathJax.typesetPromise(root ? [root] : undefined);
-                }
-            } catch (e) {
-                console.warn('Math typeset warning', e);
-            }
-        }
-
-        function downloadBlob(filename, blob, mime) {
-            const file = blob instanceof Blob ? blob : new Blob([blob], {
-                type: mime || 'application/octet-stream'
-            });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(file);
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                URL.revokeObjectURL(a.href);
-                a.remove();
-            }, 1000);
-        }
-
-
         // Auth state listener
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingOverlay').style.display = 'none';
@@ -2034,8 +2006,11 @@
             await loadSessions();
             setupRealtimeListeners();
 
-            activeSessionId = null;
-            await loadActiveSession();
+            const savedId = localStorage.getItem('teacher_active_session_' + currentTeacher.uid);
+            if (savedId) {
+                activeSessionId = savedId;
+                await loadActiveSession();
+            }
         }
 
         async function populateAssignedDropdowns() {
@@ -2223,9 +2198,9 @@
         };
 
         window.activateSession = async function(id) {
-            activeSessionMemory = id;
             activeSessionId = id;
-            await loadActiveSession(id);
+            localStorage.setItem('teacher_active_session_' + currentTeacher.uid, id);
+            await loadActiveSession();
         };
 
         window.deleteSession = async function(id) {
@@ -2254,12 +2229,8 @@
             showToast('Session deleted');
         };
 
-        async function loadActiveSession(id = activeSessionId) {
-            activeSessionId = id || activeSessionId;
-            if (!activeSessionId) {
-                updateSessionChip();
-                return;
-            }
+        async function loadActiveSession() {
+            if (!activeSessionId) return;
 
             const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
             if (!sessionDoc.exists()) {
@@ -2288,10 +2259,8 @@
 
             await loadQuestions();
             await loadStudents();
-            await loadClassStatus();
+            await loadClassStatus(); // Load the new tab data
             updateStats();
-            setupRealtimeListeners();
-            await safeTypeset();
         }
 
         async function loadQuestions() {
@@ -2510,12 +2479,6 @@
         // }
 
         function setupRealtimeListeners() {
-            if (sessionsListener) {
-                try {
-                    sessionsListener();
-                } catch (e) {}
-                sessionsListener = null;
-            }
             if (!activeSessionId) return;
 
             console.log('🟢 Setting up RTDB real-time listeners...');
@@ -3291,35 +3254,6 @@
         };
 
 
-        window.exportWordReport = async function() {
-            if (!activeSessionId || !currentSessionData) {
-                showToast('Load a session first.', true);
-                return;
-            }
-            const printContainer = document.getElementById('print-container');
-            printContainer.innerHTML = '';
-            const title = currentSessionData.title || 'Session Report';
-            const students = currentStudents || [];
-            let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
-  <style>body{font-family:'Times New Roman',serif;padding:24px;color:#111;line-height:1.55} h1,h2,h3{margin:0 0 12px} .meta{color:#555;margin-bottom:18px} .card{border:1px solid #d0d0d0;border-radius:8px;padding:14px 16px;margin:0 0 18px;page-break-inside:avoid} .q{margin:10px 0;padding-top:8px;border-top:1px solid #eee} .math-content{font-size:15px;line-height:1.8} .ans{background:#fafafa;border-left:3px solid #bbb;padding:8px 10px;margin-top:6px} .score{float:right;font-weight:bold}</style></head><body>`;
-            html += `<h1>${escapeHtml(title)}</h1><div class="meta">Teacher: ${escapeHtml(currentTeacher?.name || '')} | Grade: ${escapeHtml(currentSessionData.grade || '')} | Subject: ${escapeHtml(currentSessionData.subject || '')}</div>`;
-            for (const student of students) {
-                html += `<section class="card"><h2>${escapeHtml(student.name || 'Student')}</h2><div class="meta">Status: ${student.online ? 'Online' : 'Offline'} | Submitted: ${student.submittedAt ? escapeHtml(String(student.submittedAt)) : '—'}</div>`;
-                const answers = student.answers || {};
-                for (const q of (currentQuestions || [])) {
-                    const a = answers[q.id] || {};
-                    html += `<div class="q"><div class="score">${escapeHtml(String(a.score ?? 0))} / ${escapeHtml(String(q.points || 0))}</div><div class="math-content"><strong>Q:</strong> ${mathHtml(q.text || '')}</div><div class="ans math-content"><strong>A:</strong> ${mathHtml(a.answer || '<em>No answer</em>')}</div><div><strong>Feedback:</strong> ${escapeHtml(a.feedback || '—')}</div></div>`;
-                }
-                html += `</section>`;
-            }
-            html += `<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]},svg:{fontCache:'global'}};<\/script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"><\/script></body></html>`;
-            const blob = new Blob(['﻿', html], {
-                type: 'application/msword'
-            });
-            downloadBlob(`${slugify(title)}-report.doc`, blob, 'application/msword');
-            showToast('Word report exported.');
-        };
-
         window.exportReports = async function() {
             if (!activeSessionId) {
                 showToast('No active session', true);
@@ -3390,7 +3324,7 @@
 
                 // Wait for MathJax to render
                 if (window.MathJax && MathJax.typesetPromise) {
-                    await safeTypeset(printContainer);
+                    await MathJax.typesetPromise([printContainer]);
                 }
 
                 // Capture with html2canvas
@@ -3899,12 +3833,6 @@
             result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[parseInt(idx)]}\\)`);
 
             return result;
-        }
-
-
-
-        function slugify(value) {
-            return String(value || 'report').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'report';
         }
     </script>
 </body>
