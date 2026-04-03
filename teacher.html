@@ -2242,33 +2242,33 @@ async function loadActiveSession() {
     currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
     const config = currentSessionData;
 
-    document.getElementById('cfTitle').value = config.title || '';
+    // Extract date from Timestamp or string
+    const toDate = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string') return val.slice(0, 10);
+        if (val.seconds) return new Date(val.seconds * 1000).toISOString().slice(0, 10);
+        return '';
+    };
 
-    // gradeLevel in Firestore, grade in teacher-created sessions
-    document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
-
-    // className may not exist in admin-created sessions
-    document.getElementById('cfClass').value = config.className || config.class || '';
-
-    document.getElementById('cfSubject').value = config.subject || '';
-    document.getElementById('cfTeacher').value = currentTeacher.name || '';
-
-    // date may not exist in admin-created sessions
-    document.getElementById('cfDate').value = config.date || '';
-
-    // startTime/endTime stored as Timestamps by admin, strings by teacher
+    // Extract HH:MM from Timestamp or string
     const toTimeStr = (val) => {
         if (!val) return '';
-        if (typeof val === 'string') return val;
+        if (typeof val === 'string' && val.includes(':')) return val.slice(0, 5);
         if (val.seconds) return new Date(val.seconds * 1000).toTimeString().slice(0, 5);
         return '';
     };
+
+    document.getElementById('cfTitle').value = config.title || '';
+    document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
+    document.getElementById('cfClass').value = config.className || config.class || '';
+    document.getElementById('cfSubject').value = config.subject || '';
+    document.getElementById('cfTeacher').value = currentTeacher.name || '';
+    document.getElementById('cfDate').value = config.date || toDate(config.startTime);
     document.getElementById('cfStart').value = toTimeStr(config.startTime);
     document.getElementById('cfEnd').value = toTimeStr(config.endTime);
-
     document.getElementById('cfInstructions').value = config.instructions || '';
 
-    // isActive in Firestore (admin), active in teacher-created
+    // isActive (admin-created) or active (teacher-created)
     setToggle(!!(config.isActive || config.active));
     updateSessionChip(config);
 
