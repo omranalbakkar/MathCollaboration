@@ -2338,59 +2338,62 @@
         }
 
         async function populateTeacherProfile() {
-            const assignedGradeIds = currentTeacher.assignedGrades || [];
-            const assignedSubjectIds = currentTeacher.assignedSubjects || [];
-            let gradeNames = [];
-            let subjectNames = [];
+    // FIX: Define these variables locally here, as they were missing
+    const assignedGradeIds = currentTeacher.assignedGrades || [];
+    const assignedSubjectIds = currentTeacher.assignedSubjects || [];
+    
+    let gradeNames = [];
+    let subjectNames = [];
 
-            if (assignedGradeIds.length > 0) {
-                for (const gradeId of assignedGradeIds) {
-                    try {
-                        const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
-                        if (gradeDoc.exists()) {
-                            gradeNames.push(gradeDoc.data().nameEn);
-                        }
-                    } catch (e) {
-                        console.warn(`Could not fetch grade ${gradeId}`, e);
-                    }
+    if (assignedGradeIds.length > 0) {
+        for (const gradeId of assignedGradeIds) {
+            try {
+                const gradeDoc = await getDoc(doc(db, 'grades', gradeId));
+                if (gradeDoc.exists()) {
+                    gradeNames.push(gradeDoc.data().nameEn);
                 }
+            } catch (e) {
+                console.warn(`Could not fetch grade ${gradeId}`, e);
             }
-
-            if (assignedSubjectIds.length > 0) {
-                for (const subjectId of assignedSubjects) {
-                    try {
-                        const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
-                        if (subjectDoc.exists()) {
-                            subjectNames.push(subjectDoc.data().nameEn);
-                        }
-                    } catch (e) {
-                        console.warn(`Could not fetch subject ${subjectId}`, e);
-                    }
-                }
-            }
-
-            const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
-            const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
-
-            let teacherDisplayName = currentTeacher.name || '';
-            if (!teacherDisplayName && currentTeacher.firestoreId) {
-                try {
-                    const teacherDoc = await getDoc(doc(db, 'teachers', currentTeacher.firestoreId));
-                    if (teacherDoc.exists()) {
-                        teacherDisplayName = teacherDoc.data().name || teacherDoc.data().displayName || currentTeacher.email || '';
-                    }
-                } catch (err) {
-                    console.error('Error fetching teacher details:', err);
-                }
-            }
-
-            document.getElementById('teacherProfileInfo').innerHTML = `
-<div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
-<div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
-<div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
-<div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
-`;
         }
+    }
+
+    // FIX: Use assignedSubjectIds instead of the undefined assignedSubjects
+    if (assignedSubjectIds.length > 0) {
+        for (const subjectId of assignedSubjectIds) {
+            try {
+                const subjectDoc = await getDoc(doc(db, 'subjects', subjectId));
+                if (subjectDoc.exists()) {
+                    subjectNames.push(subjectDoc.data().nameEn);
+                }
+            } catch (e) {
+                console.warn(`Could not fetch subject ${subjectId}`, e);
+            }
+        }
+    }
+
+    const assignedGradeNamesStr = gradeNames.length ? gradeNames.join(', ') : 'None Assigned';
+    const assignedSubjectNamesStr = subjectNames.length ? subjectNames.join(', ') : 'None Assigned';
+
+    let teacherDisplayName = currentTeacher.name || '';
+    if (!teacherDisplayName && currentTeacher.firestoreId) {
+        try {
+            const teacherDoc = await getDoc(doc(db, 'teachers', currentTeacher.firestoreId));
+            if (teacherDoc.exists()) {
+                teacherDisplayName = teacherDoc.data().name || teacherDoc.data().displayName || currentTeacher.email || '';
+            }
+        } catch (err) {
+            console.error('Error fetching teacher details:', err);
+        }
+    }
+
+    document.getElementById('teacherProfileInfo').innerHTML = `
+    <div class="info-row"><span class="info-key">Name</span><span>${escapeHtml(teacherDisplayName || currentTeacher.name || currentTeacher.email || '')}</span></div>
+    <div class="info-row"><span class="info-key">Email</span><span>${escapeHtml(currentTeacher.email || '')}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Grades</span><span>${escapeHtml(assignedGradeNamesStr)}</span></div>
+    <div class="info-row"><span class="info-key">Assigned Subjects</span><span>${escapeHtml(assignedSubjectNamesStr)}</span></div>
+    `;
+}
 
         async function loadSessions() {
             console.log('Loading sessions for teacher:', currentTeacher);
