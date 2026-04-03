@@ -2258,6 +2258,7 @@ async function loadActiveSession() {
         const config = currentSessionData;
 
         console.log('Loading session config:', config);
+        console.log('Owner Teacher ID:', config.ownerTeacherId);
 
         // Helper function to format Firestore Timestamp to time string (HH:MM)
         const formatTime = (timestamp) => {
@@ -2289,40 +2290,99 @@ async function loadActiveSession() {
             return '';
         };
 
-        // Fetch teacher name from teachers collection using ownerTeacherId
-        let teacherName = '';
-        if (config.ownerTeacherId) {
+        // FIRST: Try to get teacher name from the session document if it exists
+        let teacherName = config.teacherName || config.teacher || '';
+        
+        // SECOND: If not in session, fetch from teachers collection using ownerTeacherId
+        if (!teacherName && config.ownerTeacherId) {
             try {
-                const teacherDoc = await getDoc(doc(db, 'teachers', config.ownerTeacherId));
+                console.log('🔍 Fetching teacher for ID:', config.ownerTeacherId);
+                const teacherDocRef = doc(db, 'teachers', config.ownerTeacherId);
+                const teacherDoc = await getDoc(teacherDocRef);
+                
                 if (teacherDoc.exists()) {
-                    teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
-                    console.log('📚 Found teacher name:', teacherName);
+                    const teacherData = teacherDoc.data();
+                    teacherName = teacherData.name || teacherData.displayName || teacherData.fullName || '';
+                    console.log('📚 Found teacher in teachers collection:', teacherName);
                 } else {
                     console.warn('⚠️ Teacher document not found for ID:', config.ownerTeacherId);
-                    teacherName = currentTeacher.name || 'Teacher';
                 }
             } catch (err) {
                 console.error('❌ Error fetching teacher:', err);
-                teacherName = currentTeacher.name || 'Teacher';
             }
-        } else {
-            teacherName = currentTeacher.name || 'Teacher';
+        }
+        
+        // THIRD: Try to find teacher by querying with userId field
+        if (!teacherName && config.ownerTeacherId) {
+            try {
+                const teachersRef = collection(db, 'teachers');
+                const q = query(teachersRef, where('userId', '==', config.ownerTeacherId));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const teacherData = querySnapshot.docs[0].data();
+                    teacherName = teacherData.name || teacherData.displayName || '';
+                    console.log('📚 Found teacher by userId query:', teacherName);
+                }
+            } catch (err) {
+                console.error('❌ Error querying teacher:', err);
+            }
+        }
+        
+        // FOURTH: Fallback to currentTeacher
+        if (!teacherName && currentTeacher) {
+            teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
+            console.log('📚 Using currentTeacher name:', teacherName);
+        }
+        
+        // LAST RESORT
+        if (!teacherName) {
+            teacherName = 'Teacher Name Not Found';
         }
 
         // Populate form fields
-        document.getElementById('cfTitle').value = config.title || '';
-        document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
-        document.getElementById('cfClass').value = config.className || config.class || '';
-        document.getElementById('cfSubject').value = config.subject || '';
+        const titleField = document.getElementById('cfTitle');
+        if (titleField) titleField.value = config.title || '';
         
-        // Set the teacher name (now properly fetched)
-        document.getElementById('cfTeacher').value = teacherName;
+        const gradeField = document.getElementById('cfGrade');
+        if (gradeField) gradeField.value = config.gradeLevel || config.grade || '';
         
-        // Format dates and times
-        document.getElementById('cfDate').value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
-        document.getElementById('cfStart').value = formatTime(config.startTime);
-        document.getElementById('cfEnd').value = formatTime(config.endTime);
-        document.getElementById('cfInstructions').value = config.instructions || '';
+        const classField = document.getElementById('cfClass');
+        if (classField) classField.value = config.className || config.class || '';
+        
+        const subjectField = document.getElementById('cfSubject');
+        if (subjectField) subjectField.value = config.subject || '';
+        
+        // CRITICAL: Set the teacher name field
+        const teacherField = document.getElementById('cfTeacher');
+        if (teacherField) {
+            teacherField.value = teacherName;
+            console.log('✅ SUCCESS: Set cfTeacher field to:', teacherName);
+            // Force a visual update
+            teacherField.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+            console.error('❌ CRITICAL: cfTeacher element not found in DOM!');
+        }
+        
+        // Set date and time fields
+        const dateField = document.getElementById('cfDate');
+        if (dateField) {
+            dateField.value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
+        }
+        
+        const startField = document.getElementById('cfStart');
+        if (startField) {
+            startField.value = formatTime(config.startTime);
+        }
+        
+        const endField = document.getElementById('cfEnd');
+        if (endField) {
+            endField.value = formatTime(config.endTime);
+        }
+        
+        const instructionsField = document.getElementById('cfInstructions');
+        if (instructionsField) {
+            instructionsField.value = config.instructions || '';
+        }
 
         // Set toggle state
         const isSessionActive = !!(config.isActive || config.active);
@@ -2336,12 +2396,14 @@ async function loadActiveSession() {
         updateStats();
         
         console.log('✅ Session loaded successfully:', config.title);
+        console.log('📋 FINAL - Teacher name in cfTeacher:', document.getElementById('cfTeacher')?.value);
         
     } catch (error) {
         console.error('❌ Error loading session:', error);
         showToast('Error loading session: ' + error.message, true);
     }
 }
+        
         
         
         async function loadQuestions() {
@@ -2826,18 +2888,21 @@ window.saveSessionConfig = async function() {
         return;
     }
 
-    // Fetch the current teacher name from the teachers collection
-    let teacherName = currentTeacher.name || '';
+    // Get the current teacher name from the field or fetch it
+    let teacherName = document.getElementById('cfTeacher')?.value || '';
     
-    // If we have ownerTeacherId but name is missing, fetch it
-    if (currentSessionData && currentSessionData.ownerTeacherId && !teacherName) {
+    if (!teacherName && currentTeacher) {
+        teacherName = currentTeacher.name || currentTeacher.displayName || '';
+    }
+    
+    if (!teacherName && currentSessionData?.ownerTeacherId) {
         try {
             const teacherDoc = await getDoc(doc(db, 'teachers', currentSessionData.ownerTeacherId));
             if (teacherDoc.exists()) {
                 teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
             }
         } catch (err) {
-            console.error('Error fetching teacher name:', err);
+            console.error('Error fetching teacher:', err);
         }
     }
 
@@ -2850,8 +2915,8 @@ window.saveSessionConfig = async function() {
         gradeLevel: gradeValue,
         className: document.getElementById('cfClass').value.trim(),
         subject: subjectValue,
-        teacher: teacherName, // Save the fetched teacher name
-        teacherName: teacherName, // Also save as teacherName for compatibility
+        teacherName: teacherName,  // Save teacher name to session
+        teacher: teacherName,       // Save to teacher field as well
         date: document.getElementById('cfDate').value,
         startTime: document.getElementById('cfStart').value,
         endTime: document.getElementById('cfEnd').value,
@@ -2859,17 +2924,16 @@ window.saveSessionConfig = async function() {
         active: !!(document.getElementById('sessionToggle').classList.contains('on')),
         isActive: !!(document.getElementById('sessionToggle').classList.contains('on')),
         updatedAt: serverTimestamp(),
-        updatedBy: currentTeacher.uid
+        updatedBy: currentTeacher?.uid || ''
     };
 
     await updateDoc(doc(db, 'sessions', activeSessionId), config);
     updateSessionChip(config);
     showToast('Configuration saved!');
     
-    // Reload to refresh the teacher name display
+    // Reload to ensure everything is fresh
     await loadActiveSession();
 };
-
     
         // window.toggleSession = async function() {
         //   if (!activeSessionId) return;
