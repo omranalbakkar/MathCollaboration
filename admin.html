@@ -658,26 +658,38 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading...</td></tr>';
             
             try {
-                const q = query(collection(db, "users"), where("role", "==", "student"));
-                const snap = await getDocs(q);
+                // FIX 1: Read from the 'students' collection, not 'users'
+                const snap = await getDocs(collection(db, "students"));
                 tbody.innerHTML = '';
                 
                 snap.forEach(doc => {
                     const d = doc.data();
-                    if (gradeFilter && d.gradeLevel !== gradeFilter) return;
                     
-                    const status = d.status || 'Active';
-                    const gradeDisplay = getNameById(d.gradeLevel, allGrades);
+                    // Filter logic (optional, keeps the dropdown working)
+                    // Note: Since we are now using gradeId, we might need to resolve the name first to filter by name
+                    let currentGradeName = "N/A";
+                    if(d.gradeId) {
+                        const gradeObj = allGrades.find(g => g.id === d.gradeId);
+                        if(gradeObj) currentGradeName = gradeObj.nameEn;
+                    }
+
+                    if (gradeFilter && currentGradeName !== gradeFilter) return;
+                    
+                    const status = d.active ? 'Active' : 'Inactive'; // Your DB uses 'active', not 'status'
+                    
+                    // FIX 2: Resolve gradeId to Name
+                    const gradeDisplay = getNameById(d.gradeId, allGrades);
 
                     tbody.innerHTML += `
                         <tr>
-                            <td>${getDisplayName(d)}</td>
+                            <td>${d.name || 'Unnamed Student'}</td>
                             <td>${d.email}</td>
                             <td>${gradeDisplay}</td>
                             <td><span class="status-badge ${status === 'Active' ? 'status-active' : 'status-inactive'}">${status}</span></td>
                             <td class="action-btns">
-                                <button class="icon-btn" onclick="editItem('student', '${doc.id}', '${JSON.stringify(d).replace(/"/g, '&quot;')}')">✏️</button>
-                                <button class="icon-btn delete" onclick="deleteItem('users', '${doc.id}')">🗑️</button>
+                                <!-- Note: Editing students requires mapping fields carefully since 'students' collection differs from 'users' -->
+                                <button class="icon-btn" onclick="alert('Edit functionality for standalone students collection needs specific mapping')">✏️</button>
+                                <button class="icon-btn delete" onclick="deleteItem('students', '${doc.id}')">🗑️</button>
                             </td>
                         </tr>
                     `;
@@ -685,8 +697,7 @@
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="5" style="color:red">Error: ${e.message}</td></tr>`;
             }
-        }
-        
+        }        
         async function loadSessions() {
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center">Loading...</td></tr>';
