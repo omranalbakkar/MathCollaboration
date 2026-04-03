@@ -3,142 +3,172 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduBoard | Super Admin Console</title>
-    <!-- Bootstrap 5 + Icons + Font Awesome + SheetJS -->
+    
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS for Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    
     <style>
         :root {
-            --sidebar-width: 280px;
+            --sidebar-width: 260px;
+            --primary-color: #3b82f6;
+            --dark-bg: #0f172a;
         }
 
         body {
-            background: #f1f5f9;
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto;
+            background: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             overflow-x: hidden;
         }
 
+        /* Sidebar Styling */
         .wrapper {
             display: flex;
             width: 100%;
-            min-height: 100vh;
+            align-items: stretch;
         }
 
         #sidebar {
-            width: var(--sidebar-width);
-            background: #0f172a;
-            color: #e2e8f0;
+            min-width: var(--sidebar-width);
+            max-width: var(--sidebar-width);
+            background: var(--dark-bg);
+            color: #fff;
             transition: all 0.3s;
+            min-height: 100vh;
             position: fixed;
-            height: 100vh;
             z-index: 999;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+        }
+
+        #sidebar.active {
+            margin-left: -var(--sidebar-width);
         }
 
         #sidebar .sidebar-header {
-            padding: 1.5rem 1.2rem;
+            padding: 20px;
+            background: #1e293b;
             border-bottom: 1px solid #334155;
         }
 
+        #sidebar ul.components {
+            padding: 20px 0;
+        }
+
         #sidebar ul li a {
-            padding: 0.8rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            padding: 15px 20px;
+            font-size: 0.95em;
+            display: block;
             color: #cbd5e1;
             text-decoration: none;
             transition: 0.2s;
+            border-left: 4px solid transparent;
         }
 
-        #sidebar ul li a:hover,
-        #sidebar ul li.active a {
+        #sidebar ul li a:hover, #sidebar ul li.active a {
+            color: #fff;
             background: #1e293b;
-            color: white;
-            border-left: 3px solid #3b82f6;
+            border-left: 4px solid var(--primary-color);
         }
 
+        #sidebar ul li a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Content Styling */
         #content {
-            width: calc(100% - var(--sidebar-width));
+            width: 100%;
             margin-left: var(--sidebar-width);
             transition: all 0.3s;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .navbar-custom {
-            background: white;
-            padding: 0.75rem 1.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        #content.active {
+            margin-left: 0;
+        }
+
+        .navbar {
+            background: #fff;
+            padding: 15px 20px;
             border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
 
+        .main-container {
+            padding: 30px;
+            flex: 1;
+        }
+
+        /* Cards & UI Elements */
         .stat-card {
-            border-radius: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
-            border: none;
-            background: white;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            border: 1px solid #f1f5f9;
+            height: 100%;
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 20px 25px -12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .card-icon {
-            width: 48px;
-            height: 48px;
-            background: #eef2ff;
-            border-radius: 1rem;
+        .icon-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: #3b82f6;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
         }
 
         .status-badge {
-            padding: 0.2rem 0.7rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
             font-weight: 600;
         }
+        .bg-active { background: #dcfce7; color: #166534; }
+        .bg-inactive { background: #fee2e2; color: #991b1b; }
 
-        .status-active {
-            background: #d1fae5;
-            color: #065f46;
+        /* Login Overlay */
+        #loginOverlay {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
         }
 
-        .status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .live-badge {
-            background: #10b981;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-        }
-
+        /* Responsive */
         @media (max-width: 768px) {
-            #sidebar {
-                margin-left: -280px;
-            }
-
-            #content {
-                width: 100%;
-                margin-left: 0;
-            }
-
-            #sidebar.active {
-                margin-left: 0;
-            }
+            #sidebar { margin-left: -var(--sidebar-width); }
+            #sidebar.active { margin-left: 0; }
+            #content { margin-left: 0; }
         }
-
-        .toast-container {
-            z-index: 1055;
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            vertical-align: text-bottom;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border .75s linear infinite;
         }
     </style>
 </head>
@@ -146,313 +176,318 @@
 <body>
 
     <!-- LOGIN OVERLAY -->
-    <div id="loginOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(15,23,42,0.92); backdrop-filter: blur(10px); z-index: 9999;">
-        <div class="card shadow-lg border-0 rounded-4" style="width: 100%; max-width: 450px;">
-            <div class="card-body p-4 p-lg-5">
-                <div class="text-center mb-4">
-                    <i class="fas fa-graduation-cap fa-3x text-primary"></i>
-                    <h3 class="fw-bold mt-2">EduBoard Admin</h3>
-                    <p class="text-muted">Super Admin Portal</p>
-                </div>
+    <div id="loginOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 9999;">
+        <div class="card shadow-lg border-0 rounded-4" style="width: 90%; max-width: 400px;">
+            <div class="card-body p-5 text-center">
+                <div class="mb-4 text-primary"><i class="fas fa-shield-halved fa-3x"></i></div>
+                <h3 class="fw-bold mb-2">EduBoard</h3>
+                <p class="text-muted mb-4">Super Admin Portal</p>
                 <form id="loginForm">
-                    <div class="mb-3"><label class="form-label"><i class="fas fa-envelope me-1"></i> Email</label><input type="email" id="adminEmail" class="form-control form-control-lg" required></div>
-                    <div class="mb-4"><label class="form-label"><i class="fas fa-lock me-1"></i> Password</label><input type="password" id="adminPassword" class="form-control form-control-lg" required></div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill"><i class="fas fa-sign-in-alt me-2"></i> Sign In</button>
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="adminEmail" placeholder="name@example.com" required>
+                        <label for="adminEmail">Email address</label>
+                    </div>
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control" id="adminPassword" placeholder="Password" required>
+                        <label for="adminPassword">Password</label>
+                    </div>
+                    <button class="btn btn-primary w-100 py-2 fw-bold rounded-pill" type="submit">
+                        Sign In
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- MAIN APP -->
-    <div id="appContainer" style="display: none;">
-        <div class="wrapper">
-            <nav id="sidebar">
-                <div class="sidebar-header d-flex align-items-center gap-2">
-                    <i class="fas fa-chalkboard-user fa-2x text-primary"></i>
-                    <h4 class="mb-0 fw-bold">EduBoard</h4>
+    <!-- MAIN APP WRAPPER -->
+    <div class="wrapper" id="appContainer" style="display: none;">
+        
+        <!-- SIDEBAR -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h4 class="m-0 fw-bold"><i class="fas fa-graduation-cap me-2"></i>EduBoard</h4>
+            </div>
+            <ul class="list-unstyled components">
+                <li class="active" onclick="switchSection('dashboard')">
+                    <a href="#"><i class="fas fa-chart-pie"></i> Dashboard</a>
+                </li>
+                <li onclick="switchSection('grades')">
+                    <a href="#"><i class="fas fa-layer-group"></i> Grades</a>
+                </li>
+                <li onclick="switchSection('subjects')">
+                    <a href="#"><i class="fas fa-book"></i> Subjects</a>
+                </li>
+                <li onclick="switchSection('teachers')">
+                    <a href="#"><i class="fas fa-chalkboard-user"></i> Teachers</a>
+                </li>
+                <li onclick="switchSection('students')">
+                    <a href="#"><i class="fas fa-user-graduate"></i> Students</a>
+                </li>
+                <li onclick="switchSection('sessions')">
+                    <a href="#"><i class="fas fa-video"></i> Live Sessions</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- PAGE CONTENT -->
+        <div id="content">
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-light d-md-none">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <span class="ms-auto fw-medium text-secondary d-flex align-items-center gap-2">
+                        <i class="fas fa-circle-user fa-lg"></i> 
+                        <span id="adminEmailDisplay">Admin</span>
+                    </span>
+                    <button class="btn btn-outline-danger btn-sm ms-3 rounded-pill px-3" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt me-1"></i> Logout
+                    </button>
                 </div>
-                <ul class="list-unstyled components">
-                    <li class="active" data-section="dashboard"><a href="#" onclick="switchSection('dashboard')"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li data-section="grades"><a href="#" onclick="switchSection('grades')"><i class="fas fa-layer-group"></i> Grades</a></li>
-                    <li data-section="subjects"><a href="#" onclick="switchSection('subjects')"><i class="fas fa-book-open"></i> Subjects</a></li>
-                    <li data-section="teachers"><a href="#" onclick="switchSection('teachers')"><i class="fas fa-chalkboard-user"></i> Teachers</a></li>
-                    <li data-section="students"><a href="#" onclick="switchSection('students')"><i class="fas fa-user-graduate"></i> Students</a></li>
-                    <li data-section="sessions"><a href="#" onclick="switchSection('sessions')"><i class="fas fa-video"></i> Live Sessions</a></li>
-                </ul>
             </nav>
 
-            <div id="content">
-                <nav class="navbar navbar-custom">
-                    <div class="container-fluid">
-                        <button class="btn btn-sm btn-outline-secondary d-md-none" id="sidebarCollapse"><i class="fas fa-bars"></i></button>
-                        <div class="ms-auto d-flex gap-3"><span id="adminUserBadge" class="text-secondary"><i class="fas fa-user-shield"></i> Admin</span><button class="btn btn-outline-danger btn-sm rounded-pill" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</button></div>
-                    </div>
-                </nav>
-                <main class="p-3 p-md-4">
-                    <!-- DASHBOARD -->
-                    <div id="dashboardSection" class="section-content">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3><i class="fas fa-chart-line text-primary me-2"></i>Executive Dashboard</h3><button class="btn btn-sm btn-outline-info" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Live Monitor</button>
-                        </div>
-                        <div class="row g-4" id="statsRow">
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="switchSection('grades')">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-warning" id="dashGrades">—</div><span>Grades</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-layer-group"></i></div>
+            <!-- Main Sections -->
+            <div class="main-container">
+                
+                <!-- DASHBOARD SECTION -->
+                <div id="dashboardSection" class="section-content">
+                    <h3 class="fw-bold mb-4">Executive Overview</h3>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card" onclick="switchSection('grades')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Total Grades</h6>
+                                        <h2 class="fw-bold mb-0 text-primary" id="dashGrades">...</h2>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="switchSection('subjects')">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-primary" id="dashSubjects">—</div><span>Subjects</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-book"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="switchSection('teachers')">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-success" id="dashTeachers">—</div><span>Teachers</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-chalkboard-user"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="switchSection('students')">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-purple" id="dashStudents">—</div><span>Students</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-users"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="toggleLivePanel()">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-success" id="liveStudentCount">—</div><span>🟢 Live Students</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-wifi"></i></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3 col-sm-6">
-                                <div class="stat-card card p-3" onclick="toggleLivePanel()">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <div class="stat-val fw-bold fs-2 text-warning" id="liveSessionCount">—</div><span>⚡ Active Sessions</span>
-                                        </div>
-                                        <div class="card-icon"><i class="fas fa-play-circle"></i></div>
-                                    </div>
+                                    <div class="icon-box bg-primary bg-opacity-10 text-primary"><i class="fas fa-layer-group"></i></div>
                                 </div>
                             </div>
                         </div>
-                        <div id="liveDetailsPanel" class="mt-4" style="display: none;">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="card shadow-sm border-0">
-                                        <div class="card-header bg-warning text-white"><i class="fas fa-video me-2"></i> Active Sessions</div>
-                                        <div class="card-body p-0" id="liveSessionsList" style="max-height: 300px; overflow-y: auto;">
-                                            <div class="text-center p-4 text-muted">Loading...</div>
-                                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card" onclick="switchSection('subjects')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Subjects</h6>
+                                        <h2 class="fw-bold mb-0 text-success" id="dashSubjects">...</h2>
                                     </div>
+                                    <div class="icon-box bg-success bg-opacity-10 text-success"><i class="fas fa-book"></i></div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="card shadow-sm border-0">
-                                        <div class="card-header bg-success text-white"><i class="fas fa-user-check me-2"></i> Students Online</div>
-                                        <div class="card-body p-0" id="liveStudentsList" style="max-height: 300px; overflow-y: auto;">
-                                            <div class="text-center p-4 text-muted">No live data</div>
-                                        </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card" onclick="switchSection('teachers')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Teachers</h6>
+                                        <h2 class="fw-bold mb-0 text-warning" id="dashTeachers">...</h2>
                                     </div>
+                                    <div class="icon-box bg-warning bg-opacity-10 text-warning"><i class="fas fa-chalkboard-user"></i></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <div class="stat-card" onclick="switchSection('students')">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-1">Students</h6>
+                                        <h2 class="fw-bold mb-0 text-info" id="dashStudents">...</h2>
+                                    </div>
+                                    <div class="icon-box bg-info bg-opacity-10 text-info"><i class="fas fa-user-graduate"></i></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- GRADES -->
-                    <div id="gradesSection" class="section-content" style="display:none;">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h3><i class="fas fa-layer-group"></i> Grades</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('grades')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('grades')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button></div>
+                    <!-- Live Monitor Panel -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-satellite-dish text-danger me-2"></i>Live Monitor</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="toggleLivePanel()"><i class="fas fa-eye"></i> Toggle View</button>
                         </div>
+                        <div class="card-body" id="liveMonitorBody">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <h1 class="text-success mb-0" id="liveStudentCount">0</h1>
+                                        <small class="text-muted">Students Online</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-light rounded text-center">
+                                        <h1 class="text-primary mb-0" id="liveSessionCount">0</h1>
+                                        <small class="text-muted">Active Sessions</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="liveDetailsPanel" class="mt-3" style="display:none;">
+                                <div class="alert alert-light border">
+                                    <strong>Active Sessions:</strong> <span id="liveSessionListText">None</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GRADES SECTION -->
+                <div id="gradesSection" class="section-content" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold m-0">Manage Grades</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="exportData('grades')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-outline-secondary" onclick="importData('grades')"><i class="fas fa-file-import"></i> Import</button>
+                            <button class="btn btn-primary" onclick="openModalForm('grade')"><i class="fas fa-plus"></i> Add Grade</button>
+                        </div>
+                    </div>
+                    <div class="table-card">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle" id="gradesTable">
+                            <table class="table table-hover align-middle mb-0" id="gradesTable">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th>Name (AR)</th>
-                                        <th>Code</th>
-                                        <th>Status</th>
-                                        <th class="text-center">Actions</th>
-                                    </tr>
+                                    <tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th class="text-end">Actions</th></tr>
                                 </thead>
-                                <tbody id="gradesTbody">
-                                    <tr>
-                                        <td colspan="5" class="text-center">Loading...</td>
-                                    </tr>
-                                </tbody>
+                                <tbody id="gradesTbody"></tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- SUBJECTS -->
-                    <div id="subjectsSection" class="section-content" style="display:none;">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h3><i class="fas fa-book-open"></i> Subjects</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('subjects')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('subjects')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button></div>
+                </div>
+
+                <!-- SUBJECTS SECTION -->
+                <div id="subjectsSection" class="section-content" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold m-0">Manage Subjects</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="exportData('subjects')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-outline-secondary" onclick="importData('subjects')"><i class="fas fa-file-import"></i> Import</button>
+                            <button class="btn btn-primary" onclick="openModalForm('subject')"><i class="fas fa-plus"></i> Add Subject</button>
                         </div>
+                    </div>
+                    <div class="table-card">
                         <div class="table-responsive">
-                            <table class="table table-hover" id="subjectsTable">
+                            <table class="table table-hover align-middle mb-0" id="subjectsTable">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th>Name (AR)</th>
-                                        <th>Code</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
+                                    <tr><th>Name (EN)</th><th>Name (AR)</th><th>Code</th><th>Status</th><th class="text-end">Actions</th></tr>
                                 </thead>
                                 <tbody id="subjectsTbody"></tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- TEACHERS (Firestore only, no Auth) -->
-                    <div id="teachersSection" class="section-content" style="display:none;">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h3><i class="fas fa-chalkboard-user"></i> Teachers</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('teachers')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('teachers')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button></div>
+                </div>
+
+                <!-- TEACHERS SECTION -->
+                <div id="teachersSection" class="section-content" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold m-0">Manage Teachers</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="exportData('teachers')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-outline-secondary" onclick="importData('teachers')"><i class="fas fa-file-import"></i> Import</button>
+                            <button class="btn btn-primary" onclick="openModalForm('teacher')"><i class="fas fa-user-plus"></i> Add Teacher</button>
                         </div>
-                        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Teachers stored only in Firestore (no Firebase Auth account created).</div>
+                    </div>
+                    <div class="alert alert-info border-0 shadow-sm">
+                        <i class="fas fa-info-circle me-2"></i> Teachers are created directly in Firestore. No Authentication account is generated automatically.
+                    </div>
+                    <div class="table-card">
                         <div class="table-responsive">
-                            <table class="table table-hover" id="teachersTable">
+                            <table class="table table-hover align-middle mb-0" id="teachersTable">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Grades</th>
-                                        <th>Subjects</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
+                                    <tr><th>Name</th><th>Email</th><th>Assigned Grades</th><th>Status</th><th class="text-end">Actions</th></tr>
                                 </thead>
                                 <tbody id="teachersTbody"></tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- STUDENTS (Firestore only) -->
-                    <div id="studentsSection" class="section-content" style="display:none;">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h3><i class="fas fa-user-graduate"></i> Students</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('students')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('students')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button></div>
+                </div>
+
+                <!-- STUDENTS SECTION -->
+                <div id="studentsSection" class="section-content" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold m-0">Manage Students</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="exportData('students')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-outline-secondary" onclick="importData('students')"><i class="fas fa-file-import"></i> Import</button>
+                            <button class="btn btn-primary" onclick="openModalForm('student')"><i class="fas fa-user-plus"></i> Add Student</button>
                         </div>
-                        <div class="alert alert-info"><i class="fas fa-info-circle"></i> Students stored only in Firestore (no Firebase Auth).</div>
-                        <div class="row mb-3">
-                            <div class="col-md-4"><select id="gradeFilter" class="form-select" onchange="loadStudentsData()">
-                                    <option value="">All Grades</option>
-                                </select></div>
+                    </div>
+                     <div class="alert alert-info border-0 shadow-sm">
+                        <i class="fas fa-info-circle me-2"></i> Students are created directly in Firestore.
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <select id="gradeFilter" class="form-select" onchange="loadStudentsData()">
+                                <option value="">All Grades</option>
+                            </select>
                         </div>
+                    </div>
+                    <div class="table-card">
                         <div class="table-responsive">
-                            <table class="table table-hover" id="studentsTable">
+                            <table class="table table-hover align-middle mb-0" id="studentsTable">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Grade</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
+                                    <tr><th>Name</th><th>Email</th><th>Grade</th><th>Status</th><th class="text-end">Actions</th></tr>
                                 </thead>
                                 <tbody id="studentsTbody"></tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- SESSIONS -->
-                    <div id="sessionsSection" class="section-content" style="display:none;">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h3><i class="fas fa-video"></i> Sessions</h3>
-                            <div><button class="btn btn-sm btn-outline-secondary me-2" onclick="exportData('sessions')"><i class="fas fa-file-excel"></i> Export</button><button class="btn btn-sm btn-outline-secondary me-2" onclick="importData('sessions')"><i class="fas fa-upload"></i> Import</button><button class="btn btn-sm btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus-circle"></i> Create Session</button></div>
+                </div>
+
+                <!-- SESSIONS SECTION -->
+                <div id="sessionsSection" class="section-content" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold m-0">Live Sessions</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="exportData('sessions')"><i class="fas fa-file-export"></i> Export</button>
+                            <button class="btn btn-primary" onclick="openModalForm('session')"><i class="fas fa-plus"></i> Create Session</button>
                         </div>
+                    </div>
+                    <div class="table-card">
                         <div class="table-responsive">
-                            <table class="table table-hover" id="sessionsTable">
+                            <table class="table table-hover align-middle mb-0" id="sessionsTable">
                                 <thead class="table-light">
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Teacher</th>
-                                        <th>Grade</th>
-                                        <th>Subject</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
+                                    <tr><th>Title</th><th>Teacher</th><th>Grade</th><th>Subject</th><th>Start Time</th><th>Status</th><th class="text-end">Actions</th></tr>
                                 </thead>
                                 <tbody id="sessionsTbody"></tbody>
                             </table>
                         </div>
                     </div>
-                </main>
-                <footer class="text-center text-muted py-3 small">© 2025 EduBoard — Secure Admin Portal</footer>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
-
-    <!-- Modal Form -->
-    <div class="modal fade" id="universalModal" tabindex="-1" data-bs-backdrop="static">
+    <!-- UNIVERSAL MODAL -->
+    <div class="modal fade" id="universalModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Add Item</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="modalTitle">Add Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="dynamicForm"></form>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary" id="modalSaveBtn">Save changes</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="modalSaveBtn">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module">
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import {
-            getAuth,
-            signInWithEmailAndPassword,
-            signOut,
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import {
-            getFirestore,
-            collection,
-            getDocs,
-            doc,
-            setDoc,
-            deleteDoc,
-            updateDoc,
-            addDoc,
-            serverTimestamp,
-            Timestamp,
-            query,
-            where,
-            writeBatch
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import {
-            getDatabase,
-            ref,
-            onValue
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
 
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc, updateDoc, addDoc, serverTimestamp, Timestamp, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
             authDomain: "eduboard-870d3.firebaseapp.com",
@@ -462,367 +497,624 @@
             messagingSenderId: "123456789",
             appId: "1:123456789:web:abcdef"
         };
+
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const rtdb = getDatabase(app);
 
+        // Global State
         let currentAdmin = null;
-        let allGrades = [],
-            allSubjects = [],
-            allTeachers = [];
-        let liveSessionsData = {};
+        let cachedData = {
+            grades: [],
+            subjects: [],
+            teachers: []
+        };
 
-        function showToast(msg, type = 'success') {
-            const toastHtml = `<div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 show" role="alert"><div class="d-flex"><div class="toast-body">${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
-            document.querySelector('.toast-container').innerHTML += toastHtml;
-            setTimeout(() => document.querySelector('.toast')?.remove(), 3000);
+        // --- UTILITIES ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            
+            const html = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" onclick="this.parentElement.parentElement.remove()"></button>
+                    </div>
+                </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            setTimeout(() => {
+                const el = document.getElementById(toastId);
+                if(el) el.remove();
+            }, 4000);
         }
 
-        // LOGIN
-        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+        // --- AUTHENTICATION ---
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('adminEmail').value,
-                pwd = document.getElementById('adminPassword').value;
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
             try {
-                await signInWithEmailAndPassword(auth, email, pwd);
-            } catch (err) {
-                showToast("Login failed: " + err.message, 'danger');
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showToast("Login Failed: " + error.message, 'danger');
             }
         });
-        window.handleLogout = async () => {
-            await signOut(auth);
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('appContainer').style.display = 'none';
-            currentAdmin = null;
+
+        window.handleLogout = () => {
+            signOut(auth);
+            window.location.reload();
         };
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (!userDoc.exists() || userDoc.data().role !== 'superadmin') {
-                    await signOut(auth);
-                    showToast("No admin privileges", 'danger');
-                    return;
+                // Verify Super Admin Role
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (!userDoc.exists() || userDoc.data().role !== 'superadmin') {
+                        showToast("Access Denied: Not a Super Admin", 'danger');
+                        await signOut(auth);
+                        return;
+                    }
+
+                    // Set Global State
+                    currentAdmin = user; 
+                    
+                    // UI Updates
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'flex';
+                    document.getElementById('adminEmailDisplay').textContent = user.email;
+
+                    // Load Data
+                    await loadAllMasterData();
+                    initLiveMonitor();
+                    switchSection('dashboard');
+
+                } catch (err) {
+                    console.error(err);
+                    showToast("Error verifying admin status", 'danger');
                 }
-                currentAdmin = user;
-                document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('appContainer').style.display = 'block';
-                document.getElementById('adminUserBadge').innerHTML = `<i class="fas fa-user-shield"></i> ${user.email}`;
-                await loadAllMasterData();
-                initLiveMonitor();
-                switchSection('dashboard');
             } else {
                 document.getElementById('loginOverlay').style.display = 'flex';
                 document.getElementById('appContainer').style.display = 'none';
+                currentAdmin = null;
             }
         });
 
+        // --- DATA LOADING ---
         async function loadAllMasterData() {
-            const [gradesSnap, subjectsSnap, teachersSnap, studentsSnap] = await Promise.all([getDocs(collection(db, "grades")), getDocs(collection(db, "subjects")), getDocs(collection(db, "teachers")), getDocs(collection(db, "students"))]);
-            allGrades = gradesSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
-            allSubjects = subjectsSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
-            allTeachers = teachersSnap.docs.map(d => ({
-                id: d.id,
-                ...d.data()
-            }));
-            document.getElementById('dashGrades').innerText = allGrades.length;
-            document.getElementById('dashSubjects').innerText = allSubjects.length;
-            document.getElementById('dashTeachers').innerText = allTeachers.length;
-            document.getElementById('dashStudents').innerText = studentsSnap.size;
-            populateGradeFilter();
-            await Promise.all([loadGradesTable(), loadSubjectsTable(), loadTeachersTable(), loadStudentsData(), loadSessionsTable()]);
+            try {
+                // Fetch parallel
+                const [gSnap, sSnap, tSnap, stSnap] = await Promise.all([
+                    getDocs(collection(db, "grades")),
+                    getDocs(collection(db, "subjects")),
+                    getDocs(collection(db, "teachers")),
+                    getDocs(collection(db, "students"))
+                ]);
+
+                // Cache Data
+                cachedData.grades = gSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                cachedData.subjects = sSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                cachedData.teachers = tSnap.docs.map(d => ({id: d.id, ...d.data()}));
+                const studentsCount = stSnap.size;
+
+                // Update Dashboard Counters
+                document.getElementById('dashGrades').innerText = cachedData.grades.length;
+                document.getElementById('dashSubjects').innerText = cachedData.subjects.length;
+                document.getElementById('dashTeachers').innerText = cachedData.teachers.length;
+                document.getElementById('dashStudents').innerText = studentsCount;
+
+                // Populate Filters
+                populateGradeFilter();
+
+                // Render Tables
+                renderGradesTable();
+                renderSubjectsTable();
+                renderTeachersTable();
+                renderStudentsTable(); // Initial load
+                renderSessionsTable();
+
+            } catch (err) {
+                console.error("Load Error:", err);
+                showToast("Failed to load data", 'danger');
+            }
         }
 
         function populateGradeFilter() {
-            const sel = document.getElementById('gradeFilter');
-            if (sel) sel.innerHTML = '<option value="">All Grades</option>' + allGrades.map(g => `<option value="${g.id}">${g.nameEn}</option>`).join('');
+            const select = document.getElementById('gradeFilter');
+            select.innerHTML = '<option value="">All Grades</option>';
+            cachedData.grades.forEach(g => {
+                select.innerHTML += `<option value="${g.id}">${g.nameEn}</option>`;
+            });
         }
 
-        async function loadGradesTable() {
+        // --- RENDER FUNCTIONS ---
+        function renderGradesTable() {
             const tbody = document.getElementById('gradesTbody');
             tbody.innerHTML = '';
-            const snap = await getDocs(collection(db, "grades"));
-            snap.forEach(d => {
-                const data = d.data();
-                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td class="text-center"><button class="btn btn-sm btn-outline-secondary me-1" onclick='editItem("grade","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger" onclick='deleteItem("grades","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+            if(cachedData.grades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No grades found</td></tr>';
+                return;
+            }
+            cachedData.grades.forEach(item => {
+                const statusClass = item.status === 'Active' ? 'bg-active' : 'bg-inactive';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.nameEn}</td>
+                        <td>${item.nameAr || '-'}</td>
+                        <td>${item.code}</td>
+                        <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("grade", "${item.id}")'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("grades", "${item.id}")'><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No grades</td></tr>';
         }
-        async function loadSubjectsTable() {
+
+        function renderSubjectsTable() {
             const tbody = document.getElementById('subjectsTbody');
             tbody.innerHTML = '';
-            const snap = await getDocs(collection(db, "subjects"));
-            snap.forEach(d => {
-                const data = d.data();
-                tbody.innerHTML += `<tr><td>${data.nameEn||''}</td><td>${data.nameAr||''}</td><td>${data.code||''}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("subject","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteItem("subjects","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+            if(cachedData.subjects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No subjects found</td></tr>';
+                return;
+            }
+            cachedData.subjects.forEach(item => {
+                const statusClass = item.status === 'Active' ? 'bg-active' : 'bg-inactive';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.nameEn}</td>
+                        <td>${item.nameAr || '-'}</td>
+                        <td>${item.code}</td>
+                        <td><span class="status-badge ${statusClass}">${item.status}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("subject", "${item.id}")'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("subjects", "${item.id}")'><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
             });
         }
-        async function loadTeachersTable() {
+
+        function renderTeachersTable() {
             const tbody = document.getElementById('teachersTbody');
             tbody.innerHTML = '';
-            const snap = await getDocs(collection(db, "teachers"));
-            snap.forEach(d => {
-                const data = d.data();
-                const gNames = data.assignedGrades?.map(id => allGrades.find(g => g.id === id)?.nameEn || id).join(', ') || 'None';
-                const sNames = data.assignedSubjects?.map(id => allSubjects.find(s => s.id === id)?.nameEn || id).join(', ') || 'None';
-                tbody.innerHTML += `<tr><td>${data.name||'Unnamed'}</td><td>${data.email}</td><td>${gNames}</td><td>${sNames}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("teacher","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteTeacherRecord("${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+            if(cachedData.teachers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No teachers found</td></tr>';
+                return;
+            }
+            cachedData.teachers.forEach(t => {
+                // Map IDs to Names
+                const gradeNames = (t.assignedGrades || []).map(id => {
+                    const g = cachedData.grades.find(x => x.id === id);
+                    return g ? g.nameEn : id;
+                }).join(', ');
+                
+                const statusClass = t.status === 'Active' ? 'bg-active' : 'bg-inactive';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold">${t.name}</td>
+                        <td>${t.email}</td>
+                        <td><small class="text-muted">${gradeNames || 'None'}</small></td>
+                        <td><span class="status-badge ${statusClass}">${t.status || 'Active'}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("teacher", "${t.id}")'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("teachers", "${t.id}")'><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
             });
         }
+
         window.loadStudentsData = async () => {
-            const filter = document.getElementById('gradeFilter')?.value || '';
+            const filterGrade = document.getElementById('gradeFilter').value;
             const tbody = document.getElementById('studentsTbody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary"></div></td></tr>';
+            
+            // We fetch fresh here to allow filtering, though optimization would cache this too
+            let q = collection(db, "students");
+            // Note: Client side filtering used for simplicity as per previous logic, 
+            // ideally use Firestore query where('gradeLevel', '==', filterGrade)
+            
+            const snap = await getDocs(q);
             tbody.innerHTML = '';
-            const snap = await getDocs(collection(db, "students"));
+            
+            let count = 0;
             snap.forEach(d => {
                 const data = d.data();
-                if (filter && data.gradeLevel !== filter) return;
-                const gradeName = allGrades.find(g => g.id === data.gradeLevel)?.nameEn || data.gradeLevel || '-';
-                tbody.innerHTML += `<tr><td>${data.name||''}</td><td>${data.email||''}</td><td>${gradeName}</td><td><span class="status-badge ${data.status==='Active'?'status-active':'status-inactive'}">${data.status||'Active'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("student","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteStudentRecord("${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+                if (filterGrade && data.gradeLevel !== filterGrade) return;
+                
+                const gradeName = (cachedData.grades.find(g => g.id === data.gradeLevel) || {}).nameEn || data.gradeLevel;
+                const statusClass = data.status === 'Active' ? 'bg-active' : 'bg-inactive';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${data.name}</td>
+                        <td>${data.email}</td>
+                        <td>${gradeName}</td>
+                        <td><span class="status-badge ${statusClass}">${data.status || 'Active'}</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-light text-primary" onclick='editItem("student", "${d.id}")'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("students", "${d.id}")'><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>`;
+                count++;
             });
-            if (!tbody.innerHTML) tbody.innerHTML = '<tr><td colspan="5" class="text-center">No students</td></tr>';
+
+            if(count === 0) tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No students found</td></tr>';
         };
-        async function loadSessionsTable() {
+
+        async function renderSessionsTable() {
             const tbody = document.getElementById('sessionsTbody');
-            tbody.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading sessions...</td></tr>';
             const snap = await getDocs(collection(db, "sessions"));
+            tbody.innerHTML = '';
+            
             snap.forEach(d => {
                 const data = d.data();
-                const date = data.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toLocaleDateString() : '-';
-                const teacher = allTeachers.find(t => t.id === data.ownerTeacherId);
-                const teacherName = teacher ? teacher.name : (data.ownerTeacherId?.slice(0, 8) || '?');
-                tbody.innerHTML += `<tr><td>${data.title||''}</td><td>${teacherName}</td><td>${data.gradeLevel||''}</td><td>${data.subject||''}</td><td>${date}</td><td><span class="badge ${data.isActive?'bg-success':'bg-secondary'}">${data.isActive?'Active':'Closed'}</span></td><td><button class="btn btn-sm btn-outline-secondary" onclick='editItem("session","${d.id}",${JSON.stringify(data).replace(/'/g,"&#39;")})'><i class="fas fa-edit"></i></button> <button class="btn btn-sm btn-outline-danger" onclick='deleteItem("sessions","${d.id}")'><i class="fas fa-trash"></i></button></td></tr>`;
+                const teacher = cachedData.teachers.find(t => t.id === data.ownerTeacherId);
+                const teacherName = teacher ? teacher.name : 'Unknown';
+                
+                let dateStr = '-';
+                if(data.startTime && data.startTime.seconds) {
+                    dateStr = new Date(data.startTime.seconds * 1000).toLocaleString();
+                }
+
+                const badge = data.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Closed</span>';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${data.title}</td>
+                        <td>${teacherName}</td>
+                        <td>${data.gradeLevel || '-'}</td>
+                        <td>${data.subject || '-'}</td>
+                        <td><small>${dateStr}</small></td>
+                        <td>${badge}</td>
+                        <td class="text-end">
+                             <button class="btn btn-sm btn-light text-primary" onclick='editItem("session", "${d.id}")'><i class="fas fa-edit"></i></button>
+                             <button class="btn btn-sm btn-light text-danger" onclick='deleteItem("sessions", "${d.id}")'><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
             });
         }
 
-        // DELETE helpers
-        window.deleteItem = async (col, id) => {
-            if (confirm("Delete permanently?")) {
-                await deleteDoc(doc(db, col, id));
-                if (col === 'grades') loadGradesTable();
-                if (col === 'subjects') loadSubjectsTable();
-                if (col === 'sessions') loadSessionsTable();
-                showToast("Deleted");
-            }
-        };
-        window.deleteTeacherRecord = async (id) => {
-            if (confirm("Delete teacher?")) {
-                await deleteDoc(doc(db, "teachers", id));
-                loadTeachersTable();
-                showToast("Teacher deleted");
-            }
-        };
-        window.deleteStudentRecord = async (id) => {
-            if (confirm("Delete student?")) {
-                await deleteDoc(doc(db, "students", id));
-                loadStudentsData();
-                showToast("Student deleted");
+        // --- CRUD OPERATIONS ---
+
+        // Delete
+        window.deleteItem = async (collectionName, id) => {
+            if(!confirm("Are you sure you want to delete this record?")) return;
+            try {
+                await deleteDoc(doc(db, collectionName, id));
+                showToast("Record deleted successfully");
+                loadAllMasterData(); // Refresh everything
+            } catch (err) {
+                showToast("Delete failed: " + err.message, 'danger');
             }
         };
 
-        // MODAL & CRUD (NO AUTH CREATION)
-        window.openModalForm = (type, id = null, data = null) => {
-            document.getElementById('modalTitle').innerText = (id ? 'Edit ' : 'Add ') + type;
+        // Modal Handling
+        window.openModalForm = (type, editId = null) => {
+            const modalTitle = document.getElementById('modalTitle');
             const form = document.getElementById('dynamicForm');
-            let html = `<input type="hidden" id="editId" value="${id||''}">`;
-            if (type === 'grade' || type === 'subject') {
-                html += `<div class="mb-3"><label>Name (EN)</label><input class="form-control" name="nameEn" value="${data?.nameEn||''}" required></div><div class="mb-3"><label>Name (AR)</label><input class="form-control" name="nameAr" value="${data?.nameAr||''}"></div><div class="mb-3"><label>Code</label><input class="form-control" name="code" value="${data?.code||''}" required></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status==='Active'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            } else if (type === 'teacher') {
-                const gradeOpts = allGrades.map(g => `<option value="${g.id}" ${data?.assignedGrades?.includes(g.id)?'selected':''}>${g.nameEn}</option>`).join('');
-                const subOpts = allSubjects.map(s => `<option value="${s.id}" ${data?.assignedSubjects?.includes(s.id)?'selected':''}>${s.nameEn}</option>`).join('');
-                html += `<div class="mb-3"><label>Email</label><input class="form-control" name="email" value="${data?.email||''}" required></div><div class="mb-3"><label>Full Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div><div class="mb-3"><label>Assigned Grades (Ctrl+Click)</label><select multiple class="form-select" name="assignedGrades" size="4">${gradeOpts}</select></div><div class="mb-3"><label>Assigned Subjects</label><select multiple class="form-select" name="assignedSubjects" size="4">${subOpts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status!=='Inactive'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            } else if (type === 'student') {
-                const opts = allGrades.map(g => `<option value="${g.id}" ${data?.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
-                html += `<div class="mb-3"><label>Email</label><input class="form-control" name="email" value="${data?.email||''}" required></div><div class="mb-3"><label>Name</label><input class="form-control" name="name" value="${data?.name||''}" required></div><div class="mb-3"><label>Grade</label><select class="form-select" name="gradeLevel">${opts}</select></div><div class="mb-3"><label>Status</label><select class="form-select" name="status"><option value="Active" ${data?.status!=='Inactive'?'selected':''}>Active</option><option value="Inactive" ${data?.status==='Inactive'?'selected':''}>Inactive</option></select></div>`;
-            } else if (type === 'session') {
-                const teacherOpts = allTeachers.map(t => `<option value="${t.id}" ${data?.ownerTeacherId===t.id?'selected':''}>${t.name||t.email}</option>`).join('');
-                html += `<div class="mb-3"><label>Title</label><input class="form-control" name="title" value="${data?.title||''}" required></div><div class="mb-3"><label>Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div><div class="mb-3"><label>Grade Level</label><input class="form-control" name="gradeLevel" value="${data?.gradeLevel||''}"></div><div class="mb-3"><label>Subject</label><input class="form-control" name="subject" value="${data?.subject||''}"></div><div class="mb-3"><label>Start Time</label><input class="form-control" name="startTime" type="datetime-local"></div><div class="mb-3"><label>End Time</label><input class="form-control" name="endTime" type="datetime-local"></div><div class="mb-3"><label>Active</label><select class="form-select" name="isActive"><option value="true" ${data?.isActive?'selected':''}>Active</option><option value="false" ${!data?.isActive?'selected':''}>Closed</option></select></div>`;
+            const saveBtn = document.getElementById('modalSaveBtn');
+            
+            modalTitle.innerText = (editId ? 'Edit ' : 'Add ') + type.charAt(0).toUpperCase() + type.slice(1);
+            form.innerHTML = ''; // Clear previous
+
+            // Find existing data if editing
+            let itemData = {};
+            if(editId) {
+                if(type === 'grade') itemData = cachedData.grades.find(x => x.id === editId);
+                if(type === 'subject') itemData = cachedData.subjects.find(x => x.id === editId);
+                if(type === 'teacher') itemData = cachedData.teachers.find(x => x.id === editId);
+                // For student/session we'd typically fetch individually or cache them too. 
+                // Simplified: We will re-fetch inside submit if needed, but for form population:
+                // (For this demo, assuming simple types or fetching specifically)
             }
+
+            // Generate Form HTML
+            let html = `<input type="hidden" id="editId" value="${editId || ''}">`;
+            
+            if (type === 'grade' || type === 'subject') {
+                html += `
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Name (English)</label><input type="text" class="form-control" name="nameEn" value="${itemData.nameEn||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Name (Arabic)</label><input type="text" class="form-control" name="nameAr" value="${itemData.nameAr||''}"></div>
+                        <div class="col-md-6"><label class="form-label">Code</label><input type="text" class="form-control" name="code" value="${itemData.code||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" ${itemData.status==='Active'?'selected':''}>Active</option>
+                                <option value="Inactive" ${itemData.status==='Inactive'?'selected':''}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>`;
+            } 
+            else if (type === 'teacher') {
+                const gradeOptions = cachedData.grades.map(g => `<option value="${g.id}" ${(itemData.assignedGrades||[]).includes(g.id)?'selected':''}>${g.nameEn}</option>`).join('');
+                const subjectOptions = cachedData.subjects.map(s => `<option value="${s.id}" ${(itemData.assignedSubjects||[]).includes(s.id)?'selected':''}>${s.nameEn}</option>`).join('');
+                
+                html += `
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" value="${itemData.name||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="${itemData.email||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Assigned Grades</label><select class="form-select" multiple name="assignedGrades" size="4">${gradeOptions}</select><small class="text-muted">Ctrl+Click to select multiple</small></div>
+                        <div class="col-md-6"><label class="form-label">Assigned Subjects</label><select class="form-select" multiple name="assignedSubjects" size="4">${subjectOptions}</select></div>
+                        <div class="col-md-12"><label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" ${itemData.status!=='Inactive'?'selected':''}>Active</option>
+                                <option value="Inactive" ${itemData.status==='Inactive'?'selected':''}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>`;
+            }
+            else if (type === 'student') {
+                 // Need to fetch specific student data if editing (async)
+                 // For simplicity in this fix, assuming we might need to fetch it if not in cache
+                 // But let's assume basic fields.
+                 const gradeOptions = cachedData.grades.map(g => `<option value="${g.id}" ${itemData.gradeLevel===g.id?'selected':''}>${g.nameEn}</option>`).join('');
+                 
+                 // If editing, we need the actual data. Since I didn't cache students fully in global var above to save memory, let's do a quick fetch if ID exists
+                 if(editId) {
+                     // This is a bit hacky for the single file structure, usually you'd have the data object passed in
+                     // For now, I'll leave the form blank if editing student unless we fetched it. 
+                     // To fix properly:
+                     getDoc(doc(db, "students", editId)).then(docSnap => {
+                         if(docSnap.exists()) fillStudentForm(docSnap.data(), gradeOptions);
+                     });
+                     return; // Exit, async fill
+                 }
+
+                 html += `
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required></div>
+                        <div class="col-md-6"><label class="form-label">Grade Level</label><select class="form-select" name="gradeLevel">${gradeOptions}</select></div>
+                        <div class="col-md-6"><label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>`;
+            }
+            else if (type === 'session') {
+                const teacherOpts = cachedData.teachers.map(t => `<option value="${t.id}" ${itemData.ownerTeacherId===t.id?'selected':''}>${t.name}</option>`).join('');
+                
+                // Handle Timestamp conversion for input type="datetime-local"
+                let startVal = '';
+                let endVal = '';
+                if(itemData.startTime?.seconds) {
+                    const d = new Date(itemData.startTime.seconds * 1000);
+                    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+                    startVal = d.toISOString().slice(0,16);
+                }
+                
+                html += `
+                    <div class="row g-3">
+                        <div class="col-md-12"><label class="form-label">Session Title</label><input type="text" class="form-control" name="title" value="${itemData.title||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Teacher</label><select class="form-select" name="ownerTeacherId">${teacherOpts}</select></div>
+                        <div class="col-md-6"><label class="form-label">Subject</label><input type="text" class="form-control" name="subject" value="${itemData.subject||''}"></div>
+                        <div class="col-md-6"><label class="form-label">Start Time</label><input type="datetime-local" class="form-control" name="startTime" value="${startVal}"></div>
+                        <div class="col-md-6"><label class="form-label">Active?</label><select class="form-select" name="isActive"><option value="true" ${itemData.isActive!==false?'selected':''}>Yes</option><option value="false" ${itemData.isActive===false?'selected':''}>No</option></select></div>
+                    </div>`;
+            }
+
             form.innerHTML = html;
+
+            // Show Modal
             const modal = new bootstrap.Modal(document.getElementById('universalModal'));
             modal.show();
-            document.getElementById('modalSaveBtn').onclick = async () => {
-                await submitDynamicForm(type, id);
-                modal.hide();
-            };
-        };
-        window.submitDynamicForm = async (type, id) => {
-            const formEl = document.getElementById('dynamicForm');
-            const formData = new FormData(formEl);
-            const data = {};
-            for (let [k, v] of formData.entries()) {
-                if (k === 'assignedGrades' || k === 'assignedSubjects') {
-                    if (!data[k]) data[k] = [];
-                    data[k].push(v);
-                } else data[k] = v;
-            }
-            try {
-                if (type === 'grade' || type === 'subject') {
-                    const col = type + 's';
-                    if (id) await updateDoc(doc(db, col, id), data);
-                    else await addDoc(collection(db, col), {
-                        ...data,
-                        createdAt: serverTimestamp(),
-                        createdBy: currentAdmin?.uid
-                    });
-                    showToast(`${type} saved`);
-                    loadGradesTable();
-                    loadSubjectsTable();
-                } else if (type === 'teacher') {
-                    if (id) {
-                        await updateDoc(doc(db, "teachers", id), data);
-                    } else {
-                        await addDoc(collection(db, "teachers"), {
-                            ...data,
-                            createdAt: serverTimestamp(),
-                            createdBy: currentAdmin?.uid
-                        });
-                    }
-                    loadTeachersTable();
-                    showToast("Teacher saved");
-                } else if (type === 'student') {
-                    if (id) {
-                        await updateDoc(doc(db, "students", id), data);
-                    } else {
-                        await addDoc(collection(db, "students"), {
-                            ...data,
-                            createdAt: serverTimestamp(),
-                            createdBy: currentAdmin?.uid
-                        });
-                    }
-                    loadStudentsData();
-                    showToast("Student saved");
-                } else if (type === 'session') {
-                    if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
-                    if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
-                    data.isActive = data.isActive === 'true';
-                    if (id) await updateDoc(doc(db, "sessions", id), data);
-                    else await addDoc(collection(db, "sessions"), {
-                        ...data,
-                        createdAt: serverTimestamp(),
-                        createdBy: currentAdmin?.uid
-                    });
-                    loadSessionsTable();
-                    showToast("Session saved");
-                }
-            } catch (err) {
-                showToast(err.message, 'danger');
-            }
-        };
-        window.editItem = (type, id, data) => openModalForm(type, id, data);
 
-        // IMPORT / EXPORT
-        window.exportData = async (type) => {
-            const col = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
-            const snap = await getDocs(collection(db, col));
-            const docs = snap.docs.map(d => d.data());
-            const ws = XLSX.utils.json_to_sheet(docs);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Data");
-            XLSX.writeFile(wb, `${type}_export_${new Date().toISOString().slice(0,19)}.xlsx`);
-            showToast(`Exported ${type}`);
+            // Bind Save Button
+            saveBtn.onclick = () => submitDynamicForm(type, editId, modal);
         };
-        window.importData = async (type) => {
+
+        // Helper for async student edit filling
+        function fillStudentForm(data, gradeOptions) {
+             const form = document.getElementById('dynamicForm');
+             const editId = document.getElementById('editId')?.value || '';
+             let html = `<input type="hidden" id="editId" value="${editId}">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Full Name</label><input type="text" class="form-control" name="name" value="${data.name||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input type="email" class="form-control" name="email" value="${data.email||''}" required></div>
+                        <div class="col-md-6"><label class="form-label">Grade Level</label><select class="form-select" name="gradeLevel">${gradeOptions.replace(`value="${data.gradeLevel}"`, `value="${data.gradeLevel}" selected`)}</select></div>
+                        <div class="col-md-6"><label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" ${data.status!=='Inactive'?'selected':''}>Active</option>
+                                <option value="Inactive" ${data.status==='Inactive'?'selected':''}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>`;
+            form.innerHTML = html;
+        }
+
+        async function submitDynamicForm(type, editId, modalInstance) {
+            if(!currentAdmin) {
+                showToast("Session expired. Please login again.", 'danger');
+                return;
+            }
+
+            const form = document.getElementById('dynamicForm');
+            if(!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+            const data = {};
+            
+            // Process Form Data
+            for (let [key, value] of formData.entries()) {
+                if(key === 'assignedGrades' || key === 'assignedSubjects') {
+                    // Handle multi-select
+                    if(!data[key]) data[key] = [];
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+
+            // Specific Type Processing
+            if(type === 'session') {
+                if(data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
+                data.isActive = data.isActive === 'true';
+            }
+
+            // Firestore Path
+            const collectionName = type + 's'; // e.g., teachers, students
+            
+            try {
+                if(editId) {
+                    // Update
+                    await updateDoc(doc(db, collectionName, editId), data);
+                    showToast(`${type} updated successfully`);
+                } else {
+                    // Create (Firestore ONLY, No Auth creation)
+                    data.createdAt = serverTimestamp();
+                    data.createdBy = currentAdmin.uid; // Safe now as we checked currentAdmin
+                    
+                    // Explicitly handle collections that don't follow plural naming perfectly if needed
+                    // But here: grades, subjects, teachers, students, sessions works.
+                    
+                    await addDoc(collection(db, collectionName), data);
+                    showToast(`${type} created successfully in Firestore`);
+                }
+                
+                modalInstance.hide();
+                loadAllMasterData(); // Refresh UI
+                
+            } catch (err) {
+                console.error(err);
+                showToast("Error saving: " + err.message, 'danger');
+            }
+        }
+
+        window.editItem = (type, id) => openModalForm(type, id);
+
+        // --- IMPORT / EXPORT ---
+        window.exportData = async (type) => {
+            const collectionName = type + 's';
+            const snap = await getDocs(collection(db, collectionName));
+            const data = snap.docs.map(d => d.data());
+            
+            if(data.length === 0) {
+                showToast("No data to export", 'danger');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, type);
+            XLSX.writeFile(wb, `EduBoard_${type}_${Date.now()}.xlsx`);
+            showToast("Export started");
+        };
+
+        window.importData = (type) => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.xlsx, .xls';
             input.onchange = async (e) => {
                 const file = e.target.files[0];
-                if (!file) return;
+                if(!file) return;
+                
                 const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    const wb = XLSX.read(ev.target.result, {
-                        type: 'array'
-                    });
-                    const sheet = wb.Sheets[wb.SheetNames[0]];
-                    const rows = XLSX.utils.sheet_to_json(sheet);
-                    if (rows.length === 0) {
-                        showToast("Empty file", 'danger');
+                reader.onload = async (evt) => {
+                    const bstr = evt.target.result;
+                    const wb = XLSX.read(bstr, {type:'binary'});
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(ws);
+                    
+                    if(jsonData.length === 0) {
+                        showToast("File is empty", 'danger');
                         return;
                     }
+
+                    if(!confirm(`Import ${jsonData.length} records into ${type}? This will add new entries.`)) return;
+
                     const batch = writeBatch(db);
-                    let count = 0;
-                    const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
-                    for (const row of rows) {
-                        const docData = {
-                            ...row,
-                            createdAt: serverTimestamp(),
-                            createdBy: currentAdmin?.uid
-                        };
-                        const docRef = doc(collection(db, colName));
-                        batch.set(docRef, docData);
-                        count++;
-                        if (count >= 400) {
-                            await batch.commit();
-                            count = 0;
-                        }
+                    const colRef = collection(db, type + 's');
+                    
+                    jsonData.forEach(row => {
+                        // Clean data
+                        const cleanRow = { ...row, createdAt: serverTimestamp(), importedBy: currentAdmin?.uid };
+                        const newDocRef = doc(colRef);
+                        batch.set(newDocRef, cleanRow);
+                    });
+
+                    try {
+                        await batch.commit();
+                        showToast(`Successfully imported ${jsonData.length} records`);
+                        loadAllMasterData();
+                    } catch(err) {
+                        showToast("Import failed: " + err.message, 'danger');
                     }
-                    if (count > 0) await batch.commit();
-                    showToast(`Imported ${rows.length} records`);
-                    if (type === 'grades') loadGradesTable();
-                    if (type === 'subjects') loadSubjectsTable();
-                    if (type === 'teachers') loadTeachersTable();
-                    if (type === 'students') loadStudentsData();
-                    if (type === 'sessions') loadSessionsTable();
-                    await loadAllMasterData();
                 };
-                reader.readAsArrayBuffer(file);
+                reader.readAsBinaryString(file);
             };
             input.click();
         };
 
-        // LIVE SESSIONS MONITOR
+        // --- LIVE MONITOR ---
         function initLiveMonitor() {
-            onValue(ref(rtdb, 'liveSessions'), (snap) => {
-                liveSessionsData = snap.val() || {};
-                let sessionCount = 0,
-                    studentCount = 0;
-                Object.values(liveSessionsData).forEach(s => {
-                    sessionCount++;
-                    if (s.students) studentCount += Object.keys(s.students).length;
+            onValue(ref(rtdb, 'liveSessions'), (snapshot) => {
+                const data = snapshot.val() || {};
+                const sessionIds = Object.keys(data);
+                const sessionCount = sessionIds.length;
+                
+                let totalStudents = 0;
+                sessionIds.forEach(sid => {
+                    const s = data[sid];
+                    if(s.students) totalStudents += Object.keys(s.students).length;
                 });
-                document.getElementById('liveStudentCount').innerText = studentCount;
+
                 document.getElementById('liveSessionCount').innerText = sessionCount;
-                updateLiveUI();
+                document.getElementById('liveStudentCount').innerText = totalStudents;
+                
+                // Optional: List active sessions
+                const listDiv = document.getElementById('liveSessionListText');
+                if(sessionCount > 0) {
+                    listDiv.innerHTML = sessionIds.map(id => `<span class="badge bg-primary me-1">${data[id].title || 'Session'}</span>`).join('');
+                } else {
+                    listDiv.innerText = "No active sessions";
+                }
             });
         }
 
-        function updateLiveUI() {
-            const sessionsDiv = document.getElementById('liveSessionsList');
-            const studentsDiv = document.getElementById('liveStudentsList');
-            if (!liveSessionsData || Object.keys(liveSessionsData).length === 0) {
-                sessionsDiv.innerHTML = '<div class="text-center p-4 text-muted">No active sessions</div>';
-                studentsDiv.innerHTML = '<div class="text-center p-4 text-muted">No students online</div>';
-                return;
-            }
-            let sessionsHtml = '';
-            let studentsList = [];
-            Object.entries(liveSessionsData).forEach(([id, s]) => {
-                sessionsHtml += `<div class="border-bottom p-3 d-flex justify-content-between"><div><strong>${s.title||'Untitled'}</strong><div class="small text-muted">Teacher: ${s.teacherName||s.ownerTeacherId?.slice(0,8)}</div></div><span class="live-badge">${s.students?Object.keys(s.students).length:0}</span></div>`;
-                if (s.students) Object.values(s.students).forEach(st => studentsList.push(st));
+        // --- UI HELPERS ---
+        window.switchSection = (sectionId) => {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
+            // Show target
+            document.getElementById(sectionId + 'Section').style.display = 'block';
+            
+            // Update sidebar active state
+            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
+            // Find the li that calls this function (approximate match)
+            const items = document.querySelectorAll('#sidebar ul li');
+            items.forEach(item => {
+                if(item.getAttribute('onclick').includes(sectionId)) item.classList.add('active');
             });
-            sessionsDiv.innerHTML = sessionsHtml || '<div class="p-3 text-muted">None</div>';
-            studentsDiv.innerHTML = studentsList.map(st => `<div class="border-bottom p-3"><i class="fas fa-user-circle me-2"></i>${st.name||st.displayName||'Student'}</div>`).join('') || '<div class="p-3 text-muted">No students</div>';
-        }
+
+            // Mobile sidebar toggle close
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.remove('active');
+            }
+        };
+
         window.toggleLivePanel = () => {
             const panel = document.getElementById('liveDetailsPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-            if (panel.style.display === 'block') updateLiveUI();
         };
-        window.switchSection = (section) => {
-            document.querySelectorAll('.section-content').forEach(el => el.style.display = 'none');
-            document.getElementById(`${section}Section`).style.display = 'block';
-            document.querySelectorAll('#sidebar ul li').forEach(li => li.classList.remove('active'));
-            document.querySelector(`#sidebar ul li[data-section="${section}"]`)?.classList.add('active');
-            if (section === 'dashboard') loadAllMasterData();
-        };
-        document.getElementById('sidebarCollapse')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('active'));
+
+        document.getElementById('sidebarCollapse').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+
     </script>
 </body>
-
 </html>
