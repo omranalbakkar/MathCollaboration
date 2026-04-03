@@ -2242,51 +2242,73 @@ async function loadActiveSession() {
     currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
     const config = currentSessionData;
 
- const toTimeStr = (val) => {
-    if (!val) return '';
-    if (typeof val === 'string' && val.includes(':')) return val.slice(0, 5);
-    if (val.seconds) {
-        const d = new Date(val.seconds * 1000);
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        return `${hh}:${mm}`;
-    }
-    return '';
-};
+    // Helper functions defined inside the function
+    const toTimeStr = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string' && val.includes(':')) return val.slice(0, 5);
+        // Handle Firestore Timestamp
+        if (val && typeof val.toDate === 'function') {
+            const d = val.toDate();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+        // Handle object with seconds property
+        if (val && val.seconds) {
+            const d = new Date(val.seconds * 1000);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+        return '';
+    };
 
-const toDate = (val) => {
-    if (!val) return '';
-    if (typeof val === 'string') return val.slice(0, 10);
-    if (val.seconds) {
-        const d = new Date(val.seconds * 1000);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-    }
-    return '';
-};
+    const toDateStr = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string') return val.slice(0, 10);
+        // Handle Firestore Timestamp
+        if (val && typeof val.toDate === 'function') {
+            const d = val.toDate();
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        // Handle object with seconds property
+        if (val && val.seconds) {
+            const d = new Date(val.seconds * 1000);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        return '';
+    };
 
-
+    // Populate form fields
     document.getElementById('cfTitle').value = config.title || '';
     document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
     document.getElementById('cfClass').value = config.className || config.class || '';
     document.getElementById('cfSubject').value = config.subject || '';
     document.getElementById('cfTeacher').value = currentTeacher.name || '';
-    document.getElementById('cfDate').value = config.date || toDate(config.startTime);
+    document.getElementById('cfDate').value = toDateStr(config.date || config.startTime);
     document.getElementById('cfStart').value = toTimeStr(config.startTime);
     document.getElementById('cfEnd').value = toTimeStr(config.endTime);
     document.getElementById('cfInstructions').value = config.instructions || '';
 
-    // isActive (admin-created) or active (teacher-created)
-    setToggle(!!(config.isActive || config.active));
+    // Set toggle state (isActive or active)
+    const isSessionActive = !!(config.isActive || config.active);
+    setToggle(isSessionActive);
     updateSessionChip(config);
 
     await loadQuestions();
     await loadStudents();
     await loadClassStatus();
     updateStats();
+    
+    console.log('✅ Session loaded successfully:', config.title);
 }
+        
         async function loadQuestions() {
             if (!activeSessionId) return;
 
