@@ -1397,81 +1397,83 @@ onAuthStateChanged(auth, async (user) => {
             if (e.key === 'Enter') doStudentLogin();
         });
 
-        async function findAndJoinOpenSession() {
-            try {
-                if (!activeSessionId) {
-                    const sessionsRef = collection(db, 'sessions');
-                    const q = query(sessionsRef, where('active', '==', true));
-                    const snapshot = await getDocs(q);
+async function findAndJoinOpenSession() {
+    try {
+        if (!activeSessionId) {
+            const sessionsRef = collection(db, 'sessions');
+            // ✅ FIX: Use 'isActive' instead of 'active'
+            const q = query(sessionsRef, where('isActive', '==', true));
+            const snapshot = await getDocs(q);
 
-                    if (snapshot.empty) {
-                        showNoSessions();
-                        return;
-                    }
-                    activeSessionId = snapshot.docs[0].id;
-                    sessionData = snapshot.docs[0].data();
-                } else {
-                    const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-                    if (!sessDoc.exists() || !sessDoc.data().active) {
-                        showNoSessions();
-                        return;
-                    }
-                    sessionData = sessDoc.data();
-                }
+            if (snapshot.empty) {
+                showNoSessions();
+                return;
+            }
+            activeSessionId = snapshot.docs[0].id;
+            sessionData = snapshot.docs[0].data();
+        } else {
+            const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+            if (!sessDoc.exists() || !sessDoc.data().isActive) {
+                showNoSessions();
+                return;
+            }
+            sessionData = sessDoc.data();
+        }
 
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+        const studentKey = currentStudent.docId || currentStudent.uid;
+        const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
-                await setDoc(studentRef, {
-                    name: studentProfile.name || currentStudent.email,
-                    uid: currentStudent.uid,
-                    studentDocId: currentStudent.docId,
-                    online: true,
-                    loginTime: Date.now(),
-                    submitted: false,
-                    answers: {},
-                    grades: {},
-                    feedback: {}
-                }, {
-                    merge: true
-                });
+        await setDoc(studentRef, {
+            name: studentProfile.name || currentStudent.email,
+            uid: currentStudent.uid,
+            studentDocId: currentStudent.docId,
+            online: true,
+            loginTime: Date.now(),
+            submitted: false,
+            answers: {},
+            grades: {},
+            feedback: {}
+        }, {
+            merge: true
+        });
 
-                try {
-                    await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-                        name: studentProfile.name || currentStudent.email,
-                        uid: currentStudent.uid,
-                        studentDocId: currentStudent.docId,
-                        joinedAt: new Date().toISOString(),
-                        status: 'active'
-                    });
-                } catch (e) {
-                    console.warn('Could not mark present in RTDB:', e);
-                }
+        try {
+            await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                name: studentProfile.name || currentStudent.email,
+                uid: currentStudent.uid,
+                studentDocId: currentStudent.docId,
+                joinedAt: new Date().toISOString(),
+                status: 'active'
+            });
+        } catch (e) {
+            console.warn('Could not mark present in RTDB:', e);
+        }
 
-                document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
-                document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
+        document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
+        document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
 
-                if (unsubSession) unsubSession();
-                unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
-                    if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
-                        refreshCompletion(sd.data());
-                    }
-                });
+        if (unsubSession) unsubSession();
+        unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
+            if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
+                refreshCompletion(sd.data());
+            }
+        });
 
-                await loadAndShowWelcome();
-            } catch (e) {
-                console.error('Join session error:', e);
-                showConnectionWarning(true);
-                document.getElementById('welcomeScreen').innerHTML = `
+        await loadAndShowWelcome();
+    } catch (e) {
+        console.error('Join session error:', e);
+        showConnectionWarning(true);
+        document.getElementById('welcomeScreen').innerHTML = `
       <div style="text-align:center;padding:60px 0">
         <div style="font-size:56px;margin-bottom:16px">⚠️</div>
         <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
         <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
         <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
       </div>`;
-                document.getElementById('welcomeScreen').style.display = 'block';
-            }
-        }
+        document.getElementById('welcomeScreen').style.display = 'block';
+    }
+}
+        
 
         function showNoSessions() {
             document.getElementById('app').style.display = 'block';
