@@ -1540,7 +1540,7 @@ window.viewResults = async function(sessionId) {
     const state = window.appState;
     
     try {
-        // Get session data
+        // Get session data FIRST - this is the most important part
         const sessionRef = doc(db, 'sessions', sessionId);
         const sessionSnap = await getDoc(sessionRef);
         if (!sessionSnap.exists()) {
@@ -1548,6 +1548,32 @@ window.viewResults = async function(sessionId) {
             return;
         }
         const sessionData = sessionSnap.data();
+        
+        // Store full session data for PDF generation
+        const fullSessionData = {
+            id: sessionId,
+            title: sessionData.title || 'Quiz',
+            subject: sessionData.subject || 'Not specified',
+            gradeLevel: sessionData.gradeLevel || sessionData.grade || 'Not specified',
+            className: sessionData.className || sessionData.class || 'Not specified',
+            teacherName: sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || 'Not specified',
+            date: sessionData.date || (sessionData.startTime ? formatSessionDate(sessionData.startTime) : 'Not set'),
+            startTime: sessionData.startTime,
+            endTime: sessionData.endTime,
+            instructions: sessionData.instructions || ''
+        };
+        
+        // Helper function to format date
+        function formatSessionDate(timestamp) {
+            if (!timestamp) return 'Not set';
+            try {
+                if (timestamp.toDate) return timestamp.toDate().toLocaleDateString();
+                if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleDateString();
+                return new Date(timestamp).toLocaleDateString();
+            } catch (e) {
+                return 'Not set';
+            }
+        }
         
         // Get questions for this session
         const questionsRef = collection(db, 'sessions', sessionId, 'questions');
@@ -1594,10 +1620,30 @@ window.viewResults = async function(sessionId) {
             return formatted;
         };
         
-        // Store data for PDF generation
+        // Helper function to format time
+        const formatTimeDisplay = (timestamp) => {
+            if (!timestamp) return 'Not set';
+            try {
+                if (timestamp.toDate) return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                if (typeof timestamp === 'string') return timestamp;
+                return 'Not set';
+            } catch (e) {
+                return 'Not set';
+            }
+        };
+        
+        // Store data for PDF generation with FULL session details
         const reportData = {
             sessionTitle: sessionData.title || 'Quiz Results',
-            subject: sessionData.subject || '',
+            sessionId: sessionId,
+            subject: sessionData.subject || fullSessionData.subject,
+            gradeLevel: sessionData.gradeLevel || sessionData.grade || fullSessionData.gradeLevel,
+            className: sessionData.className || sessionData.class || fullSessionData.className,
+            teacherName: sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || fullSessionData.teacherName,
+            sessionDate: sessionData.date || formatSessionDate(sessionData.startTime),
+            startTime: formatTimeDisplay(sessionData.startTime),
+            endTime: formatTimeDisplay(sessionData.endTime),
             studentName: state.studentProfile?.name || 'Student',
             studentEmail: state.currentStudent?.email || '',
             date: new Date().toLocaleDateString(),
@@ -1609,6 +1655,8 @@ window.viewResults = async function(sessionId) {
             grades: grades,
             feedback: feedback
         };
+        
+        console.log('Report data prepared:', reportData);
         
         // Build results modal
         const modal = document.createElement('div');
@@ -1728,7 +1776,7 @@ window.viewResults = async function(sessionId) {
         
         document.body.appendChild(modal);
         
-        // Add PDF export functionality
+        // Add PDF export functionality with the correct data
         const printBtn = document.getElementById('printPdfBtn');
         if (printBtn) {
             printBtn.addEventListener('click', async () => {
@@ -1736,7 +1784,7 @@ window.viewResults = async function(sessionId) {
             });
         }
         
-        // ✅ RENDER MATHJAX ON THE MODAL CONTENT
+        // Render MathJax
         if (window.MathJax && MathJax.typesetPromise) {
             try {
                 await MathJax.typesetPromise([modal]);
@@ -1756,6 +1804,14 @@ window.viewResults = async function(sessionId) {
         showToast('Error loading results: ' + err.message, true);
     }
 };
+
+
+
+
+
+
+
+    
 
 // ===== EXPORT RESULTS AS PDF =====
 // ===== EXPORT RESULTS AS PDF =====
