@@ -1010,78 +1010,86 @@ await loadSessions();
 showToast('Session deleted', 'info');
 };
 
-async function loadActiveSession() {
-if (!activeSessionId) return;
-try {
-const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-if (!sessionDoc.exists()) {
-activeSessionId = null;
-localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
-showToast('Session not found', true);
-return;
-}
-currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
-const config = currentSessionData;
+async function loadActiveSession() {async function loadActiveSession() {
+  if (!activeSessionId) return;
+  try {
+    const sessionDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+    if (!sessionDoc.exists()) {
+      activeSessionId = null;
+      localStorage.removeItem('teacher_active_session_' + currentTeacher.uid);
+      showToast('Session not found', true);
+      return;
+    }
+    currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
+    const config = currentSessionData;
 
-// Helper functions for time/date
-const formatTime = (timestamp) => {
-if (!timestamp) return '';
-if (typeof timestamp === 'string') return timestamp.slice(0, 5);
-if (timestamp.toDate) {
-const date = timestamp.toDate();
-return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
-if (timestamp.seconds) {
-const date = new Date(timestamp.seconds * 1000);
-return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
-return '';
-};
-const formatDate = (timestamp) => {
-if (!timestamp) return '';
-if (typeof timestamp === 'string') return timestamp.slice(0, 10);
-if (timestamp.toDate) {
-const date = timestamp.toDate();
-return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-if (timestamp.seconds) {
-const date = new Date(timestamp.seconds * 1000);
-return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-return '';
-};
+    // Helper functions for time/date
+    const formatTime = (timestamp) => {
+      if (!timestamp) return '';
+      if (typeof timestamp === 'string') return timestamp.slice(0, 5);
+      if (timestamp.toDate) {
+        const date = timestamp.toDate();
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      }
+      if (timestamp.seconds) {
+        const date = new Date(timestamp.seconds * 1000);
+        return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      }
+      return '';
+    };
 
-let teacherName = config.teacherName || config.teacher || '';
-if (!teacherName && config.ownerTeacherId) {
-try {
-const teacherDoc = await getDoc(doc(db, 'teachers', config.ownerTeacherId));
-if (teacherDoc.exists()) teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
-} catch (err) { console.error('Error fetching teacher:', err); }
-}
-if (!teacherName && currentTeacher) teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
+    const formatDate = (timestamp) => {
+      if (!timestamp) return '';
+      if (typeof timestamp === 'string') return timestamp.slice(0, 10);
+      if (timestamp.toDate) {
+        const date = timestamp.toDate();
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+      if (timestamp.seconds) {
+        const date = new Date(timestamp.seconds * 1000);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      }
+      return '';
+    };
 
-document.getElementById('cfTitle').value = config.title || '';
-document.getElementById('cfGrade').value = config.gradeLevel || config.grade || '';
-document.getElementById('cfClass').value = config.className || config.class || '';
-document.getElementById('cfSubject').value = config.subject || '';
-document.getElementById('cfTeacher').value = teacherName;
-document.getElementById('cfDate').value = formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0];
-document.getElementById('cfStart').value = formatTime(config.startTime);
-document.getElementById('cfEnd').value = formatTime(config.endTime);
-document.getElementById('cfInstructions').value = config.instructions || '';
+    let teacherName = config.teacherName || config.teacher || '';
+    if (!teacherName && config.ownerTeacherId) {
+      try {
+        const teacherDoc = await getDoc(doc(db, 'teachers', config.ownerTeacherId));
+        if (teacherDoc.exists()) teacherName = teacherDoc.data().name || teacherDoc.data().displayName || '';
+      } catch (err) { console.error('Error fetching teacher:', err); }
+    }
+    if (!teacherName && currentTeacher) teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
 
-const isSessionActive = !!(config.isActive || config.active);
-setToggle(isSessionActive);
-updateSessionChip(config);
-await loadQuestions();
-await loadStudents();
-await loadClassStatus();
-updateStats();
-} catch (error) {
-console.error('Error loading session:', error);
-showToast('Error loading session: ' + error.message, true);
+    // Safe assignment with null checks
+    const setTitle = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+
+    setTitle('cfTitle', config.title || '');
+    setTitle('cfGrade', config.gradeLevel || config.grade || '');
+    setTitle('cfClass', config.className || config.class || '');
+    setTitle('cfSubject', config.subject || '');
+    setTitle('cfTeacher', teacherName);
+    
+    // FIX: Use formatDate for the Date input, not formatTime
+    setTitle('cfDate', formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0]);
+    
+    setTitle('cfStart', formatTime(config.startTime));
+    setTitle('cfEnd', formatTime(config.endTime));
+    setTitle('cfInstructions', config.instructions || '');
+
+    const isSessionActive = !!(config.isActive || config.active);
+    setToggle(isSessionActive);
+    updateSessionChip(config);
+    await loadQuestions();
+    await loadStudents();
+    await loadClassStatus();
+    updateStats();
+  } catch (error) {
+    console.error('Error loading session:', error);
+    showToast('Error loading session: ' + error.message, true);
+  }
 }
-}
+                                    
 
 async function loadQuestions() {
 if (!activeSessionId) return;
