@@ -1161,6 +1161,90 @@ function showFinishWarning(missingQuestions) {
     });
 }
         
+
+// Add this function after the existing utility functions (around line 400-450)
+async function registerStudentInSession(sessionId, studentId, studentName, studentEmail) {
+    try {
+        const studentRef = doc(db, 'sessions', sessionId, 'students', studentId);
+        const snap = await getDoc(studentRef);
+        
+        const studentData = {
+            id: studentId,
+            name: studentName || 'Student',
+            email: studentEmail || '',
+            online: true,
+            loginTime: new Date(),
+            lastSeen: Date.now(),
+            answers: {},
+            submitted: false
+        };
+        
+        if (!snap.exists()) {
+            // First time joining - create record
+            await setDoc(studentRef, studentData);
+            console.log('Student registered in session:', sessionId);
+        } else {
+            // Update online status
+            await updateDoc(studentRef, { 
+                online: true, 
+                lastSeen: Date.now(),
+                loginTime: snap.data().loginTime || new Date()
+            });
+            console.log('Student online status updated');
+        }
+        
+        // Also update RTDB for real-time presence
+        const { getDatabase, ref, set } = await import('./firebase-config.js');
+        const rtdb = getDatabase();
+        const rtdbRef = ref(rtdb, `liveSessions/${sessionId}/students/${studentId}`);
+        await set(rtdbRef, {
+            name: studentName || 'Student',
+            uid: studentId,
+            status: 'active',
+            loginTime: Date.now(),
+            lastSeen: Date.now()
+        });
+        
+        return true;
+    } catch (err) {
+        console.error('Error registering student:', err);
+        return false;
+    }
+}
+        
+async function updateStudentOnlineStatus() {
+    const state = window.appState;
+    if (!state.currentSession || !state.currentStudent) return;
+    
+    try {
+        const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
+        await updateDoc(studentRef, { 
+            online: true, 
+            lastSeen: Date.now() 
+        });
+        
+        // Also update RTDB
+        const { getDatabase, ref, set } = await import('./firebase-config.js');
+        const rtdb = getDatabase();
+        const rtdbRef = ref(rtdb, `liveSessions/${state.currentSession.id}/students/${state.currentStudent.docId}`);
+        await set(rtdbRef, {
+            name: state.studentProfile?.name || 'Student',
+            uid: state.currentStudent.docId,
+            status: 'active',
+            lastSeen: Date.now()
+        });
+    } catch (err) {
+        console.warn('Error updating online status:', err);
+    }
+}
+
+// Start periodic online status updates (every 30 seconds)
+setInterval(() => {
+    if (window.appState.currentSession && window.appState.currentStudent) {
+        updateStudentOnlineStatus();
+    }
+}, 30000);
+        
         
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');
@@ -1440,57 +1524,67 @@ async function loadStudentSessions() {
         }
 
         // ===== SELECT SESSION =====
-        window.selectSession = async function(sessionId) {
-            const state = window.appState;
-            const session = state.availableSessions.find(s => s.id === sessionId);
+window.selectSession = async function(sessionId) {
+    const state = window.appState;
+    const session = state.availableSessions.find(s => s.id === sessionId);
 
-            if (!session) {
-                showToast('Session not found', true);
-                return;
-            }
-            if (!isQuizAccessible(session)) {
-                showToast('This quiz is not available at this time', true);
-                return;
-            }
-            if (session.studentProgress?.submitted) {
-                showToast('You have already completed this quiz', true);
-                return;
-            }
+    if (!session) {
+        showToast('Session not found', true);
+        return;
+    }
+    if (!isQuizAccessible(session)) {
+        showToast('This quiz is not available at this time', true);
+        return;
+    }
+    if (session.studentProgress?.submitted) {
+        showToast('You have already completed this quiz', true);
+        return;
+    }
 
-            state.currentSession = session;
+    state.currentSession = session;
 
-            const questionsRef = collection(db, 'sessions', sessionId, 'questions');
-            const questionsSnap = await getDocs(questionsRef);
-            state.questions = [];
-            questionsSnap.forEach(doc => {
-                state.questions.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
-            state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
+    // ✅ CRITICAL FIX: Register student in session immediately
+    await registerStudentInSession(
+        sessionId, 
+        state.currentStudent.docId, 
+        state.studentProfile?.name || 'Student',
+        state.currentStudent.email
+    );
 
-            if (state.questions.length === 0) {
-                showToast('This quiz has no questions yet', true);
-                return;
-            }
+    const questionsRef = collection(db, 'sessions', sessionId, 'questions');
+    const questionsSnap = await getDocs(questionsRef);
+    state.questions = [];
+    questionsSnap.forEach(doc => {
+        state.questions.push({
+            id: doc.id,
+            ...doc.data()
+        });
+    });
+    state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            // Find first unanswered question
-            const answers = session.studentProgress?.answers || {};
-            let startIndex = 0;
-            for (let i = 0; i < state.questions.length; i++) {
-                if (!answers[state.questions[i].id]) {
-                    startIndex = i;
-                    break;
-                }
-            }
-            state.currentQIndex = startIndex;
+    if (state.questions.length === 0) {
+        showToast('This quiz has no questions yet', true);
+        return;
+    }
 
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('quizScreen').style.display = 'block';
-            document.getElementById('navFooter').style.display = 'flex';
-            await renderQuestion();
-        };
+    // Find first unanswered question
+    const answers = session.studentProgress?.answers || {};
+    let startIndex = 0;
+    for (let i = 0; i < state.questions.length; i++) {
+        if (!answers[state.questions[i].id]) {
+            startIndex = i;
+            break;
+        }
+    }
+    state.currentQIndex = startIndex;
+
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('quizScreen').style.display = 'block';
+    document.getElementById('navFooter').style.display = 'flex';
+    await renderQuestion();
+};
+
+        
 
         // ===== GET CURRENT ANSWER =====
         function getCurrentAnswer() {
