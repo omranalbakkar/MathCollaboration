@@ -1758,6 +1758,7 @@ window.viewResults = async function(sessionId) {
 };
 
 // ===== EXPORT RESULTS AS PDF =====
+// ===== EXPORT RESULTS AS PDF =====
 async function exportResultsAsPDF(data) {
     showToast('Generating PDF... Please wait.', false);
     
@@ -1770,6 +1771,37 @@ async function exportResultsAsPDF(data) {
         font-family: 'Inter', sans-serif;
     `;
     
+    // Helper function to format math for PDF
+    const formatMathForPDF = (text) => {
+        if (!text) return '';
+        let formatted = String(text);
+        return formatted;
+    };
+    
+    // Get additional session details from the current session data
+    const sessionDetails = window.appState.currentSession || {};
+    const sessionData = sessionDetails;
+    
+    // Format date and time nicely
+    const formatDateTime = (timestamp) => {
+        if (!timestamp) return 'Not set';
+        try {
+            if (timestamp.toDate) return timestamp.toDate().toLocaleString();
+            if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleString();
+            return new Date(timestamp).toLocaleString();
+        } catch (e) {
+            return 'Not set';
+        }
+    };
+    
+    const startTime = sessionData.startTime ? formatDateTime(sessionData.startTime) : 'Not set';
+    const endTime = sessionData.endTime ? formatDateTime(sessionData.endTime) : 'Not set';
+    const sessionDate = sessionData.date || (sessionData.startTime ? formatDateTime(sessionData.startTime).split(',')[0] : 'Not set');
+    const gradeLevel = sessionData.gradeLevel || sessionData.grade || 'Not specified';
+    const subject = sessionData.subject || data.subject || 'General';
+    const teacherName = sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || 'Not specified';
+    const className = sessionData.className || sessionData.class || 'Not specified';
+    
     // Build PDF content
     let questionsHtml = '';
     data.questions.forEach((q, idx) => {
@@ -1777,6 +1809,7 @@ async function exportResultsAsPDF(data) {
         const score = data.grades[q.id];
         const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
         const feedbackText = data.feedback[q.id] || 'No feedback';
+        const isCorrect = score >= q.points;
         
         questionsHtml += `
             <div style="margin-bottom: 24px; page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
@@ -1785,15 +1818,15 @@ async function exportResultsAsPDF(data) {
                         <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Question ${idx + 1}</span>
                         <span style="margin-left: 8px; font-size: 0.8rem; color: #64748b;">${q.points} points</span>
                     </div>
-                    <span style="background: ${score >= q.points ? '#d1fae5' : '#fee2e2'}; color: ${score >= q.points ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                    <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
                         Score: ${scoreDisplay}
                     </span>
                 </div>
-                <div style="font-weight: 600; margin-bottom: 12px; font-size: 1rem;">${q.text}</div>
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 1rem; line-height: 1.5;">${formatMathForPDF(q.text)}</div>
                 <div style="margin-bottom: 12px;">
                     <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">📝 Your Answer:</div>
                     <div style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        ${studentAnswer}
+                        ${formatMathForPDF(studentAnswer)}
                     </div>
                 </div>
                 <div>
@@ -1834,30 +1867,65 @@ async function exportResultsAsPDF(data) {
                     color: #64748b;
                     font-size: 14px;
                 }
-                .student-info {
-                    background: #f1f5f9;
-                    padding: 16px;
-                    border-radius: 12px;
-                    margin-bottom: 24px;
-                    display: flex;
-                    justify-content: space-between;
-                    flex-wrap: wrap;
-                }
-                .score-summary {
+                .session-info {
                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                     color: white;
                     padding: 20px;
                     border-radius: 16px;
                     margin-bottom: 24px;
+                }
+                .session-info h3 {
+                    font-size: 16px;
+                    margin-bottom: 12px;
+                    opacity: 0.9;
+                    letter-spacing: 1px;
+                }
+                .info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                }
+                .info-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 13px;
+                }
+                .info-item i {
+                    width: 20px;
+                    opacity: 0.8;
+                }
+                .student-info {
+                    background: #f1f5f9;
+                    padding: 16px;
+                    border-radius: 12px;
+                    margin-bottom: 24px;
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                }
+                .student-info .info-item {
+                    color: #1e293b;
+                }
+                .score-summary {
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    color: white;
+                    padding: 24px;
+                    border-radius: 16px;
+                    margin-bottom: 24px;
                     display: flex;
                     justify-content: space-around;
                     text-align: center;
+                    flex-wrap: wrap;
+                    gap: 20px;
                 }
                 .score-item {
                     text-align: center;
+                    flex: 1;
+                    min-width: 100px;
                 }
                 .score-value {
-                    font-size: 28px;
+                    font-size: 32px;
                     font-weight: 800;
                 }
                 .score-label {
@@ -1882,7 +1950,6 @@ async function exportResultsAsPDF(data) {
                 }
                 @media print {
                     body { margin: 0; padding: 0; }
-                    .no-print { display: none; }
                 }
             </style>
         </head>
@@ -1892,13 +1959,30 @@ async function exportResultsAsPDF(data) {
                 <div class="subtitle">Quiz Results Report</div>
             </div>
             
-            <div class="student-info">
-                <div><strong>Student:</strong> ${escapeHtml(data.studentName)}</div>
-                <div><strong>Email:</strong> ${escapeHtml(data.studentEmail)}</div>
-                <div><strong>Date:</strong> ${data.date}</div>
-                <div><strong>Subject:</strong> ${escapeHtml(data.subject)}</div>
+            <!-- Session Details Section -->
+            <div class="session-info">
+                <h3><i class="fas fa-info-circle"></i> Session Information</h3>
+                <div class="info-grid">
+                    <div class="info-item"><span>📚 Subject:</span> <strong>${escapeHtml(subject)}</strong></div>
+                    <div class="info-item"><span>📖 Grade Level:</span> <strong>${escapeHtml(gradeLevel)}</strong></div>
+                    <div class="info-item"><span>🏫 Class:</span> <strong>${escapeHtml(className)}</strong></div>
+                    <div class="info-item"><span>👨‍🏫 Teacher:</span> <strong>${escapeHtml(teacherName)}</strong></div>
+                    <div class="info-item"><span>📅 Date:</span> <strong>${escapeHtml(sessionDate)}</strong></div>
+                    <div class="info-item"><span>⏰ Start Time:</span> <strong>${escapeHtml(startTime)}</strong></div>
+                    <div class="info-item"><span>⏰ End Time:</span> <strong>${escapeHtml(endTime)}</strong></div>
+                    <div class="info-item"><span>🆔 Session ID:</span> <strong>${escapeHtml(window.appState.currentSession?.id || 'N/A')}</strong></div>
+                </div>
             </div>
             
+            <!-- Student Details Section -->
+            <div class="student-info">
+                <div class="info-item"><span>👤 Student Name:</span> <strong>${escapeHtml(data.studentName)}</strong></div>
+                <div class="info-item"><span>📧 Email:</span> <strong>${escapeHtml(data.studentEmail)}</strong></div>
+                <div class="info-item"><span>📅 Report Date:</span> <strong>${data.date}</strong></div>
+                <div class="info-item"><span>📊 Status:</span> <strong>Completed</strong></div>
+            </div>
+            
+            <!-- Score Summary -->
             <div class="score-summary">
                 <div class="score-item">
                     <div class="score-value">${data.totalEarned} / ${data.totalPossible}</div>
@@ -1926,19 +2010,27 @@ async function exportResultsAsPDF(data) {
     
     document.body.appendChild(pdfContainer);
     
-    // Wait for any MathJax rendering
+    // Wait for MathJax rendering
     if (window.MathJax && MathJax.typesetPromise) {
         try {
             await MathJax.typesetPromise([pdfContainer]);
+            console.log('MathJax rendered for PDF');
         } catch (err) {
             console.warn('MathJax error in PDF:', err);
         }
     }
     
     // Small delay to ensure rendering
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
     
     try {
+        // Check if jsPDF is available
+        if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
+            showToast('PDF library not loaded. Please refresh the page.', true);
+            pdfContainer.remove();
+            return;
+        }
+        
         const { jsPDF } = window.jspdf;
         
         // Use html2canvas to capture the content
@@ -1947,10 +2039,14 @@ async function exportResultsAsPDF(data) {
             scale: 2,
             backgroundColor: '#ffffff',
             logging: false,
-            useCORS: true
+            useCORS: true,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight
         });
         
         const imgData = canvas.toDataURL('image/png');
+        
+        // Calculate PDF dimensions
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
@@ -1958,12 +2054,34 @@ async function exportResultsAsPDF(data) {
         });
         
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`${data.sessionTitle}_${data.studentName}_Results.pdf`);
+        // Calculate image dimensions
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        showToast('PDF downloaded successfully!', false);
+        let heightLeft = imgHeight;
+        let position = 0;
+        let pageNum = 1;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        // Add additional pages if needed
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+            pageNum++;
+        }
+        
+        // Save the PDF
+        const fileName = `${data.sessionTitle}_${data.studentName}_Results.pdf`;
+        pdf.save(fileName);
+        
+        showToast(`PDF downloaded successfully! (${pageNum} page${pageNum > 1 ? 's' : ''})`, false);
     } catch (err) {
         console.error('PDF generation error:', err);
         showToast('Error generating PDF: ' + err.message, true);
@@ -1971,8 +2089,7 @@ async function exportResultsAsPDF(data) {
         // Clean up
         pdfContainer.remove();
     }
-}
-        
+}        
 
         
         // ===== SELECT SESSION =====
