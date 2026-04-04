@@ -958,34 +958,41 @@ return `<div class="session-card ${isActive ? 'active-context' : ''} ${session.a
 }
 
 window.createNewSession = async function() {
-if (!currentTeacher) return;
-const sessionData = {
-title: 'New Session',
-grade: '',
-className: '',
-subject: '',
-teacher: currentTeacher.name || '',
-date: new Date().toISOString().split('T')[0],
-startTime: '',
-endTime: '',
-instructions: '',
-active: false,
-createdAt: new Date().toISOString(),
-ownerTeacherId: currentTeacher.firestoreId || currentTeacher.uid,
-ownerTeacherName: currentTeacher.name || '',
-createdBy: currentTeacher.uid,
-createdByRole: 'teacher'
-};
-try {
-const docRef = await addDoc(collection(db, 'sessions'), sessionData);
-await activateSession(docRef.id);
-showToast('Session created!', 'success');
-await loadSessions();
-switchTab('session', document.querySelectorAll('.nav-link')[1]);
-} catch (error) {
-console.error('Error creating session:', error);
-showToast('Error creating session: ' + error.message, true);
-}
+  if (!currentTeacher) return;
+  const sessionData = {
+    title: 'New Session',
+    grade: '',
+    gradeLevel: '',
+    className: '',
+    subject: '',
+    teacher: currentTeacher.name || '',
+    teacherName: currentTeacher.name || '',
+    date: new Date().toISOString().split('T')[0],
+    startTime: null,
+    endTime: null,
+    instructions: '',
+    active: false,
+    isActive: false,
+    createdAt: serverTimestamp(),
+    ownerTeacherId: currentTeacher.firestoreId || currentTeacher.uid,
+    ownerTeacherName: currentTeacher.name || '',
+    createdBy: currentTeacher.uid,
+    createdByRole: 'teacher'
+  };
+  try {
+    const docRef = await addDoc(collection(db, 'sessions'), sessionData);
+    
+    // Don't sync to RTDB yet because session is not active (isActive = false)
+    // Students only see active sessions
+    
+    await activateSession(docRef.id);
+    showToast('Session created!', 'success');
+    await loadSessions();
+    switchTab('session', document.querySelectorAll('.nav-link')[1]);
+  } catch (error) {
+    console.error('Error creating session:', error);
+    showToast('Error creating session: ' + error.message, true);
+  }
 };
 
 window.activateSession = async function(id) {
@@ -1447,7 +1454,7 @@ window.saveSessionConfig = async function() {
     subject: subjectValue,
     teacherName: teacherName,
     teacher: teacherName,
-    date: dateStr,                      // store the date separately for easy display
+    date: dateStr,
     startTime: Timestamp.fromDate(startDateTime),
     endTime: Timestamp.fromDate(endDateTime),
     instructions: instructions,
@@ -1458,38 +1465,107 @@ window.saveSessionConfig = async function() {
   };
 
   try {
+    // Update Firestore
     await updateDoc(doc(db, 'sessions', activeSessionId), config);
+    
+    // *** FIX: ALSO UPDATE RTDB FOR STUDENTS TO SEE ***
+    // Prepare data for RTDB (convert Timestamps to ISO strings)
+    const rtdbData = {
+      title: title,
+      gradeLevel: gradeValue,
+      subject: subjectValue,
+      teacherName: teacherName,
+      isActive: isActive,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      ownerTeacherId: currentTeacher?.firestoreId || currentTeacher?.uid || '',
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentTeacher?.uid || ''
+    };
+    
+    if (isActive) {
+      // If session is active, write to RTDB so students can see it
+      await set(ref(rtDB, `liveSessions/${activeSessionId}`), rtdbData);
+      console.log('Session synced to RTDB:', activeSessionId);
+    } else {
+      // If session is closed, remove from RTDB so students don't see it
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
+      console.log('Session removed from RTDB:', activeSessionId);
+    }
+    
     updateSessionChip(config);
     showToast('Configuration saved!', 'success');
-    // Reload the session to refresh the UI with the new Timestamp objects
     await loadActiveSession();
   } catch (error) {
     console.error('Error saving session:', error);
     showToast('Error saving configuration: ' + error.message, true);
   }
-};
+};  
 
 window.toggleSessionOpen = async function() {
-if (!activeSessionId || !currentSessionData) return;
-const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
-const newStatus = !currentStatus;
-try {
-await updateDoc(doc(db, 'sessions', activeSessionId), { active: newStatus });
-if (newStatus) {
-await set(ref(rtDB, `liveSessions/${activeSessionId}`), { createdAt: Date.now(), status: 'active', students: {} });
-setupRealtimeListeners();
-showToast('Session is now OPEN to students', 'success');
-} else {
-await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
-showToast('Session is now CLOSED', 'info');
-}
-setToggle(newStatus);
-if (currentSessionData) currentSessionData.active = newStatus;
-} catch (error) {
-console.error('Error toggling session:', error);
-showToast('Failed to update session', true);
-}
+  if (!activeSessionId || !currentSessionData) return;
+  const currentStatus = document.getElementById('sessionToggle').classList.contains('on');
+  const newStatus = !currentStatus;
+  
+  // Get current config values for RTDB sync
+  const title = document.getElementById('cfTitle')?.value.trim() || currentSessionData.title || 'Quiz Session';
+  const gradeValue = document.getElementById('cfGrade')?.value || currentSessionData.gradeLevel || '';
+  const subjectValue = document.getElementById('cfSubject')?.value || currentSessionData.subject || '';
+  let teacherName = document.getElementById('cfTeacher')?.value || currentSessionData.teacherName || '';
+  if (!teacherName && currentTeacher) teacherName = currentTeacher.name || '';
+  
+  const dateStr = document.getElementById('cfDate')?.value;
+  const startTimeStr = document.getElementById('cfStart')?.value;
+  const endTimeStr = document.getElementById('cfEnd')?.value;
+  
+  try {
+    // Update Firestore
+    await updateDoc(doc(db, 'sessions', activeSessionId), { active: newStatus, isActive: newStatus });
+    
+    if (newStatus) {
+      // Session is opening - need to sync full session data to RTDB
+      let startDateTime, endDateTime;
+      if (dateStr && startTimeStr && endTimeStr) {
+        startDateTime = new Date(`${dateStr}T${startTimeStr}`);
+        endDateTime = new Date(`${dateStr}T${endTimeStr}`);
+      } else {
+        // Fallback to existing timestamps
+        startDateTime = currentSessionData.startTime?.toDate ? currentSessionData.startTime.toDate() : new Date();
+        endDateTime = currentSessionData.endTime?.toDate ? currentSessionData.endTime.toDate() : new Date();
+      }
+      
+      const rtdbData = {
+        title: title,
+        gradeLevel: gradeValue,
+        subject: subjectValue,
+        teacherName: teacherName,
+        isActive: true,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        ownerTeacherId: currentTeacher?.firestoreId || currentTeacher?.uid || '',
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentTeacher?.uid || ''
+      };
+      
+      await set(ref(rtDB, `liveSessions/${activeSessionId}`), rtdbData);
+      setupRealtimeListeners();
+      showToast('Session is now OPEN to students', 'success');
+    } else {
+      // Session is closing - remove from RTDB
+      await remove(ref(rtDB, `liveSessions/${activeSessionId}`));
+      showToast('Session is now CLOSED', 'info');
+    }
+    
+    setToggle(newStatus);
+    if (currentSessionData) currentSessionData.active = newStatus;
+    if (currentSessionData) currentSessionData.isActive = newStatus;
+    
+  } catch (error) {
+    console.error('Error toggling session:', error);
+    showToast('Failed to update session', true);
+  }
 };
+  
 
 function setToggle(on) {
 const track = document.getElementById('sessionToggle');
