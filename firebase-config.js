@@ -1,5 +1,4 @@
 // firebase-config.js
-// Version 3 - Fixed onSnapshot Export
 
 // 1. Import ALL necessary Firebase modules (v10.8.0)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -25,7 +24,7 @@ import {
   addDoc, 
   getCountFromServer,
   onSnapshot,
-  Timestamp
+  Timestamp // 👇 1. IMPORT IT HERE FROM FIRESTORE
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Realtime Database
@@ -66,7 +65,8 @@ export {
   doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, 
   collection, query, where, getDocs, getCountFromServer, 
   serverTimestamp, orderBy, limit,
-  onSnapshot, // <--- 2. ADDED HERE (Export)
+  onSnapshot,
+  Timestamp, // 👇 2. EXPORT IT HERE SO TEACHER.HTML CAN SEE IT
   ref, set, push, onValue, update, remove, child, get
 };
 
