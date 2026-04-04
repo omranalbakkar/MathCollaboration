@@ -58,7 +58,6 @@
             color: var(--dark);
         }
 
-        /* Modern Glassmorphism Effects */
         .glass-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -124,14 +123,14 @@
             transform: translateY(-2px);
         }
 
-        .btn-success {
-            background: var(--secondary);
-            color: white;
-        }
-
         .btn-danger {
             background: var(--danger);
             color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
         }
 
         .spinner-screen {
@@ -238,7 +237,6 @@
             min-height: 100vh;
         }
 
-        /* Modern Header */
         .header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -250,6 +248,8 @@
             position: sticky;
             top: 0;
             z-index: 100;
+            flex-wrap: wrap;
+            gap: 16px;
         }
 
         .logo {
@@ -259,6 +259,12 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .student-badge {
@@ -282,13 +288,31 @@
             font-weight: bold;
         }
 
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
         .main {
             max-width: 1200px;
             margin: 0 auto;
             padding: 32px;
         }
 
-        /* Welcome Dashboard */
         .dashboard-grid {
             display: grid;
             gap: 24px;
@@ -335,6 +359,11 @@
             margin-bottom: 8px;
         }
 
+        .profile-info p {
+            margin-top: 4px;
+            opacity: 0.9;
+        }
+
         .session-card {
             background: white;
             border-radius: 28px;
@@ -348,6 +377,7 @@
             align-items: center;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            gap: 12px;
         }
 
         .status-badge {
@@ -394,7 +424,6 @@
             color: var(--primary);
         }
 
-        /* Progress Stats */
         .progress-stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -426,7 +455,6 @@
             font-size: 0.9rem;
         }
 
-        /* Question Card */
         .question-container {
             background: white;
             border-radius: 28px;
@@ -493,6 +521,7 @@
             gap: 16px;
             justify-content: center;
             z-index: 100;
+            flex-wrap: wrap;
         }
 
         @media (max-width: 768px) {
@@ -511,6 +540,14 @@
             .btn {
                 padding: 10px 16px;
                 font-size: 0.85rem;
+            }
+
+            .header {
+                padding: 12px 16px;
+            }
+
+            .student-badge {
+                padding: 6px 12px;
             }
         }
 
@@ -535,6 +572,15 @@
             margin-top: 16px;
             display: none;
             font-size: 0.9rem;
+        }
+
+        .grade-tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 8px;
         }
     </style>
 </head>
@@ -571,9 +617,14 @@
             <div class="logo">
                 <i class="fas fa-graduation-cap"></i> EduBoard
             </div>
-            <div class="student-badge" id="studentBadge">
-                <div class="student-avatar" id="studentAvatar">👤</div>
-                <span id="studentName">Student</span>
+            <div class="header-right">
+                <div class="student-badge" id="studentBadge">
+                    <div class="student-avatar" id="studentAvatar">👤</div>
+                    <span id="studentName">Student</span>
+                </div>
+                <button class="logout-btn" onclick="window.exitSession()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
         </header>
 
@@ -708,7 +759,6 @@
                     }
                 }, 1500);
 
-                // Update progress display
                 await updateWelcomeScreen();
 
             } catch (err) {
@@ -803,7 +853,6 @@
             } catch (e) {}
 
             const total = state.questions.length;
-            const percent = ((state.currentQIndex + 1) / total) * 100;
 
             let inputHtml = '';
             if (q.type === 'mcq' && q.options && q.options.length) {
@@ -919,6 +968,11 @@
             const totalQuestions = state.questions.length;
             const totalPoints = state.questions.reduce((sum, q) => sum + (q.points || 0), 0);
 
+            // Get student grade from profile (with fallback)
+            const studentGrade = state.studentProfile?.grade || 'Not specified';
+            const studentName = state.studentProfile?.name || 'Student';
+            const studentEmail = state.currentStudent?.email || '';
+
             // Format session date
             let sessionDate = 'Not set';
             if (state.sessionData.date) {
@@ -942,9 +996,11 @@
                         <i class="fas fa-user-graduate"></i>
                     </div>
                     <div class="profile-info">
-                        <h2>${escapeHtml(state.studentProfile?.name || 'Student')}</h2>
-                        <p><i class="fas fa-envelope"></i> ${escapeHtml(state.currentStudent?.email || '')}</p>
-                        <p><i class="fas fa-graduation-cap"></i> Grade: ${escapeHtml(state.studentProfile?.grade || 'Not specified')}</p>
+                        <h2>${escapeHtml(studentName)}</h2>
+                        <p><i class="fas fa-envelope"></i> ${escapeHtml(studentEmail)}</p>
+                        <div class="grade-tag">
+                            <i class="fas fa-star"></i> Grade: ${escapeHtml(studentGrade)}
+                        </div>
                     </div>
                 </div>
                 
@@ -1174,7 +1230,6 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
-                // Success - auth state listener will handle navigation
             } catch (e) {
                 errDiv.textContent = 'Invalid email or password. Please try again.';
                 errDiv.style.display = 'block';
@@ -1193,16 +1248,15 @@
                 } catch (e) {}
             }
             await signOut(auth);
-            // Show login screen again
+            // Reset UI
             document.getElementById('loginScreen').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
-            // Clear any error messages
             const errDiv = document.getElementById('loginErr');
             errDiv.style.display = 'none';
             errDiv.textContent = '';
-            // Clear input fields
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginPass').value = '';
+            showToast('Logged out successfully', false);
         };
 
         // Handle Enter key on login form
@@ -1214,17 +1268,14 @@
 
         // Main auth state listener
         onAuthStateChanged(auth, async (user) => {
-            // Hide loading screen
             document.getElementById('loadingScreen').style.display = 'none';
 
             if (!user) {
-                // Show login screen, hide app
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
                 return;
             }
 
-            // User is logged in, show loading while fetching data
             document.getElementById('loadingScreen').style.display = 'flex';
 
             try {
@@ -1239,12 +1290,13 @@
                 if (!querySnap.empty) {
                     studentDocId = querySnap.docs[0].id;
                     studentData = querySnap.docs[0].data();
+                    console.log('Student data found:', studentData);
                 } else {
-                    // Try to find by document ID
                     const directSnap = await getDoc(doc(db, 'students', user.uid));
                     if (directSnap.exists()) {
                         studentDocId = user.uid;
                         studentData = directSnap.data();
+                        console.log('Student data found by doc ID:', studentData);
                     }
                 }
 
@@ -1256,22 +1308,19 @@
                 const sessionsRef = collection(db, 'sessions');
                 let sessionQuery;
 
-                // If student has a grade, filter sessions by that grade
-                if (studentData.grade) {
+                if (studentData.grade && studentData.grade !== 'Not specified') {
                     sessionQuery = query(
                         sessionsRef,
                         where('isActive', '==', true),
                         where('grade', '==', studentData.grade)
                     );
                 } else {
-                    // If no grade specified, get any active session
                     sessionQuery = query(sessionsRef, where('isActive', '==', true));
                 }
 
                 const sessionSnap = await getDocs(sessionQuery);
 
                 if (sessionSnap.empty) {
-                    // No active session found
                     document.getElementById('loadingScreen').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('welcomeScreen').innerHTML = `
@@ -1280,8 +1329,8 @@
                         <h3 style="margin: 20px 0;">No Active Session</h3>
                         <p>There are no active sessions for your grade (${escapeHtml(studentData.grade || 'All')}) at the moment.</p>
                         <p style="margin-top: 12px; color: var(--gray);">Please check back later or contact your teacher.</p>
-                        <button class="btn btn-secondary" onclick="window.exitSession()" style="margin-top: 24px;">
-                            Sign Out
+                        <button class="btn btn-danger" onclick="window.exitSession()" style="margin-top: 24px;">
+                            <i class="fas fa-sign-out-alt"></i> Sign Out
                         </button>
                     </div>
                 `;
@@ -1289,7 +1338,6 @@
                     return;
                 }
 
-                // Get the first active session
                 const sessionDoc = sessionSnap.docs[0];
                 const state = window.appState;
                 state.currentStudent = user;
@@ -1298,11 +1346,11 @@
                 state.sessionData = sessionDoc.data();
                 state.currentStudent.docId = studentDocId;
 
-                // Update header with student name
+                // Update header
                 document.getElementById('studentName').textContent = studentData.name || user.email;
                 document.getElementById('studentAvatar').innerHTML = (studentData.name || 'S').charAt(0).toUpperCase();
 
-                // Load questions for this session
+                // Load questions
                 const questionsRef = collection(db, 'sessions', state.activeSessionId, 'questions');
                 const questionsSnap = await getDocs(questionsRef);
                 state.questions = [];
@@ -1314,10 +1362,8 @@
                 });
                 state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-                // Initialize or update student document in session
+                // Initialize student in session
                 const studentSessionRef = doc(db, 'sessions', state.activeSessionId, 'students', studentDocId);
-
-                // Safely prepare student data (filter out undefined values)
                 const studentSessionData = {
                     name: studentData.name || 'Student',
                     uid: user.uid,
@@ -1333,7 +1379,7 @@
                     merge: true
                 });
 
-                // Update RTDB presence
+                // Update RTDB
                 try {
                     await set(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${user.uid}`), {
                         name: studentData.name || 'Student',
@@ -1345,11 +1391,9 @@
                     console.warn('RTDB update failed:', e);
                 }
 
-                // Check if student already submitted
                 const studentSnap = await getDoc(studentSessionRef);
                 state.isSubmitted = studentSnap.exists() && studentSnap.data().submitted === true;
 
-                // Hide loading, show app and dashboard
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
@@ -1358,15 +1402,11 @@
             } catch (err) {
                 console.error('Auth setup error:', err);
                 document.getElementById('loadingScreen').style.display = 'none';
-
-                // Show error on login screen
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
                 const errDiv = document.getElementById('loginErr');
                 errDiv.textContent = err.message || 'Failed to load student data. Please contact support.';
                 errDiv.style.display = 'block';
-
-                // Sign out if there's a critical error
                 await signOut(auth);
             }
         });
