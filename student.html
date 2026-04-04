@@ -1742,7 +1742,7 @@ ${buildInput(q, existing)}
                 showToast('Answer saved successfully');
                 btn.innerHTML = '<i class="fas fa-check"></i> Saved';
                 btn.classList.add('saved');
-                renderQuestion();
+                
             } catch (e) {
                 console.error('Submit error:', e);
                 showToast('Failed to save. Please try again.', true);
