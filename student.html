@@ -1407,73 +1407,74 @@ async function loadStudentSessions() {
         
 
         // ===== SHOW WELCOME DASHBOARD =====
-        async function showWelcomeDashboard() {
-            const state = window.appState;
-            const ws = document.getElementById('welcomeScreen');
-            const quizScreen = document.getElementById('quizScreen');
-            const completionScreen = document.getElementById('completionScreen');
-            const navFooter = document.getElementById('navFooter');
+        // ===== SHOW WELCOME DASHBOARD =====
+async function showWelcomeDashboard() {
+    const state = window.appState;
+    const ws = document.getElementById('welcomeScreen');
+    const quizScreen = document.getElementById('quizScreen');
+    const completionScreen = document.getElementById('completionScreen');
+    const navFooter = document.getElementById('navFooter');
 
-            ws.style.display = 'block';
-            quizScreen.style.display = 'none';
-            completionScreen.style.display = 'none';
-            navFooter.style.display = 'none';
+    ws.style.display = 'block';
+    quizScreen.style.display = 'none';
+    completionScreen.style.display = 'none';
+    navFooter.style.display = 'none';
 
-            let displayGrade = 'Not specified';
-            if (state.studentProfile?.gradeLevel) {
-                displayGrade = await getGradeName(state.studentProfile.gradeLevel);
-            } else if (state.studentProfile?.grade) {
-                displayGrade = state.studentProfile.grade;
+    let displayGrade = 'Not specified';
+    if (state.studentProfile?.gradeLevel) {
+        displayGrade = await getGradeName(state.studentProfile.gradeLevel);
+    } else if (state.studentProfile?.grade) {
+        displayGrade = state.studentProfile.grade;
+    }
+
+    const sessions = await loadStudentSessions();
+    state.availableSessions = sessions;
+
+    const studentName = state.studentProfile?.name || 'Student';
+    const studentEmail = state.currentStudent?.email || '';
+
+    let sessionsHtml = '';
+    if (sessions.length === 0) {
+        sessionsHtml = `
+            <div class="glass-card" style="text-align: center; padding: 56px 40px;">
+                <i class="fas fa-folder-open" style="font-size: 3.5rem; color: var(--gray); opacity:0.5;"></i>
+                <h3 style="margin-top: 20px; font-size:1.4rem;">No Quizzes Available</h3>
+                <p style="color:var(--gray); margin-top:8px;">There are no quizzes for your grade (<strong>${escapeHtml(displayGrade)}</strong>) at the moment.</p>
+                <p style="margin-top: 8px; font-size: 0.85rem; color:var(--gray);">Please check with your teacher to create quizzes for your grade.</p>
+            </div>
+        `;
+    } else {
+        sessionsHtml = `<div class="sessions-grid">`;
+        for (const session of sessions) {
+            const answeredCount = session.studentProgress?.answers ? Object.keys(session.studentProgress.answers).length : 0;
+            const totalQuestions = session.questionCount || 0;
+            const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+            const status = getQuizStatus(session, session.studentProgress);
+            const isAccessible = isQuizAccessible(session);
+            const isSubmitted = session.studentProgress?.submitted;
+
+            let startTimeStr = '',
+                endTimeStr = '';
+            if (session.startTime) {
+                if (session.startTime.toDate) startTimeStr = session.startTime.toDate().toLocaleString();
+                else if (session.startTime.seconds) startTimeStr = new Date(session.startTime.seconds * 1000).toLocaleString();
+                else startTimeStr = new Date(session.startTime).toLocaleString();
+            }
+            if (session.endTime) {
+                if (session.endTime.toDate) endTimeStr = session.endTime.toDate().toLocaleString();
+                else if (session.endTime.seconds) endTimeStr = new Date(session.endTime.seconds * 1000).toLocaleString();
+                else endTimeStr = new Date(session.endTime).toLocaleString();
             }
 
-            const sessions = await loadStudentSessions();
-            state.availableSessions = sessions;
+            sessionsHtml += `
+                <div class="quiz-card ${!isAccessible || isSubmitted ? 'disabled' : ''}"
+                     ${isAccessible && !isSubmitted ? `onclick="window.selectSession('${session.id}')"` : ''}>
+                    <span class="quiz-status ${status.class}">${status.text}</span>
+                    <h3 style="margin: 10px 0 6px; font-size:1.15rem; font-weight:700;">${escapeHtml(session.title || 'Untitled Quiz')}</h3>
+                    <p style="color: var(--primary); font-size: 0.88rem; font-weight:600;">${escapeHtml(session.subject || 'General')}</p>
+                    <p style="color: var(--gray); font-size: 0.85rem; margin-top: 8px; line-height:1.5;">${escapeHtml(session.instructions || 'No description')}</p>
 
-            const studentName = state.studentProfile?.name || 'Student';
-            const studentEmail = state.currentStudent?.email || '';
-
-            let sessionsHtml = '';
-            if (sessions.length === 0) {
-                sessionsHtml = `
-                <div class="glass-card" style="text-align: center; padding: 56px 40px;">
-                    <i class="fas fa-folder-open" style="font-size: 3.5rem; color: var(--gray); opacity:0.5;"></i>
-                    <h3 style="margin-top: 20px; font-size:1.4rem;">No Quizzes Available</h3>
-                    <p style="color:var(--gray); margin-top:8px;">There are no quizzes for your grade (<strong>${escapeHtml(displayGrade)}</strong>) at the moment.</p>
-                    <p style="margin-top: 8px; font-size: 0.85rem; color:var(--gray);">Please check with your teacher to create quizzes for your grade.</p>
-                </div>
-            `;
-            } else {
-                sessionsHtml = `<div class="sessions-grid">`;
-                for (const session of sessions) {
-                    const answeredCount = session.studentProgress?.answers ? Object.keys(session.studentProgress.answers).length : 0;
-                    const totalQuestions = session.questionCount || 0;
-                    const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-                    const status = getQuizStatus(session, session.studentProgress);
-                    const isAccessible = isQuizAccessible(session);
-                    const isSubmitted = session.studentProgress?.submitted;
-
-                    let startTimeStr = '',
-                        endTimeStr = '';
-                    if (session.startTime) {
-                        if (session.startTime.toDate) startTimeStr = session.startTime.toDate().toLocaleString();
-                        else if (session.startTime.seconds) startTimeStr = new Date(session.startTime.seconds * 1000).toLocaleString();
-                        else startTimeStr = new Date(session.startTime).toLocaleString();
-                    }
-                    if (session.endTime) {
-                        if (session.endTime.toDate) endTimeStr = session.endTime.toDate().toLocaleString();
-                        else if (session.endTime.seconds) endTimeStr = new Date(session.endTime.seconds * 1000).toLocaleString();
-                        else endTimeStr = new Date(session.endTime).toLocaleString();
-                    }
-
-                    sessionsHtml += `
-                    <div class="quiz-card ${!isAccessible || isSubmitted ? 'disabled' : ''}"
-                         onclick="${isAccessible && !isSubmitted ? `window.selectSession('${session.id}')` : ''}">
-                        <span class="quiz-status ${status.class}">${status.text}</span>
-                        <h3 style="margin: 10px 0 6px; font-size:1.15rem; font-weight:700;">${escapeHtml(session.title || 'Untitled Quiz')}</h3>
-                        <p style="color: var(--primary); font-size: 0.88rem; font-weight:600;">${escapeHtml(session.subject || 'General')}</p>
-                        <p style="color: var(--gray); font-size: 0.85rem; margin-top: 8px; line-height:1.5;">${escapeHtml(session.instructions || 'No description')}</p>
-
-                        ${totalQuestions > 0 ? `
+                    ${totalQuestions > 0 ? `
                         <div class="quiz-progress">
                             <div class="quiz-progress-bar" style="width: ${progressPercent}%;"></div>
                         </div>
@@ -1481,46 +1482,224 @@ async function loadStudentSessions() {
                             <span>📊 ${answeredCount}/${totalQuestions} answered</span>
                             <span>⭐ ${session.totalPoints || 0} pts</span>
                         </div>
-                        ` : '<div style="margin: 14px 0; font-size:0.88rem;"><em style="color:var(--gray);">No questions added yet</em></div>'}
+                    ` : '<div style="margin: 14px 0; font-size:0.88rem;"><em style="color:var(--gray);">No questions added yet</em></div>'}
 
-                        ${startTimeStr && endTimeStr ? `
+                    ${startTimeStr && endTimeStr ? `
                         <div style="margin-top: 14px; font-size: 0.75rem; color: var(--gray); padding-top:12px; border-top:1px solid var(--border);">
                             <i class="far fa-clock"></i> ${startTimeStr} — ${endTimeStr}
                         </div>
-                        ` : ''}
-                    </div>
-                `;
-                }
-                sessionsHtml += `</div>`;
-            }
-
-            ws.innerHTML = `
-            <div class="dashboard-grid">
-                <div class="profile-card">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                    <div class="profile-info">
-                        <h2>${escapeHtml(studentName)}</h2>
-                        <p><i class="fas fa-envelope" style="opacity:0.7;"></i> ${escapeHtml(studentEmail)}</p>
-                        <div class="grade-tag">
-                            <i class="fas fa-layer-group"></i> Grade: ${escapeHtml(displayGrade)}
+                    ` : ''}
+                    
+                    ${isSubmitted ? `
+                        <div style="margin-top: 16px;">
+                            <button class="btn btn-secondary btn-sm" style="width:100%;" onclick="event.stopPropagation(); window.viewResults('${session.id}')">
+                                <i class="fas fa-chart-line"></i> View My Results
+                            </button>
                         </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+        sessionsHtml += `</div>`;
+    }
+
+    ws.innerHTML = `
+        <div class="dashboard-grid">
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="profile-info">
+                    <h2>${escapeHtml(studentName)}</h2>
+                    <p><i class="fas fa-envelope" style="opacity:0.7;"></i> ${escapeHtml(studentEmail)}</p>
+                    <div class="grade-tag">
+                        <i class="fas fa-layer-group"></i> Grade: ${escapeHtml(displayGrade)}
                     </div>
                 </div>
+            </div>
 
-                <div class="glass-card" style="padding: 36px 40px;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:4px;">
-                        <h3 style="font-size:1.3rem; font-weight:800;"><i class="fas fa-chalkboard" style="color:var(--primary);"></i> Available Quizzes</h3>
-                        <span style="font-size:0.85rem; color:var(--gray);">${sessions.length} quiz${sessions.length !== 1 ? 'zes' : ''} found</span>
+            <div class="glass-card" style="padding: 36px 40px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:4px;">
+                    <h3 style="font-size:1.3rem; font-weight:800;"><i class="fas fa-chalkboard" style="color:var(--primary);"></i> Available Quizzes</h3>
+                    <span style="font-size:0.85rem; color:var(--gray);">${sessions.length} quiz${sessions.length !== 1 ? 'zes' : ''} found</span>
+                </div>
+                <p style="color: var(--gray); margin-top: 4px; margin-bottom:0; font-size:0.9rem;">Select a quiz to begin or continue your session</p>
+                ${sessionsHtml}
+            </div>
+        </div>
+    `;
+}
+
+
+// ===== VIEW RESULTS (Student views their graded answers) =====
+window.viewResults = async function(sessionId) {
+    const state = window.appState;
+    
+    try {
+        // Get session data
+        const sessionRef = doc(db, 'sessions', sessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        if (!sessionSnap.exists()) {
+            showToast('Session not found', true);
+            return;
+        }
+        const sessionData = sessionSnap.data();
+        
+        // Get questions for this session
+        const questionsRef = collection(db, 'sessions', sessionId, 'questions');
+        const questionsSnap = await getDocs(questionsRef);
+        const questions = [];
+        questionsSnap.forEach(doc => {
+            questions.push({ id: doc.id, ...doc.data() });
+        });
+        questions.sort((a, b) => (a.order || 0) - (b.order || 0));
+        
+        // Get student's answers and grades
+        const studentRef = doc(db, 'sessions', sessionId, 'students', state.currentStudent.docId);
+        const studentSnap = await getDoc(studentRef);
+        
+        if (!studentSnap.exists()) {
+            showToast('No results found for this quiz', true);
+            return;
+        }
+        
+        const studentData = studentSnap.data();
+        const answers = studentData.answers || {};
+        const grades = studentData.grades || {};
+        const feedback = studentData.feedback || {};
+        
+        // Calculate total score
+        let totalEarned = 0;
+        let totalPossible = 0;
+        questions.forEach(q => {
+            totalPossible += q.points || 0;
+            const score = grades[q.id];
+            if (score !== undefined && score !== null && score !== '') {
+                totalEarned += parseFloat(score) || 0;
+            }
+        });
+        
+        // Build results modal
+        const modal = document.createElement('div');
+        modal.id = 'resultsModal';
+        modal.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10000; padding: 20px; backdrop-filter: blur(4px);
+            animation: fadeIn 0.2s ease;
+            overflow-y: auto;
+        `;
+        
+        let questionsHtml = '';
+        questions.forEach((q, idx) => {
+            const studentAnswer = answers[q.id] || 'No answer provided';
+            const score = grades[q.id];
+            const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
+            const feedbackText = feedback[q.id] || 'No feedback';
+            const isCorrect = score >= q.points;
+            
+            questionsHtml += `
+            <div style="background: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 16px; border-left: 4px solid ${isCorrect ? '#10b981' : '#ef4444'};">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <span style="background: var(--gradient-1); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Q${idx + 1}</span>
+                        <span style="margin-left: 8px; font-size: 0.8rem; color: var(--gray);">${q.points} pts</span>
                     </div>
-                    <p style="color: var(--gray); margin-top: 4px; margin-bottom:0; font-size:0.9rem;">Select a quiz to begin or continue your session</p>
-                    ${sessionsHtml}
+                    <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                        ${scoreDisplay}
+                    </span>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 12px; color: var(--dark);">${escapeHtml(q.text)}</div>
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--gray); margin-bottom: 4px;"><i class="fas fa-user-edit"></i> Your Answer:</div>
+                    <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.95rem;">
+                        ${escapeHtml(studentAnswer)}
+                    </div>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 0.75rem; color: var(--gray); margin-bottom: 4px;"><i class="fas fa-comment-dots"></i> Teacher's Feedback:</div>
+                    <div style="background: #fef3c7; padding: 10px 12px; border-radius: 12px; font-size: 0.9rem; color: #92400e;">
+                        ${escapeHtml(feedbackText)}
+                    </div>
+                </div>
+                ${score !== undefined && score !== null && score !== '' && score < q.points ? `
+                <div style="margin-top: 8px; font-size: 0.75rem; color: var(--warning);">
+                    <i class="fas fa-lightbulb"></i> Tip: Review this topic to improve your score.
+                </div>
+                ` : ''}
+            </div>
+            `;
+        });
+        
+        modal.innerHTML = `
+            <div style="
+                background: white; border-radius: 28px; max-width: 800px; width: 100%;
+                max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+                animation: slideUp 0.3s ease;
+            ">
+                <div style="position: sticky; top: 0; background: white; border-bottom: 1px solid var(--border); padding: 24px 28px; border-radius: 28px 28px 0 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 800;">
+                                <i class="fas fa-chart-line" style="color: var(--primary);"></i> Quiz Results
+                            </h2>
+                            <p style="margin: 4px 0 0; color: var(--gray);">${escapeHtml(sessionData.title || 'Quiz')}</p>
+                        </div>
+                        <button onclick="this.closest('#resultsModal').remove()" style="
+                            width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
+                            background: white; cursor: pointer; font-size: 1.2rem;
+                        ">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="padding: 24px 28px;">
+                    <!-- Score Summary -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 24px; color: white; margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <div style="font-size: 0.85rem; opacity: 0.8;">Your Total Score</div>
+                                <div style="font-size: 2.5rem; font-weight: 800;">${totalEarned} / ${totalPossible}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.85rem; opacity: 0.8;">Percentage</div>
+                                <div style="font-size: 2rem; font-weight: 800;">${totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0}%</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.85rem; opacity: 0.8;">Questions</div>
+                                <div style="font-size: 2rem; font-weight: 800;">${questions.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin: 0 0 16px 0; font-size: 1.1rem;"><i class="fas fa-list-check"></i> Detailed Review</h3>
+                    ${questionsHtml}
+                </div>
+                
+                <div style="position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); padding: 16px 28px; text-align: right; border-radius: 0 0 28px 28px;">
+                    <button onclick="this.closest('#resultsModal').remove()" class="btn btn-primary">
+                        <i class="fas fa-check"></i> Close
+                    </button>
                 </div>
             </div>
         `;
-        }
+        
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
+    } catch (err) {
+        console.error('Error loading results:', err);
+        showToast('Error loading results: ' + err.message, true);
+    }
+};
+        
 
+        
         // ===== SELECT SESSION =====
 window.selectSession = async function(sessionId) {
     const state = window.appState;
