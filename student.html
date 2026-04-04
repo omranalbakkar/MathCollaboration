@@ -1604,12 +1604,16 @@ window.selectSession = async function(sessionId) {
         }
 
         // ===== SAVE ANSWER =====
+// ===== SAVE ANSWER =====
 window.saveCurrentAnswer = async function() {
     const state = window.appState;
     if (state.isSaving) return;
 
     const answer = getCurrentAnswer();
-    if (!answer) { showToast('Please provide an answer first', true); return; }
+    if (!answer) { 
+        showToast('Please provide an answer first', true); 
+        return; 
+    }
 
     const q = state.questions[state.currentQIndex];
     const saveBtn = document.getElementById('btnSave');
@@ -1630,6 +1634,9 @@ window.saveCurrentAnswer = async function() {
             // Doc doesn't exist → setDoc with proper nested object
             await setDoc(studentRef, { answers: { [q.id]: answer } });
         }
+
+        // ✅ OPTIONAL: Update online status to refresh lastSeen timestamp
+        await updateStudentOnlineStatus();
 
         showToast('Answer saved!', false);
         saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
@@ -1660,7 +1667,8 @@ window.saveCurrentAnswer = async function() {
         state.isSaving = false;
     }
 };
-    
+
+        
         // ===== NAVIGATION =====
         window.prevQuestion = async function() {
             const state = window.appState;
