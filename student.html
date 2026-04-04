@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
         window.MathJax = {
@@ -1532,6 +1533,7 @@ async function showWelcomeDashboard() {
 
 
 // ===== VIEW RESULTS (Student views their graded answers) =====
+// ===== VIEW RESULTS (Student views their graded answers) =====
 window.viewResults = async function(sessionId) {
     const state = window.appState;
     
@@ -1579,6 +1581,33 @@ window.viewResults = async function(sessionId) {
             }
         });
         
+        const percentage = totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0;
+        
+        // Helper function to format math content
+        const formatMath = (text) => {
+            if (!text) return '';
+            let formatted = escapeHtml(text);
+            formatted = formatted.replace(/\\\(/g, '\\(').replace(/\\\)/g, '\\)');
+            formatted = formatted.replace(/\\\[/g, '\\[').replace(/\\\]/g, '\\]');
+            return formatted;
+        };
+        
+        // Store data for PDF generation
+        const reportData = {
+            sessionTitle: sessionData.title || 'Quiz Results',
+            subject: sessionData.subject || '',
+            studentName: state.studentProfile?.name || 'Student',
+            studentEmail: state.currentStudent?.email || '',
+            date: new Date().toLocaleDateString(),
+            totalEarned: totalEarned,
+            totalPossible: totalPossible,
+            percentage: percentage,
+            questions: questions,
+            answers: answers,
+            grades: grades,
+            feedback: feedback
+        };
+        
         // Build results modal
         const modal = document.createElement('div');
         modal.id = 'resultsModal';
@@ -1609,11 +1638,11 @@ window.viewResults = async function(sessionId) {
                         ${scoreDisplay}
                     </span>
                 </div>
-                <div style="font-weight: 600; margin-bottom: 12px; color: var(--dark);">${escapeHtml(q.text)}</div>
+                <div class="math-content" style="font-weight: 600; margin-bottom: 12px; color: var(--dark);">${formatMath(q.text)}</div>
                 <div style="margin-bottom: 8px;">
                     <div style="font-size: 0.75rem; color: var(--gray); margin-bottom: 4px;"><i class="fas fa-user-edit"></i> Your Answer:</div>
-                    <div style="background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.95rem;">
-                        ${escapeHtml(studentAnswer)}
+                    <div class="math-content" style="background: white; padding: 12px; border-radius: 12px; border: 1px solid var(--border); font-size: 0.95rem;">
+                        ${formatMath(studentAnswer)}
                     </div>
                 </div>
                 <div style="margin-bottom: 8px;">
@@ -1645,16 +1674,26 @@ window.viewResults = async function(sessionId) {
                             </h2>
                             <p style="margin: 4px 0 0; color: var(--gray);">${escapeHtml(sessionData.title || 'Quiz')}</p>
                         </div>
-                        <button onclick="this.closest('#resultsModal').remove()" style="
-                            width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
-                            background: white; cursor: pointer; font-size: 1.2rem;
-                        ">
-                            <i class="fas fa-times"></i>
-                        </button>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="printPdfBtn" style="
+                                background: linear-gradient(135deg, #ef4444, #dc2626);
+                                color: white; border: none; padding: 8px 16px;
+                                border-radius: 12px; cursor: pointer; font-size: 0.85rem;
+                                font-weight: 600; display: flex; align-items: center; gap: 6px;
+                            ">
+                                <i class="fas fa-file-pdf"></i> Save as PDF
+                            </button>
+                            <button onclick="this.closest('#resultsModal').remove()" style="
+                                width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border);
+                                background: white; cursor: pointer; font-size: 1.2rem;
+                            ">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
-                <div style="padding: 24px 28px;">
+                <div id="resultsContent" style="padding: 24px 28px;">
                     <!-- Score Summary -->
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 24px; color: white; margin-bottom: 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
@@ -1664,7 +1703,7 @@ window.viewResults = async function(sessionId) {
                             </div>
                             <div>
                                 <div style="font-size: 0.85rem; opacity: 0.8;">Percentage</div>
-                                <div style="font-size: 2rem; font-weight: 800;">${totalPossible > 0 ? Math.round((totalEarned / totalPossible) * 100) : 0}%</div>
+                                <div style="font-size: 2rem; font-weight: 800;">${percentage}%</div>
                             </div>
                             <div>
                                 <div style="font-size: 0.85rem; opacity: 0.8;">Questions</div>
@@ -1687,6 +1726,24 @@ window.viewResults = async function(sessionId) {
         
         document.body.appendChild(modal);
         
+        // Add PDF export functionality
+        const printBtn = document.getElementById('printPdfBtn');
+        if (printBtn) {
+            printBtn.addEventListener('click', async () => {
+                await exportResultsAsPDF(reportData);
+            });
+        }
+        
+        // ✅ RENDER MATHJAX ON THE MODAL CONTENT
+        if (window.MathJax && MathJax.typesetPromise) {
+            try {
+                await MathJax.typesetPromise([modal]);
+                console.log('MathJax rendered in results modal');
+            } catch (err) {
+                console.warn('MathJax error in modal:', err);
+            }
+        }
+        
         // Close modal when clicking outside
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
@@ -1697,6 +1754,222 @@ window.viewResults = async function(sessionId) {
         showToast('Error loading results: ' + err.message, true);
     }
 };
+
+// ===== EXPORT RESULTS AS PDF =====
+async function exportResultsAsPDF(data) {
+    showToast('Generating PDF... Please wait.', false);
+    
+    // Create a temporary container for the PDF content
+    const pdfContainer = document.createElement('div');
+    pdfContainer.id = 'pdfExportContainer';
+    pdfContainer.style.cssText = `
+        position: fixed; left: -9999px; top: 0;
+        width: 210mm; background: white; padding: 20mm;
+        font-family: 'Inter', sans-serif;
+    `;
+    
+    // Build PDF content
+    let questionsHtml = '';
+    data.questions.forEach((q, idx) => {
+        const studentAnswer = data.answers[q.id] || 'No answer provided';
+        const score = data.grades[q.id];
+        const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
+        const feedbackText = data.feedback[q.id] || 'No feedback';
+        
+        questionsHtml += `
+            <div style="margin-bottom: 24px; page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div>
+                        <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Question ${idx + 1}</span>
+                        <span style="margin-left: 8px; font-size: 0.8rem; color: #64748b;">${q.points} points</span>
+                    </div>
+                    <span style="background: ${score >= q.points ? '#d1fae5' : '#fee2e2'}; color: ${score >= q.points ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                        Score: ${scoreDisplay}
+                    </span>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 1rem;">${q.text}</div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">📝 Your Answer:</div>
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                        ${studentAnswer}
+                    </div>
+                </div>
+                <div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">💬 Teacher's Feedback:</div>
+                    <div style="background: #fef3c7; padding: 10px 12px; border-radius: 12px; color: #92400e;">
+                        ${escapeHtml(feedbackText)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    pdfContainer.innerHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Quiz Results - ${data.sessionTitle}</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                    line-height: 1.5;
+                    color: #1e293b;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 30px;
+                    padding-bottom: 20px;
+                    border-bottom: 2px solid #6366f1;
+                }
+                .header h1 {
+                    font-size: 24px;
+                    margin-bottom: 8px;
+                    color: #1e293b;
+                }
+                .header .subtitle {
+                    color: #64748b;
+                    font-size: 14px;
+                }
+                .student-info {
+                    background: #f1f5f9;
+                    padding: 16px;
+                    border-radius: 12px;
+                    margin-bottom: 24px;
+                    display: flex;
+                    justify-content: space-between;
+                    flex-wrap: wrap;
+                }
+                .score-summary {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 20px;
+                    border-radius: 16px;
+                    margin-bottom: 24px;
+                    display: flex;
+                    justify-content: space-around;
+                    text-align: center;
+                }
+                .score-item {
+                    text-align: center;
+                }
+                .score-value {
+                    font-size: 28px;
+                    font-weight: 800;
+                }
+                .score-label {
+                    font-size: 12px;
+                    opacity: 0.8;
+                    margin-top: 4px;
+                }
+                .section-title {
+                    font-size: 18px;
+                    font-weight: 700;
+                    margin: 24px 0 16px 0;
+                    padding-bottom: 8px;
+                    border-bottom: 2px solid #e2e8f0;
+                }
+                .footer {
+                    margin-top: 40px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #94a3b8;
+                    border-top: 1px solid #e2e8f0;
+                    padding-top: 16px;
+                }
+                @media print {
+                    body { margin: 0; padding: 0; }
+                    .no-print { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>${escapeHtml(data.sessionTitle)}</h1>
+                <div class="subtitle">Quiz Results Report</div>
+            </div>
+            
+            <div class="student-info">
+                <div><strong>Student:</strong> ${escapeHtml(data.studentName)}</div>
+                <div><strong>Email:</strong> ${escapeHtml(data.studentEmail)}</div>
+                <div><strong>Date:</strong> ${data.date}</div>
+                <div><strong>Subject:</strong> ${escapeHtml(data.subject)}</div>
+            </div>
+            
+            <div class="score-summary">
+                <div class="score-item">
+                    <div class="score-value">${data.totalEarned} / ${data.totalPossible}</div>
+                    <div class="score-label">Total Score</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-value">${data.percentage}%</div>
+                    <div class="score-label">Percentage</div>
+                </div>
+                <div class="score-item">
+                    <div class="score-value">${data.questions.length}</div>
+                    <div class="score-label">Questions</div>
+                </div>
+            </div>
+            
+            <div class="section-title">📋 Detailed Review</div>
+            ${questionsHtml}
+            
+            <div class="footer">
+                Generated by EduBoard • ${new Date().toLocaleString()}
+            </div>
+        </body>
+        </html>
+    `;
+    
+    document.body.appendChild(pdfContainer);
+    
+    // Wait for any MathJax rendering
+    if (window.MathJax && MathJax.typesetPromise) {
+        try {
+            await MathJax.typesetPromise([pdfContainer]);
+        } catch (err) {
+            console.warn('MathJax error in PDF:', err);
+        }
+    }
+    
+    // Small delay to ensure rendering
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        
+        // Use html2canvas to capture the content
+        const element = pdfContainer;
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${data.sessionTitle}_${data.studentName}_Results.pdf`);
+        
+        showToast('PDF downloaded successfully!', false);
+    } catch (err) {
+        console.error('PDF generation error:', err);
+        showToast('Error generating PDF: ' + err.message, true);
+    } finally {
+        // Clean up
+        pdfContainer.remove();
+    }
+}
         
 
         
