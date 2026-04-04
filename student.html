@@ -1009,26 +1009,32 @@
         </main>
 
         <!-- Navigation Footer -->
-        <footer class="nav-footer" id="navFooter" style="display:none;">
-            <div class="nav-footer-left">
-                <button class="btn btn-secondary" id="btnPrev" onclick="window.prevQuestion()">
-                    <i class="fas fa-chevron-left"></i> Previous
-                </button>
-            </div>
-            <div class="nav-footer-center">
-                <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()">
-                    <i class="fas fa-save"></i> Save Answer
-                </button>
-            </div>
-            <div class="nav-footer-right">
-                <button class="btn btn-secondary" id="btnNext" onclick="window.nextQuestion()">
-                    Next <i class="fas fa-chevron-right"></i>
-                </button>
-                <button class="btn btn-success" id="btnFinish" onclick="window.finishQuiz()" style="display:none;">
-                    <i class="fas fa-check-circle"></i> Submit Quiz
-                </button>
-            </div>
-        </footer>
+<footer class="nav-footer" id="navFooter" style="display:none;">
+    <div class="nav-footer-left">
+        <button class="btn btn-secondary" id="btnPrev" onclick="window.prevQuestion()">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+    </div>
+    <div class="nav-footer-center">
+        <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()">
+            <i class="fas fa-save"></i> Save Answer
+        </button>
+    </div>
+    <div class="nav-footer-right">
+        <button class="btn btn-secondary" id="btnNext" onclick="window.nextQuestion()">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+        <!-- Always visible End Quiz button -->
+        <button class="btn btn-danger" id="btnEndQuiz" onclick="window.finishQuiz(false)">
+            <i class="fas fa-flag-checkered"></i> End Quiz
+        </button>
+        <!-- Submit shown only on last question -->
+        <button class="btn btn-success" id="btnFinish" onclick="window.finishQuiz(false)" style="display:none;">
+            <i class="fas fa-check-circle"></i> Submit Quiz
+        </button>
+    </div>
+</footer>
+        
     </div>
 
     <!-- ===== TOAST ===== -->
@@ -1067,7 +1073,95 @@
         };
 
         // ===== UTILITIES =====
+function showFinishWarning(missingQuestions) {
+    // Remove existing modal if any
+    const existing = document.getElementById('finishWarningModal');
+    if (existing) existing.remove();
 
+    const modal = document.createElement('div');
+    modal.id = 'finishWarningModal';
+    modal.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 9000; padding: 20px; backdrop-filter: blur(4px);
+        animation: fadeIn 0.2s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: white; border-radius: 24px; padding: 40px 36px;
+            max-width: 460px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        ">
+            <div style="text-align:center; margin-bottom: 24px;">
+                <div style="font-size:3rem; margin-bottom:12px;">⚠️</div>
+                <h3 style="font-size:1.4rem; font-weight:800; color:#1e293b; margin-bottom:8px;">
+                    Unanswered Questions
+                </h3>
+                <p style="color:#64748b; font-size:0.95rem; line-height:1.6;">
+                    You have <strong style="color:#ef4444;">${missingQuestions.length} unanswered question${missingQuestions.length > 1 ? 's' : ''}</strong>:
+                    Question${missingQuestions.length > 1 ? 's' : ''} 
+                    <strong>${missingQuestions.join(', ')}</strong>
+                </p>
+                <p style="color:#64748b; font-size:0.88rem; margin-top:10px;">
+                    You can go back and answer them, or submit anyway with unanswered questions.
+                </p>
+            </div>
+
+            <div style="display:flex; gap:12px; flex-direction:column;">
+                <button onclick="
+                        document.getElementById('finishWarningModal').remove();
+                        window.appState.currentQIndex = ${missingQuestions[0] - 1};
+                        renderQuestion();
+                    "
+                    style="
+                        padding: 14px; border-radius: 14px; border: 2px solid #6366f1;
+                        background: white; color: #6366f1; font-weight: 700;
+                        font-family: inherit; font-size: 1rem; cursor: pointer;
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.background='#6366f1';this.style.color='white';"
+                    onmouseout="this.style.background='white';this.style.color='#6366f1';"
+                >
+                    <i class="fas fa-arrow-left"></i> Go Back & Answer
+                </button>
+
+                <button onclick="window.finishQuiz(true)"
+                    style="
+                        padding: 14px; border-radius: 14px; border: none;
+                        background: linear-gradient(135deg, #ef4444, #dc2626);
+                        color: white; font-weight: 700;
+                        font-family: inherit; font-size: 1rem; cursor: pointer;
+                        box-shadow: 0 4px 14px rgba(239,68,68,0.35);
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.transform='translateY(-2px)';"
+                    onmouseout="this.style.transform='translateY(0)';"
+                >
+                    <i class="fas fa-paper-plane"></i> Submit Anyway
+                </button>
+
+                <button onclick="document.getElementById('finishWarningModal').remove();"
+                    style="
+                        padding: 12px; border-radius: 14px; border: none;
+                        background: #f1f5f9; color: #64748b; font-weight: 600;
+                        font-family: inherit; font-size: 0.9rem; cursor: pointer;
+                    "
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+    });
+}
+        
+        
         function showToast(msg, isError = false) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMessage');
@@ -1434,12 +1528,18 @@ window.saveCurrentAnswer = async function() {
     try {
         const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
 
-        // ✅ setDoc with merge — creates doc if it doesn't exist yet
-        await setDoc(studentRef, { [`answers.${q.id}`]: answer }, { merge: true });
+        // ✅ Check if doc exists first, then use correct method
+        const snap = await getDoc(studentRef);
+        if (snap.exists()) {
+            // Doc exists → updateDoc supports dot notation
+            await updateDoc(studentRef, { [`answers.${q.id}`]: answer });
+        } else {
+            // Doc doesn't exist → setDoc with proper nested object
+            await setDoc(studentRef, { answers: { [q.id]: answer } });
+        }
 
         showToast('Answer saved!', false);
         saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
-
         setTimeout(() => {
             if (saveBtn) {
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
@@ -1447,7 +1547,7 @@ window.saveCurrentAnswer = async function() {
             }
         }, 1500);
 
-        // ✅ Safely initialize local studentProgress before writing
+        // ✅ Safe local state update
         if (!state.currentSession.studentProgress) {
             state.currentSession.studentProgress = { answers: {} };
         }
@@ -1467,7 +1567,6 @@ window.saveCurrentAnswer = async function() {
         state.isSaving = false;
     }
 };
-
     
         // ===== NAVIGATION =====
         window.prevQuestion = async function() {
@@ -1493,19 +1592,22 @@ window.saveCurrentAnswer = async function() {
         };
 
         // ===== FINISH QUIZ =====
-window.finishQuiz = async function() {
+window.finishQuiz = async function(force = false) {
     const state = window.appState;
 
-    // Save current answer if any (with local state guard)
+    // Save current answer if any
     const currentAnswer = getCurrentAnswer();
     if (currentAnswer) {
         const q = state.questions[state.currentQIndex];
         const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-        
-        // ✅ Firestore: setDoc with merge (creates if missing)
-        await setDoc(studentRef, { [`answers.${q.id}`]: currentAnswer }, { merge: true });
-        
-        // ✅ Local state: safely initialize studentProgress.answers
+
+        const snap = await getDoc(studentRef);
+        if (snap.exists()) {
+            await updateDoc(studentRef, { [`answers.${q.id}`]: currentAnswer });
+        } else {
+            await setDoc(studentRef, { answers: { [q.id]: currentAnswer } });
+        }
+
         if (!state.currentSession.studentProgress) {
             state.currentSession.studentProgress = { answers: {} };
         }
@@ -1515,7 +1617,7 @@ window.finishQuiz = async function() {
         state.currentSession.studentProgress.answers[q.id] = currentAnswer;
     }
 
-    // Verify all questions answered (refetch fresh data)
+    // Verify all questions answered
     const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
     const snap = await getDoc(studentRef);
     const answersMap = snap.exists() ? (snap.data().answers || {}) : {};
@@ -1527,22 +1629,32 @@ window.finishQuiz = async function() {
         }
     }
 
-    if (missingQuestions.length > 0) {
-        showToast(`Please answer questions: ${missingQuestions.join(', ')}`, true);
-        state.currentQIndex = missingQuestions[0] - 1;
-        await renderQuestion();
+    // ✅ If there are missing questions and not forced, show warning modal
+    if (missingQuestions.length > 0 && !force) {
+        showFinishWarning(missingQuestions);
         return;
     }
 
-    // Mark quiz as submitted (with merge)
-    await setDoc(studentRef, { 
-        submitted: true, 
-        submittedAt: new Date() // ✅ Use Date object for Firestore
-    }, { merge: true });
+    // Submit quiz
+    const studentRefFinal = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
+    const finalSnap = await getDoc(studentRefFinal);
+    if (finalSnap.exists()) {
+        await updateDoc(studentRefFinal, { submitted: true, submittedAt: new Date() });
+    } else {
+        await setDoc(studentRefFinal, { answers: {}, submitted: true, submittedAt: new Date() });
+    }
+
+    // Hide warning modal if open
+    const modal = document.getElementById('finishWarningModal');
+    if (modal) modal.remove();
 
     showToast('Quiz submitted successfully! 🎉');
     await showWelcomeDashboard();
 };
+        
+
+
+    
         // ===== UPDATE QUESTION INDEX BUTTONS =====
         function updateQuestionIndex() {
             const state = window.appState;
