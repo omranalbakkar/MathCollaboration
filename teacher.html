@@ -1010,6 +1010,7 @@ await loadSessions();
 showToast('Session deleted', 'info');
 };
 
+// ==================== loadActiveSession ====================
 async function loadActiveSession() {
   if (!activeSessionId) return;
   try {
@@ -1023,24 +1024,32 @@ async function loadActiveSession() {
     currentSessionData = { id: sessionDoc.id, ...sessionDoc.data() };
     const config = currentSessionData;
 
-    // Helper functions for time/date
+    // Helper: format Firestore Timestamp or date string to HH:MM
     const formatTime = (timestamp) => {
       if (!timestamp) return '';
-      if (typeof timestamp === 'string') return timestamp.slice(0, 5);
+      // If it's a Firestore Timestamp
       if (timestamp.toDate) {
         const date = timestamp.toDate();
         return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
       }
+      // If it's a {seconds, nanoseconds} object
       if (timestamp.seconds) {
         const date = new Date(timestamp.seconds * 1000);
         return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
       }
+      // If it's a string (legacy)
+      if (typeof timestamp === 'string') {
+        // If it looks like a full ISO string or date+time, extract time part
+        if (timestamp.includes('T')) return timestamp.split('T')[1].slice(0, 5);
+        // If it's just "HH:MM" or "HH:MM:SS"
+        if (/^\d{1,2}:\d{2}/.test(timestamp)) return timestamp.slice(0, 5);
+      }
       return '';
     };
 
+    // Helper: format to YYYY-MM-DD (rejects time-only strings)
     const formatDate = (timestamp) => {
       if (!timestamp) return '';
-      if (typeof timestamp === 'string') return timestamp.slice(0, 10);
       if (timestamp.toDate) {
         const date = timestamp.toDate();
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -1049,9 +1058,16 @@ async function loadActiveSession() {
         const date = new Date(timestamp.seconds * 1000);
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       }
+      if (typeof timestamp === 'string') {
+        // Reject time-only strings (e.g., "08:00", "08:00:00")
+        if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timestamp)) return '';
+        // Otherwise assume it's at least a partial date
+        return timestamp.length >= 10 ? timestamp.slice(0, 10) : '';
+      }
       return '';
     };
 
+    // Fetch teacher name if needed
     let teacherName = config.teacherName || config.teacher || '';
     if (!teacherName && config.ownerTeacherId) {
       try {
@@ -1061,7 +1077,7 @@ async function loadActiveSession() {
     }
     if (!teacherName && currentTeacher) teacherName = currentTeacher.name || currentTeacher.displayName || currentTeacher.email || 'Teacher';
 
-    // Safe assignment with null checks
+    // Safe DOM setter
     const setTitle = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
 
     setTitle('cfTitle', config.title || '');
@@ -1069,10 +1085,17 @@ async function loadActiveSession() {
     setTitle('cfClass', config.className || config.class || '');
     setTitle('cfSubject', config.subject || '');
     setTitle('cfTeacher', teacherName);
-    
-    // FIX: Use formatDate for the Date input, not formatTime
-    setTitle('cfDate', formatDate(config.startTime) || formatDate(config.createdAt) || new Date().toISOString().split('T')[0]);
-    
+
+    // ***** FIXED DATE FIELD *****
+    // Use explicitly stored 'date' field, fallback to createdAt or today
+    let dateValue = config.date;
+    if (!dateValue && config.startTime && typeof config.startTime === 'string' && config.startTime.includes('-')) {
+      // Legacy: startTime accidentally contains a date
+      dateValue = config.startTime.slice(0, 10);
+    }
+    setTitle('cfDate', dateValue || formatDate(config.createdAt) || new Date().toISOString().split('T')[0]);
+
+    // Time fields – now config.startTime / config.endTime are Timestamps (or legacy strings)
     setTitle('cfStart', formatTime(config.startTime));
     setTitle('cfEnd', formatTime(config.endTime));
     setTitle('cfInstructions', config.instructions || '');
@@ -1089,7 +1112,7 @@ async function loadActiveSession() {
     showToast('Error loading session: ' + error.message, true);
   }
 }
-                                    
+                                      
 
 async function loadQuestions() {
 if (!activeSessionId) return;
@@ -1379,25 +1402,70 @@ showToast('Deleted', 'info');
 };
 
 window.saveSessionConfig = async function() {
-if (!activeSessionId) { showToast('No active session', true); return; }
-let teacherName = document.getElementById('cfTeacher')?.value || '';
-if (!teacherName && currentTeacher) teacherName = currentTeacher.name || currentTeacher.displayName || '';
-const gradeValue = document.getElementById('cfGrade').value;
-const subjectValue = document.getElementById('cfSubject').value;
-const config = {
-title: document.getElementById('cfTitle').value.trim() || 'Quiz Session',
-grade: gradeValue, gradeLevel: gradeValue, className: document.getElementById('cfClass').value.trim(),
-subject: subjectValue, teacherName: teacherName, teacher: teacherName,
-date: document.getElementById('cfDate').value, startTime: document.getElementById('cfStart').value,
-endTime: document.getElementById('cfEnd').value, instructions: document.getElementById('cfInstructions').value.trim(),
-active: !!(document.getElementById('sessionToggle').classList.contains('on')),
-isActive: !!(document.getElementById('sessionToggle').classList.contains('on')),
-updatedAt: serverTimestamp(), updatedBy: currentTeacher?.uid || ''
-};
-await updateDoc(doc(db, 'sessions', activeSessionId), config);
-updateSessionChip(config);
-showToast('Configuration saved!', 'success');
-await loadActiveSession();
+  if (!activeSessionId) {
+    showToast('No active session', true);
+    return;
+  }
+
+  // Get DOM values
+  const title = document.getElementById('cfTitle')?.value.trim() || 'Quiz Session';
+  const gradeValue = document.getElementById('cfGrade')?.value || '';
+  const className = document.getElementById('cfClass')?.value.trim() || '';
+  const subjectValue = document.getElementById('cfSubject')?.value || '';
+  let teacherName = document.getElementById('cfTeacher')?.value || '';
+  if (!teacherName && currentTeacher) teacherName = currentTeacher.name || currentTeacher.displayName || '';
+  const instructions = document.getElementById('cfInstructions')?.value.trim() || '';
+  const isActive = !!(document.getElementById('sessionToggle')?.classList.contains('on'));
+
+  // Date and time strings from inputs
+  const dateStr = document.getElementById('cfDate')?.value;        // yyyy-MM-dd
+  const startTimeStr = document.getElementById('cfStart')?.value;  // HH:MM
+  const endTimeStr = document.getElementById('cfEnd')?.value;      // HH:MM
+
+  // Validate date + time presence
+  if (!dateStr || !startTimeStr || !endTimeStr) {
+    showToast('Please fill in Date, Start Time and End Time', true);
+    return;
+  }
+
+  // Combine date and time into full DateTime strings (local time assumed)
+  const startDateTime = new Date(`${dateStr}T${startTimeStr}`);
+  const endDateTime = new Date(`${dateStr}T${endTimeStr}`);
+
+  if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+    showToast('Invalid date or time values', true);
+    return;
+  }
+
+  // Prepare config object – store startTime and endTime as Firestore Timestamps
+  const config = {
+    title: title,
+    grade: gradeValue,
+    gradeLevel: gradeValue,
+    className: className,
+    subject: subjectValue,
+    teacherName: teacherName,
+    teacher: teacherName,
+    date: dateStr,                      // store the date separately for easy display
+    startTime: Timestamp.fromDate(startDateTime),
+    endTime: Timestamp.fromDate(endDateTime),
+    instructions: instructions,
+    active: isActive,
+    isActive: isActive,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentTeacher?.uid || ''
+  };
+
+  try {
+    await updateDoc(doc(db, 'sessions', activeSessionId), config);
+    updateSessionChip(config);
+    showToast('Configuration saved!', 'success');
+    // Reload the session to refresh the UI with the new Timestamp objects
+    await loadActiveSession();
+  } catch (error) {
+    console.error('Error saving session:', error);
+    showToast('Error saving configuration: ' + error.message, true);
+  }
 };
 
 window.toggleSessionOpen = async function() {
