@@ -1535,12 +1535,11 @@ async function showWelcomeDashboard() {
 
 
 // ===== VIEW RESULTS (Student views their graded answers) =====
-// ===== VIEW RESULTS (Student views their graded answers) =====
 window.viewResults = async function(sessionId) {
     const state = window.appState;
     
     try {
-        // Get session data FIRST - this is the most important part
+        // Get session data from Firestore
         const sessionRef = doc(db, 'sessions', sessionId);
         const sessionSnap = await getDoc(sessionRef);
         if (!sessionSnap.exists()) {
@@ -1549,31 +1548,61 @@ window.viewResults = async function(sessionId) {
         }
         const sessionData = sessionSnap.data();
         
-        // Store full session data for PDF generation
-        const fullSessionData = {
-            id: sessionId,
-            title: sessionData.title || 'Quiz',
-            subject: sessionData.subject || 'Not specified',
-            gradeLevel: sessionData.gradeLevel || sessionData.grade || 'Not specified',
-            className: sessionData.className || sessionData.class || 'Not specified',
-            teacherName: sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || 'Not specified',
-            date: sessionData.date || (sessionData.startTime ? formatSessionDate(sessionData.startTime) : 'Not set'),
-            startTime: sessionData.startTime,
-            endTime: sessionData.endTime,
-            instructions: sessionData.instructions || ''
-        };
-        
-        // Helper function to format date
-        function formatSessionDate(timestamp) {
+        // Helper function to format time from Firestore Timestamp
+        const formatTimeFromTimestamp = (timestamp) => {
             if (!timestamp) return 'Not set';
             try {
-                if (timestamp.toDate) return timestamp.toDate().toLocaleDateString();
-                if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleDateString();
-                return new Date(timestamp).toLocaleDateString();
+                if (timestamp.toDate) {
+                    return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                if (timestamp.seconds) {
+                    return new Date(timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+                if (typeof timestamp === 'string') {
+                    return timestamp;
+                }
+                return 'Not set';
             } catch (e) {
                 return 'Not set';
             }
-        }
+        };
+        
+        // Helper function to format date
+        const formatDateFromData = (dateField) => {
+            if (!dateField) return 'Not set';
+            if (typeof dateField === 'string') return dateField;
+            if (dateField.toDate) return dateField.toDate().toLocaleDateString();
+            if (dateField.seconds) return new Date(dateField.seconds * 1000).toLocaleDateString();
+            return 'Not set';
+        };
+        
+        // Get teacher name - check both possible fields
+        let teacherName = sessionData.teacherName || sessionData.teacher || 'Not specified';
+        
+        // Get grade level - check both possible fields
+        let gradeLevel = sessionData.gradeLevel || sessionData.grade || 'Not specified';
+        
+        // Get class name
+        let className = sessionData.className || sessionData.class || 'Not specified';
+        
+        // Get date
+        let sessionDate = sessionData.date || formatDateFromData(sessionData.startTime);
+        
+        // Get times
+        let startTime = formatTimeFromTimestamp(sessionData.startTime);
+        let endTime = formatTimeFromTimestamp(sessionData.endTime);
+        
+        console.log('Session data extracted:', {
+            title: sessionData.title,
+            subject: sessionData.subject,
+            gradeLevel: gradeLevel,
+            className: className,
+            teacherName: teacherName,
+            date: sessionDate,
+            startTime: startTime,
+            endTime: endTime,
+            sessionId: sessionId
+        });
         
         // Get questions for this session
         const questionsRef = collection(db, 'sessions', sessionId, 'questions');
@@ -1620,30 +1649,17 @@ window.viewResults = async function(sessionId) {
             return formatted;
         };
         
-        // Helper function to format time
-        const formatTimeDisplay = (timestamp) => {
-            if (!timestamp) return 'Not set';
-            try {
-                if (timestamp.toDate) return timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                if (typeof timestamp === 'string') return timestamp;
-                return 'Not set';
-            } catch (e) {
-                return 'Not set';
-            }
-        };
-        
-        // Store data for PDF generation with FULL session details
+        // Store data for PDF generation with ALL session details
         const reportData = {
             sessionTitle: sessionData.title || 'Quiz Results',
             sessionId: sessionId,
-            subject: sessionData.subject || fullSessionData.subject,
-            gradeLevel: sessionData.gradeLevel || sessionData.grade || fullSessionData.gradeLevel,
-            className: sessionData.className || sessionData.class || fullSessionData.className,
-            teacherName: sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || fullSessionData.teacherName,
-            sessionDate: sessionData.date || formatSessionDate(sessionData.startTime),
-            startTime: formatTimeDisplay(sessionData.startTime),
-            endTime: formatTimeDisplay(sessionData.endTime),
+            subject: sessionData.subject || 'Not specified',
+            gradeLevel: gradeLevel,
+            className: className,
+            teacherName: teacherName,
+            sessionDate: sessionDate,
+            startTime: startTime,
+            endTime: endTime,
             studentName: state.studentProfile?.name || 'Student',
             studentEmail: state.currentStudent?.email || '',
             date: new Date().toLocaleDateString(),
@@ -1655,8 +1671,6 @@ window.viewResults = async function(sessionId) {
             grades: grades,
             feedback: feedback
         };
-        
-        console.log('Report data prepared:', reportData);
         
         // Build results modal
         const modal = document.createElement('div');
@@ -1804,8 +1818,6 @@ window.viewResults = async function(sessionId) {
         showToast('Error loading results: ' + err.message, true);
     }
 };
-
-
 
 
 
