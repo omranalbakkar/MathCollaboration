@@ -1823,12 +1823,12 @@ window.viewResults = async function(sessionId) {
 
 
 
-    
-
-// ===== EXPORT RESULTS AS PDF =====
 // ===== EXPORT RESULTS AS PDF =====
 async function exportResultsAsPDF(data) {
     showToast('Generating PDF... Please wait.', false);
+    
+    // Log the data to see what's being passed
+    console.log('PDF Export Data received:', data);
     
     // Create a temporary container for the PDF content
     const pdfContainer = document.createElement('div');
@@ -1846,73 +1846,38 @@ async function exportResultsAsPDF(data) {
         return formatted;
     };
     
-    // Get additional session details from the current session data
-    const sessionDetails = window.appState.currentSession || {};
-    const sessionData = sessionDetails;
+    // Get values from data with fallbacks - using the exact field names from reportData
+    const sessionTitle = data.sessionTitle || data.title || 'Quiz Results';
+    const subject = data.subject || 'Not specified';
+    const gradeLevel = data.gradeLevel || 'Not specified';
+    const className = data.className || 'Not specified';
+    const teacherName = data.teacherName || 'Not specified';
+    const sessionDate = data.sessionDate || data.date || 'Not set';
+    const startTime = data.startTime || 'Not set';
+    const endTime = data.endTime || 'Not set';
+    const sessionId = data.sessionId || 'N/A';
+    const studentName = data.studentName || 'Student';
+    const studentEmail = data.studentEmail || '';
+    const reportDate = data.date || new Date().toLocaleDateString();
+    const totalEarned = data.totalEarned || 0;
+    const totalPossible = data.totalPossible || 0;
+    const percentage = data.percentage || 0;
+    const questions = data.questions || [];
+    const answers = data.answers || {};
+    const grades = data.grades || {};
+    const feedback = data.feedback || {};
     
-    // Format date and time nicely
-    const formatDateTime = (timestamp) => {
-        if (!timestamp) return 'Not set';
-        try {
-            if (timestamp.toDate) return timestamp.toDate().toLocaleString();
-            if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleString();
-            return new Date(timestamp).toLocaleString();
-        } catch (e) {
-            return 'Not set';
-        }
-    };
-    
-    const startTime = sessionData.startTime ? formatDateTime(sessionData.startTime) : 'Not set';
-    const endTime = sessionData.endTime ? formatDateTime(sessionData.endTime) : 'Not set';
-    const sessionDate = sessionData.date || (sessionData.startTime ? formatDateTime(sessionData.startTime).split(',')[0] : 'Not set');
-    const gradeLevel = sessionData.gradeLevel || sessionData.grade || 'Not specified';
-    const subject = sessionData.subject || data.subject || 'General';
-    const teacherName = sessionData.teacherName || sessionData.teacher || sessionData.ownerTeacherName || 'Not specified';
-    const className = sessionData.className || sessionData.class || 'Not specified';
-    
-    // Build PDF content
-    let questionsHtml = '';
-    data.questions.forEach((q, idx) => {
-        const studentAnswer = data.answers[q.id] || 'No answer provided';
-        const score = data.grades[q.id];
-        const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
-        const feedbackText = data.feedback[q.id] || 'No feedback';
-        const isCorrect = score >= q.points;
-        
-        questionsHtml += `
-            <div style="margin-bottom: 24px; page-break-inside: avoid; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div>
-                        <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Question ${idx + 1}</span>
-                        <span style="margin-left: 8px; font-size: 0.8rem; color: #64748b;">${q.points} points</span>
-                    </div>
-                    <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
-                        Score: ${scoreDisplay}
-                    </span>
-                </div>
-                <div style="font-weight: 600; margin-bottom: 12px; font-size: 1rem; line-height: 1.5;">${formatMathForPDF(q.text)}</div>
-                <div style="margin-bottom: 12px;">
-                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">📝 Your Answer:</div>
-                    <div style="background: #f8fafc; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                        ${formatMathForPDF(studentAnswer)}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 4px; font-weight: 600;">💬 Teacher's Feedback:</div>
-                    <div style="background: #fef3c7; padding: 10px 12px; border-radius: 12px; color: #92400e;">
-                        ${escapeHtml(feedbackText)}
-                    </div>
-                </div>
-            </div>
-        `;
+    console.log('PDF Values extracted:', {
+        sessionTitle, subject, gradeLevel, className, teacherName, sessionDate, startTime, endTime, sessionId
     });
     
+    // Build PDF content
     pdfContainer.innerHTML = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>Quiz Results - ${data.sessionTitle}</title>
+            <title>Quiz Results - ${sessionTitle}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { 
@@ -1935,23 +1900,24 @@ async function exportResultsAsPDF(data) {
                     color: #64748b;
                     font-size: 14px;
                 }
-                .session-info {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    padding: 20px;
+                .info-section {
+                    background: #f1f5f9;
                     border-radius: 16px;
                     margin-bottom: 24px;
+                    overflow: hidden;
                 }
-                .session-info h3 {
-                    font-size: 16px;
-                    margin-bottom: 12px;
-                    opacity: 0.9;
-                    letter-spacing: 1px;
+                .info-title {
+                    background: #e2e8f0;
+                    padding: 12px 20px;
+                    font-weight: 700;
+                    font-size: 14px;
+                    color: #1e293b;
                 }
                 .info-grid {
                     display: grid;
                     grid-template-columns: repeat(2, 1fr);
                     gap: 12px;
+                    padding: 16px 20px;
                 }
                 .info-item {
                     display: flex;
@@ -1959,20 +1925,7 @@ async function exportResultsAsPDF(data) {
                     gap: 8px;
                     font-size: 13px;
                 }
-                .info-item i {
-                    width: 20px;
-                    opacity: 0.8;
-                }
-                .student-info {
-                    background: #f1f5f9;
-                    padding: 16px;
-                    border-radius: 12px;
-                    margin-bottom: 24px;
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 12px;
-                }
-                .student-info .info-item {
+                .info-item strong {
                     color: #1e293b;
                 }
                 .score-summary {
@@ -2008,6 +1961,46 @@ async function exportResultsAsPDF(data) {
                     padding-bottom: 8px;
                     border-bottom: 2px solid #e2e8f0;
                 }
+                .question-block {
+                    margin-bottom: 24px;
+                    page-break-inside: avoid;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 16px;
+                    overflow: hidden;
+                }
+                .question-header {
+                    background: #f8fafc;
+                    padding: 12px 16px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 1px solid #e2e8f0;
+                }
+                .question-text {
+                    padding: 16px;
+                    background: white;
+                    font-weight: 600;
+                    font-size: 14px;
+                    line-height: 1.6;
+                }
+                .answer-section, .feedback-section {
+                    padding: 12px 16px;
+                    border-top: 1px solid #e2e8f0;
+                }
+                .answer-section {
+                    background: #f8fafc;
+                }
+                .feedback-section {
+                    background: #fef3c7;
+                }
+                .section-label {
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    color: #64748b;
+                    margin-bottom: 6px;
+                }
                 .footer {
                     margin-top: 40px;
                     text-align: center;
@@ -2023,51 +2016,84 @@ async function exportResultsAsPDF(data) {
         </head>
         <body>
             <div class="header">
-                <h1>${escapeHtml(data.sessionTitle)}</h1>
+                <h1>${escapeHtml(sessionTitle)}</h1>
                 <div class="subtitle">Quiz Results Report</div>
             </div>
             
-            <!-- Session Details Section -->
-            <div class="session-info">
-                <h3><i class="fas fa-info-circle"></i> Session Information</h3>
+            <!-- Session Details -->
+            <div class="info-section">
+                <div class="info-title">📋 Session Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><span>📚 Subject:</span> <strong>${escapeHtml(subject)}</strong></div>
-                    <div class="info-item"><span>📖 Grade Level:</span> <strong>${escapeHtml(gradeLevel)}</strong></div>
-                    <div class="info-item"><span>🏫 Class:</span> <strong>${escapeHtml(className)}</strong></div>
-                    <div class="info-item"><span>👨‍🏫 Teacher:</span> <strong>${escapeHtml(teacherName)}</strong></div>
-                    <div class="info-item"><span>📅 Date:</span> <strong>${escapeHtml(sessionDate)}</strong></div>
-                    <div class="info-item"><span>⏰ Start Time:</span> <strong>${escapeHtml(startTime)}</strong></div>
-                    <div class="info-item"><span>⏰ End Time:</span> <strong>${escapeHtml(endTime)}</strong></div>
-                    <div class="info-item"><span>🆔 Session ID:</span> <strong>${escapeHtml(window.appState.currentSession?.id || 'N/A')}</strong></div>
+                    <div class="info-item">📚 <strong>Subject:</strong> ${escapeHtml(subject)}</div>
+                    <div class="info-item">📖 <strong>Grade Level:</strong> ${escapeHtml(gradeLevel)}</div>
+                    <div class="info-item">🏫 <strong>Class:</strong> ${escapeHtml(className)}</div>
+                    <div class="info-item">👨‍🏫 <strong>Teacher:</strong> ${escapeHtml(teacherName)}</div>
+                    <div class="info-item">📅 <strong>Date:</strong> ${escapeHtml(sessionDate)}</div>
+                    <div class="info-item">⏰ <strong>Start Time:</strong> ${escapeHtml(startTime)}</div>
+                    <div class="info-item">⏰ <strong>End Time:</strong> ${escapeHtml(endTime)}</div>
+                    <div class="info-item">🆔 <strong>Session ID:</strong> ${escapeHtml(sessionId)}</div>
                 </div>
             </div>
             
-            <!-- Student Details Section -->
-            <div class="student-info">
-                <div class="info-item"><span>👤 Student Name:</span> <strong>${escapeHtml(data.studentName)}</strong></div>
-                <div class="info-item"><span>📧 Email:</span> <strong>${escapeHtml(data.studentEmail)}</strong></div>
-                <div class="info-item"><span>📅 Report Date:</span> <strong>${data.date}</strong></div>
-                <div class="info-item"><span>📊 Status:</span> <strong>Completed</strong></div>
+            <!-- Student Details -->
+            <div class="info-section">
+                <div class="info-title">👤 Student Information</div>
+                <div class="info-grid">
+                    <div class="info-item">👨‍🎓 <strong>Name:</strong> ${escapeHtml(studentName)}</div>
+                    <div class="info-item">📧 <strong>Email:</strong> ${escapeHtml(studentEmail)}</div>
+                    <div class="info-item">📅 <strong>Report Date:</strong> ${reportDate}</div>
+                    <div class="info-item">✅ <strong>Status:</strong> Completed</div>
+                </div>
             </div>
             
             <!-- Score Summary -->
             <div class="score-summary">
                 <div class="score-item">
-                    <div class="score-value">${data.totalEarned} / ${data.totalPossible}</div>
+                    <div class="score-value">${totalEarned} / ${totalPossible}</div>
                     <div class="score-label">Total Score</div>
                 </div>
                 <div class="score-item">
-                    <div class="score-value">${data.percentage}%</div>
+                    <div class="score-value">${percentage}%</div>
                     <div class="score-label">Percentage</div>
                 </div>
                 <div class="score-item">
-                    <div class="score-value">${data.questions.length}</div>
+                    <div class="score-value">${questions.length}</div>
                     <div class="score-label">Questions</div>
                 </div>
             </div>
             
             <div class="section-title">📋 Detailed Review</div>
-            ${questionsHtml}
+            
+            ${questions.map((q, idx) => {
+                const studentAnswer = answers[q.id] || 'No answer provided';
+                const score = grades[q.id];
+                const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
+                const feedbackText = feedback[q.id] || 'No feedback';
+                const isCorrect = score >= q.points;
+                
+                return `
+                    <div class="question-block">
+                        <div class="question-header">
+                            <div>
+                                <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">Question ${idx + 1}</span>
+                                <span style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">${q.points} points</span>
+                            </div>
+                            <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">
+                                Score: ${scoreDisplay}
+                            </span>
+                        </div>
+                        <div class="question-text">${formatMathForPDF(q.text)}</div>
+                        <div class="answer-section">
+                            <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
+                            <div>${formatMathForPDF(studentAnswer)}</div>
+                        </div>
+                        <div class="feedback-section">
+                            <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
+                            <div>${escapeHtml(feedbackText)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
             
             <div class="footer">
                 Generated by EduBoard • ${new Date().toLocaleString()}
@@ -2088,11 +2114,9 @@ async function exportResultsAsPDF(data) {
         }
     }
     
-    // Small delay to ensure rendering
     await new Promise(resolve => setTimeout(resolve, 800));
     
     try {
-        // Check if jsPDF is available
         if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
             showToast('PDF library not loaded. Please refresh the page.', true);
             pdfContainer.remove();
@@ -2100,8 +2124,6 @@ async function exportResultsAsPDF(data) {
         }
         
         const { jsPDF } = window.jspdf;
-        
-        // Use html2canvas to capture the content
         const element = pdfContainer;
         const canvas = await html2canvas(element, {
             scale: 2,
@@ -2113,18 +2135,9 @@ async function exportResultsAsPDF(data) {
         });
         
         const imgData = canvas.toDataURL('image/png');
-        
-        // Calculate PDF dimensions
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        // Calculate image dimensions
         const imgWidth = pdfWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
@@ -2132,11 +2145,9 @@ async function exportResultsAsPDF(data) {
         let position = 0;
         let pageNum = 1;
         
-        // Add first page
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pdfHeight;
         
-        // Add additional pages if needed
         while (heightLeft > 0) {
             position = heightLeft - imgHeight;
             pdf.addPage();
@@ -2145,19 +2156,16 @@ async function exportResultsAsPDF(data) {
             pageNum++;
         }
         
-        // Save the PDF
-        const fileName = `${data.sessionTitle}_${data.studentName}_Results.pdf`;
+        const fileName = `${sessionTitle}_${studentName}_Results.pdf`;
         pdf.save(fileName);
-        
         showToast(`PDF downloaded successfully! (${pageNum} page${pageNum > 1 ? 's' : ''})`, false);
     } catch (err) {
         console.error('PDF generation error:', err);
         showToast('Error generating PDF: ' + err.message, true);
     } finally {
-        // Clean up
         pdfContainer.remove();
     }
-}        
+}
 
         
         // ===== SELECT SESSION =====
