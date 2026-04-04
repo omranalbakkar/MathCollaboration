@@ -1175,6 +1175,10 @@ async function loadActiveSession() {
     console.error('Error loading session:', error);
     showToast('Error loading session: ' + error.message, true);
   }
+
+  // At the end of loadActiveSession function, add:
+setupRealtimeStudentListener();
+  
 }
                                       
 
@@ -1527,16 +1531,81 @@ async function loadClassStatus() {
 }
 
 function setupRealtimeStudentListener() {
-if (!activeSessionId) return;
-const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-onSnapshot(studentsRef, (snapshot) => { loadStudents(); }, (error) => { console.error('Real-time listener error:', error); });
+  if (!activeSessionId) return;
+  
+  console.log('Setting up real-time listener for session:', activeSessionId);
+  
+  // Listen to students subcollection in Firestore
+  const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+  
+  onSnapshot(studentsRef, async (snapshot) => {
+    console.log('Real-time update: Students changed, count:', snapshot.size);
+    
+    // Update currentStudents array
+    currentStudents = [];
+    snapshot.forEach(doc => {
+      currentStudents.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Fetch proper names from main students collection
+    await enrichStudentNames();
+    
+    // Update all UI components
+    updateStats();
+    renderStudentCards();
+    
+    // Refresh active tab if needed
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    if (activeTab === 'tab-class-status') {
+      await loadClassStatus();
+    }
+    if (activeTab === 'tab-results') {
+      await renderResults();
+    }
+    
+  }, (error) => {
+    console.error('Real-time listener error:', error);
+  });
+  
+  // Also listen to RTDB for online status changes
+  const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
+  onValue(rtdbRef, async (snapshot) => {
+    const rtdbStudents = snapshot.val() || {};
+    console.log('RTDB update: Online status changed:', Object.keys(rtdbStudents).length, 'online');
+    
+    // Update online status in currentStudents based on RTDB
+    for (const student of currentStudents) {
+      const wasOnline = student.online;
+      const isOnline = !!rtdbStudents[student.id];
+      
+      if (wasOnline !== isOnline) {
+        student.online = isOnline;
+        
+        // Update Firestore to keep in sync
+        const studentRef = doc(db, 'sessions', activeSessionId, 'students', student.id);
+        await updateDoc(studentRef, { online: isOnline, lastSeen: Date.now() });
+      }
+    }
+    
+    // Update UI
+    updateStats();
+    renderStudentCards();
+    
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    if (activeTab === 'tab-class-status') {
+      await loadClassStatus();
+    }
+  });
 }
 
-function updateStats() {
+
+  function updateStats() {
   const onlineCount = currentStudents.filter(s => s.online === true).length;
   const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
   const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
   const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+  
+  console.log('Stats updated - Online:', onlineCount, 'Answers:', answersCount, 'Graded:', gradedCount);
   
   // Update top bar
   const liveCountEl = document.getElementById('liveCount');
@@ -1566,7 +1635,7 @@ function updateStats() {
   if (statQuestions) statQuestions.textContent = currentQuestions.length;
   if (statGraded) statGraded.textContent = gradedCount;
 }
-
+  
 function renderQuestions() {
 const list = document.getElementById('questionsList');
 if (!currentQuestions.length) {
@@ -1867,6 +1936,7 @@ document.getElementById('page-subtitle').textContent = config.subject || 'Overvi
 
 function renderStudentCards() {
   const online = currentStudents.filter(s => s.online === true);
+  const offline = currentStudents.filter(s => s.online !== true);
   const grid = document.getElementById('studentsGrid');
   const qcount = currentQuestions.length;
   const isSessionOpen = currentSessionData && (currentSessionData.active === true || currentSessionData.isActive === true);
@@ -1897,16 +1967,20 @@ function renderStudentCards() {
     return;
   }
   
-  // Session has students but all are offline
-  if (!online.length) {
+  // Show online students first, then offline if any
+  if (online.length === 0 && offline.length > 0) {
+    // All students are offline
     if (isSessionOpen) {
       grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1">
         <i class="fas fa-wifi"></i>
-        <h3>${currentStudents.length} student${currentStudents.length !== 1 ? 's have' : ' has'} joined but ${currentStudents.length !== 1 ? 'are' : 'is'} offline</h3>
-        <p>Students need to be online to participate. Make sure they have internet connection.</p>
+        <h3>${offline.length} student${offline.length !== 1 ? 's have' : ' has'} joined but ${offline.length !== 1 ? 'are' : 'is'} offline</h3>
+        <p>Students need to be online to participate. Make sure they have internet connection and the session is open.</p>
         <div style="margin-top:16px; padding:12px; background:var(--surface-2); border-radius:14px; display:inline-block;">
           <span class="muted">Session Code: </span>
           <code class="mono" style="background:#fff; padding:8px 12px; border-radius:8px; border:1px solid var(--border);">${activeSessionId}</code>
+        </div>
+        <div class="muted" style="margin-top:12px; font-size:0.85rem;">
+          <i class="fas fa-info-circle"></i> Students appear here when they join and go online
         </div>
       </div>`;
     } else {
@@ -1922,45 +1996,89 @@ function renderStudentCards() {
     return;
   }
   
-  // Show online students with proper names
+  // Show online students
   const colors = ['#1d4ed8', '#059669', '#d97706', '#dc2626', '#7c3aed', '#ea580c', '#0891b2', '#ca8a04'];
-  grid.innerHTML = online.map((student, i) => {
-    const answered = student.answers ? Object.keys(student.answers).length : 0;
-    const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-    const color = colors[i % colors.length];
-    const displayName = student.displayName || student.name || student.id || 'Student';
-    return `<div class="session-card">
-      <div class="sc-header">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div class="k-avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
-          <div>
-            <div class="row-title">${escapeHtml(displayName)}${student.submitted ? '<span class="pill pill-green" style="margin-left:6px;font-size:0.7rem;"><i class="fas fa-check"></i> SUBMITTED</span>' : ''}</div>
-            <div class="row-sub">Online since: ${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
+  
+  let html = '';
+  
+  // Add online students section
+  if (online.length > 0) {
+    html += `<div style="margin-bottom: 16px;">
+      <div class="pill pill-green" style="margin-bottom: 12px;"><i class="fas fa-circle"></i> Online (${online.length})</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">`;
+    
+    html += online.map((student, i) => {
+      const answered = student.answers ? Object.keys(student.answers).length : 0;
+      const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+      const color = colors[i % colors.length];
+      const displayName = student.displayName || student.name || student.id || 'Student';
+      return `<div class="session-card">
+        <div class="sc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="k-avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="row-title">${escapeHtml(displayName)}${student.submitted ? '<span class="pill pill-green" style="margin-left:6px;font-size:0.7rem;"><i class="fas fa-check"></i> SUBMITTED</span>' : ''}</div>
+              <div class="row-sub"><i class="fas fa-circle" style="color:var(--success); font-size:0.7rem;"></i> Online</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="k-progress-bar-bg" style="height:8px;margin:16px 0;">
-        <div class="k-progress-bar-fill" style="width:${pct}%; background:${student.submitted ? 'var(--success)' : 'var(--warning)'}; height:8px; border-radius:4px;"></div>
-      </div>
-      <div class="k-progress-text" style="margin-bottom:16px;">
-        <span>${answered}/${qcount} answered</span>
-        <span>${pct}%</span>
-      </div>
-      <div class="sc-actions">
-        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openReview('${student.id}')"><i class="fas fa-eye"></i> Review →</button>
-        <button class="icon-btn delete" onclick="clearStudentAnswers('${student.id}')" title="Clear answers"><i class="fas fa-eraser"></i></button>
-        <button class="icon-btn delete" onclick="deleteStudentRecord('${student.id}')" title="Remove student"><i class="fas fa-trash"></i></button>
-      </div>
-    </div>`;
-  }).join('');
+        <div class="k-progress-bar-bg" style="height:8px;margin:16px 0;">
+          <div class="k-progress-bar-fill" style="width:${pct}%; background:${student.submitted ? 'var(--success)' : 'var(--warning)'}; height:8px; border-radius:4px;"></div>
+        </div>
+        <div class="k-progress-text" style="margin-bottom:16px;">
+          <span>${answered}/${qcount} answered</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="sc-actions">
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openReview('${student.id}')"><i class="fas fa-eye"></i> Review →</button>
+          <button class="icon-btn delete" onclick="clearStudentAnswers('${student.id}')" title="Clear answers"><i class="fas fa-eraser"></i></button>
+          <button class="icon-btn delete" onclick="deleteStudentRecord('${student.id}')" title="Remove student"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+    
+    html += `</div></div>`;
+  }
+  
+  // Add offline students section if any
+  if (offline.length > 0 && online.length > 0) {
+    html += `<div style="margin-top: 16px;">
+      <div class="pill pill-red" style="margin-bottom: 12px;"><i class="fas fa-circle"></i> Offline (${offline.length})</div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">`;
+    
+    html += offline.map((student, i) => {
+      const answered = student.answers ? Object.keys(student.answers).length : 0;
+      const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+      const displayName = student.displayName || student.name || student.id || 'Student';
+      return `<div class="session-card" style="opacity: 0.7;">
+        <div class="sc-header">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div class="k-avatar" style="background:var(--text-faint)22;color:var(--text-faint)">${displayName.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="row-title">${escapeHtml(displayName)}</div>
+              <div class="row-sub"><i class="fas fa-circle" style="color:var(--text-faint); font-size:0.7rem;"></i> Offline</div>
+            </div>
+          </div>
+        </div>
+        <div class="k-progress-bar-bg" style="height:8px;margin:16px 0;">
+          <div class="k-progress-bar-fill" style="width:${pct}%; background:var(--text-faint); height:8px; border-radius:4px;"></div>
+        </div>
+        <div class="k-progress-text" style="margin-bottom:16px;">
+          <span>${answered}/${qcount} answered</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="sc-actions">
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openReview('${student.id}')"><i class="fas fa-eye"></i> Review →</button>
+        </div>
+      </div>`;
+    }).join('');
+    
+    html += `</div></div>`;
+  }
+  
+  grid.innerHTML = html;
 }
-
-// Helper function to copy session code
-window.copySessionCode = function() {
-  if (!activeSessionId) return;
-  navigator.clipboard.writeText(activeSessionId);
-  showToast('Session code copied to clipboard!', 'success');
-};
+  
 
 // Helper function to copy session code
 window.copySessionCode = function() {
@@ -2088,6 +2206,24 @@ console.error(err);
 showToast('Error deleting student record', true);
 }
 };
+
+  window.clearStudentAnswers = async function(studentId) {
+  if (!confirm('Clear all answers for this student?')) return;
+  try {
+    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentId), { 
+      answers: {}, 
+      submitted: false, 
+      grades: {}, 
+      feedback: {} 
+    });
+    await loadStudents();
+    showToast('Student answers cleared', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Error clearing answers', true);
+  }
+};
+  
 
 window.renderResults = async function() {
   if (!activeSessionId) return;
@@ -2498,6 +2634,40 @@ result = result.replace(/%%MATHPAREN(\d+)%%/g, (match, idx) => `\\(${mathBlocks[
 return result;
 }
 
+  async function enrichStudentNames() {
+  // Fetch student names from main students collection
+  const mainStudentsMap = new Map();
+  try {
+    const mainStudentsSnap = await getDocs(collection(db, 'students'));
+    mainStudentsSnap.forEach(doc => {
+      const data = doc.data();
+      mainStudentsMap.set(doc.id, data.name || data.displayName || doc.id);
+      if (data.email) mainStudentsMap.set(data.email, data.name || data.displayName || doc.id);
+    });
+  } catch (err) {
+    console.warn('Could not fetch main students:', err);
+  }
+  
+  // Enhance student objects with proper names
+  for (const student of currentStudents) {
+    let properName = student.name || student.displayName;
+    if (!properName || properName === student.id || properName.length < 5) {
+      if (mainStudentsMap.has(student.id)) {
+        properName = mainStudentsMap.get(student.id);
+      } else if (student.email && mainStudentsMap.has(student.email)) {
+        properName = mainStudentsMap.get(student.email);
+      } else {
+        properName = student.id.substring(0, 12) + '...';
+      }
+      student.displayName = properName;
+      student.name = properName;
+    } else {
+      student.displayName = properName;
+    }
+  }
+}
+
+  
 function setupRealtimeListeners() {
 if (!activeSessionId) return;
 const liveStudentsRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
