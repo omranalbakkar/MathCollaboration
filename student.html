@@ -1418,59 +1418,52 @@
         }
 
         // ===== SAVE ANSWER =====
-        window.saveCurrentAnswer = async function() {
-            const state = window.appState;
-            if (state.isSaving) return;
+window.saveCurrentAnswer = async function() {
+    const state = window.appState;
+    if (state.isSaving) return;
 
-            const answer = getCurrentAnswer();
-            if (!answer) {
-                showToast('Please provide an answer first', true);
-                return;
-            }
+    const answer = getCurrentAnswer();
+    if (!answer) { showToast('Please provide an answer first', true); return; }
 
-            const q = state.questions[state.currentQIndex];
-            const saveBtn = document.getElementById('btnSave');
+    const q = state.questions[state.currentQIndex];
+    const saveBtn = document.getElementById('btnSave');
 
-            state.isSaving = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            saveBtn.disabled = true;
+    state.isSaving = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
 
-            try {
-                const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: answer
-                });
+    try {
+        const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
 
-                showToast('Answer saved!', false);
-                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
+        // ✅ Use setDoc with merge:true — creates the doc if it doesn't exist, updates if it does
+        await setDoc(studentRef, { [`answers.${q.id}`]: answer }, { merge: true });
 
-                setTimeout(() => {
-                    if (saveBtn) {
-                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                        saveBtn.disabled = false;
-                    }
-                }, 1500);
+        showToast('Answer saved!', false);
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
 
-                if (!state.currentSession.studentProgress) {
-                    state.currentSession.studentProgress = {
-                        answers: {}
-                    };
-                }
-                state.currentSession.studentProgress.answers[q.id] = answer;
-
-                // Refresh question index buttons
-                updateQuestionIndex();
-
-            } catch (err) {
-                console.error('Save error:', err);
-                showToast('Failed to save', true);
+        setTimeout(() => {
+            if (saveBtn) {
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 saveBtn.disabled = false;
-            } finally {
-                state.isSaving = false;
             }
-        };
+        }, 1500);
 
+        if (!state.currentSession.studentProgress) {
+            state.currentSession.studentProgress = { answers: {} };
+        }
+        state.currentSession.studentProgress.answers[q.id] = answer;
+
+        updateQuestionIndex();
+
+    } catch (err) {
+        console.error('Save error:', err);
+        showToast('Failed to save', true);
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
+        saveBtn.disabled = false;
+    } finally {
+        state.isSaving = false;
+    }
+};
         // ===== NAVIGATION =====
         window.prevQuestion = async function() {
             const state = window.appState;
@@ -1495,42 +1488,40 @@
         };
 
         // ===== FINISH QUIZ =====
-        window.finishQuiz = async function() {
-            const state = window.appState;
+window.finishQuiz = async function() {
+    const state = window.appState;
 
-            const currentAnswer = getCurrentAnswer();
-            if (currentAnswer) {
-                const q = state.questions[state.currentQIndex];
-                const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: currentAnswer
-                });
-            }
+    // Save current answer if any
+    const currentAnswer = getCurrentAnswer();
+    if (currentAnswer) {
+        const q = state.questions[state.currentQIndex];
+        const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
+        // ✅ setDoc with merge
+        await setDoc(studentRef, { [`answers.${q.id}`]: currentAnswer }, { merge: true });
+    }
 
-            const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-            const snap = await getDoc(studentRef);
-            const answersMap = snap.exists() ? snap.data().answers || {} : {};
+    // Verify all questions answered
+    const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
+    const snap = await getDoc(studentRef);
+    const answersMap = snap.exists() ? snap.data().answers || {} : {};
 
-            const missingQuestions = [];
-            for (let i = 0; i < state.questions.length; i++) {
-                if (!answersMap[state.questions[i].id]) missingQuestions.push(i + 1);
-            }
+    const missingQuestions = [];
+    for (let i = 0; i < state.questions.length; i++) {
+        if (!answersMap[state.questions[i].id]) missingQuestions.push(i + 1);
+    }
 
-            if (missingQuestions.length > 0) {
-                showToast(`Please answer questions: ${missingQuestions.join(', ')}`, true);
-                state.currentQIndex = missingQuestions[0] - 1;
-                await renderQuestion();
-                return;
-            }
+    if (missingQuestions.length > 0) {
+        showToast(`Please answer questions: ${missingQuestions.join(', ')}`, true);
+        state.currentQIndex = missingQuestions[0] - 1;
+        await renderQuestion();
+        return;
+    }
 
-            await updateDoc(studentRef, {
-                submitted: true,
-                submittedAt: Date.now()
-            });
-            showToast('Quiz submitted successfully! 🎉');
-            await showWelcomeDashboard();
-        };
-
+    // ✅ setDoc with merge for submission flag
+    await setDoc(studentRef, { submitted: true, submittedAt: Date.now() }, { merge: true });
+    showToast('Quiz submitted successfully! 🎉');
+    await showWelcomeDashboard();
+};
         // ===== UPDATE QUESTION INDEX BUTTONS =====
         function updateQuestionIndex() {
             const state = window.appState;
