@@ -7,8 +7,6 @@
     <title>EduBoard — Interactive Learning Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
@@ -372,7 +370,7 @@
             border: 2px solid var(--border);
         }
 
-        .quiz-card:hover {
+        .quiz-card:hover:not(.disabled) {
             transform: translateY(-4px);
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
             border-color: var(--primary);
@@ -439,14 +437,14 @@
             font-size: 0.9rem;
         }
 
-        .countdown-timer {
-            background: var(--warning);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-weight: 600;
-            margin-top: 12px;
-            text-align: center;
+        .debug-info {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            display: none;
         }
     </style>
 </head>
@@ -541,6 +539,7 @@
         window.appState = {
             currentStudent: null,
             studentProfile: null,
+            studentGradeName: null,
             availableSessions: [],
             currentSession: null,
             questions: [],
@@ -565,6 +564,23 @@
                 if (m === '>') return '&gt;';
                 return m;
             });
+        }
+
+        // Get grade name from gradeLevel ID reference
+        async function getGradeName(gradeLevelId) {
+            if (!gradeLevelId || gradeLevelId === 'Not specified') return 'Not specified';
+
+            try {
+                const gradeDoc = await getDoc(doc(db, 'grades', gradeLevelId));
+                if (gradeDoc.exists()) {
+                    const gradeData = gradeDoc.data();
+                    // Return English name or Arabic name
+                    return gradeData.nameEn || gradeData.nameAr || gradeLevelId;
+                }
+            } catch (e) {
+                console.warn('Could not fetch grade name:', e);
+            }
+            return gradeLevelId;
         }
 
         // Check if quiz is accessible based on date/time
@@ -619,7 +635,7 @@
 
                     if (now < startTime) {
                         return {
-                            text: `🔒 Starts ${startTime.toLocaleString()}`,
+                            text: `🔒 Starts ${startTime.toLocaleTimeString()}`,
                             class: 'status-closed'
                         };
                     }
@@ -659,33 +675,60 @@
 
         async function loadStudentSessions() {
             const state = window.appState;
-            const studentGrade = state.studentProfile?.grade;
 
-            if (!studentGrade || studentGrade === 'Not specified') {
+            // Get student's grade name (from the grade document reference)
+            let studentGradeValue = null;
+
+            if (state.studentProfile?.gradeLevel) {
+                // If gradeLevel is a document ID, fetch the actual grade name
+                const gradeName = await getGradeName(state.studentProfile.gradeLevel);
+                studentGradeValue = gradeName;
+                console.log('Student grade from gradeLevel reference:', studentGradeValue);
+            } else if (state.studentProfile?.grade) {
+                studentGradeValue = state.studentProfile.grade;
+                console.log('Student grade from direct field:', studentGradeValue);
+            }
+
+            if (!studentGradeValue || studentGradeValue === 'Not specified') {
                 showToast('Grade not specified. Please contact your teacher.', true);
                 return [];
             }
 
-            // Query sessions for student's grade
+            // Query sessions that match the student's grade name
             const sessionsRef = collection(db, 'sessions');
-            const q = query(sessionsRef, where('grade', '==', studentGrade));
+            const q = query(sessionsRef, where('grade', '==', studentGradeValue));
             const querySnap = await getDocs(q);
 
+            console.log(`Found ${querySnap.size} sessions for grade: ${studentGradeValue}`);
+
             const sessions = [];
-            for (const doc of querySnap.docs) {
+            for (const docSnap of querySnap.docs) {
                 const sessionData = {
-                    id: doc.id,
-                    ...doc.data()
+                    id: docSnap.id,
+                    ...docSnap.data()
                 };
 
                 // Get student progress for this session
-                const studentProgressRef = doc(db, 'sessions', doc.id, 'students', state.currentStudent.docId);
+                const studentProgressRef = doc(db, 'sessions', docSnap.id, 'students', state.currentStudent.docId);
                 const progressSnap = await getDoc(studentProgressRef);
                 const studentProgress = progressSnap.exists() ? progressSnap.data() : null;
 
+                // Get question count
+                const questionsRef = collection(db, 'sessions', docSnap.id, 'questions');
+                const questionsSnap = await getDocs(questionsRef);
+                const questionCount = questionsSnap.size;
+
+                // Calculate total points
+                let totalPoints = 0;
+                questionsSnap.forEach(qDoc => {
+                    totalPoints += qDoc.data().points || 0;
+                });
+
                 sessions.push({
                     ...sessionData,
-                    studentProgress
+                    studentProgress,
+                    questionCount,
+                    totalPoints
                 });
             }
 
@@ -721,13 +764,20 @@
             completionScreen.style.display = 'none';
             navFooter.style.display = 'none';
 
+            // Get student's display grade name
+            let displayGrade = 'Not specified';
+            if (state.studentProfile?.gradeLevel) {
+                displayGrade = await getGradeName(state.studentProfile.gradeLevel);
+            } else if (state.studentProfile?.grade) {
+                displayGrade = state.studentProfile.grade;
+            }
+
             // Load available sessions
             const sessions = await loadStudentSessions();
             state.availableSessions = sessions;
 
             const studentName = state.studentProfile?.name || 'Student';
             const studentEmail = state.currentStudent?.email || '';
-            const studentGrade = state.studentProfile?.grade || 'Not specified';
 
             let sessionsHtml = '';
             if (sessions.length === 0) {
@@ -735,7 +785,8 @@
                 <div class="glass-card" style="text-align: center; padding: 40px;">
                     <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--gray);"></i>
                     <h3 style="margin-top: 16px;">No Quizzes Available</h3>
-                    <p>There are no quizzes for your grade (${escapeHtml(studentGrade)}) at the moment.</p>
+                    <p>There are no quizzes for your grade (${escapeHtml(displayGrade)}) at the moment.</p>
+                    <p style="margin-top: 8px; font-size: 0.85rem;">Please check with your teacher to create quizzes for your grade.</p>
                 </div>
             `;
             } else {
@@ -748,13 +799,27 @@
                     const isAccessible = isQuizAccessible(session);
                     const isSubmitted = session.studentProgress?.submitted;
 
+                    // Format times for display
+                    let startTimeStr = '',
+                        endTimeStr = '';
+                    if (session.startTime) {
+                        if (session.startTime.toDate) startTimeStr = session.startTime.toDate().toLocaleString();
+                        else if (session.startTime.seconds) startTimeStr = new Date(session.startTime.seconds * 1000).toLocaleString();
+                        else startTimeStr = new Date(session.startTime).toLocaleString();
+                    }
+                    if (session.endTime) {
+                        if (session.endTime.toDate) endTimeStr = session.endTime.toDate().toLocaleString();
+                        else if (session.endTime.seconds) endTimeStr = new Date(session.endTime.seconds * 1000).toLocaleString();
+                        else endTimeStr = new Date(session.endTime).toLocaleString();
+                    }
+
                     sessionsHtml += `
                     <div class="quiz-card ${!isAccessible || isSubmitted ? 'disabled' : ''}" 
                          onclick="${isAccessible && !isSubmitted ? `window.selectSession('${session.id}')` : ''}">
                         <span class="quiz-status ${status.class}">${status.text}</span>
                         <h3 style="margin: 12px 0;">${escapeHtml(session.title || 'Untitled Quiz')}</h3>
                         <p style="color: var(--gray); font-size: 0.9rem;">${escapeHtml(session.subject || 'General')}</p>
-                        <p style="color: var(--gray); font-size: 0.85rem; margin-top: 8px;">${escapeHtml(session.description || 'No description')}</p>
+                        <p style="color: var(--gray); font-size: 0.85rem; margin-top: 8px;">${escapeHtml(session.instructions || 'No description')}</p>
                         
                         ${totalQuestions > 0 ? `
                         <div class="quiz-progress">
@@ -764,11 +829,11 @@
                             <span>📊 ${answeredCount}/${totalQuestions} answered</span>
                             <span>⭐ ${session.totalPoints || 0} pts</span>
                         </div>
-                        ` : ''}
+                        ` : '<div style="margin: 16px 0;"><em>No questions added yet</em></div>'}
                         
-                        ${session.startTime && session.endTime ? `
-                        <div style="margin-top: 12px; font-size: 0.75rem; color: var(--gray);">
-                            <i class="far fa-clock"></i> ${new Date(session.startTime?.seconds * 1000).toLocaleString()} - ${new Date(session.endTime?.seconds * 1000).toLocaleString()}
+                        ${startTimeStr && endTimeStr ? `
+                        <div style="margin-top: 12px; font-size: 0.7rem; color: var(--gray);">
+                            <i class="far fa-clock"></i> ${startTimeStr} - ${endTimeStr}
                         </div>
                         ` : ''}
                     </div>
@@ -787,7 +852,7 @@
                         <h2>${escapeHtml(studentName)}</h2>
                         <p><i class="fas fa-envelope"></i> ${escapeHtml(studentEmail)}</p>
                         <div class="grade-tag">
-                            <i class="fas fa-star"></i> Grade: ${escapeHtml(studentGrade)}
+                            <i class="fas fa-star"></i> Grade: ${escapeHtml(displayGrade)}
                         </div>
                     </div>
                 </div>
@@ -834,6 +899,11 @@
                 });
             });
             state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            if (state.questions.length === 0) {
+                showToast('This quiz has no questions yet', true);
+                return;
+            }
 
             // Find first unanswered question
             const answers = session.studentProgress?.answers || {};
@@ -910,6 +980,7 @@
                 state.currentSession.studentProgress.answers[q.id] = answer;
 
             } catch (err) {
+                console.error('Save error:', err);
                 showToast('Failed to save', true);
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 saveBtn.disabled = false;
@@ -1108,6 +1179,7 @@
                 if (!querySnap.empty) {
                     studentDocId = querySnap.docs[0].id;
                     studentData = querySnap.docs[0].data();
+                    console.log('Student data loaded:', studentData);
                 } else {
                     const directSnap = await getDoc(doc(db, 'students', user.uid));
                     if (directSnap.exists()) {
