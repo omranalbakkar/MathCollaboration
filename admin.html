@@ -978,6 +978,7 @@
             color: var(--text-muted);
         }
 
+        /* Modal Styles */
         .modal {
             position: fixed;
             inset: 0;
@@ -1473,6 +1474,7 @@
         </main>
     </div>
 
+    <!-- Generic Modal -->
     <div id="generic-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -1493,6 +1495,43 @@
         </div>
     </div>
 
+    <!-- NEW: Password Change Modal -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 id="password-modal-title">Change Password</h3>
+                <button class="close-modal" onclick="closePasswordModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="password-form" onsubmit="handlePasswordChange(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="password-user-id" />
+                    <input type="hidden" id="password-user-type" />
+                    <input type="hidden" id="password-user-email" />
+
+                    <div class="form-group">
+                        <label for="new-password">New Password</label>
+                        <input type="password" id="new-password" name="newPassword" required minlength="8" placeholder="At least 8 characters" />
+                        <div class="hint">Use a strong password with uppercase, numbers, and special characters.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <input type="password" id="confirm-password" name="confirmPassword" required placeholder="Confirm the password" />
+                    </div>
+
+                    <div class="info-banner" style="margin-top: 16px;">
+                        <i class="fas fa-info-circle"></i>
+                        <div>Password will be synced to Firebase Auth immediately via Cloud Functions.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import {
             initializeApp,
@@ -1506,7 +1545,7 @@
             onAuthStateChanged,
             createUserWithEmailAndPassword,
             deleteUser,
-            sendPasswordResetEmail // ADDED: For password resets
+            sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import {
             getFirestore,
@@ -1533,14 +1572,14 @@
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
-  apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
-  authDomain: "eduboard-870d3.firebaseapp.com",
-  databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
-  projectId: "eduboard-870d3",
-  storageBucket: "eduboard-870d3.firebasestorage.app",
-  messagingSenderId: "658705588696",
-  appId: "1:658705588696:web:9e55ce87364f26a9fb52ad",
-  measurementId: "G-LMDZHSMSB7"
+            apiKey: "AIzaSyCay_CY1kTHJR51UekskDwgZ_FGUaWml9A",
+            authDomain: "eduboard-870d3.firebaseapp.com",
+            databaseURL: "https://eduboard-870d3-default-rtdb.firebaseio.com",
+            projectId: "eduboard-870d3",
+            storageBucket: "eduboard-870d3.firebasestorage.app",
+            messagingSenderId: "658705588696",
+            appId: "1:658705588696:web:9e55ce87364f26a9fb52ad",
+            measurementId: "G-LMDZHSMSB7"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -1911,7 +1950,8 @@
                     <td>
                         <div class="action-btns">
                             <button class="icon-btn" onclick='editItem("teacher","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'teacher')" title="Send Password Reset Email"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn" onclick="openPasswordModal('${docSnap.id}', 'teacher', '${escapeHtml(d.email)}', '${escapeHtml(getDisplayName(d))}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
+                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'teacher')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
                             <button class="icon-btn delete" onclick="deleteTeacherRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
@@ -1946,7 +1986,8 @@
                     <td>
                         <div class="action-btns">
                             <button class="icon-btn" onclick='editItem("student","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'student')" title="Send Password Reset Email"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn" onclick="openPasswordModal('${docSnap.id}', 'student', '${escapeHtml(d.email)}', '${escapeHtml(d.name)}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
+                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'student')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
                             <button class="icon-btn delete" onclick="deleteStudentRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
@@ -2200,8 +2241,6 @@
             });
         }
 
-
-
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
             if (!currentUser) {
@@ -2291,7 +2330,7 @@
             }
         };
 
-        // NEW: Password Reset Function
+        // NEW: Password Reset Function (Email based)
         window.resetUserPassword = async (email, type) => {
             if (!email) {
                 toast('No email address found for this user.', 'error');
@@ -2302,7 +2341,6 @@
             showLoading(true);
             try {
                 // We use the main auth instance. This sends an email to the user.
-                // The user clicks the link, sets a new password, and can then log in.
                 await sendPasswordResetEmail(auth, email);
                 toast(`Password reset email sent to ${email}.`, 'success');
             } catch (e) {
@@ -2395,6 +2433,78 @@
                 if (col === 'grades' || col === 'subjects') await initDashboard();
             } catch (e) {
                 toast('Delete failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        // NEW: Password Modal Functions
+        window.openPasswordModal = (userId, userType, userEmail, userName) => {
+            document.getElementById('password-user-id').value = userId;
+            document.getElementById('password-user-type').value = userType;
+            document.getElementById('password-user-email').value = userEmail;
+            document.getElementById('password-modal-title').textContent = `Change Password for ${userName}`;
+            document.getElementById('password-modal').classList.add('active');
+        };
+
+        window.closePasswordModal = () => {
+            document.getElementById('password-modal').classList.remove('active');
+            document.getElementById('password-form').reset();
+        };
+
+        window.handlePasswordChange = async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('password-user-id').value;
+            const userType = document.getElementById('password-user-type').value;
+            const userEmail = document.getElementById('password-user-email').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            // Validate passwords match
+            if (newPassword !== confirmPassword) {
+                toast('Passwords do not match.', 'error');
+                return;
+            }
+
+            // Validate password strength
+            if (newPassword.length < 8) {
+                toast('Password must be at least 8 characters.', 'error');
+                return;
+            }
+
+            if (!/[A-Z]/.test(newPassword)) {
+                toast('Password must contain at least one uppercase letter.', 'error');
+                return;
+            }
+
+            if (!/[0-9]/.test(newPassword)) {
+                toast('Password must contain at least one number.', 'error');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const collectionName = userType === 'teacher' ? 'teachers' : 'students';
+
+                // Update pendingPassword → Cloud Function will sync to Auth
+                await updateDoc(doc(db, collectionName, userId), {
+                    pendingPassword: newPassword,
+                    updatedAt: serverTimestamp(),
+                    updatedBy: currentUser.uid,
+                    lastPasswordChanged: serverTimestamp(),
+                    passwordChangedBy: 'superadmin'
+                });
+
+                toast(`Password updated for ${userEmail}. Cloud Function syncing to Auth...`, 'success');
+                closePasswordModal();
+
+                // Refresh the table
+                if (currentSection === 'teachers') loadTeachers();
+                if (currentSection === 'students') loadStudents();
+            } catch (error) {
+                console.error(error);
+                toast('Error changing password: ' + error.message, 'error');
             } finally {
                 showLoading(false);
             }
@@ -2702,8 +2812,10 @@
         };
 
         window.addEventListener('click', (e) => {
-            const modal = document.getElementById('generic-modal');
-            if (e.target === modal) closeModal();
+            const genericModal = document.getElementById('generic-modal');
+            const passModal = document.getElementById('password-modal');
+            if (e.target === genericModal) closeModal();
+            if (e.target === passModal) closePasswordModal();
         });
     </script>
 </body>
