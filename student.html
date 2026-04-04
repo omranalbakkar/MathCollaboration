@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduBoard — Interactive Learning Platform</title>
+    <title>EduBoard — Student Portal</title>
 
-    <!-- Fonts -->
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,19 +33,35 @@
 
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
+            /* Color Palette */
+            --primary: #4f46e5;
+            /* Indigo 600 */
+            --primary-hover: #4338ca;
+            /* Indigo 700 */
             --secondary: #10b981;
+            /* Emerald 500 */
             --danger: #ef4444;
-            --dark: #1e293b;
-            --gray: #64748b;
-            --light-gray: #f8fafc;
-            --border: #e2e8f0;
-            --gradient-main: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            /* Red 500 */
+            --warning: #f59e0b;
+            /* Amber 500 */
+
+            --bg-body: #f3f4f6;
+            /* Gray 100 */
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            /* Gray 800 */
+            --text-muted: #6b7280;
+            /* Gray 500 */
+            --border: #e5e7eb;
+            /* Gray 200 */
+
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --radius-lg: 24px;
-            --radius-md: 16px;
+
+            --radius-md: 0.5rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.5rem;
         }
 
         * {
@@ -56,10 +72,11 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f1f5f9;
-            color: var(--dark);
+            background-color: var(--bg-body);
+            color: var(--text-main);
             height: 100vh;
-            overflow-x: hidden;
+            overflow: hidden;
+            /* App-like feel */
         }
 
         /* --- Utilities --- */
@@ -73,46 +90,54 @@
             justify-content: center;
         }
 
+        .w-full {
+            width: 100%;
+        }
+
         /* --- Buttons --- */
         .btn {
-            border: none;
-            border-radius: var(--radius-md);
-            padding: 12px 24px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            font-size: 1rem;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .btn-primary {
-            background: var(--gradient-main);
-            color: white;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .btn-secondary {
-            background: white;
-            color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
             background: var(--primary);
             color: white;
         }
 
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
         .btn-danger {
-            background: var(--danger);
-            color: white;
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fecaca;
         }
 
         .btn-success {
@@ -120,50 +145,62 @@
             color: white;
         }
 
+        .btn-success:hover {
+            background: #059669;
+        }
+
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
         }
 
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 1.1rem;
+        }
+
         /* --- Login Screen --- */
         #loginScreen {
-            min-height: 100vh;
-            background: var(--gradient-main);
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
 
         .login-card {
             background: white;
-            border-radius: 32px;
-            padding: 48px;
+            padding: 40px;
+            border-radius: var(--radius-xl);
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            max-width: 420px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             text-align: center;
         }
 
         .form-group input {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             margin-bottom: 16px;
             border: 2px solid var(--border);
             border-radius: var(--radius-md);
             font-size: 1rem;
-            transition: 0.3s;
+            transition: 0.2s;
         }
 
         .form-group input:focus {
             outline: none;
             border-color: var(--primary);
+            ring: 2px solid var(--primary);
         }
 
-        /* --- App Layout (Split Screen) --- */
+        /* --- Main App Layout --- */
         #app {
             display: none;
+            /* Hidden until auth */
             height: 100vh;
             display: flex;
             flex-direction: column;
@@ -177,134 +214,119 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 32px;
-            position: sticky;
-            top: 0;
-            z-index: 50;
+            padding: 0 30px;
+            flex-shrink: 0;
+            z-index: 20;
         }
 
-        .logo {
+        .brand {
             font-size: 1.5rem;
             font-weight: 800;
-            color: var(--primary-dark);
+            color: var(--primary);
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .user-controls {
+        .user-profile {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--light-gray);
-            padding: 6px 16px;
-            border-radius: 50px;
-        }
-
-        .avatar-circle {
-            width: 36px;
-            height: 36px;
-            background: var(--gradient-main);
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 1.1rem;
         }
 
-        /* Main Container */
-        .main-container {
-            flex: 1;
+        /* Workspace (Sidebar + Content) */
+        .workspace {
             display: flex;
+            flex: 1;
             overflow: hidden;
-            /* Prevents double scrollbars */
+            /* Contains scroll areas */
         }
 
-        /* Sidebar (Left) */
+        /* Sidebar */
         .sidebar {
-            width: 300px;
+            width: 320px;
             background: white;
             border-right: 1px solid var(--border);
-            padding: 32px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
             overflow-y: auto;
+            flex-shrink: 0;
         }
 
-        /* Content Area (Right) */
-        .content-area {
-            flex: 1;
-            background: #f8fafc;
-            padding: 40px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        /* --- Dashboard Components --- */
-        .profile-summary {
-            background: var(--gradient-main);
-            color: white;
+        .sidebar-header {
             padding: 24px;
-            border-radius: var(--radius-lg);
-            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
         }
 
-        .profile-summary h2 {
-            font-size: 1.5rem;
-            margin-bottom: 8px;
+        .student-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
         }
 
         .grade-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
             display: inline-block;
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
 
-        .quiz-list {
+        .session-list {
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
         }
 
-        .quiz-item {
+        .session-item {
             background: white;
             border: 1px solid var(--border);
+            padding: 16px;
             border-radius: var(--radius-md);
-            padding: 20px;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
-            overflow: hidden;
         }
 
-        .quiz-item:hover:not(.disabled) {
+        .session-item:hover:not(.disabled) {
             border-color: var(--primary);
-            transform: translateX(5px);
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
         }
 
-        .quiz-item.disabled {
+        .session-item.disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            background: #f1f5f9;
+            background: #f9fafb;
         }
 
-        .quiz-status {
-            font-size: 0.75rem;
-            font-weight: 700;
+        .session-item.active {
+            border-left: 4px solid var(--primary);
+            background: #f5f7ff;
+        }
+
+        .status-pill {
+            font-size: 0.7rem;
             text-transform: uppercase;
+            font-weight: 700;
             letter-spacing: 0.5px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: block;
         }
 
@@ -320,38 +342,55 @@
             color: var(--primary);
         }
 
+        /* Main Content Area */
+        .content-area {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            background: var(--bg-body);
+            position: relative;
+        }
+
+        /* --- Dashboard View --- */
+        .welcome-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px;
+            border-radius: var(--radius-xl);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .welcome-banner h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .welcome-banner p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
         /* --- Quiz Interface --- */
-        .quiz-wrapper {
+        .quiz-container {
             max-width: 900px;
             margin: 0 auto;
             padding-bottom: 100px;
-            /* Space for footer */
-        }
-
-        .quiz-header-card {
-            background: white;
-            padding: 24px 32px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .question-card {
             background: white;
-            padding: 40px;
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-lg);
-            margin-bottom: 32px;
-            animation: fadeIn 0.4s ease;
+            padding: 40px;
+            margin-bottom: 30px;
+            animation: slideUp 0.4s ease-out;
         }
 
-        @keyframes fadeIn {
+        @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
             }
 
             to {
@@ -360,46 +399,55 @@
             }
         }
 
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
         .q-meta {
             display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: 10px;
         }
 
         .badge {
-            padding: 6px 14px;
-            border-radius: 50px;
+            padding: 6px 12px;
+            border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
         }
 
         .badge-num {
-            background: #e0e7ff;
-            color: var(--primary-dark);
+            background: #eff6ff;
+            color: var(--primary);
         }
 
         .badge-pts {
-            background: #fef3c7;
-            color: #d97706;
+            background: #fffbeb;
+            color: #b45309;
         }
 
         .q-text {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             line-height: 1.6;
-            color: var(--dark);
+            color: var(--text-main);
             margin-bottom: 32px;
             font-weight: 500;
         }
 
-        /* Ensure MathJax scales nicely */
+        /* MathJax Enhancement */
         mjx-container {
-            font-size: 110% !important;
+            font-size: 115% !important;
+            color: #111;
         }
 
         /* Answer Options Styling */
         .options-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 16px;
         }
 
@@ -414,56 +462,68 @@
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 15px;
         }
 
         .option-btn:hover {
-            border-color: var(--primary-light);
-            background: #f8fafc;
+            border-color: #a5b4fc;
+            background: #fdfdfd;
         }
 
         .option-btn.selected {
             border-color: var(--primary);
             background: #eef2ff;
-            color: var(--primary-dark);
+            color: var(--primary);
             font-weight: 600;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
         }
 
-        .tf-container {
+        .option-letter {
+            background: #f3f4f6;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             display: flex;
-            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 700;
         }
 
-        .tf-btn {
-            flex: 1;
-            padding: 20px;
-            font-size: 1.2rem;
+        .option-btn.selected .option-letter {
+            background: var(--primary);
+            color: white;
         }
 
-        .text-input {
+        .input-answer {
             width: 100%;
-            padding: 20px;
+            padding: 16px;
             font-size: 1.1rem;
             border: 2px solid var(--border);
             border-radius: var(--radius-md);
-            resize: vertical;
-            min-height: 150px;
             font-family: inherit;
+            transition: 0.2s;
         }
 
-        .text-input:focus {
+        .input-answer:focus {
             outline: none;
             border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        /* Bottom Navigation Bar */
+        textarea.input-answer {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* Sticky Footer Nav */
         .nav-footer {
             position: fixed;
             bottom: 0;
-            left: 300px;
-            /* Width of sidebar */
+            left: 320px;
             right: 0;
+            /* Left matches sidebar width */
             height: 80px;
             background: white;
             border-top: 1px solid var(--border);
@@ -471,44 +531,44 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 40px;
-            z-index: 100;
+            z-index: 40;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
         }
 
-        /* Toast Notification */
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 100px;
             right: 40px;
-            background: white;
+            background: #1f2937;
+            color: white;
             padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             gap: 12px;
-            transform: translateX(200%);
+            transform: translateY(150%);
             transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            z-index: 2000;
-            font-weight: 600;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
         }
 
         .toast.show {
-            transform: translateX(0);
+            transform: translateY(0);
         }
 
-        /* Responsive Adjustments */
+        /* Responsive */
         @media (max-width: 900px) {
-            .main-container {
+            .workspace {
                 flex-direction: column;
             }
 
             .sidebar {
                 width: 100%;
                 height: auto;
+                max-height: 200px;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
-                padding: 20px;
             }
 
             .nav-footer {
@@ -523,10 +583,6 @@
             .options-grid {
                 grid-template-columns: 1fr;
             }
-
-            .q-text {
-                font-size: 1.2rem;
-            }
         }
     </style>
 </head>
@@ -534,57 +590,65 @@
 <body>
 
     <!-- Loading Spinner -->
-    <div class="spinner-screen flex-center" id="loadingScreen" style="position:fixed; inset:0; background:white; z-index:9999;">
+    <div id="loadingScreen" class="flex-center" style="position:fixed; inset:0; background:white; z-index:9999;">
         <div style="text-align:center">
             <i class="fas fa-circle-notch fa-spin" style="font-size: 3rem; color: var(--primary);"></i>
-            <p style="margin-top:16px; color:var(--gray)">Loading EduBoard...</p>
+            <p style="margin-top:16px; color:var(--text-muted); font-weight:500;">Loading EduBoard...</p>
         </div>
     </div>
 
     <!-- Login Screen -->
     <div id="loginScreen">
         <div class="login-card">
-            <div style="font-size: 3rem; margin-bottom: 16px;">🎓</div>
-            <h2 style="margin-bottom: 8px;">Welcome Back!</h2>
-            <p style="color: var(--gray); margin-bottom: 32px;">Sign in to continue your learning journey</p>
+            <div style="font-size: 3rem; margin-bottom: 16px; color: var(--primary);"><i class="fas fa-graduation-cap"></i></div>
+            <h2 style="margin-bottom: 8px; font-size: 1.8rem;">Welcome Back</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px;">Sign in to access your quizzes</p>
 
             <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="Student Email">
+                <input type="email" id="loginEmail" placeholder="Student Email Address">
             </div>
             <div class="form-group">
                 <input type="password" id="loginPass" placeholder="Password">
             </div>
 
-            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="window.doStudentLogin()">
+            <button class="btn btn-primary w-full btn-lg" onclick="window.doStudentLogin()">
                 Sign In <i class="fas fa-arrow-right"></i>
             </button>
-            <div id="loginErr" style="color:var(--danger); margin-top:16px; display:none;"></div>
+            <div id="loginErr" style="color:var(--danger); margin-top:16px; display:none; font-weight:500;"></div>
         </div>
     </div>
 
     <!-- Main Application -->
     <div id="app">
-        <!-- Header -->
+        <!-- Top Header -->
         <header class="top-header">
-            <div class="logo">
+            <div class="brand">
                 <i class="fas fa-graduation-cap"></i> EduBoard
             </div>
-            <div class="user-controls">
-                <div class="user-info">
-                    <div class="avatar-circle" id="studentAvatar">S</div>
-                    <span id="studentName" style="font-weight:600;">Student Name</span>
+            <div class="user-profile">
+                <div style="text-align: right; display: none;" id="userInfoText">
+                    <div style="font-weight: 600;" id="studentName">Student Name</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Student</div>
                 </div>
-                <button class="btn btn-danger" style="padding: 8px 16px; font-size:0.9rem;" onclick="window.exitSession()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                <div class="avatar" id="studentAvatar">S</div>
+                <button class="btn btn-danger" onclick="window.exitSession()" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
         </header>
 
-        <div class="main-container">
-            <!-- Sidebar -->
+        <div class="workspace">
+            <!-- Sidebar Navigation -->
             <aside class="sidebar">
-                <div id="sidebarContent">
-                    <!-- Dynamic Profile & List will go here -->
+                <div class="sidebar-header">
+                    <div class="student-info">
+                        <h3 id="sidebarStudentName">Loading...</h3>
+                        <span class="grade-badge" id="sidebarGrade">Grade: --</span>
+                    </div>
+                </div>
+                <div style="padding: 20px 20px 0 20px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase;">Available Quizzes</div>
+                <div class="session-list" id="sidebarContent">
+                    <!-- Dynamic Session List -->
                 </div>
             </aside>
 
@@ -596,14 +660,14 @@
             </main>
         </div>
 
-        <!-- Sticky Footer Navigation (Only visible during quiz) -->
+        <!-- Sticky Footer Navigation (Quiz Mode Only) -->
         <footer class="nav-footer hidden" id="navFooter">
             <button class="btn btn-secondary" id="btnPrev" onclick="window.prevQuestion()">
                 <i class="fas fa-chevron-left"></i> Previous
             </button>
 
             <div style="display:flex; gap:12px;">
-                <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()" style="background: var(--dark);">
+                <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()" style="background: var(--text-main);">
                     <i class="fas fa-save"></i> Save Answer
                 </button>
                 <button class="btn btn-primary" id="btnNext" onclick="window.nextQuestion()">
@@ -616,10 +680,10 @@
         </footer>
     </div>
 
-    <!-- Toast -->
+    <!-- Toast Notification -->
     <div class="toast" id="toast">
-        <i class="fas fa-check-circle" style="color: var(--secondary); font-size:1.2rem;"></i>
-        <span id="toastMessage">Action Successful</span>
+        <i class="fas fa-check-circle" style="color: #34d399; font-size:1.2rem;"></i>
+        <span id="toastMessage" style="font-weight: 500;">Action Successful</span>
     </div>
 
     <script type="module">
@@ -659,10 +723,10 @@
             toastMsg.textContent = msg;
             if (isError) {
                 icon.className = 'fas fa-exclamation-circle';
-                icon.style.color = 'var(--danger)';
+                icon.style.color = '#f87171';
             } else {
                 icon.className = 'fas fa-check-circle';
-                icon.style.color = 'var(--secondary)';
+                icon.style.color = '#34d399';
             }
 
             toast.classList.add('show');
@@ -782,16 +846,19 @@
             const state = window.appState;
             const sb = document.getElementById('sidebarContent');
 
+            // Update Header Info
+            document.getElementById('sidebarStudentName').textContent = state.studentProfile?.name || 'Student';
             let displayGrade = 'N/A';
             if (state.studentProfile?.gradeLevel) displayGrade = await getGradeName(state.studentProfile.gradeLevel);
             else if (state.studentProfile?.grade) displayGrade = state.studentProfile.grade;
+            document.getElementById('sidebarGrade').textContent = `Grade: ${displayGrade}`;
 
             const sessions = await loadStudentSessions();
             state.availableSessions = sessions;
 
-            let listHtml = `<div class="quiz-list">`;
+            let listHtml = ``;
             if (sessions.length === 0) {
-                listHtml += `<div style="text-align:center; color:var(--gray); padding:20px;">No active quizzes.</div>`;
+                listHtml += `<div style="text-align:center; color:var(--text-muted); padding:20px; font-style:italic;">No active quizzes found.</div>`;
             } else {
                 sessions.forEach(session => {
                     const status = getQuizStatus(session, session.studentProgress);
@@ -799,25 +866,17 @@
                     const submitted = session.studentProgress?.submitted;
 
                     listHtml += `
-                    <div class="quiz-item ${!accessible || submitted ? 'disabled' : ''}" 
+                    <div class="session-item ${!accessible || submitted ? 'disabled' : ''}" 
                          onclick="${accessible && !submitted ? `window.selectSession('${session.id}')` : ''}">
-                        <span class="quiz-status ${status.class}"><i class="fas ${status.icon}"></i> ${status.text}</span>
-                        <h4 style="margin-bottom:4px;">${escapeHtml(session.title)}</h4>
-                        <small style="color:var(--gray)">${escapeHtml(session.subject || 'General')}</small>
+                        <span class="status-pill ${status.class}"><i class="fas ${status.icon}"></i> ${status.text}</span>
+                        <h4 style="margin-bottom:4px; font-weight:600;">${escapeHtml(session.title)}</h4>
+                        <small style="color:var(--text-muted)">${escapeHtml(session.subject || 'General Subject')}</small>
                     </div>
                 `;
                 });
             }
-            listHtml += `</div>`;
 
-            sb.innerHTML = `
-            <div class="profile-summary">
-                <h2>${escapeHtml(state.studentProfile?.name || 'Student')}</h2>
-                <div class="grade-badge"><i class="fas fa-star"></i> Grade: ${escapeHtml(displayGrade)}</div>
-            </div>
-            <h3 style="font-size:1.1rem; color:var(--dark); margin-bottom:16px;">Your Quizzes</h3>
-            ${listHtml}
-        `;
+            sb.innerHTML = listHtml;
         }
 
         window.selectSession = async function(sessionId) {
@@ -998,42 +1057,37 @@
                     <button class="option-btn ${existingAnswer === opt ? 'selected' : ''}" 
                             data-value="${escapeHtml(opt)}"
                             onclick="document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
-                        <span style="font-weight:800; opacity:0.5;">${letters[idx]}</span> 
+                        <span class="option-letter">${letters[idx]}</span> 
                         <span>${escapeHtml(opt)}</span>
                     </button>
                 `).join('') + `</div>`;
             } else if (q.type === 'truefalse') {
                 inputHtml = `
-                <div class="tf-container">
-                    <button class="btn btn-secondary tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" data-value="True" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">True</button>
-                    <button class="btn btn-secondary tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" data-value="False" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">False</button>
+                <div class="options-grid" style="grid-template-columns: 1fr 1fr;">
+                    <button class="option-btn tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" data-value="True" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                        <i class="fas fa-check" style="color:green"></i> True
+                    </button>
+                    <button class="option-btn tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" data-value="False" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                        <i class="fas fa-times" style="color:red"></i> False
+                    </button>
                 </div>
             `;
             } else if (q.type === 'number') {
-                inputHtml = `<input class="text-input" id="answerInput" type="number" placeholder="Enter numeric answer..." value="${existingAnswer || ''}">`;
+                inputHtml = `<input class="input-answer" id="answerInput" type="number" placeholder="Enter numeric answer..." value="${existingAnswer || ''}">`;
             } else {
-                inputHtml = `<textarea class="text-input" id="answerInput" placeholder="Type your detailed answer here...">${existingAnswer || ''}</textarea>`;
+                inputHtml = `<textarea class="input-answer" id="answerInput" placeholder="Type your detailed answer here...">${existingAnswer || ''}</textarea>`;
             }
 
             const quizScreen = document.getElementById('quizScreen');
             quizScreen.innerHTML = `
-            <div class="quiz-wrapper">
-                <div class="quiz-header-card">
-                    <div>
-                        <h3 style="color:var(--gray); font-size:0.9rem; text-transform:uppercase; letter-spacing:1px;">${escapeHtml(state.currentSession.title)}</h3>
-                        <div style="font-size:0.9rem; color:var(--gray); margin-top:4px;">
-                            Question ${state.currentQIndex + 1} of ${total}
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <span class="badge badge-pts"><i class="fas fa-star"></i> ${q.points} pts</span>
-                    </div>
-                </div>
-
+            <div class="quiz-container">
                 <div class="question-card">
-                    <div class="q-meta">
-                        <span class="badge badge-num">Question ${state.currentQIndex + 1}</span>
-                        ${existingAnswer ? '<span class="badge" style="background:#d1fae5; color:#065f46;"><i class="fas fa-check"></i> Saved</span>' : ''}
+                    <div class="q-header">
+                        <div class="q-meta">
+                            <span class="badge badge-num">Question ${state.currentQIndex + 1} / ${total}</span>
+                            ${existingAnswer ? '<span class="badge" style="background:#d1fae5; color:#065f46;"><i class="fas fa-check"></i> Saved</span>' : ''}
+                        </div>
+                        <span class="badge badge-pts"><i class="fas fa-star"></i> ${q.points} pts</span>
                     </div>
                     
                     <div class="q-text">${escapeHtml(q.text)}</div>
@@ -1137,8 +1191,11 @@
                 window.appState.studentProfile = studentData;
                 window.appState.currentStudent.docId = studentDocId;
 
+                // Update Header
                 document.getElementById('studentName').textContent = studentData.name || user.email;
+                document.getElementById('sidebarStudentName').textContent = studentData.name || user.email;
                 document.getElementById('studentAvatar').textContent = (studentData.name || 'S').charAt(0).toUpperCase();
+                document.getElementById('userInfoText').style.display = 'block';
 
                 document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'none';
