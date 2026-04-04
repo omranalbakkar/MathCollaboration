@@ -1824,25 +1824,15 @@ window.viewResults = async function(sessionId) {
 async function exportResultsAsPDF(data) {
     showToast('Generating PDF... Please wait.', false);
     
-    // Log the data to see what's being passed
     console.log('PDF Export Data received:', data);
-    console.log('Questions array:', data.questions);
-    console.log('Questions array details:', JSON.stringify((data.questions || []).map(q => ({ 
-        id: q.id, 
-        text: q.text, 
-        points: q.points,
-        type: q.type 
-    })), null, 2));
-    console.log('Answers object:', data.answers);
-    console.log('Grades object:', data.grades);
-    console.log('Feedback object:', data.feedback);
     
     // Create a temporary container for the PDF content
     const pdfContainer = document.createElement('div');
     pdfContainer.id = 'pdfExportContainer';
     pdfContainer.style.cssText = `
         position: fixed; left: -9999px; top: 0;
-        width: 210mm; background: white; padding: 20mm;
+        width: 210mm;
+        background: white;
         font-family: 'Inter', sans-serif;
     `;
     
@@ -1874,259 +1864,287 @@ async function exportResultsAsPDF(data) {
     const grades = data.grades || {};
     const feedback = data.feedback || {};
     
-    console.log('Questions count:', questions.length);
+    // Create header section (appears on every page)
+    const createHeader = () => `
+        <div class="header">
+            <h1>${escapeHtml(sessionTitle)}</h1>
+            <div class="subtitle">Quiz Results Report</div>
+        </div>
+        
+        <!-- Session Details -->
+        <div class="info-section">
+            <div class="info-title">📋 Session Information</div>
+            <div class="info-grid">
+                <div class="info-item">📚 <strong>Subject:</strong> ${escapeHtml(subject)}</div>
+                <div class="info-item">📖 <strong>Grade Level:</strong> ${escapeHtml(gradeLevel)}</div>
+                <div class="info-item">🏫 <strong>Class:</strong> ${escapeHtml(className)}</div>
+                <div class="info-item">👨‍🏫 <strong>Teacher:</strong> ${escapeHtml(teacherName)}</div>
+                <div class="info-item">📅 <strong>Date:</strong> ${escapeHtml(sessionDate)}</div>
+                <div class="info-item">⏰ <strong>Start Time:</strong> ${escapeHtml(startTime)}</div>
+                <div class="info-item">⏰ <strong>End Time:</strong> ${escapeHtml(endTime)}</div>
+                <div class="info-item">🆔 <strong>Session ID:</strong> ${escapeHtml(sessionId)}</div>
+            </div>
+        </div>
+        
+        <!-- Student Details -->
+        <div class="info-section">
+            <div class="info-title">👤 Student Information</div>
+            <div class="info-grid">
+                <div class="info-item">👨‍🎓 <strong>Name:</strong> ${escapeHtml(studentName)}</div>
+                <div class="info-item">📧 <strong>Email:</strong> ${escapeHtml(studentEmail)}</div>
+                <div class="info-item">📅 <strong>Report Date:</strong> ${reportDate}</div>
+                <div class="info-item">✅ <strong>Status:</strong> Completed</div>
+            </div>
+        </div>
+        
+        <!-- Score Summary -->
+        <div class="score-summary">
+            <div class="score-item">
+                <div class="score-value">${totalEarned} / ${totalPossible}</div>
+                <div class="score-label">Total Score</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value">${percentage}%</div>
+                <div class="score-label">Percentage</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value">${questions.length}</div>
+                <div class="score-label">Questions</div>
+            </div>
+        </div>
+    `;
     
-    // Build questions HTML
+    // Create a single question block
+    const createQuestionBlock = (q, idx) => {
+        const questionText = q.text || q.questionText || q.question || 'Question text not available';
+        const studentAnswer = answers[q.id] || 'No answer provided';
+        const score = grades[q.id];
+        const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
+        const feedbackText = feedback[q.id] || 'No feedback';
+        const isCorrect = (score !== undefined && score !== null && score !== '') ? (score >= (q.points || 0)) : false;
+        
+        return `
+            <div class="question-block">
+                <div class="question-header">
+                    <div>
+                        <span class="q-badge">Question ${idx + 1}</span>
+                        <span class="points-badge">${q.points || 0} points</span>
+                    </div>
+                    <span class="score-badge ${isCorrect ? 'score-correct' : 'score-incorrect'}">
+                        Score: ${scoreDisplay}
+                    </span>
+                </div>
+                <div class="question-text">
+                    <div class="section-label">📖 Question:</div>
+                    <div class="math-content">${formatMathForPDF(questionText)}</div>
+                </div>
+                <div class="answer-section">
+                    <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
+                    <div class="math-content">${formatMathForPDF(studentAnswer)}</div>
+                </div>
+                <div class="feedback-section">
+                    <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
+                    <div>${escapeHtml(feedbackText)}</div>
+                </div>
+            </div>
+        `;
+    };
+    
+    // Build the complete HTML with proper styling for page breaks
+    const style = `
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                line-height: 1.5;
+                color: #1e293b;
+                background: white;
+                padding: 20mm;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid #6366f1;
+            }
+            .header h1 {
+                font-size: 22px;
+                margin-bottom: 6px;
+                color: #1e293b;
+            }
+            .header .subtitle {
+                color: #64748b;
+                font-size: 13px;
+            }
+            .info-section {
+                background: #f1f5f9;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                overflow: hidden;
+            }
+            .info-title {
+                background: #e2e8f0;
+                padding: 10px 16px;
+                font-weight: 700;
+                font-size: 13px;
+                color: #1e293b;
+            }
+            .info-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 14px 16px;
+            }
+            .info-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+            }
+            .score-summary {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: white;
+                padding: 16px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-around;
+                text-align: center;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            .score-item {
+                text-align: center;
+                flex: 1;
+                min-width: 80px;
+            }
+            .score-value {
+                font-size: 24px;
+                font-weight: 800;
+            }
+            .score-label {
+                font-size: 11px;
+                opacity: 0.8;
+                margin-top: 4px;
+            }
+            .section-title {
+                font-size: 16px;
+                font-weight: 700;
+                margin: 20px 0 12px 0;
+                padding-bottom: 6px;
+                border-bottom: 2px solid #e2e8f0;
+            }
+            .question-block {
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+                break-inside: avoid;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                overflow: hidden;
+                background: white;
+            }
+            .question-header {
+                background: #f8fafc;
+                padding: 10px 14px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #e2e8f0;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .q-badge {
+                background: #6366f1;
+                color: white;
+                padding: 3px 10px;
+                border-radius: 16px;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+            .points-badge {
+                margin-left: 8px;
+                font-size: 0.7rem;
+                color: #64748b;
+            }
+            .score-badge {
+                padding: 3px 10px;
+                border-radius: 16px;
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+            .score-correct {
+                background: #d1fae5;
+                color: #065f46;
+            }
+            .score-incorrect {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+            .question-text {
+                padding: 12px 14px;
+                background: white;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .answer-section, .feedback-section {
+                padding: 10px 14px;
+            }
+            .answer-section {
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+            }
+            .feedback-section {
+                background: #fef3c7;
+            }
+            .section-label {
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: #64748b;
+                margin-bottom: 6px;
+            }
+            .math-content {
+                font-size: 12px;
+                line-height: 1.5;
+                word-break: break-word;
+            }
+            .footer {
+                margin-top: 30px;
+                text-align: center;
+                font-size: 10px;
+                color: #94a3b8;
+                border-top: 1px solid #e2e8f0;
+                padding-top: 12px;
+            }
+            @media print {
+                body { margin: 0; padding: 0; }
+                .question-block { page-break-inside: avoid; break-inside: avoid; }
+            }
+        </style>
+    `;
+    
+    // Build the complete HTML with all questions
     let questionsHtml = '';
     if (questions && questions.length > 0) {
         questions.forEach((q, idx) => {
-            // Get the question text - try different possible field names
-            const questionText = q.text || q.questionText || q.question || 'Question text not available';
-            const studentAnswer = answers[q.id] || 'No answer provided';
-            const score = grades[q.id];
-            const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
-            const feedbackText = feedback[q.id] || 'No feedback';
-            const isCorrect = (score !== undefined && score !== null && score !== '') ? (score >= (q.points || 0)) : false;
-            
-            console.log(`Question ${idx + 1}:`, {
-                id: q.id,
-                text: questionText,
-                points: q.points,
-                answer: studentAnswer,
-                score: score,
-                feedback: feedbackText
-            });
-            
-            questionsHtml += `
-                <div class="question-block">
-                    <div class="question-header">
-                        <div>
-                            <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">Question ${idx + 1}</span>
-                            <span style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">${q.points || 0} points</span>
-                        </div>
-                        <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">
-                            Score: ${scoreDisplay}
-                        </span>
-                    </div>
-                    <div class="question-text">
-                        <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px; font-weight: 600;">📖 Question:</div>
-                        <div class="math-content" style="font-size: 0.9rem; line-height: 1.5;">${formatMathForPDF(questionText)}</div>
-                    </div>
-                    <div class="answer-section">
-                        <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
-                        <div class="math-content" style="font-size: 0.9rem;">${formatMathForPDF(studentAnswer)}</div>
-                    </div>
-                    <div class="feedback-section">
-                        <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
-                        <div style="font-size: 0.9rem;">${escapeHtml(feedbackText)}</div>
-                    </div>
-                </div>
-            `;
+            questionsHtml += createQuestionBlock(q, idx);
         });
     } else {
         questionsHtml = '<div style="text-align: center; padding: 40px; color: #64748b;">No questions found for this quiz.</div>';
     }
     
-    // Rest of the PDF generation remains the same...
     pdfContainer.innerHTML = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
             <title>Quiz Results - ${sessionTitle}</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-                    line-height: 1.5;
-                    color: #1e293b;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 30px;
-                    padding-bottom: 20px;
-                    border-bottom: 2px solid #6366f1;
-                }
-                .header h1 {
-                    font-size: 24px;
-                    margin-bottom: 8px;
-                    color: #1e293b;
-                }
-                .header .subtitle {
-                    color: #64748b;
-                    font-size: 14px;
-                }
-                .info-section {
-                    background: #f1f5f9;
-                    border-radius: 16px;
-                    margin-bottom: 24px;
-                    overflow: hidden;
-                }
-                .info-title {
-                    background: #e2e8f0;
-                    padding: 12px 20px;
-                    font-weight: 700;
-                    font-size: 14px;
-                    color: #1e293b;
-                }
-                .info-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 12px;
-                    padding: 16px 20px;
-                }
-                .info-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    font-size: 13px;
-                }
-                .info-item strong {
-                    color: #1e293b;
-                }
-                .score-summary {
-                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                    color: white;
-                    padding: 24px;
-                    border-radius: 16px;
-                    margin-bottom: 24px;
-                    display: flex;
-                    justify-content: space-around;
-                    text-align: center;
-                    flex-wrap: wrap;
-                    gap: 20px;
-                }
-                .score-item {
-                    text-align: center;
-                    flex: 1;
-                    min-width: 100px;
-                }
-                .score-value {
-                    font-size: 32px;
-                    font-weight: 800;
-                }
-                .score-label {
-                    font-size: 12px;
-                    opacity: 0.8;
-                    margin-top: 4px;
-                }
-                .section-title {
-                    font-size: 18px;
-                    font-weight: 700;
-                    margin: 24px 0 16px 0;
-                    padding-bottom: 8px;
-                    border-bottom: 2px solid #e2e8f0;
-                }
-                .question-block {
-                    margin-bottom: 24px;
-                    page-break-inside: avoid;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 16px;
-                    overflow: hidden;
-                }
-                .question-header {
-                    background: #f8fafc;
-                    padding: 12px 16px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid #e2e8f0;
-                    flex-wrap: wrap;
-                    gap: 8px;
-                }
-                .question-text {
-                    padding: 16px;
-                    background: white;
-                    border-bottom: 1px solid #e2e8f0;
-                }
-                .answer-section, .feedback-section {
-                    padding: 12px 16px;
-                }
-                .answer-section {
-                    background: #f8fafc;
-                    border-bottom: 1px solid #e2e8f0;
-                }
-                .feedback-section {
-                    background: #fef3c7;
-                }
-                .section-label {
-                    font-size: 11px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    color: #64748b;
-                    margin-bottom: 8px;
-                }
-                .math-content {
-                    font-size: 13px;
-                    line-height: 1.5;
-                    word-break: break-word;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    font-size: 11px;
-                    color: #94a3b8;
-                    border-top: 1px solid #e2e8f0;
-                    padding-top: 16px;
-                }
-                @media print {
-                    body { margin: 0; padding: 0; }
-                }
-            </style>
+            ${style}
         </head>
         <body>
-            <div class="header">
-                <h1>${escapeHtml(sessionTitle)}</h1>
-                <div class="subtitle">Quiz Results Report</div>
-            </div>
-            
-            <!-- Session Details -->
-            <div class="info-section">
-                <div class="info-title">📋 Session Information</div>
-                <div class="info-grid">
-                    <div class="info-item">📚 <strong>Subject:</strong> ${escapeHtml(subject)}</div>
-                    <div class="info-item">📖 <strong>Grade Level:</strong> ${escapeHtml(gradeLevel)}</div>
-                    <div class="info-item">🏫 <strong>Class:</strong> ${escapeHtml(className)}</div>
-                    <div class="info-item">👨‍🏫 <strong>Teacher:</strong> ${escapeHtml(teacherName)}</div>
-                    <div class="info-item">📅 <strong>Date:</strong> ${escapeHtml(sessionDate)}</div>
-                    <div class="info-item">⏰ <strong>Start Time:</strong> ${escapeHtml(startTime)}</div>
-                    <div class="info-item">⏰ <strong>End Time:</strong> ${escapeHtml(endTime)}</div>
-                    <div class="info-item">🆔 <strong>Session ID:</strong> ${escapeHtml(sessionId)}</div>
-                </div>
-            </div>
-            
-            <!-- Student Details -->
-            <div class="info-section">
-                <div class="info-title">👤 Student Information</div>
-                <div class="info-grid">
-                    <div class="info-item">👨‍🎓 <strong>Name:</strong> ${escapeHtml(studentName)}</div>
-                    <div class="info-item">📧 <strong>Email:</strong> ${escapeHtml(studentEmail)}</div>
-                    <div class="info-item">📅 <strong>Report Date:</strong> ${reportDate}</div>
-                    <div class="info-item">✅ <strong>Status:</strong> Completed</div>
-                </div>
-            </div>
-            
-            <!-- Score Summary -->
-            <div class="score-summary">
-                <div class="score-item">
-                    <div class="score-value">${totalEarned} / ${totalPossible}</div>
-                    <div class="score-label">Total Score</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-value">${percentage}%</div>
-                    <div class="score-label">Percentage</div>
-                </div>
-                <div class="score-item">
-                    <div class="score-value">${questions.length}</div>
-                    <div class="score-label">Questions</div>
-                </div>
-            </div>
-            
+            ${createHeader()}
             <div class="section-title">📋 Detailed Review</div>
             ${questionsHtml}
-            
             <div class="footer">
                 Generated by EduBoard • ${new Date().toLocaleString()}
             </div>
@@ -2157,6 +2175,25 @@ async function exportResultsAsPDF(data) {
         
         const { jsPDF } = window.jspdf;
         const element = pdfContainer;
+        
+        // Get element dimensions
+        const elementHeight = element.scrollHeight;
+        const elementWidth = element.scrollWidth;
+        
+        // A4 dimensions in pixels (at 96 DPI)
+        const a4WidthPx = 793;  // 210mm ≈ 793px at 96 DPI
+        const a4HeightPx = 1122; // 297mm ≈ 1122px at 96 DPI
+        
+        // Calculate scale factor to fit A4 width
+        const scale = a4WidthPx / elementWidth;
+        const scaledHeight = elementHeight * scale;
+        
+        // Calculate number of pages needed
+        const pageCount = Math.ceil(scaledHeight / a4HeightPx);
+        
+        console.log(`PDF Generation: Element height=${elementHeight}px, Scaled height=${scaledHeight}px, Pages needed=${pageCount}`);
+        
+        // Create canvas with full height
         const canvas = await html2canvas(element, {
             scale: 2,
             backgroundColor: '#ffffff',
@@ -2167,24 +2204,32 @@ async function exportResultsAsPDF(data) {
         });
         
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'px',
+            format: 'a4'
+        });
+        
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // Calculate image dimensions
         const imgWidth = pdfWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        let heightLeft = imgHeight;
-        let position = 0;
+        let yPosition = 0;
         let pageNum = 1;
         
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pdfHeight;
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, yPosition, imgWidth, imgHeight);
         
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
+        // Add additional pages if needed
+        let remainingHeight = imgHeight - pdfHeight;
+        while (remainingHeight > 0) {
+            yPosition -= pdfHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pdfHeight;
+            pdf.addImage(imgData, 'PNG', 0, yPosition, imgWidth, imgHeight);
+            remainingHeight -= pdfHeight;
             pageNum++;
         }
         
@@ -2198,6 +2243,8 @@ async function exportResultsAsPDF(data) {
         pdfContainer.remove();
     }
 }
+
+        
 
         
 
