@@ -1184,11 +1184,9 @@ async function registerStudentInSession(sessionId, studentId, studentName, stude
         };
         
         if (!snap.exists()) {
-            // First time joining - create record
             await setDoc(studentRef, studentData);
             console.log('Student registered in session:', sessionId);
         } else {
-            // Update online status
             await updateDoc(studentRef, { 
                 online: true, 
                 lastSeen: Date.now(),
@@ -1197,10 +1195,8 @@ async function registerStudentInSession(sessionId, studentId, studentName, stude
             console.log('Student online status updated');
         }
         
-        // Also update RTDB for real-time presence
-        const { getDatabase, ref, set } = await import('./firebase-config.js');
-        const rtdb = getDatabase();
-        const rtdbRef = ref(rtdb, `liveSessions/${sessionId}/students/${studentId}`);
+        // ✅ CORRECTED: Use imported rtDB and ref
+        const rtdbRef = ref(rtDB, `liveSessions/${sessionId}/students/${studentId}`);
         await set(rtdbRef, {
             name: studentName || 'Student',
             uid: studentId,
@@ -1227,10 +1223,8 @@ async function updateStudentOnlineStatus() {
             lastSeen: Date.now() 
         });
         
-        // Also update RTDB
-        const { getDatabase, ref, set } = await import('./firebase-config.js');
-        const rtdb = getDatabase();
-        const rtdbRef = ref(rtdb, `liveSessions/${state.currentSession.id}/students/${state.currentStudent.docId}`);
+        // ✅ CORRECTED: Use imported rtDB and ref
+        const rtdbRef = ref(rtDB, `liveSessions/${state.currentSession.id}/students/${state.currentStudent.docId}`);
         await set(rtdbRef, {
             name: state.studentProfile?.name || 'Student',
             uid: state.currentStudent.docId,
