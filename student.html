@@ -1692,6 +1692,7 @@ window.saveCurrentAnswer = async function() {
         };
 
         // ===== FINISH QUIZ =====
+// ===== FINISH QUIZ =====
 window.finishQuiz = async function(force = false) {
     const state = window.appState;
 
@@ -1739,14 +1740,39 @@ window.finishQuiz = async function(force = false) {
     const studentRefFinal = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
     const finalSnap = await getDoc(studentRefFinal);
     if (finalSnap.exists()) {
-        await updateDoc(studentRefFinal, { submitted: true, submittedAt: new Date() });
+        await updateDoc(studentRefFinal, { 
+            submitted: true, 
+            submittedAt: new Date(),
+            online: false,        // ✅ Mark as offline when quiz ends
+            lastSeen: Date.now()
+        });
     } else {
-        await setDoc(studentRefFinal, { answers: {}, submitted: true, submittedAt: new Date() });
+        await setDoc(studentRefFinal, { 
+            answers: {}, 
+            submitted: true, 
+            submittedAt: new Date(),
+            online: false,        // ✅ Mark as offline when quiz ends
+            lastSeen: Date.now()
+        });
+    }
+    
+    // ✅ Remove from RTDB live session (student no longer online)
+    try {
+        const rtdbRef = ref(rtDB, `liveSessions/${state.currentSession.id}/students/${state.currentStudent.docId}`);
+        await remove(rtdbRef);
+        console.log('Student removed from RTDB live session');
+    } catch (err) {
+        console.warn('Error removing from RTDB:', err);
     }
 
     // Hide warning modal if open
     const modal = document.getElementById('finishWarningModal');
     if (modal) modal.remove();
+
+    // Clear current session state
+    state.currentSession = null;
+    state.questions = [];
+    state.currentQIndex = 0;
 
     showToast('Quiz submitted successfully! 🎉');
     await showWelcomeDashboard();
@@ -1935,15 +1961,32 @@ window.renderQuestion = renderQuestion;
         };
 
         // ===== LOGOUT =====
-        window.exitSession = async function() {
-            await signOut(auth);
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPass').value = '';
-            document.getElementById('loginErr').style.display = 'none';
-            showToast('Logged out successfully');
-        };
+// ===== LOGOUT =====
+window.exitSession = async function() {
+    const state = window.appState;
+    
+    // ✅ If student is in an active session, remove them from RTDB
+    if (state.currentSession && state.currentStudent) {
+        try {
+            const rtdbRef = ref(rtDB, `liveSessions/${state.currentSession.id}/students/${state.currentStudent.docId}`);
+            await remove(rtdbRef);
+            
+            // Also update Firestore to mark as offline
+            const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
+            await updateDoc(studentRef, { online: false, lastSeen: Date.now() });
+        } catch (err) {
+            console.warn('Error cleaning up session on logout:', err);
+        }
+    }
+    
+    await signOut(auth);
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('loginErr').style.display = 'none';
+    showToast('Logged out successfully');
+};
 
         // Enter key on password field
         document.getElementById('loginPass')?.addEventListener('keypress', function(e) {
