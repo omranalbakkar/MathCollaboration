@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduBoard — Student Portal</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
     <script>
         window.MathJax = {
             tex: {
@@ -23,52 +28,65 @@
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg: #f7f5f0;
+            --bg: #f4f7fb;
             --surface: #ffffff;
-            --surface2: #f0ede6;
-            --border: #e0d9cf;
-            --sage: #5a7a5e;
-            --sage-l: rgba(90, 122, 94, 0.1);
-            --sage-m: rgba(90, 122, 94, 0.2);
-            --clay: #c4654a;
-            --clay-l: rgba(196, 101, 74, 0.1);
-            --sky: #4a7aaa;
-            --sky-l: rgba(74, 122, 170, 0.1);
-            --text: #2a2520;
-            --muted: #8a7f72;
-            --faint: #d4cdc3;
-            --shadow: 0 4px 24px rgba(42, 37, 32, 0.08);
-            --shadow-lg: 0 12px 48px rgba(42, 37, 32, 0.14);
+            --surface-2: #f8fbff;
+            --surface-3: #eef4ff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --text-faint: #94a3b8;
+            --primary: #1d4ed8;
+            --primary-2: #2563eb;
+            --primary-soft: #dbeafe;
+            --success: #059669;
+            --success-soft: #d1fae5;
+            --warning: #d97706;
+            --warning-soft: #ffedd5;
+            --danger: #dc2626;
+            --danger-soft: #fee2e2;
+            --purple: #7c3aed;
+            --purple-soft: #ede9fe;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.05);
+            --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
         }
 
-        *,
-        *::before,
-        *::after {
+        * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
 
         body {
-            font-family: 'Nunito', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            line-height: 1.5;
         }
 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(ellipse at 80% 10%, rgba(90, 122, 94, 0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at 10% 90%, rgba(196, 101, 74, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
+        /* --- Global Utilities & Components --- */
+
+        .hidden {
+            display: none !important;
         }
 
+        .muted {
+            color: var(--text-muted);
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        /* Spinner */
         .spinner-screen {
             position: fixed;
             inset: 0;
@@ -78,16 +96,16 @@
             flex-direction: column;
             gap: 16px;
             background: var(--bg);
-            z-index: 999;
+            z-index: 9999;
         }
 
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--sage);
+            width: 52px;
+            height: 52px;
+            border: 4px solid #dbeafe;
+            border-top-color: var(--primary);
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -97,250 +115,389 @@
         }
 
         .spinner-text {
-            font-size: 13px;
-            color: var(--muted);
+            font-size: 0.9rem;
+            color: var(--text-muted);
             font-weight: 600;
         }
 
+        /* Buttons */
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 700;
+            transition: .2s ease;
+            text-decoration: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface-2);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-sm {
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .input-wrap input,
+        .answer-textarea,
+        .answer-number {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 13px 14px;
+            background: #fff;
+            color: var(--text);
+            transition: .2s ease;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .input-wrap input:focus,
+        .answer-textarea:focus,
+        .answer-number:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+        }
+
+        .input-wrap input[type="password"] {
+            font-family: ui-monospace, monospace;
+            letter-spacing: 2px;
+        }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Cards & Panels */
+        .panel,
+        .hero-card,
+        .q-card,
+        .session-card,
+        .summary-item,
+        .answer-review-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: 24px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 6000;
+            white-space: nowrap;
+            box-shadow: var(--shadow-md);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Connection Warning */
+        .connection-warning {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--danger);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 14px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 5000;
+            display: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        .adblock-warning {
+            background: var(--warning-soft);
+            border: 1px solid #fdba74;
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #9a3412;
+            display: none;
+        }
+
+        .adblock-warning strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #7c2d12;
+        }
+
+        .adblock-warning ul {
+            margin: 8px 0 0 20px;
+        }
+
+        /* --- Login Screen --- */
         #loginScreen {
             min-height: 100vh;
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
+            padding: 24px;
+            background: radial-gradient(circle at top left, #e0ecff 0%, #f8fbff 45%, #f4f7fb 100%);
         }
 
-        .login-card {
-            background: var(--surface);
-            border-radius: 24px;
-            padding: 48px 44px;
-            width: 440px;
-            max-width: 100%;
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--border);
+        .login-shell {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media(min-width: 768px) {
+            .login-shell {
+                grid-template-columns: 1.1fr 0.9fr;
+            }
+        }
+
+        .login-side {
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
+            color: white;
+            padding: 36px;
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .login-brand-area {
+            margin-bottom: 24px;
+        }
+
+        .login-logo {
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            display: grid;
+            place-items: center;
+            font-size: 28px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        .login-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .login-sub {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+            max-width: 40ch;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 28px;
+            padding: 34px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-box h2 {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .login-box p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .error-msg {
+            background: var(--danger-soft);
+            border: 1px solid #fecaca;
+            color: var(--danger);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 0.9rem;
+            margin-top: 16px;
+            display: none;
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
             text-align: center;
         }
 
-        .school-icon {
-            width: 64px;
-            height: 64px;
-            background: var(--sage-l);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 30px;
-        }
-
-        .login-brand {
-            font-family: 'Lora', serif;
-            font-size: 30px;
-            font-weight: 600;
-            color: var(--text);
-            letter-spacing: -0.5px;
-            margin-bottom: 6px;
-        }
-
-        .login-tagline {
-            color: var(--muted);
-            font-size: 14px;
-            margin-bottom: 28px;
+        .back-link:hover {
+            color: var(--primary);
         }
 
         .session-info-box {
-            background: var(--surface2);
+            background: var(--surface-2);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px 18px;
+            border-radius: 16px;
+            padding: 16px;
             margin-bottom: 24px;
             text-align: left;
         }
 
         .sib-label {
-            font-size: 10px;
+            font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 8px;
-        }
-
-        .sib-title {
-            font-family: 'Lora', serif;
-            font-size: 16px;
-            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
             margin-bottom: 6px;
         }
 
-        .sib-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
+        .sib-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
         }
 
         .sib-tag {
-            font-size: 11px;
-            font-weight: 600;
-            background: var(--surface);
+            display: inline-block;
+            font-size: 0.75rem;
+            background: #fff;
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 3px 10px;
-            color: var(--muted);
+            padding: 2px 8px;
+            border-radius: 99px;
+            color: var(--text-muted);
+            margin-right: 4px;
         }
 
-        .session-closed-box {
-            background: rgba(196, 101, 74, 0.08);
-            border: 1.5px solid var(--clay);
-            border-radius: 14px;
-            padding: 16px;
-            text-align: center;
-            color: var(--clay);
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 24px;
-        }
-
-        .session-loading {
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
-            margin-bottom: 24px;
-            padding: 16px;
-            background: var(--surface2);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .input-wrap {
-            position: relative;
-            margin-bottom: 16px;
-            text-align: left;
-        }
-
-        .input-wrap label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 8px;
-        }
-
-        .input-wrap input {
-            width: 100%;
-            background: var(--surface2);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 13px 16px;
-            color: var(--text);
-            font-family: 'Nunito', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            outline: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
-
-        .input-wrap input[type="password"] {
-            font-family: 'Courier New', monospace;
-        }
-
-        .input-wrap input:focus {
-            border-color: var(--sage);
-            background: var(--surface);
-        }
-
-        .btn-enter {
-            width: 100%;
-            background: var(--sage);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            letter-spacing: 0.02em;
-            box-shadow: 0 6px 20px rgba(90, 122, 94, 0.25);
-        }
-
-        .btn-enter:hover {
-            background: #4a6a4e;
-            transform: translateY(-1px);
-        }
-
-        .btn-enter:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .back-link {
-            display: block;
-            margin-top: 18px;
-            font-size: 13px;
-            color: var(--muted);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .back-link:hover {
-            color: var(--sage);
-        }
-
-        .error-msg {
-            background: var(--clay-l);
-            border: 1.5px solid var(--clay);
-            color: var(--clay);
-            border-radius: 10px;
-            padding: 10px 14px;
-            font-size: 13px;
-            margin-top: 12px;
-            display: none;
-            font-weight: 600;
-            text-align: left;
-        }
-
+        /* --- App Layout --- */
         #app {
             display: none;
-            position: relative;
-            z-index: 1;
+            min-height: 100vh;
+            flex-direction: column;
         }
 
         .header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0 24px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             position: sticky;
             top: 0;
-            z-index: 50;
-            box-shadow: 0 2px 12px rgba(42, 37, 32, 0.06);
+            z-index: 100;
+            backdrop-filter: blur(8px);
+            background: rgba(244, 247, 251, 0.9);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .header-brand {
-            font-family: 'Lora', serif;
-            font-size: 20px;
-            font-weight: 600;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .header-session {
-            font-size: 12px;
-            color: var(--muted);
+            font-size: 0.9rem;
+            color: var(--text-muted);
             font-weight: 600;
-            background: var(--surface2);
+            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 4px 12px;
-            max-width: 200px;
+            padding: 6px 14px;
+            border-radius: 99px;
+            max-width: 300px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -349,23 +506,23 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .user-chip {
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--sage-l);
-            border: 1px solid var(--sage-m);
-            border-radius: 20px;
+            background: var(--primary-soft);
+            border: 1px solid #bfdbfe;
+            border-radius: 99px;
             padding: 6px 14px;
         }
 
         .user-dot {
             width: 8px;
             height: 8px;
-            background: var(--sage);
+            background: var(--primary);
             border-radius: 50%;
             animation: blink 2s infinite;
         }
@@ -383,111 +540,104 @@
         }
 
         .user-name {
-            font-size: 13px;
+            font-size: 0.9rem;
             font-weight: 700;
-            color: var(--sage);
-        }
-
-        .btn-exit {
-            background: none;
-            border: 1.5px solid var(--border);
-            color: var(--muted);
-            padding: 6px 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            font-family: 'Nunito', sans-serif;
-            transition: all 0.15s;
-        }
-
-        .btn-exit:hover {
-            border-color: var(--clay);
-            color: var(--clay);
+            color: var(--primary);
         }
 
         .main {
-            max-width: 720px;
+            flex: 1;
+            max-width: 900px;
+            width: 100%;
             margin: 0 auto;
-            padding: 32px 20px 80px;
+            padding: 28px;
         }
 
+        /* --- Welcome Screen --- */
         #welcomeScreen {
             text-align: center;
-            padding: 20px 0;
+            animation: sectionFade 0.3s ease;
+        }
+
+        @keyframes sectionFade {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .welcome-icon {
-            font-size: 56px;
+            font-size: 4rem;
             margin-bottom: 16px;
+            color: var(--primary);
         }
 
         .welcome-title {
-            font-family: 'Lora', serif;
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 2rem;
+            font-weight: 800;
             margin-bottom: 8px;
+            color: var(--text);
         }
 
         .welcome-sub {
-            color: var(--muted);
-            font-size: 15px;
-            max-width: 400px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 500px;
             margin: 0 auto 32px;
-            line-height: 1.6;
         }
 
         .session-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 24px 28px;
-            margin-bottom: 24px;
             text-align: left;
-            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
         }
 
         .sc-label {
-            font-size: 11px;
+            font-size: 0.75rem;
             font-weight: 700;
-            letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: var(--muted);
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
             margin-bottom: 6px;
         }
 
         .sc-title {
-            font-family: 'Lora', serif;
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 12px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text);
         }
 
         .sc-meta-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .sc-meta-item {
-            background: var(--surface2);
-            border-radius: 10px;
-            padding: 10px 12px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
         }
 
         .sc-meta-label {
-            font-size: 10px;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: var(--muted);
-            margin-bottom: 3px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
         }
 
         .sc-meta-val {
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 0.95rem;
+            font-weight: 600;
             color: var(--text);
         }
 
@@ -495,86 +645,56 @@
             display: flex;
             gap: 16px;
             flex-wrap: wrap;
-            margin-top: 4px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
         }
 
         .sc-stat {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 13px;
-            color: var(--muted);
+            font-size: 0.9rem;
+            color: var(--text-muted);
             font-weight: 600;
         }
 
         .sc-stat .dot {
-            width: 7px;
-            height: 7px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
         }
 
         .instructions-box {
-            background: var(--sky-l);
-            border: 1px solid rgba(74, 122, 170, 0.2);
-            border-radius: 12px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: var(--text);
-            line-height: 1.7;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
 
         .instructions-box strong {
-            color: var(--sky);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
+            color: #1e40af;
         }
 
-        .btn-start {
-            background: var(--sage);
-            color: #fff;
-            border: none;
-            border-radius: 14px;
-            padding: 16px 40px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: 'Nunito', sans-serif;
-            transition: all 0.2s;
-            letter-spacing: 0.02em;
-            box-shadow: 0 6px 20px rgba(90, 122, 94, 0.25);
-        }
-
-        .btn-start:hover {
-            background: #4a6a4e;
-            transform: translateY(-2px);
-        }
-
-        .no-questions {
-            background: var(--surface);
-            border: 1.5px dashed var(--border);
-            border-radius: 18px;
-            padding: 48px 24px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 15px;
-            font-weight: 600;
-        }
-
+        /* --- Quiz Screen --- */
         #quizScreen {
             display: none;
+            animation: sectionFade 0.3s ease;
         }
 
         .progress-header {
             background: var(--surface);
-            border-radius: 16px;
-            padding: 18px 22px;
-            margin-bottom: 24px;
             border: 1px solid var(--border);
-            box-shadow: var(--shadow);
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
         }
 
         .progress-top {
@@ -585,337 +705,220 @@
         }
 
         .progress-label {
-            font-size: 12px;
+            font-size: 0.8rem;
             font-weight: 700;
-            color: var(--muted);
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.06em;
         }
 
         .progress-fraction {
-            font-family: 'Lora', serif;
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--primary);
         }
 
         .progress-track {
-            height: 8px;
-            background: var(--surface2);
+            height: 10px;
+            background: var(--surface-2);
             border-radius: 20px;
             overflow: hidden;
+            border: 1px solid var(--border);
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--sage), #7aaa7e);
+            background: linear-gradient(90deg, var(--primary), var(--primary-2));
             border-radius: 20px;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.5s ease;
         }
 
         .q-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 20px;
             padding: 32px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(12px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            margin-bottom: 24px;
+            position: relative;
         }
 
         .q-header {
             display: flex;
-            align-items: flex-start;
             justify-content: space-between;
-            gap: 12px;
+            align-items: center;
             margin-bottom: 20px;
             flex-wrap: wrap;
+            gap: 10px;
         }
 
         .q-badge {
-            font-size: 11px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            background: var(--sage-l);
-            color: var(--sage);
-            border-radius: 20px;
-            padding: 5px 12px;
-            border: 1px solid var(--sage-m);
         }
 
         .q-points {
-            font-size: 12px;
+            background: var(--warning-soft);
+            color: var(--warning);
+            padding: 6px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
             font-weight: 700;
-            color: var(--clay);
-            background: var(--clay-l);
-            padding: 5px 10px;
-            border-radius: 20px;
         }
 
         .q-text {
-            font-family: 'Lora', serif;
-            font-size: 18px;
-            font-weight: 400;
-            line-height: 1.8;
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 28px;
             color: var(--text);
-            margin-bottom: 24px;
-            direction: auto;
-            text-align: start;
         }
 
         mjx-container {
-            vertical-align: middle;
+            vertical-align: middle !important;
         }
 
         .answered-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: var(--sage-l);
-            color: var(--sage);
-            border: 1px solid var(--sage-m);
+            background: var(--success-soft);
+            color: var(--success);
+            border: 1px solid #a7f3d0;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 0.8rem;
             font-weight: 700;
-            padding: 5px 10px;
-            margin-bottom: 12px;
+            padding: 6px 12px;
+            margin-bottom: 16px;
         }
 
+        /* Options */
         .options-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-        }
-
-        .option-btn {
-            background: var(--surface2);
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 14px 18px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: left;
-            color: var(--text);
-            transition: all 0.15s;
-            display: flex;
-            align-items: center;
             gap: 12px;
         }
 
+        .option-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: left;
+            color: var(--text);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+        }
+
         .option-btn:hover {
-            border-color: var(--sage);
-            background: var(--sage-l);
+            border-color: #93c5fd;
+            background: #eff6ff;
+            transform: translateY(-1px);
         }
 
         .option-btn.selected {
-            border-color: var(--sage);
-            background: var(--sage-l);
-            color: var(--sage);
+            border-color: var(--primary);
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-weight: 600;
         }
 
         .option-letter {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid currentColor;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 800;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid currentColor;
+            display: grid;
+            place-items: center;
+            font-size: 0.85rem;
+            font-weight: 700;
             flex-shrink: 0;
-        }
-
-        .option-text {
-            flex: 1;
-            line-height: 1.5;
         }
 
         .tf-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 16px;
         }
 
         .tf-btn {
-            background: var(--surface2);
-            border: 2px solid var(--border);
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 20px 14px;
+            padding: 20px;
             cursor: pointer;
-            font-family: 'Nunito', sans-serif;
-            font-size: 16px;
-            font-weight: 700;
             text-align: center;
-            color: var(--text);
-            transition: all 0.15s;
+            transition: all 0.2s;
         }
 
-        .tf-btn:hover,
+        .tf-btn:hover {
+            border-color: #93c5fd;
+            background: #eff6ff;
+        }
+
         .tf-btn.selected {
-            border-color: var(--sage);
-            background: var(--sage-l);
-            color: var(--sage);
+            border-color: var(--primary);
+            background: var(--primary-soft);
+            color: var(--primary);
         }
 
         .tf-icon {
-            font-size: 28px;
+            font-size: 24px;
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .answer-textarea {
-            width: 100%;
-            background: var(--surface2);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 16px 18px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text);
-            outline: none;
+            min-height: 140px;
             resize: vertical;
-            min-height: 120px;
-            transition: border-color 0.2s;
+            font-size: 1.05rem;
             line-height: 1.6;
         }
 
-        .answer-textarea:focus {
-            border-color: var(--sage);
-            background: var(--surface);
-        }
-
         .answer-number {
-            width: 100%;
-            background: var(--surface2);
-            border: 2px solid var(--border);
-            border-radius: 14px;
-            padding: 16px 18px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            outline: none;
-            transition: border-color 0.2s;
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: center;
         }
 
-        .answer-number:focus {
-            border-color: var(--sage);
-            background: var(--surface);
-        }
-
+        /* Navigation Footer */
         .nav-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--surface);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             border-top: 1px solid var(--border);
-            padding: 14px 24px;
+            padding: 16px 24px;
             display: flex;
             gap: 12px;
             justify-content: center;
-            z-index: 50;
-            box-shadow: 0 -4px 20px rgba(42, 37, 32, 0.08);
+            z-index: 90;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
         }
 
-        .btn-nav {
-            background: var(--surface2);
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            padding: 11px 22px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            color: var(--text);
-            transition: all 0.15s;
-        }
-
-        .btn-nav:hover {
-            border-color: var(--sage);
-            color: var(--sage);
-        }
-
-        .btn-nav:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-
-        .btn-submit-answer {
-            background: var(--sage);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 11px 28px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
-            box-shadow: 0 4px 12px rgba(90, 122, 94, 0.25);
-        }
-
-        .btn-submit-answer:hover {
-            background: #4a6a4e;
-        }
-
-        .btn-submit-answer.saved {
-            background: #4a6a4e;
-            cursor: default;
-        }
-
-        .btn-finish {
-            background: var(--clay);
-            color: #fff;
-            border: none;
-            border-radius: 12px;
-            padding: 11px 28px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 14px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .btn-finish:hover {
-            background: #b05a40;
-        }
-
+        /* --- Completion Screen --- */
         #completionScreen {
             display: none;
             text-align: center;
-            padding: 40px 0;
+            animation: sectionFade 0.4s ease;
+            padding-bottom: 40px;
         }
 
         .completion-icon {
-            font-size: 72px;
+            font-size: 5rem;
             margin-bottom: 20px;
-            animation: pop 0.5s ease;
+            animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         @keyframes pop {
             0% {
                 transform: scale(0);
-            }
-
-            70% {
-                transform: scale(1.15);
             }
 
             100% {
@@ -924,242 +927,154 @@
         }
 
         .completion-title {
-            font-family: 'Lora', serif;
-            font-size: 32px;
-            font-weight: 600;
+            font-size: 2.2rem;
+            font-weight: 800;
             margin-bottom: 10px;
         }
 
         .completion-sub {
-            color: var(--muted);
-            font-size: 15px;
-            max-width: 380px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 400px;
             margin: 0 auto 32px;
-            line-height: 1.7;
         }
 
         .submitted-lock-banner {
             display: flex;
             align-items: center;
             gap: 12px;
-            background: rgba(196, 101, 74, 0.08);
-            border: 1.5px solid var(--clay);
+            justify-content: center;
+            background: var(--danger-soft);
+            border: 1px solid #fecaca;
+            color: #991b1b;
             border-radius: 14px;
-            padding: 16px 20px;
+            padding: 14px 20px;
             margin: 0 auto 32px;
-            max-width: 480px;
-            font-size: 14px;
-            color: var(--text);
-            line-height: 1.6;
-            text-align: left;
+            max-width: 500px;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
             margin-bottom: 32px;
         }
 
         .summary-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px 16px;
-            box-shadow: var(--shadow);
+            text-align: center;
+            padding: 20px;
         }
 
         .summary-val {
-            font-family: 'Lora', serif;
-            font-size: 28px;
-            font-weight: 600;
-            color: var(--sage);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 4px;
         }
 
         .summary-label {
-            font-size: 12px;
-            color: var(--muted);
+            font-size: 0.85rem;
+            color: var(--text-muted);
             font-weight: 600;
-            margin-top: 4px;
+            text-transform: uppercase;
         }
 
         .answers-review {
             text-align: left;
+            margin-top: 40px;
+        }
+
+        .answers-review h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
         }
 
         .answer-review-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 14px;
+            margin-bottom: 16px;
             padding: 20px;
-            margin-bottom: 12px;
-            box-shadow: var(--shadow);
         }
 
         .ar-q {
-            font-family: 'Lora', serif;
-            font-size: 15px;
-            margin-bottom: 8px;
-            line-height: 1.8;
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 10px;
+            color: var(--text);
         }
 
         .ar-a {
-            font-size: 14px;
-            color: var(--muted);
-            font-weight: 600;
-            line-height: 1.7;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            background: var(--surface-2);
+            padding: 10px;
+            border-radius: 8px;
         }
 
         .ar-a span {
             color: var(--text);
-        }
-
-        .math-content {
-            line-height: 1.9;
-            direction: auto;
+            font-weight: 600;
         }
 
         .grade-display {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: var(--sage-l);
-            color: var(--sage);
-            border: 1px solid var(--sage-m);
+            background: var(--success-soft);
+            color: var(--success);
+            border: 1px solid #a7f3d0;
             border-radius: 8px;
-            font-size: 13px;
+            font-size: 0.85rem;
             font-weight: 700;
-            padding: 4px 10px;
-            margin-top: 8px;
+            padding: 6px 12px;
+            margin-top: 10px;
         }
 
         .feedback-display {
-            margin-top: 6px;
-            font-size: 13px;
-            color: var(--sky);
-            background: var(--sky-l);
-            padding: 6px 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #1e40af;
+            background: #eff6ff;
+            padding: 10px;
             border-radius: 8px;
-            border-left: 3px solid var(--sky);
-            font-weight: 600;
-        }
-
-        .btn-retry {
-            background: var(--surface);
-            border: 2px solid var(--border);
-            color: var(--text);
-            border-radius: 12px;
-            padding: 12px 28px;
-            font-family: 'Nunito', sans-serif;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-
-        .btn-retry:hover {
-            border-color: var(--sage);
-            color: var(--sage);
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--text);
-            color: #fff;
-            padding: 11px 22px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 200;
-            white-space: nowrap;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .connection-warning {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--clay);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 1000;
-            display: none;
-            white-space: nowrap;
-        }
-
-        .adblock-warning {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
             text-align: left;
-            font-size: 13px;
-            color: #856404;
-            display: none;
-        }
-
-        .adblock-warning strong {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 14px;
-        }
-
-        .adblock-warning ul {
-            margin: 8px 0 0 20px;
-            padding-left: 0;
-        }
-
-        .adblock-warning li {
-            margin: 4px 0;
-        }
-
-        .troubleshooting-tip {
-            margin-top: 20px;
-            padding: 12px 16px;
-            background: var(--surface2);
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--muted);
-            text-align: left;
-            border-left: 3px solid var(--sage);
-        }
-
-        .troubleshooting-tip strong {
-            color: var(--text);
-            display: block;
-            margin-bottom: 8px;
         }
 
         /* Responsive */
-        @media (max-width: 500px) {
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .header-session {
+                display: none;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
             .q-card {
-                padding: 22px 18px;
+                padding: 20px;
             }
 
-            .q-text {
-                font-size: 17px;
-            }
-
-            .login-card {
-                padding: 36px 24px;
-            }
-
-            .sc-meta-grid {
+            .tf-row {
                 grid-template-columns: 1fr;
+            }
+
+            .nav-footer {
+                padding: 12px 16px;
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 10px 14px;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -1169,82 +1084,108 @@
 
     <div class="spinner-screen" id="loadingScreen">
         <div class="spinner"></div>
-        <div class="spinner-text">Loading…</div>
+        <div class="spinner-text">Loading EduBoard...</div>
     </div>
 
+    <!-- LOGIN SCREEN -->
     <div id="loginScreen">
-        <div class="login-card">
-            <div class="school-icon">📚</div>
-            <div class="login-brand">EduBoard</div>
-            <div class="login-tagline">Student Portal — Sign in to join your session</div>
-
-            <div class="adblock-warning" id="adblockWarning">
-                <strong>⚠️ Connection Issue Detected!</strong>
-                If you're having trouble connecting or logging in, please try one of these fixes:
-                <ul>
-                    <li>🔓 <strong>Disable your ad blocker</strong> (uBlock, AdBlock, etc.) for this site</li>
-                    <li>🕵️ Use <strong>Incognito/Private mode</strong> (Ctrl+Shift+N on Chrome)</li>
-                    <li>🦊 Try <strong>Firefox browser</strong> (works best with EduBoard)</li>
-                    <li>🔄 <strong>Refresh the page</strong> after making changes</li>
-                </ul>
+        <div class="login-shell">
+            <div class="login-side">
+                <div class="login-brand-area">
+                    <div class="login-logo"><i class="fas fa-graduation-cap"></i></div>
+                    <div class="login-title">Welcome back, student.</div>
+                    <div class="login-sub">Sign in to access your live sessions, quizzes, and performance tracking.</div>
+                </div>
+                <div style="margin-top: 32px; display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <i class="fas fa-video" style="margin-top: 4px; opacity: 0.8;"></i>
+                        <div><strong>Live Sessions</strong><br><span style="opacity: 0.8; font-size: 0.9rem;">Join real-time classes instantly.</span></div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <i class="fas fa-chart-line" style="margin-top: 4px; opacity: 0.8;"></i>
+                        <div><strong>Instant Feedback</strong><br><span style="opacity: 0.8; font-size: 0.9rem;">Get grades and comments immediately.</span></div>
+                    </div>
+                </div>
             </div>
 
-            <div id="sessionInfoBox">
-                <div class="session-loading">🔒 Sign in to view available sessions</div>
-            </div>
+            <div class="login-box">
+                <h2><i class="fas fa-right-to-bracket" style="color: var(--primary); margin-right: 8px;"></i> Student Sign In</h2>
+                <p>Enter your credentials to continue.</p>
 
-            <div class="input-wrap">
-                <label>Email Address</label>
-                <input type="email" id="loginEmail" autocomplete="email">
-            </div>
-            <div class="input-wrap">
-                <label>Password</label>
-                <input type="password" id="loginPass" autocomplete="current-password">
-            </div>
+                <div class="adblock-warning" id="adblockWarning">
+                    <strong><i class="fas fa-triangle-exclamation"></i> Connection Issue Detected</strong>
+                    If you're having trouble connecting, please try:
+                    <ul>
+                        <li>Disabling ad blockers (uBlock, AdBlock Plus)</li>
+                        <li>Using Incognito/Private mode</li>
+                        <li>Refreshing the page</li>
+                    </ul>
+                </div>
 
-            <div class="troubleshooting-tip">
-                <strong>💡 Having trouble logging in?</strong>
-                • Make sure you're using the correct email and password provided by your teacher<br>
-                • Try disabling your ad blocker for this site<br>
-                • Use Incognito/Private mode (Ctrl+Shift+N)<br>
-                • Contact your teacher if the problem persists
-            </div>
+                <div id="sessionInfoBox">
+                    <div class="session-info-box">
+                        <div class="sib-label">Current Status</div>
+                        <div style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-circle-info"></i> Sign in to view available sessions
+                        </div>
+                    </div>
+                </div>
 
-            <button class="btn-enter" id="joinBtn" onclick="doStudentLogin()">Sign In & Join Session →</button>
-            <div class="error-msg" id="loginErr"></div>
-            <a href="index.html" class="back-link">← Back to Home</a>
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" autocomplete="email" placeholder="student@school.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPass">Password</label>
+                    <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••">
+                </div>
+
+                <button class="btn btn-primary btn-block" id="joinBtn" onclick="doStudentLogin()">
+                    Sign In & Join Session <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <div class="error-msg" id="loginErr"></div>
+                <a href="index.html" class="back-link">← Back to Home</a>
+            </div>
         </div>
     </div>
 
+    <!-- MAIN APP -->
     <div id="app">
-        <div class="header">
-            <div class="header-brand">EduBoard</div>
+        <header class="header">
+            <div class="header-brand">
+                <i class="fas fa-school"></i> EduBoard
+            </div>
             <div class="header-session" id="headerSession">—</div>
             <div class="header-right">
                 <div class="user-chip">
                     <div class="user-dot"></div>
                     <div class="user-name" id="headerName">Student</div>
                 </div>
-                <button class="btn-exit" onclick="exitSession()">Exit</button>
+                <button class="btn btn-secondary btn-sm" onclick="exitSession()">
+                    <i class="fas fa-arrow-right-from-bracket"></i> Exit
+                </button>
             </div>
-        </div>
-        <div class="main">
+        </header>
+
+        <main class="main">
             <div id="welcomeScreen"></div>
             <div id="quizScreen"></div>
             <div id="completionScreen"></div>
-        </div>
+        </main>
+
+        <footer class="nav-footer" id="navFooter" style="display:none">
+            <button class="btn btn-secondary" id="btnPrev" onclick="prevQ()"><i class="fas fa-chevron-left"></i> Prev</button>
+            <button class="btn btn-primary" id="btnSubmit" onclick="submitAnswer()"><i class="fas fa-save"></i> Save Answer</button>
+            <button class="btn btn-secondary" id="btnNext" onclick="nextQ()">Next <i class="fas fa-chevron-right"></i></button>
+            <button class="btn btn-danger" id="btnFinish" onclick="finishSession()" style="display:none"><i class="fas fa-check-circle"></i> Submit All</button>
+        </footer>
     </div>
 
     <div class="connection-warning" id="connectionWarning">
-        ⚠️ Connection issue detected. Please disable ad blockers and refresh.
+        <i class="fas fa-wifi-slash"></i> Connection issue detected. Please check your internet or disable ad blockers.
     </div>
 
-    <div class="nav-footer" id="navFooter" style="display:none">
-        <button class="btn-nav" id="btnPrev" onclick="prevQ()">← Prev</button>
-        <button class="btn-submit-answer" id="btnSubmit" onclick="submitAnswer()">Save Answer</button>
-        <button class="btn-nav" id="btnNext" onclick="nextQ()">Next →</button>
-        <button class="btn-finish" id="btnFinish" onclick="finishSession()" style="display:none">Submit All ✓</button>
-    </div>
     <div class="toast" id="toast"></div>
 
     <script type="module">
@@ -1288,108 +1229,108 @@
         let activeSessionId = null;
         let unsubSession = null;
 
-
-onAuthStateChanged(auth, async (user) => {
-    document.getElementById('loadingScreen').style.display = 'none';
-
-    if (!user) {
-        const box = document.getElementById('sessionInfoBox');
-        if (box) {
-            box.innerHTML = '<div style="text-align:center; padding:10px; color:var(--muted); font-size:13px;">🔒 Sign in to view available sessions</div>';
-        }
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('app').style.display = 'none';
-        return;
-    }
-
-    try {
-        let studentData = null;
-        let studentDocId = null;
-
-        console.log('Current user UID:', user.uid);
-        
-        // Method 1: Try to find by uid field in students collection
-        const studentsRef = collection(db, 'students');
-        const q = query(studentsRef, where('uid', '==', user.uid));
-        const querySnapshot = await getDocs(q);
-        
-        console.log('Query by uid found:', querySnapshot.size, 'documents');
-        
-        if (!querySnapshot.empty) {
-            studentDocId = querySnapshot.docs[0].id;
-            studentData = querySnapshot.docs[0].data();
-            console.log('✅ Found student by uid field:', studentData);
-        } else {
-            // Method 2: Try to find by document ID (if it matches auth UID)
-            const docSnap = await getDoc(doc(db, 'students', user.uid));
-            if (docSnap.exists()) {
-                studentData = docSnap.data();
-                studentDocId = user.uid;
-                console.log('✅ Found student by document ID:', studentData);
-            } else {
-                // Method 3: Try to find by email
-                const emailQuery = query(studentsRef, where('email', '==', user.email));
-                const emailSnapshot = await getDocs(emailQuery);
-                if (!emailSnapshot.empty) {
-                    studentDocId = emailSnapshot.docs[0].id;
-                    studentData = emailSnapshot.docs[0].data();
-                    console.log('✅ Found student by email:', studentData);
+        onAuthStateChanged(auth, async (user) => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            if (!user) {
+                const box = document.getElementById('sessionInfoBox');
+                if (box) {
+                    box.innerHTML = '<div class="session-info-box"><div class="sib-label">Status</div><div style="color:var(--text-muted);font-size:0.9rem;"><i class="fas fa-lock"></i> Please sign in</div></div>';
                 }
+                document.getElementById('loginScreen').style.display = 'flex'; // Changed to flex for layout
+                document.getElementById('app').style.display = 'none';
+                return;
             }
-        }
-        
-        if (!studentData) {
-            console.error("Student profile not found for UID:", user.uid);
-            console.error("Student email:", user.email);
-            showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
-            await signOut(auth);
-            return;
-        }
 
-        // Check if account is active
-        if (studentData.status === 'inactive' || studentData.active === false) {
-            await signOut(auth);
-            showErr('Your account has been deactivated. Contact your teacher.');
-            return;
-        }
+            try {
+                let studentData = null;
+                let studentDocId = null;
+                console.log('Current user UID:', user.uid);
 
-        // Set Global Variables
-        currentStudent = user;
-        studentProfile = studentData;
-        currentStudent.docId = studentDocId;
+                // Method 1: Try to find by uid field in students collection
+                const studentsRef = collection(db, 'students');
+                const q = query(studentsRef, where('uid', '==', user.uid));
+                const querySnapshot = await getDocs(q);
+                console.log('Query by uid found:', querySnapshot.size, 'documents');
 
-        document.getElementById('headerName').textContent = studentProfile.name || user.email;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
+                if (!querySnapshot.empty) {
+                    studentDocId = querySnapshot.docs[0].id;
+                    studentData = querySnapshot.docs[0].data();
+                    console.log('✅ Found student by uid field:', studentData);
+                } else {
+                    // Method 2: Try to find by document ID (if it matches auth UID)
+                    const docSnap = await getDoc(doc(db, 'students', user.uid));
+                    if (docSnap.exists()) {
+                        studentData = docSnap.data();
+                        studentDocId = user.uid;
+                        console.log('✅ Found student by document ID:', studentData);
+                    } else {
+                        // Method 3: Try to find by email
+                        const emailQuery = query(studentsRef, where('email', '==', user.email));
+                        const emailSnapshot = await getDocs(emailQuery);
+                        if (!emailSnapshot.empty) {
+                            studentDocId = emailSnapshot.docs[0].id;
+                            studentData = emailSnapshot.docs[0].data();
+                            console.log('✅ Found student by email:', studentData);
+                        }
+                    }
+                }
 
-        await findAndJoinOpenSession();
+                if (!studentData) {
+                    console.error("Student profile not found for UID:", user.uid);
+                    console.error("Student email:", user.email);
+                    showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
+                    await signOut(auth);
+                    return;
+                }
 
-    } catch (e) {
-        console.error('Auth verification error:', e);
-        document.getElementById('loginScreen').style.display = 'flex';
-        showErr('Error: ' + e.message);
-    }
-});
-        
+                // Check if account is active
+                if (studentData.status === 'inactive' || studentData.active === false) {
+                    await signOut(auth);
+                    showErr('Your account has been deactivated. Contact your teacher.');
+                    return;
+                }
+
+                // Set Global Variables
+                currentStudent = user;
+                studentProfile = studentData;
+                currentStudent.docId = studentDocId;
+
+                document.getElementById('headerName').textContent = studentProfile.name || user.email;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('app').style.display = 'flex'; // Changed to flex for layout
+
+                await findAndJoinOpenSession();
+
+            } catch (e) {
+                console.error('Auth verification error:', e);
+                document.getElementById('loginScreen').style.display = 'flex';
+                showErr('Error: ' + e.message);
+            }
+        });
+
         window.doStudentLogin = async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
             const btn = document.getElementById('joinBtn');
             const err = document.getElementById('loginErr');
+
             err.style.display = 'none';
+
             if (!email || !pass) {
                 showErr('Email and password are required.');
                 return;
             }
+
             btn.disabled = true;
-            btn.textContent = 'Signing in…';
+            btn.innerHTML = 'Signing in... <i class="fas fa-spinner fa-spin"></i>';
+
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
                 console.error('Login error:', e);
                 showErr('Invalid email or password.');
                 btn.disabled = false;
-                btn.textContent = 'Sign In & Join Session →';
+                btn.innerHTML = 'Sign In & Join Session <i class="fas fa-arrow-right"></i>';
             }
         };
 
@@ -1397,93 +1338,93 @@ onAuthStateChanged(auth, async (user) => {
             if (e.key === 'Enter') doStudentLogin();
         });
 
-async function findAndJoinOpenSession() {
-    try {
-        if (!activeSessionId) {
-            const sessionsRef = collection(db, 'sessions');
-            // ✅ FIX: Use 'isActive' instead of 'active'
-            const q = query(sessionsRef, where('isActive', '==', true));
-            const snapshot = await getDocs(q);
+        async function findAndJoinOpenSession() {
+            try {
+                if (!activeSessionId) {
+                    const sessionsRef = collection(db, 'sessions');
+                    // ✅ FIX: Use 'isActive' instead of 'active'
+                    const q = query(sessionsRef, where('isActive', '==', true));
+                    const snapshot = await getDocs(q);
 
-            if (snapshot.empty) {
-                showNoSessions();
-                return;
+                    if (snapshot.empty) {
+                        showNoSessions();
+                        return;
+                    }
+
+                    activeSessionId = snapshot.docs[0].id;
+                    sessionData = snapshot.docs[0].data();
+                } else {
+                    const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
+                    if (!sessDoc.exists() || !sessDoc.data().isActive) {
+                        showNoSessions();
+                        return;
+                    }
+                    sessionData = sessDoc.data();
+                }
+
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                await setDoc(studentRef, {
+                    name: studentProfile.name || currentStudent.email,
+                    uid: currentStudent.uid,
+                    studentDocId: currentStudent.docId,
+                    online: true,
+                    loginTime: Date.now(),
+                    submitted: false,
+                    answers: {},
+                    grades: {},
+                    feedback: {}
+                }, {
+                    merge: true
+                });
+
+                try {
+                    await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                        name: studentProfile.name || currentStudent.email,
+                        uid: currentStudent.uid,
+                        studentDocId: currentStudent.docId,
+                        joinedAt: new Date().toISOString(),
+                        status: 'active'
+                    });
+                } catch (e) {
+                    console.warn('Could not mark present in RTDB:', e);
+                }
+
+                document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
+                document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
+
+                if (unsubSession) unsubSession();
+                unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
+                    if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
+                        refreshCompletion(sd.data());
+                    }
+                });
+
+                await loadAndShowWelcome();
+
+            } catch (e) {
+                console.error('Join session error:', e);
+                showConnectionWarning(true);
+                document.getElementById('welcomeScreen').innerHTML = `
+<div class="panel" style="text-align:center;padding:60px 0">
+<div style="font-size:3rem;margin-bottom:16px;color:var(--danger)"><i class="fas fa-triangle-exclamation"></i></div>
+<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">Connection Error</div>
+<div style="color:var(--text-muted);font-size:1rem">Unable to connect to session.</div>
+<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
+</div>`;
+                document.getElementById('welcomeScreen').style.display = 'block';
             }
-            activeSessionId = snapshot.docs[0].id;
-            sessionData = snapshot.docs[0].data();
-        } else {
-            const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-            if (!sessDoc.exists() || !sessDoc.data().isActive) {
-                showNoSessions();
-                return;
-            }
-            sessionData = sessDoc.data();
         }
-
-        const studentKey = currentStudent.docId || currentStudent.uid;
-        const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-
-        await setDoc(studentRef, {
-            name: studentProfile.name || currentStudent.email,
-            uid: currentStudent.uid,
-            studentDocId: currentStudent.docId,
-            online: true,
-            loginTime: Date.now(),
-            submitted: false,
-            answers: {},
-            grades: {},
-            feedback: {}
-        }, {
-            merge: true
-        });
-
-        try {
-            await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-                name: studentProfile.name || currentStudent.email,
-                uid: currentStudent.uid,
-                studentDocId: currentStudent.docId,
-                joinedAt: new Date().toISOString(),
-                status: 'active'
-            });
-        } catch (e) {
-            console.warn('Could not mark present in RTDB:', e);
-        }
-
-        document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
-        document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
-
-        if (unsubSession) unsubSession();
-        unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
-            if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
-                refreshCompletion(sd.data());
-            }
-        });
-
-        await loadAndShowWelcome();
-    } catch (e) {
-        console.error('Join session error:', e);
-        showConnectionWarning(true);
-        document.getElementById('welcomeScreen').innerHTML = `
-      <div style="text-align:center;padding:60px 0">
-        <div style="font-size:56px;margin-bottom:16px">⚠️</div>
-        <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">Connection Error</div>
-        <div style="color:var(--muted);font-size:15px">Unable to connect to session.</div>
-        <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
-      </div>`;
-        document.getElementById('welcomeScreen').style.display = 'block';
-    }
-}
-        
 
         function showNoSessions() {
-            document.getElementById('app').style.display = 'block';
+            document.getElementById('app').style.display = 'flex';
             document.getElementById('welcomeScreen').innerHTML = `
-    <div style="text-align:center;padding:60px 0">
-      <div style="font-size:56px;margin-bottom:16px">⏳</div>
-      <div style="font-family:'Lora',serif;font-size:24px;font-weight:600;margin-bottom:8px">No Open Sessions</div>
-      <div style="color:var(--muted);font-size:15px">Your teacher hasn't opened a session yet.</div>
-      <div style="margin-top:24px"><button class="btn-retry" onclick="location.reload()">Refresh</button></div>
-    </div>`;
+<div class="panel" style="text-align:center;padding:60px 0">
+<div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-hourglass-half"></i></div>
+<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">No Open Sessions</div>
+<div style="color:var(--text-muted);font-size:1rem">Your teacher hasn't opened a session yet.</div>
+<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
+</div>`;
             document.getElementById('welcomeScreen').style.display = 'block';
         }
 
@@ -1529,98 +1470,93 @@ async function findAndJoinOpenSession() {
             }
         }
 
-       function showWelcome() {
-    document.getElementById('quizScreen').style.display = 'none';
-    document.getElementById('completionScreen').style.display = 'none';
-    document.getElementById('navFooter').style.display = 'none';
-    const ws = document.getElementById('welcomeScreen');
-    ws.style.display = 'block';
+        function showWelcome() {
+            document.getElementById('quizScreen').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'none';
+            document.getElementById('navFooter').style.display = 'none';
 
-    if (!questions.length) {
-        ws.innerHTML = '<div style="text-align:center;padding:40px 0"><div style="font-size:56px;margin-bottom:16px">⏳</div><div style="font-family:"Lora",serif;font-size:24px;font-weight:600;margin-bottom:8px">No questions yet</div><div style="color:var(--muted);font-size:15px">Your teacher hasn\'t added questions yet.</div></div>';
-        return;
-    }
+            const ws = document.getElementById('welcomeScreen');
+            ws.style.display = 'block';
 
-    const studentKey = currentStudent.docId || currentStudent.uid;
-    getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
-        const s = sSnap.exists() ? sSnap.data() : {};
-        const answered = s.answers ? Object.keys(s.answers).length : 0;
-        
-        // ✅ FIXED: Helper function to format Firestore Timestamps or strings
-        function formatTime(timeValue) {
-            if (!timeValue) return null;
-            
-            // Handle Firestore Timestamp objects
-            if (timeValue && typeof timeValue === 'object' && timeValue.seconds) {
-                const date = new Date(timeValue.seconds * 1000);
-                return date.toLocaleTimeString('en-US', { 
-                    hour: 'numeric', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
+            if (!questions.length) {
+                ws.innerHTML = '<div class="panel" style="text-align:center;padding:40px 0"><div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-file-circle-question"></i></div><div style="font-size:1.4rem;font-weight:700;margin-bottom:8px">No questions yet</div><div style="color:var(--text-muted);">Your teacher hasn\'t added questions yet.</div></div>';
+                return;
             }
-            
-            // Handle string values (already formatted)
-            if (typeof timeValue === 'string') {
-                return timeValue;
-            }
-            
-            return String(timeValue);
-        }
-        
-        // ✅ FIXED: Format the time range properly
-        let timeDisplay = '';
-        if (sessionData.startTime || sessionData.endTime) {
-            const start = formatTime(sessionData.startTime);
-            const end = formatTime(sessionData.endTime);
-            if (start && end) {
-                timeDisplay = `${start} – ${end}`;
-            } else if (start) {
-                timeDisplay = start;
-            } else if (end) {
-                timeDisplay = `Until ${end}`;
-            }
-        }
 
-        // ✅ FIXED: Format date if it's a Timestamp
-        let dateDisplay = sessionData.date;
-        if (sessionData.date && typeof sessionData.date === 'object' && sessionData.date.seconds) {
-            const dateObj = new Date(sessionData.date.seconds * 1000);
-            dateDisplay = dateObj.toLocaleDateString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric'
-            });
-        }
+            const studentKey = currentStudent.docId || currentStudent.uid;
+            getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
+                const s = sSnap.exists() ? sSnap.data() : {};
+                const answered = s.answers ? Object.keys(s.answers).length : 0;
 
-        const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong>📋 Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
-        
-        ws.innerHTML = `<div style="text-align:center;padding:20px 0">
-      <div class="welcome-icon">🎓</div>
-      <div class="welcome-title">Welcome, ${escapeHtml((studentProfile.name || '').split(' ')[0] || 'Student')}!</div>
-      <div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
-    </div>
-    <div class="session-card">
-      <div class="sc-label">Session</div>
-      <div class="sc-title">${escapeHtml(sessionData.title || 'Quiz Session')}</div>
-      <div class="sc-meta-grid">
-        ${sessionData.grade ? `<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${escapeHtml(sessionData.grade)}</div></div>` : ''}
-        ${sessionData.className ? `<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${escapeHtml(sessionData.className)}</div></div>` : ''}
-        ${dateDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(dateDisplay)}</div></div>` : ''}
-        ${timeDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(timeDisplay)}</div></div>` : ''}
-      </div>
-      <div class="sc-stats">
-        <div class="sc-stat"><span class="dot" style="background:var(--sage)"></span>${questions.length} Questions</div>
-        <div class="sc-stat"><span class="dot" style="background:var(--clay)"></span>${questions.reduce((n, q) => n + q.points, 0)} Points</div>
-        <div class="sc-stat"><span class="dot" style="background:var(--sky)"></span>${answered} Answered</div>
-      </div>
-    </div>
-    ${instrHtml}
-    <div style="text-align:center">
-      <button class="btn-start" onclick="startQuiz()">${answered > 0 ? 'Continue Quiz →' : 'Start Quiz →'}</button>
-    </div>`;
-    }).catch(e => console.warn('Welcome error:', e));
-}
+                // ✅ FIXED: Helper function to format Firestore Timestamps or strings
+                function formatTime(timeValue) {
+                    if (!timeValue) return null;
+                    if (timeValue && typeof timeValue === 'object' && timeValue.seconds) {
+                        const date = new Date(timeValue.seconds * 1000);
+                        return date.toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                        });
+                    }
+                    if (typeof timeValue === 'string') return timeValue;
+                    return String(timeValue);
+                }
+
+                let timeDisplay = '';
+                if (sessionData.startTime || sessionData.endTime) {
+                    const start = formatTime(sessionData.startTime);
+                    const end = formatTime(sessionData.endTime);
+                    if (start && end) timeDisplay = `${start} – ${end}`;
+                    else if (start) timeDisplay = start;
+                    else if (end) timeDisplay = `Until ${end}`;
+                }
+
+                let dateDisplay = sessionData.date;
+                if (sessionData.date && typeof sessionData.date === 'object' && sessionData.date.seconds) {
+                    const dateObj = new Date(sessionData.date.seconds * 1000);
+                    dateDisplay = dateObj.toLocaleDateString('en-US', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        year: 'numeric'
+                    });
+                }
+
+                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong><i class="fas fa-clipboard-list"></i> Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
+
+                ws.innerHTML = `
+<div style="text-align:center;padding:20px 0">
+<div class="welcome-icon"><i class="fas fa-user-graduate"></i></div>
+<div class="welcome-title">Welcome, ${escapeHtml((studentProfile.name || '').split(' ')[0] || 'Student')}!</div>
+<div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
+</div>
+
+<div class="session-card">
+<div class="sc-label">Session Details</div>
+<div class="sc-title">${escapeHtml(sessionData.title || 'Quiz Session')}</div>
+<div class="sc-meta-grid">
+${sessionData.grade ? `<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${escapeHtml(sessionData.grade)}</div></div>` : ''}
+${sessionData.className ? `<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${escapeHtml(sessionData.className)}</div></div>` : ''}
+${dateDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(dateDisplay)}</div></div>` : ''}
+${timeDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(timeDisplay)}</div></div>` : ''}
+</div>
+<div class="sc-stats">
+<div class="sc-stat"><span class="dot" style="background:var(--primary)"></span>${questions.length} Questions</div>
+<div class="sc-stat"><span class="dot" style="background:var(--warning)"></span>${questions.reduce((n, q) => n + q.points, 0)} Points</div>
+<div class="sc-stat"><span class="dot" style="background:var(--success)"></span>${answered} Answered</div>
+</div>
+</div>
+
+${instrHtml}
+
+<div style="text-align:center">
+<button class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;" onclick="startQuiz()">
+${answered > 0 ? 'Continue Quiz' : 'Start Quiz'} <i class="fas fa-arrow-right"></i>
+</button>
+</div>`;
+
+            }).catch(e => console.warn('Welcome error:', e));
+        }
 
         window.startQuiz = async function() {
             if (!questions.length) return;
@@ -1628,6 +1564,7 @@ async function findAndJoinOpenSession() {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
                 const s = sSnap.exists() ? sSnap.data() : {};
+
                 let start = 0;
                 for (let i = 0; i < questions.length; i++) {
                     if (!s.answers || s.answers[questions[i].id] === undefined) {
@@ -1636,6 +1573,7 @@ async function findAndJoinOpenSession() {
                     }
                 }
                 currentQIndex = start;
+
                 document.getElementById('welcomeScreen').style.display = 'none';
                 document.getElementById('quizScreen').style.display = 'block';
                 document.getElementById('navFooter').style.display = 'flex';
@@ -1658,8 +1596,8 @@ async function findAndJoinOpenSession() {
                 questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
 
                 if (!questions.length) return;
-                const q = questions[currentQIndex];
 
+                const q = questions[currentQIndex];
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
                 const s = sSnap.exists() ? sSnap.data() : {};
@@ -1667,30 +1605,37 @@ async function findAndJoinOpenSession() {
 
                 const total = questions.length;
                 const pct = Math.round((currentQIndex + 1) / total * 100);
+
                 const btnSubmit = document.getElementById('btnSubmit');
-                btnSubmit.textContent = 'Save Answer';
+                btnSubmit.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 btnSubmit.classList.remove('saved');
                 btnSubmit.disabled = false;
 
                 function mathSafe(str) {
                     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                 }
+
                 const qscreen = document.getElementById('quizScreen');
                 qscreen.innerHTML = `
-      <div class="progress-header">
-        <div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
-        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      <div class="q-card">
-        <div class="q-header"><span class="q-badge">Question ${currentQIndex + 1} of ${total}</span><span class="q-points">${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span></div>
-        <div class="q-text">${mathSafe(q.text)}</div>
-        ${existing !== null ? '<div class="answered-badge">✓ Answer Saved</div>' : ''}
-        ${buildInput(q, existing)}
-      </div>`;
+<div class="progress-header">
+<div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
+<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+</div>
+
+<div class="q-card">
+<div class="q-header">
+<span class="q-badge"><i class="fas fa-question-circle"></i> Question ${currentQIndex + 1}</span>
+<span class="q-points"><i class="fas fa-star"></i> ${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span>
+</div>
+<div class="q-text">${mathSafe(q.text)}</div>
+${existing !== null ? '<div class="answered-badge"><i class="fas fa-check-circle"></i> Answer Saved</div>' : ''}
+${buildInput(q, existing)}
+</div>`;
 
                 document.getElementById('btnPrev').disabled = currentQIndex === 0;
                 document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
                 document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
+
                 renderMath(qscreen);
             } catch (e) {
                 console.error('Render question error:', e);
@@ -1712,24 +1657,33 @@ async function findAndJoinOpenSession() {
             function escapeAttr(s) {
                 return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             }
+
             if (q.type === 'mcq' && q.options && q.options.length) {
                 const letters = 'ABCDEFGHIJ';
-                return `<div class="options-list">${q.options.map((o, i) => `<button class="option-btn ${existing === o ? 'selected' : ''}" onclick="selectOption(this)" data-val="${escapeAttr(o)}"><span class="option-letter">${letters[i]}</span><span class="option-text">${mathSafe(o)}</span></button>`).join('')}</div>`;
+                return `<div class="options-list">${q.options.map((o, i) => `
+<button class="option-btn ${existing === o ? 'selected' : ''}" onclick="selectOption(this)" data-val="${escapeAttr(o)}">
+<span class="option-letter">${letters[i]}</span>
+<span class="option-text">${mathSafe(o)}</span>
+</button>`).join('')}</div>`;
             }
+
             if (q.type === 'truefalse') {
-                // Fixed: Added data-val attributes to ensure clean data retrieval
                 return `<div class="tf-row">
-                    <button class="tf-btn ${existing === 'True' ? 'selected' : ''}" onclick="selectTF(this, 'True')" data-val="True">
-                        <span class="tf-icon">✅</span>True
-                    </button>
-                    <button class="tf-btn ${existing === 'False' ? 'selected' : ''}" onclick="selectTF(this, 'False')" data-val="False">
-                        <span class="tf-icon">❌</span>False
-                    </button>
-                </div>`;
+<button class="tf-btn ${existing === 'True' ? 'selected' : ''}" onclick="selectTF(this, 'True')" data-val="True">
+<span class="tf-icon"><i class="fas fa-check" style="color:var(--success)"></i></span>
+<span style="font-weight:700">True</span>
+</button>
+<button class="tf-btn ${existing === 'False' ? 'selected' : ''}" onclick="selectTF(this, 'False')" data-val="False">
+<span class="tf-icon"><i class="fas fa-xmark" style="color:var(--danger)"></i></span>
+<span style="font-weight:700">False</span>
+</button>
+</div>`;
             }
+
             if (q.type === 'number') {
                 return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing !== null ? escapeHtml(String(existing)) : ''}">`;
             }
+
             return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
         }
 
@@ -1738,7 +1692,6 @@ async function findAndJoinOpenSession() {
             btn.classList.add('selected');
         };
 
-        // Fixed: Added val parameter to handle selection logic cleanly
         window.selectTF = function(btn, val) {
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
@@ -1751,7 +1704,6 @@ async function findAndJoinOpenSession() {
                 return selected ? selected.getAttribute('data-val') : null;
             }
             if (q.type === 'truefalse') {
-                // Fixed: Retrieve from data-val instead of textContent
                 const selected = document.querySelector('.tf-btn.selected');
                 return selected ? selected.getAttribute('data-val') : null;
             }
@@ -1767,15 +1719,13 @@ async function findAndJoinOpenSession() {
             }
 
             const btn = document.getElementById('btnSubmit');
-            btn.textContent = 'Saving…';
+            btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
             const q = questions[currentQIndex];
-
             try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-
                 await updateDoc(studentRef, {
                     [`answers.${q.id}`]: answer
                 });
@@ -1789,16 +1739,14 @@ async function findAndJoinOpenSession() {
                     console.warn('Could not update RTDB activity:', e);
                 }
 
-                showToast('Answer saved ✓');
-                btn.textContent = 'Saved ✓';
+                showToast('Answer saved successfully');
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
                 btn.classList.add('saved');
-
                 renderQuestion();
-
             } catch (e) {
                 console.error('Submit error:', e);
                 showToast('Failed to save. Please try again.', true);
-                btn.textContent = 'Save Answer';
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 btn.disabled = false;
             }
         };
@@ -1845,10 +1793,12 @@ async function findAndJoinOpenSession() {
                     [`answers.${q.id}`]: answer
                 });
             }
+
             try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
                 const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
+
                 for (let i = 0; i < questions.length; i++) {
                     if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
                         showToast(`Question ${i + 1} is missing an answer!`);
@@ -1857,8 +1807,8 @@ async function findAndJoinOpenSession() {
                         return;
                     }
                 }
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
 
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
                 await updateDoc(studentRef, {
                     submitted: true
                 });
@@ -1881,6 +1831,7 @@ async function findAndJoinOpenSession() {
             document.getElementById('welcomeScreen').style.display = 'none';
             document.getElementById('navFooter').style.display = 'none';
             document.getElementById('completionScreen').style.display = 'block';
+
             try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
@@ -1894,15 +1845,14 @@ async function findAndJoinOpenSession() {
             renderCompletionScreen(s);
         }
 
-        // FIXED: Completely rewritten to fix syntax errors in template literal
         function renderCompletionScreen(s) {
             const answered = s.answers ? Object.keys(s.answers).length : 0;
             const graded = s.grades ? Object.keys(s.grades).length : 0;
             const score = s.grades ? Object.values(s.grades).reduce((n, v) => n + (parseFloat(v) || 0), 0) : 0;
             const maxScore = questions.reduce((n, q) => n + q.points, 0);
+
             const cs = document.getElementById('completionScreen');
 
-            // Generate the list items first to keep the main template clean
             const answersHtml = questions.map((q, i) => {
                 const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
                 const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : null;
@@ -1913,35 +1863,40 @@ async function findAndJoinOpenSession() {
                 }
 
                 return `
-                <div class="answer-review-item">
-                    <div class="ar-q math-content">
-                        <strong>Q${i + 1}.</strong> ${mathSafe(q.text)}
-                    </div>
-                    <div class="ar-a">
-                        Your answer: <span class="math-content">${ans !== null ? mathSafe(String(ans)) : '<em>Not answered</em>'}</span>
-                    </div>
-                    ${grade !== null ? `<div class="grade-display">⭐ ${grade} / ${q.points} pts</div>` : ''}
-                    ${fb ? `<div class="feedback-display">💬 ${escapeHtml(fb)}</div>` : ''}
-                </div>`;
+<div class="answer-review-item">
+<div class="ar-q math-content">
+<strong>Q${i + 1}.</strong> ${mathSafe(q.text)}
+</div>
+<div class="ar-a">
+Your answer: <span class="math-content">${ans !== null ? mathSafe(String(ans)) : '<em>Not answered</em>'}</span>
+</div>
+${grade !== null ? `<div class="grade-display"><i class="fas fa-star"></i> ${grade} / ${q.points} pts</div>` : ''}
+${fb ? `<div class="feedback-display"><i class="fas fa-comment-dots"></i> ${escapeHtml(fb)}</div>` : ''}
+</div>`;
             }).join('');
 
             cs.innerHTML = `
-            <div class="completion-icon">🌟</div>
-            <div class="completion-title">All Done!</div>
-            <div class="submitted-lock-banner">
-                <span style="font-size:18px">🔒</span>
-                <span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
-            </div>
-            <div class="summary-grid">
-                <div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
-                <div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
-                <div class="summary-item"><div class="summary-val" style="color:var(--clay)">${score}/${maxScore}</div><div class="summary-label">Score</div></div>
-            </div>
-            <div class="answers-review">
-                <h3 style="font-family:'Lora',serif;font-size:18px;margin-bottom:16px;font-weight:600">Your Answers</h3>
-                ${answersHtml}
-            </div>
-            <button class="btn-retry" onclick="exitSession()" style="margin-top:24px">← Sign Out</button>`;
+<div class="completion-icon"><i class="fas fa-trophy" style="color: #fbbf24;"></i></div>
+<div class="completion-title">All Done!</div>
+<div class="completion-sub">Great job completing the session. Here is a summary of your performance.</div>
+
+<div class="submitted-lock-banner">
+<i class="fas fa-lock"></i>
+<span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
+</div>
+
+<div class="summary-grid">
+<div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
+<div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
+<div class="summary-item"><div class="summary-val" style="color:var(--primary)">${score}/${maxScore}</div><div class="summary-label">Score</div></div>
+</div>
+
+<div class="answers-review">
+<h3><i class="fas fa-list-check"></i> Your Answers</h3>
+${answersHtml}
+</div>
+
+<button class="btn btn-secondary" onclick="exitSession()" style="margin-top:24px"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</button>`;
 
             renderMath(cs);
         }
@@ -1964,7 +1919,7 @@ async function findAndJoinOpenSession() {
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.style.background = isError ? 'var(--clay)' : 'var(--text)';
+            t.style.background = isError ? 'var(--danger)' : 'var(--text)';
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 2200);
         }
