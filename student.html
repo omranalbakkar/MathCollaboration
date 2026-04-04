@@ -1175,10 +1175,10 @@
         </main>
 
         <footer class="nav-footer" id="navFooter" style="display:none">
-            <button class="btn btn-secondary" id="btnPrev" onclick="prevQ()"><i class="fas fa-chevron-left"></i> Prev</button>
-            <button class="btn btn-primary" id="btnSubmit" onclick="submitAnswer()"><i class="fas fa-save"></i> Save Answer</button>
-            <button class="btn btn-secondary" id="btnNext" onclick="nextQ()">Next <i class="fas fa-chevron-right"></i></button>
-            <button class="btn btn-danger" id="btnFinish" onclick="finishSession()" style="display:none"><i class="fas fa-check-circle"></i> Submit All</button>
+            <button class="btn btn-secondary" id="btnPrev"><i class="fas fa-chevron-left"></i> Prev</button>
+            <button class="btn btn-primary" id="btnSubmit"><i class="fas fa-save"></i> Save Answer</button>
+            <button class="btn btn-secondary" id="btnNext">Next <i class="fas fa-chevron-right"></i></button>
+            <button class="btn btn-danger" id="btnFinish" style="display:none"><i class="fas fa-check-circle"></i> Submit All</button>
         </footer>
     </div>
 
@@ -1228,6 +1228,20 @@
         let sessionData = {};
         let activeSessionId = null;
         let unsubSession = null;
+        let isSubmittingAnswer = false; // FIX: Flag to prevent double submissions
+
+        // ✅ FIX: Setup button event listeners on DOMContentLoaded
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnPrev = document.getElementById('btnPrev');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const btnNext = document.getElementById('btnNext');
+            const btnFinish = document.getElementById('btnFinish');
+
+            if (btnPrev) btnPrev.addEventListener('click', prevQ);
+            if (btnSubmit) btnSubmit.addEventListener('click', submitAnswer);
+            if (btnNext) btnNext.addEventListener('click', nextQ);
+            if (btnFinish) btnFinish.addEventListener('click', finishSession);
+        });
 
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingScreen').style.display = 'none';
@@ -1236,7 +1250,7 @@
                 if (box) {
                     box.innerHTML = '<div class="session-info-box"><div class="sib-label">Status</div><div style="color:var(--text-muted);font-size:0.9rem;"><i class="fas fa-lock"></i> Please sign in</div></div>';
                 }
-                document.getElementById('loginScreen').style.display = 'flex'; // Changed to flex for layout
+                document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
                 return;
             }
@@ -1297,7 +1311,7 @@
 
                 document.getElementById('headerName').textContent = studentProfile.name || user.email;
                 document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex'; // Changed to flex for layout
+                document.getElementById('app').style.display = 'flex';
 
                 await findAndJoinOpenSession();
 
@@ -1342,7 +1356,6 @@
             try {
                 if (!activeSessionId) {
                     const sessionsRef = collection(db, 'sessions');
-                    // ✅ FIX: Use 'isActive' instead of 'active'
                     const q = query(sessionsRef, where('isActive', '==', true));
                     const snapshot = await getDocs(q);
 
@@ -1400,6 +1413,8 @@
                     }
                 });
 
+                // ✅ FIX: Load questions once on session start
+                await loadQuestions();
                 await loadAndShowWelcome();
 
             } catch (e) {
@@ -1443,7 +1458,8 @@
             window.location.href = 'index.html';
         };
 
-        async function loadAndShowWelcome() {
+        // ✅ FIX: Load questions only once
+        async function loadQuestions() {
             try {
                 const qRef = collection(db, 'sessions', activeSessionId, 'questions');
                 const qSnap = await getDocs(qRef);
@@ -1453,7 +1469,14 @@
                     ...d.data()
                 }));
                 questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                console.log('✅ Questions loaded:', questions.length);
+            } catch (e) {
+                console.error('Load questions error:', e);
+            }
+        }
 
+        async function loadAndShowWelcome() {
+            try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
                 const sSnap = await getDoc(sRef);
@@ -1488,7 +1511,6 @@
                 const s = sSnap.exists() ? sSnap.data() : {};
                 const answered = s.answers ? Object.keys(s.answers).length : 0;
 
-                // ✅ FIXED: Helper function to format Firestore Timestamps or strings
                 function formatTime(timeValue) {
                     if (!timeValue) return null;
                     if (timeValue && typeof timeValue === 'object' && timeValue.seconds) {
@@ -1584,17 +1606,9 @@ ${answered > 0 ? 'Continue Quiz' : 'Start Quiz'} <i class="fas fa-arrow-right"><
             }
         };
 
+        // ✅ FIX: Simplified renderQuestion - don't re-fetch questions
         async function renderQuestion() {
             try {
-                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
-                const qsSnap = await getDocs(qRef);
-                questions = [];
-                qsSnap.forEach(d => questions.push({
-                    id: d.id,
-                    ...d.data()
-                }));
-                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-
                 if (!questions.length) return;
 
                 const q = questions[currentQIndex];
@@ -1636,11 +1650,39 @@ ${buildInput(q, existing)}
                 document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
                 document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
 
+                // Re-attach event listeners after DOM update
+                setupButtonListeners();
+
                 renderMath(qscreen);
             } catch (e) {
                 console.error('Render question error:', e);
                 showToast('Error loading question.', true);
             }
+        }
+
+        // ✅ FIX: Re-attach button listeners after DOM updates
+        function setupButtonListeners() {
+            const btnPrev = document.getElementById('btnPrev');
+            const btnSubmit = document.getElementById('btnSubmit');
+            const btnNext = document.getElementById('btnNext');
+            const btnFinish = document.getElementById('btnFinish');
+
+            // Remove old listeners
+            if (btnPrev) btnPrev.replaceWith(btnPrev.cloneNode(true));
+            if (btnSubmit) btnSubmit.replaceWith(btnSubmit.cloneNode(true));
+            if (btnNext) btnNext.replaceWith(btnNext.cloneNode(true));
+            if (btnFinish) btnFinish.replaceWith(btnFinish.cloneNode(true));
+
+            // Re-attach listeners
+            const newBtnPrev = document.getElementById('btnPrev');
+            const newBtnSubmit = document.getElementById('btnSubmit');
+            const newBtnNext = document.getElementById('btnNext');
+            const newBtnFinish = document.getElementById('btnFinish');
+
+            if (newBtnPrev) newBtnPrev.addEventListener('click', prevQ);
+            if (newBtnSubmit) newBtnSubmit.addEventListener('click', submitAnswer);
+            if (newBtnNext) newBtnNext.addEventListener('click', nextQ);
+            if (newBtnFinish) newBtnFinish.addEventListener('click', finishSession);
         }
 
         function renderMath(el) {
@@ -1661,7 +1703,7 @@ ${buildInput(q, existing)}
             if (q.type === 'mcq' && q.options && q.options.length) {
                 const letters = 'ABCDEFGHIJ';
                 return `<div class="options-list">${q.options.map((o, i) => `
-<button class="option-btn ${existing === o ? 'selected' : ''}" onclick="selectOption(this)" data-val="${escapeAttr(o)}">
+<button class="option-btn ${existing === o ? 'selected' : ''}" data-val="${escapeAttr(o)}" type="button" onclick="selectOption(event)">
 <span class="option-letter">${letters[i]}</span>
 <span class="option-text">${mathSafe(o)}</span>
 </button>`).join('')}</div>`;
@@ -1669,11 +1711,11 @@ ${buildInput(q, existing)}
 
             if (q.type === 'truefalse') {
                 return `<div class="tf-row">
-<button class="tf-btn ${existing === 'True' ? 'selected' : ''}" onclick="selectTF(this, 'True')" data-val="True">
+<button class="tf-btn ${existing === 'True' ? 'selected' : ''}" data-val="True" type="button" onclick="selectTF(event, 'True')">
 <span class="tf-icon"><i class="fas fa-check" style="color:var(--success)"></i></span>
 <span style="font-weight:700">True</span>
 </button>
-<button class="tf-btn ${existing === 'False' ? 'selected' : ''}" onclick="selectTF(this, 'False')" data-val="False">
+<button class="tf-btn ${existing === 'False' ? 'selected' : ''}" data-val="False" type="button" onclick="selectTF(event, 'False')">
 <span class="tf-icon"><i class="fas fa-xmark" style="color:var(--danger)"></i></span>
 <span style="font-weight:700">False</span>
 </button>
@@ -1687,14 +1729,16 @@ ${buildInput(q, existing)}
             return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
         }
 
-        window.selectOption = function(btn) {
+        window.selectOption = function(event) {
+            event.preventDefault();
             document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
+            event.currentTarget.classList.add('selected');
         };
 
-        window.selectTF = function(btn, val) {
+        window.selectTF = function(event, val) {
+            event.preventDefault();
             document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
+            event.currentTarget.classList.add('selected');
         };
 
         function getCurrentAnswer() {
@@ -1711,8 +1755,10 @@ ${buildInput(q, existing)}
             return el && el.value.trim() ? el.value.trim() : null;
         }
 
-        // --- FIXED SUBMIT LOGIC ---
-        window.submitAnswer = async function() {
+        // ✅ FIX: Improved submitAnswer with proper error handling
+        async function submitAnswer() {
+            if (isSubmittingAnswer) return;
+
             const answer = getCurrentAnswer();
             if (answer === null) {
                 showToast('Please provide an answer first');
@@ -1722,6 +1768,7 @@ ${buildInput(q, existing)}
             const btn = document.getElementById('btnSubmit');
             btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
             btn.disabled = true;
+            isSubmittingAnswer = true;
 
             const q = questions[currentQIndex];
             try {
@@ -1741,25 +1788,20 @@ ${buildInput(q, existing)}
                 }
 
                 showToast('Answer saved successfully');
-
-                // Update UI locally without re-rendering the whole question
-                // This prevents the "selection lost" bug
                 btn.innerHTML = '<i class="fas fa-check"></i> Saved';
                 btn.classList.add('saved');
 
-                // Add visual badge if it doesn't exist
                 const qCard = document.querySelector('.q-card');
                 let badge = qCard.querySelector('.answered-badge');
                 if (!badge) {
                     badge = document.createElement('div');
                     badge.className = 'answered-badge';
                     badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
-                    // Insert after the question text
                     const qText = qCard.querySelector('.q-text');
                     if (qText) qText.insertAdjacentElement('afterend', badge);
                 }
 
-                // Ensure visual selection persists (in case MathJax modified DOM)
+                // Persist visual selection
                 if (q.type === 'mcq') {
                     document.querySelectorAll('.option-btn').forEach(optBtn => {
                         if (optBtn.getAttribute('data-val') === answer) optBtn.classList.add('selected');
@@ -1777,64 +1819,59 @@ ${buildInput(q, existing)}
                 showToast('Failed to save. Please try again.', true);
                 btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 btn.disabled = false;
+            } finally {
+                isSubmittingAnswer = false;
             }
-        };
+        }
 
-        // --- FIXED NAVIGATION LOGIC ---
+        // ✅ FIX: Simplified navigation
+        async function prevQ() {
+            const btn = document.getElementById('btnPrev');
+            if (btn.disabled) return;
+
+            if (currentQIndex > 0) {
+                currentQIndex--;
+                await renderQuestion();
+            }
+        }
+
+        async function nextQ() {
+            const btn = document.getElementById('btnNext');
+            if (btn.disabled) return;
+
+            if (currentQIndex < questions.length - 1) {
+                if (await canNavigate()) {
+                    currentQIndex++;
+                    await renderQuestion();
+                }
+            }
+        }
+
         async function canNavigate() {
             const q = questions[currentQIndex];
             if (!q) return true;
 
-            // 1. Check UI first (fastest)
             const uiAnswer = getCurrentAnswer();
             if (uiAnswer !== null) return true;
 
-            // 2. If UI is empty, check DB (in case user saved but UI reset or MathJax interfered)
             try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
                 const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
                 const data = sSnap.exists() ? sSnap.data() : {};
 
-                // If answer exists in DB, we are safe to navigate
                 if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
                     return true;
                 }
             } catch (e) {
                 console.warn("Nav check error:", e);
-                // Fail open: allow nav if DB check fails to prevent getting stuck
                 return true;
             }
 
-            // 3. If neither UI nor DB has an answer, block navigation
             showToast('Please save your answer first');
             return false;
         }
 
-        window.prevQ = async function() {
-            const btn = document.getElementById('btnPrev');
-            if (btn.disabled) return;
-
-            if (currentQIndex > 0) {
-                // Usually "Prev" doesn't require validation, but we can add it if needed
-                currentQIndex--;
-                renderQuestion();
-            }
-        };
-
-        window.nextQ = async function() {
-            const btn = document.getElementById('btnNext');
-            if (btn.disabled) return;
-
-            if (currentQIndex < questions.length - 1) {
-                // Strict validation: Must have an answer saved to move forward
-                if (await canNavigate()) {
-                    currentQIndex++;
-                    renderQuestion();
-                }
-            }
-        };
-
-        window.finishSession = async function() {
+        async function finishSession() {
             const answer = getCurrentAnswer();
             if (answer !== null) {
                 const q = questions[currentQIndex];
@@ -1854,7 +1891,7 @@ ${buildInput(q, existing)}
                     if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
                         showToast(`Question ${i + 1} is missing an answer!`);
                         currentQIndex = i;
-                        renderQuestion();
+                        await renderQuestion();
                         return;
                     }
                 }
@@ -1870,12 +1907,12 @@ ${buildInput(q, existing)}
                     console.warn('Could not remove from RTDB:', e);
                 }
 
-                showCompletion();
+                await showCompletion();
             } catch (e) {
                 console.error('Finish error:', e);
                 showToast('Error submitting.', true);
             }
-        };
+        }
 
         async function showCompletion() {
             document.getElementById('quizScreen').style.display = 'none';
@@ -1978,6 +2015,12 @@ ${answersHtml}
         function escapeHtml(s) {
             return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
+
+        // Make functions available globally
+        window.prevQ = prevQ;
+        window.nextQ = nextQ;
+        window.submitAnswer = submitAnswer;
+        window.finishSession = finishSession;
     </script>
 </body>
 
