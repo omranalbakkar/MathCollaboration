@@ -526,6 +526,16 @@
             flex-wrap: wrap;
             gap: 16px;
         }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 16px;
+            display: none;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 
@@ -552,7 +562,7 @@
             <button class="btn btn-primary" style="width:100%" onclick="window.doStudentLogin()">
                 Sign In →
             </button>
-            <div class="error-msg" id="loginErr" style="display:none; margin-top: 16px;"></div>
+            <div class="error-msg" id="loginErr"></div>
         </div>
     </div>
 
@@ -702,6 +712,7 @@
                 await updateWelcomeScreen();
 
             } catch (err) {
+                console.error('Save error:', err);
                 showToast('Failed to save. Check connection.', true);
                 saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
                 saveBtn.disabled = false;
@@ -1148,6 +1159,7 @@
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
             const errDiv = document.getElementById('loginErr');
+            const btn = event?.target;
 
             if (!email || !pass) {
                 errDiv.textContent = 'Please enter email and password';
@@ -1155,11 +1167,21 @@
                 return;
             }
 
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = 'Signing in...';
+            }
+
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
+                // Success - auth state listener will handle navigation
             } catch (e) {
-                errDiv.textContent = 'Invalid email or password';
+                errDiv.textContent = 'Invalid email or password. Please try again.';
                 errDiv.style.display = 'block';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Sign In →';
+                }
             }
         };
 
@@ -1171,19 +1193,42 @@
                 } catch (e) {}
             }
             await signOut(auth);
-            location.reload();
+            // Show login screen again
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+            // Clear any error messages
+            const errDiv = document.getElementById('loginErr');
+            errDiv.style.display = 'none';
+            errDiv.textContent = '';
+            // Clear input fields
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPass').value = '';
         };
 
+        // Handle Enter key on login form
+        document.getElementById('loginPass')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                window.doStudentLogin();
+            }
+        });
+
+        // Main auth state listener
         onAuthStateChanged(auth, async (user) => {
+            // Hide loading screen
             document.getElementById('loadingScreen').style.display = 'none';
 
             if (!user) {
+                // Show login screen, hide app
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
                 return;
             }
 
+            // User is logged in, show loading while fetching data
+            document.getElementById('loadingScreen').style.display = 'flex';
+
             try {
+                // Find student profile
                 const studentsRef = collection(db, 'students');
                 const q = query(studentsRef, where('uid', '==', user.uid));
                 const querySnap = await getDocs(q);
@@ -1195,6 +1240,7 @@
                     studentDocId = querySnap.docs[0].id;
                     studentData = querySnap.docs[0].data();
                 } else {
+                    // Try to find by document ID
                     const directSnap = await getDoc(doc(db, 'students', user.uid));
                     if (directSnap.exists()) {
                         studentDocId = user.uid;
@@ -1203,36 +1249,60 @@
                 }
 
                 if (!studentData) {
-                    throw new Error('Student profile not found');
+                    throw new Error('Student profile not found. Please contact your teacher.');
                 }
 
+                // Find active session for this student's grade
                 const sessionsRef = collection(db, 'sessions');
-                const sessionQuery = query(sessionsRef, where('isActive', '==', true));
+                let sessionQuery;
+
+                // If student has a grade, filter sessions by that grade
+                if (studentData.grade) {
+                    sessionQuery = query(
+                        sessionsRef,
+                        where('isActive', '==', true),
+                        where('grade', '==', studentData.grade)
+                    );
+                } else {
+                    // If no grade specified, get any active session
+                    sessionQuery = query(sessionsRef, where('isActive', '==', true));
+                }
+
                 const sessionSnap = await getDocs(sessionQuery);
 
                 if (sessionSnap.empty) {
+                    // No active session found
+                    document.getElementById('loadingScreen').style.display = 'none';
                     document.getElementById('app').style.display = 'flex';
                     document.getElementById('welcomeScreen').innerHTML = `
                     <div class="glass-card" style="text-align: center; padding: 60px;">
-                        <div style="font-size: 4rem;">⏳</div>
+                        <div style="font-size: 4rem;">📭</div>
                         <h3 style="margin: 20px 0;">No Active Session</h3>
-                        <p>Please wait for your teacher to start a session.</p>
+                        <p>There are no active sessions for your grade (${escapeHtml(studentData.grade || 'All')}) at the moment.</p>
+                        <p style="margin-top: 12px; color: var(--gray);">Please check back later or contact your teacher.</p>
+                        <button class="btn btn-secondary" onclick="window.exitSession()" style="margin-top: 24px;">
+                            Sign Out
+                        </button>
                     </div>
                 `;
                     document.getElementById('welcomeScreen').style.display = 'block';
                     return;
                 }
 
+                // Get the first active session
+                const sessionDoc = sessionSnap.docs[0];
                 const state = window.appState;
                 state.currentStudent = user;
                 state.studentProfile = studentData;
-                state.activeSessionId = sessionSnap.docs[0].id;
-                state.sessionData = sessionSnap.docs[0].data();
+                state.activeSessionId = sessionDoc.id;
+                state.sessionData = sessionDoc.data();
                 state.currentStudent.docId = studentDocId;
 
+                // Update header with student name
                 document.getElementById('studentName').textContent = studentData.name || user.email;
                 document.getElementById('studentAvatar').innerHTML = (studentData.name || 'S').charAt(0).toUpperCase();
 
+                // Load questions for this session
                 const questionsRef = collection(db, 'sessions', state.activeSessionId, 'questions');
                 const questionsSnap = await getDocs(questionsRef);
                 state.questions = [];
@@ -1244,36 +1314,60 @@
                 });
                 state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
 
+                // Initialize or update student document in session
                 const studentSessionRef = doc(db, 'sessions', state.activeSessionId, 'students', studentDocId);
-                await setDoc(studentSessionRef, {
-                    name: studentData.name,
+
+                // Safely prepare student data (filter out undefined values)
+                const studentSessionData = {
+                    name: studentData.name || 'Student',
                     uid: user.uid,
-                    email: user.email,
-                    grade: studentData.grade,
+                    email: user.email || '',
+                    grade: studentData.grade || 'Not specified',
                     online: true,
                     submitted: false,
-                    answers: {}
-                }, {
+                    answers: {},
+                    lastActive: Date.now()
+                };
+
+                await setDoc(studentSessionRef, studentSessionData, {
                     merge: true
                 });
 
-                await set(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${user.uid}`), {
-                    name: studentData.name,
-                    joinedAt: Date.now()
-                });
+                // Update RTDB presence
+                try {
+                    await set(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${user.uid}`), {
+                        name: studentData.name || 'Student',
+                        email: user.email,
+                        joinedAt: Date.now(),
+                        status: 'active'
+                    });
+                } catch (e) {
+                    console.warn('RTDB update failed:', e);
+                }
 
+                // Check if student already submitted
                 const studentSnap = await getDoc(studentSessionRef);
-                state.isSubmitted = studentSnap.exists() && studentSnap.data().submitted;
+                state.isSubmitted = studentSnap.exists() && studentSnap.data().submitted === true;
 
+                // Hide loading, show app and dashboard
+                document.getElementById('loadingScreen').style.display = 'none';
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('app').style.display = 'flex';
                 await showWelcomeDashboard();
 
             } catch (err) {
-                console.error('Auth error:', err);
+                console.error('Auth setup error:', err);
+                document.getElementById('loadingScreen').style.display = 'none';
+
+                // Show error on login screen
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
                 const errDiv = document.getElementById('loginErr');
-                errDiv.textContent = err.message;
+                errDiv.textContent = err.message || 'Failed to load student data. Please contact support.';
                 errDiv.style.display = 'block';
+
+                // Sign out if there's a critical error
+                await signOut(auth);
             }
         });
     </script>
