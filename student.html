@@ -1711,141 +1711,128 @@ ${buildInput(q, existing)}
             return el && el.value.trim() ? el.value.trim() : null;
         }
 
-      window.submitAnswer = async function() {
-  const answer = getCurrentAnswer();
-  if (answer === null) {
-    showToast('Please provide an answer first');
-    return;
-  }
+        // --- FIXED SUBMIT LOGIC ---
+        window.submitAnswer = async function() {
+            const answer = getCurrentAnswer();
+            if (answer === null) {
+                showToast('Please provide an answer first');
+                return;
+            }
 
-  const btn = document.getElementById('btnSubmit');
-  btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
-  btn.disabled = true;
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
 
-  const q = questions[currentQIndex];
-  try {
-    const studentKey = currentStudent.docId || currentStudent.uid;
-    const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-    await updateDoc(studentRef, { [`answers.${q.id}`]: answer });
+            const q = questions[currentQIndex];
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                await updateDoc(studentRef, {
+                    [`answers.${q.id}`]: answer
+                });
 
-    try {
-      await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-        lastActivity: Date.now(),
-        questionsAnswered: currentQIndex + 1
-      });
-    } catch (e) {
-      console.warn('Could not update RTDB activity:', e);
-    }
+                try {
+                    await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                        lastActivity: Date.now(),
+                        questionsAnswered: currentQIndex + 1
+                    });
+                } catch (e) {
+                    console.warn('Could not update RTDB activity:', e);
+                }
 
-    showToast('Answer saved successfully');
-    btn.innerHTML = '<i class="fas fa-check"></i> Saved';
-    btn.classList.add('saved');
+                showToast('Answer saved successfully');
 
-    // Show answered badge without re-rendering whole question
-    const qCard = document.querySelector('.q-card');
-    let badge = qCard.querySelector('.answered-badge');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.className = 'answered-badge';
-      badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
-      qCard.insertBefore(badge, qCard.querySelector('.q-text').nextSibling);
-    }
+                // Update UI locally without re-rendering the whole question
+                // This prevents the "selection lost" bug
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                btn.classList.add('saved');
 
-    // Ensure selected option remains visually selected (in case MathJax messed with DOM)
-    if (q.type === 'mcq') {
-      document.querySelectorAll('.option-btn').forEach(btn => {
-        if (btn.getAttribute('data-val') === answer) {
-          btn.classList.add('selected');
-        } else {
-          btn.classList.remove('selected');
+                // Add visual badge if it doesn't exist
+                const qCard = document.querySelector('.q-card');
+                let badge = qCard.querySelector('.answered-badge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.className = 'answered-badge';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
+                    // Insert after the question text
+                    const qText = qCard.querySelector('.q-text');
+                    if (qText) qText.insertAdjacentElement('afterend', badge);
+                }
+
+                // Ensure visual selection persists (in case MathJax modified DOM)
+                if (q.type === 'mcq') {
+                    document.querySelectorAll('.option-btn').forEach(optBtn => {
+                        if (optBtn.getAttribute('data-val') === answer) optBtn.classList.add('selected');
+                        else optBtn.classList.remove('selected');
+                    });
+                } else if (q.type === 'truefalse') {
+                    document.querySelectorAll('.tf-btn').forEach(tfBtn => {
+                        if (tfBtn.getAttribute('data-val') === answer) tfBtn.classList.add('selected');
+                        else tfBtn.classList.remove('selected');
+                    });
+                }
+
+            } catch (e) {
+                console.error('Submit error:', e);
+                showToast('Failed to save. Please try again.', true);
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
+                btn.disabled = false;
+            }
+        };
+
+        // --- FIXED NAVIGATION LOGIC ---
+        async function canNavigate() {
+            const q = questions[currentQIndex];
+            if (!q) return true;
+
+            // 1. Check UI first (fastest)
+            const uiAnswer = getCurrentAnswer();
+            if (uiAnswer !== null) return true;
+
+            // 2. If UI is empty, check DB (in case user saved but UI reset or MathJax interfered)
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const data = sSnap.exists() ? sSnap.data() : {};
+
+                // If answer exists in DB, we are safe to navigate
+                if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
+                    return true;
+                }
+            } catch (e) {
+                console.warn("Nav check error:", e);
+                // Fail open: allow nav if DB check fails to prevent getting stuck
+                return true;
+            }
+
+            // 3. If neither UI nor DB has an answer, block navigation
+            showToast('Please save your answer first');
+            return false;
         }
-      });
-    } else if (q.type === 'truefalse') {
-      document.querySelectorAll('.tf-btn').forEach(btn => {
-        if (btn.getAttribute('data-val') === answer) {
-          btn.classList.add('selected');
-        } else {
-          btn.classList.remove('selected');
-        }
-      });
-    }
 
-  } catch (e) {
-    console.error('Submit error:', e);
-    showToast('Failed to save. Please try again.', true);
-    btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-    btn.disabled = false;
-  }
+        window.prevQ = async function() {
+            const btn = document.getElementById('btnPrev');
+            if (btn.disabled) return;
 
-          // Optional: Auto-advance to next question after 500ms
-setTimeout(() => {
-  if (currentQIndex < questions.length - 1) {
-    nextQ();
-  } else {
-    finishSession();
-  }
-}, 5000);
-};
+            if (currentQIndex > 0) {
+                // Usually "Prev" doesn't require validation, but we can add it if needed
+                currentQIndex--;
+                renderQuestion();
+            }
+        };
 
-// Helper to check if we can leave the current question
-async function canNavigate() {
-  const q = questions[currentQIndex];
-  if (!q) return true;
+        window.nextQ = async function() {
+            const btn = document.getElementById('btnNext');
+            if (btn.disabled) return;
 
-  // 1. Check UI first (fastest)
-  const uiAnswer = getCurrentAnswer();
-  if (uiAnswer !== null) return true;
-
-  // 2. If UI is empty, check DB (in case user saved but UI reset)
-  try {
-    const studentKey = currentStudent.docId || currentStudent.uid;
-    const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-    const data = sSnap.exists() ? sSnap.data() : {};
-    
-    // If answer exists in DB, we are safe to navigate
-    if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
-      return true;
-    }
-  } catch (e) {
-    console.warn("Nav check error:", e);
-    // Fail open: allow nav if DB check fails to prevent getting stuck
-    return true; 
-  }
-
-  // 3. If neither UI nor DB has an answer, block navigation
-  showToast('Please save your answer first');
-  return false;
-}
-
-window.prevQ = async function() {
-  // Prevent double clicks
-  const btn = document.getElementById('btnPrev');
-  if (btn.disabled) return;
-
-  if (currentQIndex > 0) {
-    // Optional: Validate current question before leaving? 
-    // Usually "Prev" doesn't require validation, but let's keep it consistent
-    // If you want strict validation, uncomment the next line:
-    // if (!(await canNavigate())) return;
-
-    currentQIndex--;
-    renderQuestion();
-  }
-};
-
-window.nextQ = async function() {
-  // Prevent double clicks
-  const btn = document.getElementById('btnNext');
-  if (btn.disabled) return;
-
-  if (currentQIndex < questions.length - 1) {
-    // Strict validation: Must have an answer saved to move forward
-    if (await canNavigate()) {
-      currentQIndex++;
-      renderQuestion();
-    }
-  }
-};
+            if (currentQIndex < questions.length - 1) {
+                // Strict validation: Must have an answer saved to move forward
+                if (await canNavigate()) {
+                    currentQIndex++;
+                    renderQuestion();
+                }
+            }
+        };
 
         window.finishSession = async function() {
             const answer = getCurrentAnswer();
