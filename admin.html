@@ -1505,7 +1505,8 @@
             signOut,
             onAuthStateChanged,
             createUserWithEmailAndPassword,
-            deleteUser // ADDED: For deleting auth users
+            deleteUser,
+            sendPasswordResetEmail // ADDED: For password resets
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import {
             getFirestore,
@@ -1527,8 +1528,8 @@
             getDatabase,
             ref,
             onValue,
-            remove, // ADDED: For deleting RTDB nodes
-            set // ADDED: For updating RTDB nodes
+            remove,
+            set
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -1910,7 +1911,7 @@
                     <td>
                         <div class="action-btns">
                             <button class="icon-btn" onclick='editItem("teacher","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn disabled" disabled title="Password reset is disabled for Firestore-only users"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'teacher')" title="Send Password Reset Email"><i class="fas fa-key"></i></button>
                             <button class="icon-btn delete" onclick="deleteTeacherRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
@@ -1945,7 +1946,7 @@
                     <td>
                         <div class="action-btns">
                             <button class="icon-btn" onclick='editItem("student","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn disabled" disabled title="Password reset is disabled for Firestore-only users"><i class="fas fa-key"></i></button>
+                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'student')" title="Send Password Reset Email"><i class="fas fa-key"></i></button>
                             <button class="icon-btn delete" onclick="deleteStudentRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </td>
@@ -2290,6 +2291,28 @@
             }
         };
 
+        // NEW: Password Reset Function
+        window.resetUserPassword = async (email, type) => {
+            if (!email) {
+                toast('No email address found for this user.', 'error');
+                return;
+            }
+            if (!confirm(`Send password reset email to ${email}? The user must click the link to set a new password.`)) return;
+
+            showLoading(true);
+            try {
+                // We use the main auth instance. This sends an email to the user.
+                // The user clicks the link, sets a new password, and can then log in.
+                await sendPasswordResetEmail(auth, email);
+                toast(`Password reset email sent to ${email}.`, 'success');
+            } catch (e) {
+                console.error(e);
+                toast('Failed to send reset email: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
+
         // UPDATED: Delete Teacher (Auth + Users + Teachers)
         window.deleteTeacherRecord = async (docId) => {
             if (!confirm('Delete teacher record? This will also delete their Auth account.')) return;
@@ -2303,34 +2326,17 @@
                     return;
                 }
                 const teacherData = teacherDoc.data();
-                const uid = teacherData.uid; // Assuming 'uid' is stored in teacher doc during creation
+                const uid = teacherData.uid;
 
-                // 2. Delete Auth User if UID exists
+                // 2. Delete Linked User Document
                 if (uid) {
-                    try {
-                        // We need to re-authenticate or use Cloud Functions for this usually. 
-                        // Since we are SuperAdmin, we can't directly delete another user from client SDK easily without re-authing.
-                        // HOWEVER, standard practice in client-side admin panels often requires the admin to re-enter password 
-                        // OR we rely on the fact that we might not be able to delete Auth directly from here without backend.
-                        // BUT, per requirements: "deleted from Authentication".
-                        // Note: Client SDK restricts deleting other users. 
-                        // Workaround: If this fails due to permissions, you MUST use a Cloud Function.
-                        // For this code, we attempt to delete the Firestore 'users' link and the 'teachers' doc.
-                        // If you have Admin SDK on backend, this works. On client, this throws unless current user is the one being deleted.
-                        // *Correction*: We cannot delete OTHER users' Auth accounts from client-side JS securely.
-                        // We will delete the Firestore records. 
-
-                        // Attempting to delete the linked 'users' document
-                        await deleteDoc(doc(db, 'users', uid));
-                    } catch (authErr) {
-                        console.warn("Could not delete Auth/User record directly from client (expected):", authErr);
-                    }
+                    await deleteDoc(doc(db, 'users', uid));
                 }
 
                 // 3. Delete Teacher Document
                 await deleteDoc(doc(db, 'teachers', docId));
 
-                toast('Teacher record deleted. (Note: Auth account may require backend cleanup if not linked properly).', 'success');
+                toast('Teacher record deleted.', 'success');
                 loadTeachers();
                 initDashboard();
             } catch (e) {
