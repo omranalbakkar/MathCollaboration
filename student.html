@@ -9,8 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="icon" href="image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
-
     <script>
         window.MathJax = {
             tex: {
@@ -28,80 +26,88 @@
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
             --bg: #f4f7fb;
             --surface: #ffffff;
-            --surface-2: #f8fbff;
-            --surface-3: #eef4ff;
             --text: #0f172a;
             --text-muted: #64748b;
-            --text-faint: #94a3b8;
             --primary: #1d4ed8;
-            --primary-2: #2563eb;
             --primary-soft: #dbeafe;
             --success: #059669;
             --success-soft: #d1fae5;
-            --warning: #d97706;
-            --warning-soft: #ffedd5;
             --danger: #dc2626;
-            --danger-soft: #fee2e2;
-            --purple: #7c3aed;
-            --purple-soft: #ede9fe;
             --border: #e2e8f0;
-            --border-strong: #cbd5e1;
-            --shadow-sm: 0 2px 10px rgba(15, 23, 42, 0.05);
-            --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.08);
-            --radius-sm: 12px;
-            --radius-md: 16px;
-            --radius-lg: 22px;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
-            line-height: 1.5;
         }
 
-        /* --- Global Utilities & Components --- */
-
-        .hidden {
-            display: none !important;
+        .btn {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 20px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s;
         }
 
-        .muted {
-            color: var(--text-muted);
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
 
-        .mono {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        .btn-primary:hover {
+            background: #1e40af;
+            transform: translateY(-1px);
         }
 
-        /* Spinner */
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .spinner-screen {
             position: fixed;
             inset: 0;
+            background: var(--bg);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
             gap: 16px;
-            background: var(--bg);
             z-index: 9999;
         }
 
         .spinner {
-            width: 52px;
-            height: 52px;
+            width: 48px;
+            height: 48px;
             border: 4px solid #dbeafe;
             border-top-color: var(--primary);
             border-radius: 50%;
@@ -114,353 +120,66 @@
             }
         }
 
-        .spinner-text {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        /* Buttons */
-        .btn {
-            border: none;
-            border-radius: 14px;
-            padding: 12px 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-weight: 700;
-            transition: .2s ease;
-            text-decoration: none;
-            font-family: inherit;
-            font-size: 0.95rem;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            color: #fff;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            filter: brightness(1.05);
-        }
-
-        .btn-secondary {
-            background: #fff;
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: var(--surface-2);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: #fff;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            filter: brightness(1.05);
-        }
-
-        .btn-block {
-            width: 100%;
-        }
-
-        .btn-sm {
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-size: 0.88rem;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 16px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .input-wrap input,
-        .answer-textarea,
-        .answer-number {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 13px 14px;
-            background: #fff;
-            color: var(--text);
-            transition: .2s ease;
-            font-family: inherit;
-            font-size: 1rem;
-        }
-
-        .input-wrap input:focus,
-        .answer-textarea:focus,
-        .answer-number:focus {
-            outline: none;
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
-        }
-
-        .input-wrap input[type="password"] {
-            font-family: ui-monospace, monospace;
-            letter-spacing: 2px;
-        }
-
-        .hint {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
-
-        /* Cards & Panels */
-        .panel,
-        .hero-card,
-        .q-card,
-        .session-card,
-        .summary-item,
-        .answer-review-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            padding: 24px;
-        }
-
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 30px;
             left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: var(--text);
-            color: #fff;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-size: 0.95rem;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
             font-weight: 600;
             opacity: 0;
-            transition: all 0.3s;
+            transition: 0.2s;
             z-index: 6000;
-            white-space: nowrap;
-            box-shadow: var(--shadow-md);
+            pointer-events: none;
         }
 
         .toast.show {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            transform: translateX(-50%) translateY(-10px);
         }
 
-        /* Connection Warning */
-        .connection-warning {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--danger);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 14px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            z-index: 5000;
-            display: none;
-            box-shadow: var(--shadow-md);
-        }
-
-        .adblock-warning {
-            background: var(--warning-soft);
-            border: 1px solid #fdba74;
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 24px;
-            text-align: left;
-            font-size: 0.9rem;
-            color: #9a3412;
-            display: none;
-        }
-
-        .adblock-warning strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 1rem;
-            color: #7c2d12;
-        }
-
-        .adblock-warning ul {
-            margin: 8px 0 0 20px;
-        }
-
-        /* --- Login Screen --- */
         #loginScreen {
             min-height: 100vh;
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: radial-gradient(circle at top left, #e0ecff 0%, #f8fbff 45%, #f4f7fb 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .login-shell {
+        .login-card {
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            max-width: 450px;
             width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
-        @media(min-width: 768px) {
-            .login-shell {
-                grid-template-columns: 1.1fr 0.9fr;
-            }
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        .login-side {
-            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
-            color: white;
-            padding: 36px;
-            border-radius: 28px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-shadow: var(--shadow-md);
-        }
-
-        .login-brand-area {
-            margin-bottom: 24px;
-        }
-
-        .login-logo {
-            width: 56px;
-            height: 56px;
-            background: rgba(255, 255, 255, 0.2);
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
             border-radius: 16px;
-            display: grid;
-            place-items: center;
-            font-size: 28px;
-            margin-bottom: 16px;
-            backdrop-filter: blur(5px);
-        }
-
-        .login-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            line-height: 1.1;
-        }
-
-        .login-sub {
-            color: rgba(255, 255, 255, 0.85);
             font-size: 1rem;
-            max-width: 40ch;
-        }
-
-        .login-box {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(226, 232, 240, 0.95);
-            border-radius: 28px;
-            padding: 34px;
-            box-shadow: var(--shadow-md);
-            backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .login-box h2 {
-            font-size: 1.6rem;
-            margin-bottom: 6px;
-            color: var(--text);
-        }
-
-        .login-box p {
-            color: var(--text-muted);
-            margin-bottom: 24px;
         }
 
         .error-msg {
-            background: var(--danger-soft);
-            border: 1px solid #fecaca;
-            color: var(--danger);
-            border-radius: 12px;
+            background: #fee2e2;
+            color: #991b1b;
             padding: 12px;
-            font-size: 0.9rem;
+            border-radius: 12px;
             margin-top: 16px;
             display: none;
-            font-weight: 600;
-            text-align: left;
         }
 
-        .back-link {
-            display: block;
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .back-link:hover {
-            color: var(--primary);
-        }
-
-        .session-info-box {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
-            text-align: left;
-        }
-
-        .sib-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-            margin-bottom: 6px;
-        }
-
-        .sib-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 4px;
-        }
-
-        .sib-tag {
-            display: inline-block;
-            font-size: 0.75rem;
-            background: #fff;
-            border: 1px solid var(--border);
-            padding: 2px 8px;
-            border-radius: 99px;
-            color: var(--text-muted);
-            margin-right: 4px;
-        }
-
-        /* --- App Layout --- */
         #app {
             display: none;
             min-height: 100vh;
@@ -468,11 +187,8 @@
         }
 
         .header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(8px);
-            background: rgba(244, 247, 251, 0.9);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             padding: 16px 28px;
             display: flex;
@@ -480,601 +196,121 @@
             align-items: center;
         }
 
-        .header-brand {
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header-session {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 6px 14px;
-            border-radius: 99px;
-            max-width: 300px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--primary-soft);
-            border: 1px solid #bfdbfe;
-            border-radius: 99px;
-            padding: 6px 14px;
-        }
-
-        .user-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--primary);
-            border-radius: 50%;
-            animation: blink 2s infinite;
-        }
-
-        @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.4;
-            }
-        }
-
-        .user-name {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
         .main {
             flex: 1;
             max-width: 900px;
             width: 100%;
             margin: 0 auto;
-            padding: 28px;
-        }
-
-        /* --- Welcome Screen --- */
-        #welcomeScreen {
-            text-align: center;
-            animation: sectionFade 0.3s ease;
-        }
-
-        @keyframes sectionFade {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .welcome-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-            color: var(--primary);
-        }
-
-        .welcome-title {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            color: var(--text);
-        }
-
-        .welcome-sub {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 500px;
-            margin: 0 auto 32px;
-        }
-
-        .session-card {
-            text-align: left;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-        }
-
-        .sc-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-            margin-bottom: 6px;
-        }
-
-        .sc-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: var(--text);
-        }
-
-        .sc-meta-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .sc-meta-item {
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-        }
-
-        .sc-meta-label {
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-
-        .sc-meta-val {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text);
-        }
-
-        .sc-stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-        }
-
-        .sc-stat {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
-        .sc-stat .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .instructions-box {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e3a8a;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 24px;
-            text-align: left;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .instructions-box strong {
-            display: block;
-            margin-bottom: 6px;
-            color: #1e40af;
-        }
-
-        /* --- Quiz Screen --- */
-        #quizScreen {
-            display: none;
-            animation: sectionFade 0.3s ease;
-        }
-
-        .progress-header {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .progress-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .progress-label {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .progress-fraction {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: var(--primary);
-        }
-
-        .progress-track {
-            height: 10px;
-            background: var(--surface-2);
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--primary-2));
-            border-radius: 20px;
-            transition: width 0.5s ease;
+            padding: 28px 20px 100px;
         }
 
         .q-card {
+            background: white;
+            border-radius: 24px;
             padding: 32px;
-            margin-bottom: 24px;
-            position: relative;
-        }
-
-        .q-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .q-badge {
-            background: var(--primary-soft);
-            color: var(--primary);
-            padding: 6px 12px;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .q-points {
-            background: var(--warning-soft);
-            color: var(--warning);
-            padding: 6px 12px;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 700;
-        }
-
-        .q-text {
-            font-size: 1.25rem;
-            font-weight: 600;
-            line-height: 1.6;
-            margin-bottom: 28px;
-            color: var(--text);
-        }
-
-        mjx-container {
-            vertical-align: middle !important;
-        }
-
-        .answered-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--success-soft);
-            color: var(--success);
-            border: 1px solid #a7f3d0;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            padding: 6px 12px;
-            margin-bottom: 16px;
-        }
-
-        /* Options */
-        .options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .option-btn {
-            background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 16px;
-            font-size: 1rem;
-            font-weight: 500;
-            text-align: left;
-            color: var(--text);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .option-btn:hover {
-            border-color: #93c5fd;
-            background: #eff6ff;
-            transform: translateY(-1px);
-        }
-
-        .option-btn.selected {
-            border-color: var(--primary);
-            background: var(--primary-soft);
-            color: var(--primary);
-            font-weight: 600;
-        }
-
-        .option-letter {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            border: 1px solid currentColor;
-            display: grid;
-            place-items: center;
-            font-size: 0.85rem;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .tf-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
+        .option-btn,
         .tf-btn {
-            background: var(--surface);
+            width: 100%;
+            text-align: left;
+            padding: 14px 18px;
+            border-radius: 16px;
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
+            background: white;
+            margin-bottom: 10px;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
+            font-weight: 500;
+            transition: all 0.15s;
         }
 
-        .tf-btn:hover {
-            border-color: #93c5fd;
-            background: #eff6ff;
-        }
-
+        .option-btn.selected,
         .tf-btn.selected {
-            border-color: var(--primary);
             background: var(--primary-soft);
+            border-color: var(--primary);
             color: var(--primary);
-        }
-
-        .tf-icon {
-            font-size: 24px;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .answer-textarea {
-            min-height: 140px;
-            resize: vertical;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-
-        .answer-number {
-            font-size: 1.2rem;
             font-weight: 600;
-            text-align: center;
         }
 
-        /* Navigation Footer */
+        .option-btn:hover,
+        .tf-btn:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+
+        .answer-textarea,
+        .answer-number {
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
         .nav-footer {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(10px);
             border-top: 1px solid var(--border);
             padding: 16px 24px;
             display: flex;
             gap: 12px;
             justify-content: center;
-            z-index: 90;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            z-index: 100;
         }
 
-        /* --- Completion Screen --- */
-        #completionScreen {
-            display: none;
-            text-align: center;
-            animation: sectionFade 0.4s ease;
-            padding-bottom: 40px;
-        }
-
-        .completion-icon {
-            font-size: 5rem;
-            margin-bottom: 20px;
-            animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes pop {
-            0% {
-                transform: scale(0);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .completion-title {
-            font-size: 2.2rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-        }
-
-        .completion-sub {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 400px;
-            margin: 0 auto 32px;
-        }
-
-        .submitted-lock-banner {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: center;
-            background: var(--danger-soft);
-            border: 1px solid #fecaca;
-            color: #991b1b;
-            border-radius: 14px;
-            padding: 14px 20px;
-            margin: 0 auto 32px;
-            max-width: 500px;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .summary-item {
-            text-align: center;
+        .progress-header {
+            background: white;
+            border-radius: 20px;
             padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
         }
 
-        .summary-val {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: var(--primary);
-            margin-bottom: 4px;
+        .progress-fill {
+            height: 8px;
+            background: var(--primary);
+            border-radius: 10px;
+            transition: width 0.3s ease;
         }
 
-        .summary-label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .answers-review {
-            text-align: left;
-            margin-top: 40px;
-        }
-
-        .answers-review h3 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-        }
-
-        .answer-review-item {
-            margin-bottom: 16px;
-            padding: 20px;
-        }
-
-        .ar-q {
-            font-weight: 600;
-            font-size: 1.05rem;
-            margin-bottom: 10px;
-            color: var(--text);
-        }
-
-        .ar-a {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            background: var(--surface-2);
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .ar-a span {
-            color: var(--text);
-            font-weight: 600;
-        }
-
-        .grade-display {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+        .answered-badge {
             background: var(--success-soft);
             color: var(--success);
-            border: 1px solid #a7f3d0;
-            border-radius: 8px;
+            border-radius: 40px;
+            padding: 8px 16px;
             font-size: 0.85rem;
             font-weight: 700;
-            padding: 6px 12px;
-            margin-top: 10px;
+            display: inline-block;
+            margin-top: 16px;
         }
 
-        .feedback-display {
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #1e40af;
-            background: #eff6ff;
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-            text-align: left;
+        .session-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 24px;
+            text-align: center;
         }
 
-        /* Responsive */
         @media (max-width: 600px) {
-            .header {
-                padding: 12px 16px;
-            }
-
-            .header-session {
-                display: none;
-            }
-
-            .main {
-                padding: 16px;
-            }
-
             .q-card {
                 padding: 20px;
             }
 
-            .tf-row {
-                grid-template-columns: 1fr;
-            }
-
             .nav-footer {
                 padding: 12px 16px;
-                gap: 8px;
             }
 
             .btn {
-                padding: 10px 14px;
-                font-size: 0.9rem;
+                padding: 10px 16px;
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -1084,88 +320,32 @@
 
     <div class="spinner-screen" id="loadingScreen">
         <div class="spinner"></div>
-        <div class="spinner-text">Loading EduBoard...</div>
+        <div>Loading EduBoard...</div>
     </div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen">
-        <div class="login-shell">
-            <div class="login-side">
-                <div class="login-brand-area">
-                    <div class="login-logo"><i class="fas fa-graduation-cap"></i></div>
-                    <div class="login-title">Welcome back, student.</div>
-                    <div class="login-sub">Sign in to access your live sessions, quizzes, and performance tracking.</div>
-                </div>
-                <div style="margin-top: 32px; display: flex; flex-direction: column; gap: 16px;">
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <i class="fas fa-video" style="margin-top: 4px; opacity: 0.8;"></i>
-                        <div><strong>Live Sessions</strong><br><span style="opacity: 0.8; font-size: 0.9rem;">Join real-time classes instantly.</span></div>
-                    </div>
-                    <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <i class="fas fa-chart-line" style="margin-top: 4px; opacity: 0.8;"></i>
-                        <div><strong>Instant Feedback</strong><br><span style="opacity: 0.8; font-size: 0.9rem;">Get grades and comments immediately.</span></div>
-                    </div>
-                </div>
+        <div class="login-card">
+            <h2 style="margin-bottom: 24px;">🎓 Student Login</h2>
+            <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="Email address">
             </div>
-
-            <div class="login-box">
-                <h2><i class="fas fa-right-to-bracket" style="color: var(--primary); margin-right: 8px;"></i> Student Sign In</h2>
-                <p>Enter your credentials to continue.</p>
-
-                <div class="adblock-warning" id="adblockWarning">
-                    <strong><i class="fas fa-triangle-exclamation"></i> Connection Issue Detected</strong>
-                    If you're having trouble connecting, please try:
-                    <ul>
-                        <li>Disabling ad blockers (uBlock, AdBlock Plus)</li>
-                        <li>Using Incognito/Private mode</li>
-                        <li>Refreshing the page</li>
-                    </ul>
-                </div>
-
-                <div id="sessionInfoBox">
-                    <div class="session-info-box">
-                        <div class="sib-label">Current Status</div>
-                        <div style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-circle-info"></i> Sign in to view available sessions
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="loginEmail">Email Address</label>
-                    <input type="email" id="loginEmail" autocomplete="email" placeholder="student@school.com">
-                </div>
-                <div class="form-group">
-                    <label for="loginPass">Password</label>
-                    <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••">
-                </div>
-
-                <button class="btn btn-primary btn-block" id="joinBtn">
-                    Sign In & Join Session <i class="fas fa-arrow-right"></i>
-                </button>
-
-                <div class="error-msg" id="loginErr"></div>
-                <a href="index.html" class="back-link">← Back to Home</a>
+            <div class="form-group">
+                <input type="password" id="loginPass" placeholder="Password">
             </div>
+            <button class="btn btn-primary" style="width:100%" onclick="window.doStudentLogin()">
+                Sign In →
+            </button>
+            <div class="error-msg" id="loginErr"></div>
         </div>
     </div>
 
     <!-- MAIN APP -->
     <div id="app">
         <header class="header">
-            <div class="header-brand">
-                <i class="fas fa-school"></i> EduBoard
-            </div>
-            <div class="header-session" id="headerSession">—</div>
-            <div class="header-right">
-                <div class="user-chip">
-                    <div class="user-dot"></div>
-                    <div class="user-name" id="headerName">Student</div>
-                </div>
-                <button class="btn btn-secondary btn-sm" id="exitBtn">
-                    <i class="fas fa-arrow-right-from-bracket"></i> Exit
-                </button>
-            </div>
+            <div><strong>🎓 EduBoard</strong></div>
+            <div id="headerSession" style="font-size:0.85rem; color:#666;">—</div>
+            <button class="btn btn-secondary" style="padding:6px 16px;" onclick="window.exitSession()">Exit</button>
         </header>
 
         <main class="main">
@@ -1174,21 +354,18 @@
             <div id="completionScreen"></div>
         </main>
 
-        <footer class="nav-footer" id="navFooter" style="display:none">
-            <button class="btn btn-secondary" id="btnPrev"><i class="fas fa-chevron-left"></i> Prev</button>
-            <button class="btn btn-primary" id="btnSubmit"><i class="fas fa-save"></i> Save Answer</button>
-            <button class="btn btn-secondary" id="btnNext">Next <i class="fas fa-chevron-right"></i></button>
-            <button class="btn btn-danger" id="btnFinish" style="display:none"><i class="fas fa-check-circle"></i> Submit All</button>
+        <footer class="nav-footer" id="navFooter" style="display:none;">
+            <button class="btn btn-secondary" id="btnPrev" onclick="window.prevQuestion()">← Prev</button>
+            <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()">💾 Save Answer</button>
+            <button class="btn btn-secondary" id="btnNext" onclick="window.nextQuestion()">Next →</button>
+            <button class="btn btn-danger" id="btnFinish" onclick="window.finishQuiz()" style="display:none;">✅ Submit All</button>
         </footer>
-    </div>
-
-    <div class="connection-warning" id="connectionWarning">
-        <i class="fas fa-wifi-slash"></i> Connection issue detected. Please check your internet or disable ad blockers.
     </div>
 
     <div class="toast" id="toast"></div>
 
     <script type="module">
+        // Import Firebase modules
         import {
             auth,
             db,
@@ -1204,793 +381,549 @@
             where,
             getDocs,
             updateDoc,
-            onSnapshot,
             ref,
             set,
-            remove,
-            update as rtdbUpdate
+            remove
         } from './firebase-config.js';
 
-        // ========== GLOBAL STATE ==========
-        let currentStudent = null;
-        let studentProfile = null;
-        let currentQIndex = 0;
-        let questions = [];
-        let sessionData = {};
-        let activeSessionId = null;
-        let unsubSession = null;
-        let isSubmittingAnswer = false;
+        // Global state (exposed to window for inline handlers)
+        window.appState = {
+            currentStudent: null,
+            studentProfile: null,
+            questions: [],
+            sessionData: null,
+            activeSessionId: null,
+            currentQIndex: 0,
+            isSaving: false
+        };
 
-        // ========== EVENT DELEGATION SETUP ==========
-        // Use event delegation for buttons that persist in the footer
-        document.getElementById('navFooter').addEventListener('click', async (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-
-            if (target.id === 'btnPrev') {
-                e.preventDefault();
-                await handlePrevClick();
-            } else if (target.id === 'btnSubmit') {
-                e.preventDefault();
-                await handleSubmitClick();
-            } else if (target.id === 'btnNext') {
-                e.preventDefault();
-                await handleNextClick();
-            } else if (target.id === 'btnFinish') {
-                e.preventDefault();
-                await handleFinishClick();
-            }
-        });
-
-        // Exit button
-        document.getElementById('exitBtn').addEventListener('click', exitSession);
-
-        // Join button
-        document.getElementById('joinBtn').addEventListener('click', doStudentLogin);
-
-        // Login password enter key
-        document.getElementById('loginPass')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') doStudentLogin();
-        });
-
-        // ========== BUTTON HANDLERS ==========
-        async function handlePrevClick() {
-            const btn = document.getElementById('btnPrev');
-            if (btn.disabled) return;
-
-            if (currentQIndex > 0) {
-                currentQIndex--;
-                await renderQuestion();
-            }
+        // Helper functions
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? '#dc2626' : '#1e293b';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
         }
 
-        async function handleNextClick() {
-            const btn = document.getElementById('btnNext');
-            if (btn.disabled) return;
-
-            if (currentQIndex < questions.length - 1) {
-                if (await canNavigate()) {
-                    currentQIndex++;
-                    await renderQuestion();
-                }
-            }
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
 
-        async function handleSubmitClick() {
-            if (isSubmittingAnswer) return;
+        // Get current answer from UI
+        function getCurrentAnswer() {
+            const state = window.appState;
+            if (!state.questions.length) return null;
+            const q = state.questions[state.currentQIndex];
 
-            const answer = getCurrentAnswer();
-            if (answer === null) {
-                showToast('Please provide an answer first');
+            if (q.type === 'mcq') {
+                const selected = document.querySelector('.option-btn.selected');
+                return selected ? selected.getAttribute('data-value') : null;
+            }
+            if (q.type === 'truefalse') {
+                const selected = document.querySelector('.tf-btn.selected');
+                return selected ? selected.getAttribute('data-value') : null;
+            }
+            const inputEl = document.getElementById('answerInput');
+            if (!inputEl) return null;
+            const val = inputEl.value.trim();
+            return val === '' ? null : val;
+        }
+
+        // Save answer (called from inline onclick)
+        window.saveCurrentAnswer = async function() {
+            const state = window.appState;
+            if (state.isSaving) {
+                showToast('Saving in progress...', false);
                 return;
             }
 
-            const btn = document.getElementById('btnSubmit');
-            btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            isSubmittingAnswer = true;
+            const answer = getCurrentAnswer();
+            if (!answer) {
+                showToast('Please provide an answer first', true);
+                return;
+            }
 
-            const q = questions[currentQIndex];
+            const q = state.questions[state.currentQIndex];
+            const saveBtn = document.getElementById('btnSave');
+
+            state.isSaving = true;
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+
             try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+                const studentRef = doc(db, 'sessions', state.activeSessionId, 'students', studentKey);
                 await updateDoc(studentRef, {
                     [`answers.${q.id}`]: answer
                 });
 
-                try {
-                    await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-                        lastActivity: Date.now(),
-                        questionsAnswered: currentQIndex + 1
-                    });
-                } catch (e) {
-                    console.warn('Could not update RTDB activity:', e);
-                }
+                showToast('✅ Answer saved!', false);
+                saveBtn.innerHTML = '✓ Saved';
+                setTimeout(() => {
+                    if (saveBtn && !state.isSaving) {
+                        saveBtn.innerHTML = '💾 Save Answer';
+                        saveBtn.disabled = false;
+                    }
+                }, 1500);
 
-                showToast('Answer saved successfully');
-
-                // Update button state
-                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
-                btn.classList.add('saved');
-                btn.disabled = false;
-
-                // Add visual badge if missing
+                // Update visual badge without re-rendering
                 const qCard = document.querySelector('.q-card');
                 if (qCard && !qCard.querySelector('.answered-badge')) {
                     const badge = document.createElement('div');
                     badge.className = 'answered-badge';
-                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer saved';
                     const qText = qCard.querySelector('.q-text');
                     if (qText) qText.insertAdjacentElement('afterend', badge);
                 }
 
-            } catch (e) {
-                console.error('Submit error:', e);
-                showToast('Failed to save. Please try again.', true);
-                btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                btn.disabled = false;
-            } finally {
-                isSubmittingAnswer = false;
-            }
-        }
-
-        async function handleFinishClick() {
-            const answer = getCurrentAnswer();
-            if (answer !== null) {
-                const q = questions[currentQIndex];
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                try {
-                    await updateDoc(studentRef, {
-                        [`answers.${q.id}`]: answer
+                // Update selected styling persistence
+                if (q.type === 'mcq') {
+                    document.querySelectorAll('.option-btn').forEach(btn => {
+                        if (btn.getAttribute('data-value') === answer) {
+                            btn.classList.add('selected');
+                        }
                     });
-                } catch (e) {
-                    console.error('Error saving last answer:', e);
+                } else if (q.type === 'truefalse') {
+                    document.querySelectorAll('.tf-btn').forEach(btn => {
+                        if (btn.getAttribute('data-value') === answer) {
+                            btn.classList.add('selected');
+                        }
+                    });
                 }
+
+            } catch (err) {
+                console.error('Save error:', err);
+                showToast('Failed to save. Check connection.', true);
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+            } finally {
+                state.isSaving = false;
             }
+        };
 
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
+        // Navigation
+        window.prevQuestion = async function() {
+            const state = window.appState;
+            if (state.currentQIndex > 0) {
+                state.currentQIndex--;
+                await renderQuestion();
+            }
+        };
 
-                // Check all questions have answers
-                for (let i = 0; i < questions.length; i++) {
-                    if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
-                        showToast(`Question ${i + 1} is missing an answer!`);
-                        currentQIndex = i;
-                        await renderQuestion();
-                        return;
-                    }
-                }
+        window.nextQuestion = async function() {
+            const state = window.appState;
+            if (state.currentQIndex < state.questions.length - 1) {
+                state.currentQIndex++;
+                await renderQuestion();
+            }
+        };
 
-                // Mark as submitted
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                await updateDoc(studentRef, {
-                    submitted: true
+        window.finishQuiz = async function() {
+            const state = window.appState;
+            // Save current answer first
+            const currentAnswer = getCurrentAnswer();
+            if (currentAnswer) {
+                const q = state.questions[state.currentQIndex];
+                const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+                await updateDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey), {
+                    [`answers.${q.id}`]: currentAnswer
                 });
+            }
 
-                try {
-                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                } catch (e) {
-                    console.warn('Could not remove from RTDB:', e);
+            // Verify all questions answered
+            const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+            const sSnap = await getDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey));
+            const answersMap = sSnap.exists() ? sSnap.data().answers || {} : {};
+
+            for (let i = 0; i < state.questions.length; i++) {
+                if (!answersMap[state.questions[i].id]) {
+                    showToast(`⚠️ Question ${i+1} not answered. Please save all answers first.`, true);
+                    state.currentQIndex = i;
+                    await renderQuestion();
+                    return;
                 }
-
-                await showCompletion();
-            } catch (e) {
-                console.error('Finish error:', e);
-                showToast('Error submitting.', true);
             }
-        }
 
-        // ========== CORE QUIZ FUNCTIONS ==========
-        async function loadQuestions() {
+            // Submit session
+            await updateDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey), {
+                submitted: true,
+                submittedAt: Date.now()
+            });
+
             try {
-                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
-                const qSnap = await getDocs(qRef);
-                questions = [];
-                qSnap.forEach(d => questions.push({
-                    id: d.id,
-                    ...d.data()
-                }));
-                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-                console.log('✅ Questions loaded:', questions.length);
-            } catch (e) {
-                console.error('Load questions error:', e);
-            }
-        }
+                await remove(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${state.currentStudent.uid}`));
+            } catch (e) {}
 
+            showToast('🎉 Session submitted successfully!');
+            await showCompletionScreen();
+        };
+
+        // Render current question
         async function renderQuestion() {
+            const state = window.appState;
+            if (!state.questions.length) return;
+
+            const q = state.questions[state.currentQIndex];
+            const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+            let existingAnswer = null;
+
             try {
-                if (!questions.length) return;
-
-                const q = questions[currentQIndex];
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const s = sSnap.exists() ? sSnap.data() : {};
-                const existing = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
-
-                const total = questions.length;
-                const pct = Math.round((currentQIndex + 1) / total * 100);
-
-                // Reset submit button
-                const btnSubmit = document.getElementById('btnSubmit');
-                btnSubmit.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                btnSubmit.classList.remove('saved');
-                btnSubmit.disabled = false;
-
-                function mathSafe(str) {
-                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const sSnap = await getDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey));
+                if (sSnap.exists() && sSnap.data().answers) {
+                    existingAnswer = sSnap.data().answers[q.id];
                 }
-
-                const qscreen = document.getElementById('quizScreen');
-                qscreen.innerHTML = `
-<div class="progress-header">
-<div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
-<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-</div>
-
-<div class="q-card">
-<div class="q-header">
-<span class="q-badge"><i class="fas fa-question-circle"></i> Question ${currentQIndex + 1}</span>
-<span class="q-points"><i class="fas fa-star"></i> ${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span>
-</div>
-<div class="q-text">${mathSafe(q.text)}</div>
-${existing !== null ? '<div class="answered-badge"><i class="fas fa-check-circle"></i> Answer Saved</div>' : ''}
-${buildInput(q, existing)}
-</div>`;
-
-                // Update button states
-                document.getElementById('btnPrev').disabled = currentQIndex === 0;
-                document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
-                document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
-
-                // Re-attach option/TF click handlers
-                setupQuestionHandlers();
-
-                renderMath(qscreen);
             } catch (e) {
-                console.error('Render question error:', e);
-                showToast('Error loading question.', true);
-            }
-        }
-
-        function setupQuestionHandlers() {
-            // Option buttons
-            document.querySelectorAll('.option-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                });
-            });
-
-            // True/False buttons
-            document.querySelectorAll('.tf-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                });
-            });
-        }
-
-        function buildInput(q, existing) {
-            function mathSafe(s) {
-                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                console.warn(e);
             }
 
-            function escapeAttr(s) {
-                return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            }
+            const total = state.questions.length;
+            const percent = ((state.currentQIndex + 1) / total) * 100;
 
+            // Build input HTML based on question type
+            let inputHtml = '';
             if (q.type === 'mcq' && q.options && q.options.length) {
-                const letters = 'ABCDEFGHIJ';
-                return `<div class="options-list">${q.options.map((o, i) => `
-<button type="button" class="option-btn ${existing === o ? 'selected' : ''}" data-val="${escapeAttr(o)}">
-<span class="option-letter">${letters[i]}</span>
-<span class="option-text">${mathSafe(o)}</span>
-</button>`).join('')}</div>`;
+                const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+                inputHtml = `<div class="options-list">` +
+                    q.options.map((opt, idx) => `
+                    <button class="option-btn ${existingAnswer === opt ? 'selected' : ''}" 
+                            data-value="${escapeHtml(opt)}"
+                            onclick="event.preventDefault(); document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                        <span style="font-weight:700; margin-right:12px;">${letters[idx]}</span> ${escapeHtml(opt)}
+                    </button>
+                `).join('') + `</div>`;
+            } else if (q.type === 'truefalse') {
+                inputHtml = `
+                <div style="display:flex; gap:12px;">
+                    <button class="tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" 
+                            data-value="True"
+                            onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                        ✅ True
+                    </button>
+                    <button class="tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" 
+                            data-value="False"
+                            onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                        ❌ False
+                    </button>
+                </div>
+            `;
+            } else if (q.type === 'number') {
+                inputHtml = `<input class="answer-number" id="answerInput" type="number" 
+                                placeholder="Enter a number..." 
+                                value="${existingAnswer ? escapeHtml(existingAnswer) : ''}">`;
+            } else {
+                inputHtml = `<textarea class="answer-textarea" id="answerInput" rows="4" 
+                                   placeholder="Write your answer here...">${existingAnswer ? escapeHtml(existingAnswer) : ''}</textarea>`;
             }
 
-            if (q.type === 'truefalse') {
-                return `<div class="tf-row">
-<button type="button" class="tf-btn ${existing === 'True' ? 'selected' : ''}" data-val="True">
-<span class="tf-icon"><i class="fas fa-check" style="color:var(--success)"></i></span>
-<span style="font-weight:700">True</span>
-</button>
-<button type="button" class="tf-btn ${existing === 'False' ? 'selected' : ''}" data-val="False">
-<span class="tf-icon"><i class="fas fa-xmark" style="color:var(--danger)"></i></span>
-<span style="font-weight:700">False</span>
-</button>
-</div>`;
-            }
+            const quizScreen = document.getElementById('quizScreen');
+            quizScreen.innerHTML = `
+            <div class="progress-header">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span><strong>Question ${state.currentQIndex + 1} of ${total}</strong></span>
+                    <span>${q.points} points</span>
+                </div>
+                <div class="progress-track" style="background:#e2e8f0; border-radius:10px;">
+                    <div class="progress-fill" style="width: ${percent}%;"></div>
+                </div>
+            </div>
+            <div class="q-card">
+                <div class="q-text" style="font-size:1.2rem; font-weight:600; margin-bottom:20px;">
+                    ${escapeHtml(q.text)}
+                </div>
+                ${existingAnswer ? `<div class="answered-badge"><i class="fas fa-check-circle"></i> Answer saved</div>` : ''}
+                ${inputHtml}
+            </div>
+        `;
 
-            if (q.type === 'number') {
-                return `<input type="number" class="answer-number" id="answerInput" placeholder="Enter a number…" value="${existing !== null ? escapeHtml(String(existing)) : ''}">`;
-            }
+            // Update navigation buttons
+            const prevBtn = document.getElementById('btnPrev');
+            const nextBtn = document.getElementById('btnNext');
+            const finishBtn = document.getElementById('btnFinish');
 
-            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
+            if (prevBtn) prevBtn.disabled = (state.currentQIndex === 0);
+            if (nextBtn) nextBtn.style.display = (state.currentQIndex < total - 1) ? 'inline-flex' : 'none';
+            if (finishBtn) finishBtn.style.display = (state.currentQIndex === total - 1) ? 'inline-flex' : 'none';
+
+            // Render MathJax
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([quizScreen]).catch(e => console.warn);
+            }
         }
 
-        function getCurrentAnswer() {
-            const q = questions[currentQIndex];
-            if (q.type === 'mcq') {
-                const selected = document.querySelector('.option-btn.selected');
-                return selected ? selected.getAttribute('data-val') : null;
-            }
-            if (q.type === 'truefalse') {
-                const selected = document.querySelector('.tf-btn.selected');
-                return selected ? selected.getAttribute('data-val') : null;
-            }
-            const el = document.getElementById('answerInput');
-            return el && el.value.trim() ? el.value.trim() : null;
+        // Welcome screen
+        async function showWelcomeScreen() {
+            const state = window.appState;
+            const ws = document.getElementById('welcomeScreen');
+            const quizScreen = document.getElementById('quizScreen');
+            const completionScreen = document.getElementById('completionScreen');
+            const navFooter = document.getElementById('navFooter');
+
+            ws.style.display = 'block';
+            quizScreen.style.display = 'none';
+            completionScreen.style.display = 'none';
+            navFooter.style.display = 'none';
+
+            const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+            let answeredCount = 0;
+            try {
+                const snap = await getDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey));
+                if (snap.exists() && snap.data().answers) {
+                    answeredCount = Object.keys(snap.data().answers).length;
+                }
+            } catch (e) {}
+
+            const totalPoints = state.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+
+            ws.innerHTML = `
+            <div class="session-card">
+                <div style="font-size:4rem; margin-bottom:16px;">📚</div>
+                <h2>Welcome, ${escapeHtml((state.studentProfile?.name || 'Student').split(' ')[0])}!</h2>
+                <p style="color:#666; margin:12px 0;">${escapeHtml(state.sessionData?.title || 'Quiz Session')}</p>
+                <div style="background:#f1f5f9; border-radius:20px; padding:20px; margin:20px 0;">
+                    <div>📋 ${state.questions.length} Questions</div>
+                    <div>⭐ ${totalPoints} Total Points</div>
+                    <div>✅ ${answeredCount} Answers Saved</div>
+                </div>
+                <button class="btn btn-primary" onclick="window.startQuiz()" style="padding:14px 40px;">
+                    ${answeredCount > 0 ? 'Continue Quiz' : 'Start Quiz'} →
+                </button>
+            </div>
+        `;
         }
 
-        async function canNavigate() {
-            const q = questions[currentQIndex];
-            if (!q) return true;
+        window.startQuiz = async function() {
+            const state = window.appState;
+            // Find first unanswered question
+            const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+            const snap = await getDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey));
+            const answers = snap.exists() ? snap.data().answers || {} : {};
 
-            const uiAnswer = getCurrentAnswer();
-            if (uiAnswer !== null) return true;
+            let startIndex = 0;
+            for (let i = 0; i < state.questions.length; i++) {
+                if (!answers[state.questions[i].id]) {
+                    startIndex = i;
+                    break;
+                }
+            }
+            state.currentQIndex = startIndex;
+
+            document.getElementById('welcomeScreen').style.display = 'none';
+            document.getElementById('quizScreen').style.display = 'block';
+            document.getElementById('navFooter').style.display = 'flex';
+            await renderQuestion();
+        };
+
+        // Completion screen
+        async function showCompletionScreen() {
+            const state = window.appState;
+            const ws = document.getElementById('welcomeScreen');
+            const quizScreen = document.getElementById('quizScreen');
+            const completionScreen = document.getElementById('completionScreen');
+            const navFooter = document.getElementById('navFooter');
+
+            ws.style.display = 'none';
+            quizScreen.style.display = 'none';
+            completionScreen.style.display = 'block';
+            navFooter.style.display = 'none';
+
+            const studentKey = state.currentStudent.docId || state.currentStudent.uid;
+            const snap = await getDoc(doc(db, 'sessions', state.activeSessionId, 'students', studentKey));
+            const data = snap.exists() ? snap.data() : {
+                answers: {},
+                grades: {}
+            };
+
+            let totalPoints = state.questions.reduce((sum, q) => sum + (q.points || 0), 0);
+            let earnedPoints = 0;
+            if (data.grades) {
+                earnedPoints = Object.values(data.grades).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+            }
+
+            let answersHtml = '';
+            for (let i = 0; i < state.questions.length; i++) {
+                const q = state.questions[i];
+                const answer = data.answers?.[q.id] || '(Not answered)';
+                const grade = data.grades?.[q.id];
+                answersHtml += `
+                <div style="border-bottom:1px solid #e2e8f0; padding:16px 0;">
+                    <strong>Q${i+1}:</strong> ${escapeHtml(q.text)}<br>
+                    <span style="color:#64748b;">Your answer: ${escapeHtml(String(answer))}</span>
+                    ${grade ? `<span style="background:#d1fae5; margin-left:12px; padding:4px 12px; border-radius:20px;">${grade}/${q.points} pts</span>` : ''}
+                </div>
+            `;
+            }
+
+            completionScreen.innerHTML = `
+            <div style="text-align:center; background:white; border-radius:32px; padding:40px;">
+                <div style="font-size:5rem;">🏆</div>
+                <h2 style="margin:16px 0;">Quiz Completed!</h2>
+                <p style="color:#666;">Great job! Your answers have been submitted.</p>
+                <div style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border-radius:24px; padding:24px; margin:24px 0;">
+                    <div style="font-size:2rem; font-weight:800;">${earnedPoints}/${totalPoints}</div>
+                    <div>Total Score</div>
+                </div>
+                <div style="text-align:left; margin-top:24px;">
+                    <h3>📝 Your Answers</h3>
+                    ${answersHtml}
+                </div>
+                <button class="btn btn-secondary" onclick="window.exitSession()" style="margin-top:24px;">
+                    Sign Out
+                </button>
+            </div>
+        `;
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([completionScreen]).catch(e => console.warn);
+            }
+        }
+
+        // Exit session
+        window.exitSession = async function() {
+            const state = window.appState;
+            if (state.activeSessionId && state.currentStudent) {
+                try {
+                    await remove(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${state.currentStudent.uid}`));
+                } catch (e) {}
+            }
+            await signOut(auth);
+            location.reload();
+        };
+
+        // Login function
+        window.doStudentLogin = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            const btn = event?.target;
+            const errDiv = document.getElementById('loginErr');
+
+            if (!email || !pass) {
+                errDiv.textContent = 'Please enter email and password';
+                errDiv.style.display = 'block';
+                return;
+            }
 
             try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const data = sSnap.exists() ? sSnap.data() : {};
-
-                if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
-                    return true;
-                }
+                await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
-                console.warn("Nav check error:", e);
-                return true;
+                errDiv.textContent = 'Invalid email or password';
+                errDiv.style.display = 'block';
             }
+        };
 
-            showToast('Please save your answer first');
-            return false;
-        }
-
-        // ========== AUTH & SESSION ==========
+        // Auth state listener
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingScreen').style.display = 'none';
+
             if (!user) {
-                const box = document.getElementById('sessionInfoBox');
-                if (box) {
-                    box.innerHTML = '<div class="session-info-box"><div class="sib-label">Status</div><div style="color:var(--text-muted);font-size:0.9rem;"><i class="fas fa-lock"></i> Please sign in</div></div>';
-                }
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
                 return;
             }
 
             try {
+                // Find student profile
+                const studentsRef = collection(db, 'students');
+                const q = query(studentsRef, where('uid', '==', user.uid));
+                const querySnap = await getDocs(q);
+
                 let studentData = null;
                 let studentDocId = null;
 
-                const studentsRef = collection(db, 'students');
-                const q = query(studentsRef, where('uid', '==', user.uid));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    studentDocId = querySnapshot.docs[0].id;
-                    studentData = querySnapshot.docs[0].data();
+                if (!querySnap.empty) {
+                    studentDocId = querySnap.docs[0].id;
+                    studentData = querySnap.docs[0].data();
                 } else {
-                    const docSnap = await getDoc(doc(db, 'students', user.uid));
-                    if (docSnap.exists()) {
-                        studentData = docSnap.data();
+                    const directSnap = await getDoc(doc(db, 'students', user.uid));
+                    if (directSnap.exists()) {
                         studentDocId = user.uid;
-                    } else {
-                        const emailQuery = query(studentsRef, where('email', '==', user.email));
-                        const emailSnapshot = await getDocs(emailQuery);
-                        if (!emailSnapshot.empty) {
-                            studentDocId = emailSnapshot.docs[0].id;
-                            studentData = emailSnapshot.docs[0].data();
-                        }
+                        studentData = directSnap.data();
                     }
                 }
 
                 if (!studentData) {
-                    showErr('Student profile not found. Please contact your teacher.');
-                    await signOut(auth);
+                    throw new Error('Student profile not found');
+                }
+
+                // Find active session
+                const sessionsRef = collection(db, 'sessions');
+                const sessionQuery = query(sessionsRef, where('isActive', '==', true));
+                const sessionSnap = await getDocs(sessionQuery);
+
+                if (sessionSnap.empty) {
+                    document.getElementById('app').style.display = 'flex';
+                    document.getElementById('welcomeScreen').innerHTML = `
+                    <div class="session-card">
+                        <div style="font-size:3rem;">⏳</div>
+                        <h3>No Active Session</h3>
+                        <p>Please wait for your teacher to start a session.</p>
+                    </div>
+                `;
+                    document.getElementById('welcomeScreen').style.display = 'block';
                     return;
                 }
 
-                if (studentData.status === 'inactive' || studentData.active === false) {
-                    await signOut(auth);
-                    showErr('Your account has been deactivated. Contact your teacher.');
-                    return;
-                }
+                const state = window.appState;
+                state.currentStudent = user;
+                state.studentProfile = studentData;
+                state.activeSessionId = sessionSnap.docs[0].id;
+                state.sessionData = sessionSnap.docs[0].data();
+                state.currentStudent.docId = studentDocId;
 
-                currentStudent = user;
-                studentProfile = studentData;
-                currentStudent.docId = studentDocId;
+                // Load questions
+                const questionsRef = collection(db, 'sessions', state.activeSessionId, 'questions');
+                const questionsSnap = await getDocs(questionsRef);
+                state.questions = [];
+                questionsSnap.forEach(doc => {
+                    state.questions.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-                document.getElementById('headerName').textContent = studentProfile.name || user.email;
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-
-                await findAndJoinOpenSession();
-
-            } catch (e) {
-                console.error('Auth verification error:', e);
-                document.getElementById('loginScreen').style.display = 'flex';
-                showErr('Error: ' + e.message);
-            }
-        });
-
-        async function doStudentLogin() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            const btn = document.getElementById('joinBtn');
-            const err = document.getElementById('loginErr');
-
-            err.style.display = 'none';
-
-            if (!email || !pass) {
-                showErr('Email and password are required.');
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = 'Signing in... <i class="fas fa-spinner fa-spin"></i>';
-
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                console.error('Login error:', e);
-                showErr('Invalid email or password.');
-                btn.disabled = false;
-                btn.innerHTML = 'Sign In & Join Session <i class="fas fa-arrow-right"></i>';
-            }
-        }
-
-        async function findAndJoinOpenSession() {
-            try {
-                if (!activeSessionId) {
-                    const sessionsRef = collection(db, 'sessions');
-                    const q = query(sessionsRef, where('isActive', '==', true));
-                    const snapshot = await getDocs(q);
-
-                    if (snapshot.empty) {
-                        showNoSessions();
-                        return;
-                    }
-
-                    activeSessionId = snapshot.docs[0].id;
-                    sessionData = snapshot.docs[0].data();
-                } else {
-                    const sessDoc = await getDoc(doc(db, 'sessions', activeSessionId));
-                    if (!sessDoc.exists() || !sessDoc.data().isActive) {
-                        showNoSessions();
-                        return;
-                    }
-                    sessionData = sessDoc.data();
-                }
-
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                await setDoc(studentRef, {
-                    name: studentProfile.name || currentStudent.email,
-                    uid: currentStudent.uid,
-                    studentDocId: currentStudent.docId,
+                // Initialize student document in session
+                const studentSessionRef = doc(db, 'sessions', state.activeSessionId, 'students', studentDocId);
+                await setDoc(studentSessionRef, {
+                    name: studentData.name,
+                    uid: user.uid,
                     online: true,
-                    loginTime: Date.now(),
                     submitted: false,
-                    answers: {},
-                    grades: {},
-                    feedback: {}
+                    answers: {}
                 }, {
                     merge: true
                 });
 
-                try {
-                    await set(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-                        name: studentProfile.name || currentStudent.email,
-                        uid: currentStudent.uid,
-                        studentDocId: currentStudent.docId,
-                        joinedAt: new Date().toISOString(),
-                        status: 'active'
-                    });
-                } catch (e) {
-                    console.warn('Could not mark present in RTDB:', e);
-                }
-
-                document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
-
-                if (unsubSession) unsubSession();
-                unsubSession = onSnapshot(doc(db, 'sessions', activeSessionId, 'students', studentKey), (sd) => {
-                    if (sd.exists() && sd.data().submitted && document.getElementById('completionScreen').style.display !== 'none') {
-                        refreshCompletion(sd.data());
-                    }
+                // RTDB presence
+                await set(ref(rtDB, `liveSessions/${state.activeSessionId}/students/${user.uid}`), {
+                    name: studentData.name,
+                    joinedAt: Date.now()
                 });
 
-                await loadQuestions();
-                await loadAndShowWelcome();
-
-            } catch (e) {
-                console.error('Join session error:', e);
-                showConnectionWarning(true);
-                document.getElementById('welcomeScreen').innerHTML = `
-<div class="panel" style="text-align:center;padding:60px 0">
-<div style="font-size:3rem;margin-bottom:16px;color:var(--danger)"><i class="fas fa-triangle-exclamation"></i></div>
-<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">Connection Error</div>
-<div style="color:var(--text-muted);font-size:1rem">Unable to connect to session.</div>
-<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
-</div>`;
-                document.getElementById('welcomeScreen').style.display = 'block';
-            }
-        }
-
-        async function loadAndShowWelcome() {
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                const sSnap = await getDoc(sRef);
-                const s = sSnap.exists() ? sSnap.data() : {};
-
-                if (s.submitted) {
-                    await showCompletion();
-                    return;
-                }
-                showWelcome();
-            } catch (e) {
-                console.error('Load welcome error:', e);
-                showConnectionWarning(true);
-            }
-        }
-
-        function showWelcome() {
-            document.getElementById('quizScreen').style.display = 'none';
-            document.getElementById('completionScreen').style.display = 'none';
-            document.getElementById('navFooter').style.display = 'none';
-
-            const ws = document.getElementById('welcomeScreen');
-            ws.style.display = 'block';
-
-            if (!questions.length) {
-                ws.innerHTML = '<div class="panel" style="text-align:center;padding:40px 0"><div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-file-circle-question"></i></div><div style="font-size:1.4rem;font-weight:700;margin-bottom:8px">No questions yet</div><div style="color:var(--text-muted);">Your teacher hasn\'t added questions yet.</div></div>';
-                return;
-            }
-
-            const studentKey = currentStudent.docId || currentStudent.uid;
-            getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey)).then(sSnap => {
-                const s = sSnap.exists() ? sSnap.data() : {};
-                const answered = s.answers ? Object.keys(s.answers).length : 0;
-
-                function formatTime(timeValue) {
-                    if (!timeValue) return null;
-                    if (timeValue && typeof timeValue === 'object' && timeValue.seconds) {
-                        const date = new Date(timeValue.seconds * 1000);
-                        return date.toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                        });
-                    }
-                    if (typeof timeValue === 'string') return timeValue;
-                    return String(timeValue);
+                // Check if already submitted
+                const studentSnap = await getDoc(studentSessionRef);
+                if (studentSnap.exists() && studentSnap.data().submitted) {
+                    await showCompletionScreen();
+                } else {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                    await showWelcomeScreen();
                 }
 
-                let timeDisplay = '';
-                if (sessionData.startTime || sessionData.endTime) {
-                    const start = formatTime(sessionData.startTime);
-                    const end = formatTime(sessionData.endTime);
-                    if (start && end) timeDisplay = `${start} – ${end}`;
-                    else if (start) timeDisplay = start;
-                    else if (end) timeDisplay = `Until ${end}`;
-                }
+                document.getElementById('headerSession').textContent = state.sessionData.title || 'Quiz Session';
 
-                let dateDisplay = sessionData.date;
-                if (sessionData.date && typeof sessionData.date === 'object' && sessionData.date.seconds) {
-                    const dateObj = new Date(sessionData.date.seconds * 1000);
-                    dateDisplay = dateObj.toLocaleDateString('en-US', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        year: 'numeric'
-                    });
-                }
-
-                const instrHtml = sessionData.instructions ? `<div class="instructions-box"><strong><i class="fas fa-clipboard-list"></i> Instructions</strong>${escapeHtml(sessionData.instructions)}</div>` : '';
-
-                ws.innerHTML = `
-<div style="text-align:center;padding:20px 0">
-<div class="welcome-icon"><i class="fas fa-user-graduate"></i></div>
-<div class="welcome-title">Welcome, ${escapeHtml((studentProfile.name || '').split(' ')[0] || 'Student')}!</div>
-<div class="welcome-sub">Your quiz is ready. Take your time and do your best!</div>
-</div>
-
-<div class="session-card">
-<div class="sc-label">Session Details</div>
-<div class="sc-title">${escapeHtml(sessionData.title || 'Quiz Session')}</div>
-<div class="sc-meta-grid">
-${sessionData.grade ? `<div class="sc-meta-item"><div class="sc-meta-label">Grade</div><div class="sc-meta-val">${escapeHtml(sessionData.grade)}</div></div>` : ''}
-${sessionData.className ? `<div class="sc-meta-item"><div class="sc-meta-label">Class</div><div class="sc-meta-val">${escapeHtml(sessionData.className)}</div></div>` : ''}
-${dateDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Date</div><div class="sc-meta-val">${escapeHtml(dateDisplay)}</div></div>` : ''}
-${timeDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div><div class="sc-meta-val">${escapeHtml(timeDisplay)}</div></div>` : ''}
-</div>
-<div class="sc-stats">
-<div class="sc-stat"><span class="dot" style="background:var(--primary)"></span>${questions.length} Questions</div>
-<div class="sc-stat"><span class="dot" style="background:var(--warning)"></span>${questions.reduce((n, q) => n + q.points, 0)} Points</div>
-<div class="sc-stat"><span class="dot" style="background:var(--success)"></span>${answered} Answered</div>
-</div>
-</div>
-
-${instrHtml}
-
-<div style="text-align:center">
-<button class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;" onclick="window.startQuiz()">
-${answered > 0 ? 'Continue Quiz' : 'Start Quiz'} <i class="fas fa-arrow-right"></i>
-</button>
-</div>`;
-
-            }).catch(e => console.warn('Welcome error:', e));
-        }
-
-        window.startQuiz = async function() {
-            if (!questions.length) return;
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const s = sSnap.exists() ? sSnap.data() : {};
-
-                let start = 0;
-                for (let i = 0; i < questions.length; i++) {
-                    if (!s.answers || s.answers[questions[i].id] === undefined) {
-                        start = i;
-                        break;
-                    }
-                }
-                currentQIndex = start;
-
-                document.getElementById('welcomeScreen').style.display = 'none';
-                document.getElementById('quizScreen').style.display = 'block';
-                document.getElementById('navFooter').style.display = 'flex';
-                await renderQuestion();
-            } catch (e) {
-                console.error('Start quiz error:', e);
-                showToast('Error loading quiz.', true);
+            } catch (err) {
+                console.error('Auth error:', err);
+                document.getElementById('loginErr').textContent = err.message;
+                document.getElementById('loginErr').style.display = 'block';
             }
-        };
-
-        function showNoSessions() {
-            document.getElementById('app').style.display = 'flex';
-            document.getElementById('welcomeScreen').innerHTML = `
-<div class="panel" style="text-align:center;padding:60px 0">
-<div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-hourglass-half"></i></div>
-<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">No Open Sessions</div>
-<div style="color:var(--text-muted);font-size:1rem">Your teacher hasn't opened a session yet.</div>
-<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
-</div>`;
-            document.getElementById('welcomeScreen').style.display = 'block';
-        }
-
-        async function exitSession() {
-            if (activeSessionId && currentStudent) {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                try {
-                    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey), {
-                        online: false
-                    });
-                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                } catch (e) {}
-            }
-            if (unsubSession) unsubSession();
-            await signOut(auth);
-            window.location.href = 'index.html';
-        }
-
-        async function showCompletion() {
-            document.getElementById('quizScreen').style.display = 'none';
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('navFooter').style.display = 'none';
-            document.getElementById('completionScreen').style.display = 'block';
-
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                renderCompletionScreen(sSnap.exists() ? sSnap.data() : {});
-            } catch (e) {
-                console.error('Completion error:', e);
-            }
-        }
-
-        async function refreshCompletion(s) {
-            renderCompletionScreen(s);
-        }
-
-        function renderCompletionScreen(s) {
-            const answered = s.answers ? Object.keys(s.answers).length : 0;
-            const graded = s.grades ? Object.keys(s.grades).length : 0;
-            const score = s.grades ? Object.values(s.grades).reduce((n, v) => n + (parseFloat(v) || 0), 0) : 0;
-            const maxScore = questions.reduce((n, q) => n + q.points, 0);
-
-            const cs = document.getElementById('completionScreen');
-
-            const answersHtml = questions.map((q, i) => {
-                const ans = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
-                const grade = s.grades && s.grades[q.id] !== undefined ? s.grades[q.id] : null;
-                const fb = s.feedback && s.feedback[q.id] ? s.feedback[q.id] : null;
-
-                function mathSafe(t) {
-                    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                }
-
-                return `
-<div class="answer-review-item">
-<div class="ar-q math-content">
-<strong>Q${i + 1}.</strong> ${mathSafe(q.text)}
-</div>
-<div class="ar-a">
-Your answer: <span class="math-content">${ans !== null ? mathSafe(String(ans)) : '<em>Not answered</em>'}</span>
-</div>
-${grade !== null ? `<div class="grade-display"><i class="fas fa-star"></i> ${grade} / ${q.points} pts</div>` : ''}
-${fb ? `<div class="feedback-display"><i class="fas fa-comment-dots"></i> ${escapeHtml(fb)}</div>` : ''}
-</div>`;
-            }).join('');
-
-            cs.innerHTML = `
-<div class="completion-icon"><i class="fas fa-trophy" style="color: #fbbf24;"></i></div>
-<div class="completion-title">All Done!</div>
-<div class="completion-sub">Great job completing the session. Here is a summary of your performance.</div>
-
-<div class="submitted-lock-banner">
-<i class="fas fa-lock"></i>
-<span>Your answers have been submitted and <strong>cannot be changed</strong>.</span>
-</div>
-
-<div class="summary-grid">
-<div class="summary-item"><div class="summary-val">${answered}/${questions.length}</div><div class="summary-label">Answered</div></div>
-<div class="summary-item"><div class="summary-val">${graded}</div><div class="summary-label">Graded</div></div>
-<div class="summary-item"><div class="summary-val" style="color:var(--primary)">${score}/${maxScore}</div><div class="summary-label">Score</div></div>
-</div>
-
-<div class="answers-review">
-<h3><i class="fas fa-list-check"></i> Your Answers</h3>
-${answersHtml}
-</div>
-
-<button class="btn btn-secondary" onclick="window.exitSession()" style="margin-top:24px"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</button>`;
-
-            renderMath(cs);
-        }
-
-        function renderMath(el) {
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
-            }
-        }
-
-        // ========== UTILITY FUNCTIONS ==========
-        function showErr(msg) {
-            const e = document.getElementById('loginErr');
-            e.textContent = msg;
-            e.style.display = 'block';
-            if (msg.includes('network') || msg.includes('connection')) {
-                const warning = document.getElementById('adblockWarning');
-                if (warning) warning.style.display = 'block';
-            }
-        }
-
-        function showConnectionWarning(show = true) {
-            const warning = document.getElementById('connectionWarning');
-            if (warning) warning.style.display = show ? 'block' : 'none';
-        }
-
-        function showToast(msg, isError = false) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.style.background = isError ? 'var(--danger)' : 'var(--text)';
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 2200);
-        }
-
-        function escapeHtml(s) {
-            return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        // Make functions globally available
-        window.exitSession = exitSession;
+        });
     </script>
 </body>
 
