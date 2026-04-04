@@ -1827,6 +1827,12 @@ async function exportResultsAsPDF(data) {
     // Log the data to see what's being passed
     console.log('PDF Export Data received:', data);
     console.log('Questions array:', data.questions);
+    console.log('Questions array details:', JSON.stringify((data.questions || []).map(q => ({ 
+        id: q.id, 
+        text: q.text, 
+        points: q.points,
+        type: q.type 
+    })), null, 2));
     console.log('Answers object:', data.answers);
     console.log('Grades object:', data.grades);
     console.log('Feedback object:', data.feedback);
@@ -1874,14 +1880,18 @@ async function exportResultsAsPDF(data) {
     let questionsHtml = '';
     if (questions && questions.length > 0) {
         questions.forEach((q, idx) => {
+            // Get the question text - try different possible field names
+            const questionText = q.text || q.questionText || q.question || 'Question text not available';
             const studentAnswer = answers[q.id] || 'No answer provided';
             const score = grades[q.id];
             const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
             const feedbackText = feedback[q.id] || 'No feedback';
-            const isCorrect = score >= q.points;
+            const isCorrect = (score !== undefined && score !== null && score !== '') ? (score >= (q.points || 0)) : false;
             
             console.log(`Question ${idx + 1}:`, {
-                text: q.text,
+                id: q.id,
+                text: questionText,
+                points: q.points,
                 answer: studentAnswer,
                 score: score,
                 feedback: feedbackText
@@ -1892,23 +1902,23 @@ async function exportResultsAsPDF(data) {
                     <div class="question-header">
                         <div>
                             <span style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">Question ${idx + 1}</span>
-                            <span style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">${q.points} points</span>
+                            <span style="margin-left: 8px; font-size: 0.75rem; color: #64748b;">${q.points || 0} points</span>
                         </div>
                         <span style="background: ${isCorrect ? '#d1fae5' : '#fee2e2'}; color: ${isCorrect ? '#065f46' : '#991b1b'}; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600;">
                             Score: ${scoreDisplay}
                         </span>
                     </div>
                     <div class="question-text">
-                        <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px;">Question:</div>
-                        ${formatMathForPDF(q.text)}
+                        <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 6px; font-weight: 600;">📖 Question:</div>
+                        <div class="math-content" style="font-size: 0.9rem; line-height: 1.5;">${formatMathForPDF(questionText)}</div>
                     </div>
                     <div class="answer-section">
                         <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
-                        <div class="math-content">${formatMathForPDF(studentAnswer)}</div>
+                        <div class="math-content" style="font-size: 0.9rem;">${formatMathForPDF(studentAnswer)}</div>
                     </div>
                     <div class="feedback-section">
                         <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
-                        <div>${escapeHtml(feedbackText)}</div>
+                        <div style="font-size: 0.9rem;">${escapeHtml(feedbackText)}</div>
                     </div>
                 </div>
             `;
@@ -1917,6 +1927,7 @@ async function exportResultsAsPDF(data) {
         questionsHtml = '<div style="text-align: center; padding: 40px; color: #64748b;">No questions found for this quiz.</div>';
     }
     
+    // Rest of the PDF generation remains the same...
     pdfContainer.innerHTML = `
         <!DOCTYPE html>
         <html>
@@ -2027,9 +2038,6 @@ async function exportResultsAsPDF(data) {
                 .question-text {
                     padding: 16px;
                     background: white;
-                    font-weight: 500;
-                    font-size: 14px;
-                    line-height: 1.6;
                     border-bottom: 1px solid #e2e8f0;
                 }
                 .answer-section, .feedback-section {
@@ -2053,6 +2061,7 @@ async function exportResultsAsPDF(data) {
                 .math-content {
                     font-size: 13px;
                     line-height: 1.5;
+                    word-break: break-word;
                 }
                 .footer {
                     margin-top: 40px;
