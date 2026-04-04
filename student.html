@@ -153,7 +153,7 @@
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             filter: brightness(1.05);
         }
 
@@ -163,7 +163,7 @@
             border: 1px solid var(--border);
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: var(--surface-2);
         }
 
@@ -172,7 +172,7 @@
             color: #fff;
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             filter: brightness(1.05);
         }
 
@@ -1140,7 +1140,7 @@
                     <input type="password" id="loginPass" autocomplete="current-password" placeholder="••••••••">
                 </div>
 
-                <button class="btn btn-primary btn-block" id="joinBtn" onclick="doStudentLogin()">
+                <button class="btn btn-primary btn-block" id="joinBtn">
                     Sign In & Join Session <i class="fas fa-arrow-right"></i>
                 </button>
 
@@ -1162,7 +1162,7 @@
                     <div class="user-dot"></div>
                     <div class="user-name" id="headerName">Student</div>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="exitSession()">
+                <button class="btn btn-secondary btn-sm" id="exitBtn">
                     <i class="fas fa-arrow-right-from-bracket"></i> Exit
                 </button>
             </div>
@@ -1211,16 +1211,7 @@
             update as rtdbUpdate
         } from './firebase-config.js';
 
-        window.addEventListener('beforeunload', async () => {
-            if (activeSessionId && currentStudent) {
-                try {
-                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                } catch (e) {
-                    console.warn('Could not remove from RTDB on exit:', e);
-                }
-            }
-        });
-
+        // ========== GLOBAL STATE ==========
         let currentStudent = null;
         let studentProfile = null;
         let currentQIndex = 0;
@@ -1228,21 +1219,339 @@
         let sessionData = {};
         let activeSessionId = null;
         let unsubSession = null;
-        let isSubmittingAnswer = false; // FIX: Flag to prevent double submissions
+        let isSubmittingAnswer = false;
 
-        // ✅ FIX: Setup button event listeners on DOMContentLoaded
-        document.addEventListener('DOMContentLoaded', function() {
-            const btnPrev = document.getElementById('btnPrev');
-            const btnSubmit = document.getElementById('btnSubmit');
-            const btnNext = document.getElementById('btnNext');
-            const btnFinish = document.getElementById('btnFinish');
+        // ========== EVENT DELEGATION SETUP ==========
+        // Use event delegation for buttons that persist in the footer
+        document.getElementById('navFooter').addEventListener('click', async (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
 
-            if (btnPrev) btnPrev.addEventListener('click', prevQ);
-            if (btnSubmit) btnSubmit.addEventListener('click', submitAnswer);
-            if (btnNext) btnNext.addEventListener('click', nextQ);
-            if (btnFinish) btnFinish.addEventListener('click', finishSession);
+            if (target.id === 'btnPrev') {
+                e.preventDefault();
+                await handlePrevClick();
+            } else if (target.id === 'btnSubmit') {
+                e.preventDefault();
+                await handleSubmitClick();
+            } else if (target.id === 'btnNext') {
+                e.preventDefault();
+                await handleNextClick();
+            } else if (target.id === 'btnFinish') {
+                e.preventDefault();
+                await handleFinishClick();
+            }
         });
 
+        // Exit button
+        document.getElementById('exitBtn').addEventListener('click', exitSession);
+
+        // Join button
+        document.getElementById('joinBtn').addEventListener('click', doStudentLogin);
+
+        // Login password enter key
+        document.getElementById('loginPass')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doStudentLogin();
+        });
+
+        // ========== BUTTON HANDLERS ==========
+        async function handlePrevClick() {
+            const btn = document.getElementById('btnPrev');
+            if (btn.disabled) return;
+
+            if (currentQIndex > 0) {
+                currentQIndex--;
+                await renderQuestion();
+            }
+        }
+
+        async function handleNextClick() {
+            const btn = document.getElementById('btnNext');
+            if (btn.disabled) return;
+
+            if (currentQIndex < questions.length - 1) {
+                if (await canNavigate()) {
+                    currentQIndex++;
+                    await renderQuestion();
+                }
+            }
+        }
+
+        async function handleSubmitClick() {
+            if (isSubmittingAnswer) return;
+
+            const answer = getCurrentAnswer();
+            if (answer === null) {
+                showToast('Please provide an answer first');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            isSubmittingAnswer = true;
+
+            const q = questions[currentQIndex];
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                await updateDoc(studentRef, {
+                    [`answers.${q.id}`]: answer
+                });
+
+                try {
+                    await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
+                        lastActivity: Date.now(),
+                        questionsAnswered: currentQIndex + 1
+                    });
+                } catch (e) {
+                    console.warn('Could not update RTDB activity:', e);
+                }
+
+                showToast('Answer saved successfully');
+
+                // Update button state
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
+                btn.classList.add('saved');
+                btn.disabled = false;
+
+                // Add visual badge if missing
+                const qCard = document.querySelector('.q-card');
+                if (qCard && !qCard.querySelector('.answered-badge')) {
+                    const badge = document.createElement('div');
+                    badge.className = 'answered-badge';
+                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
+                    const qText = qCard.querySelector('.q-text');
+                    if (qText) qText.insertAdjacentElement('afterend', badge);
+                }
+
+            } catch (e) {
+                console.error('Submit error:', e);
+                showToast('Failed to save. Please try again.', true);
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
+                btn.disabled = false;
+            } finally {
+                isSubmittingAnswer = false;
+            }
+        }
+
+        async function handleFinishClick() {
+            const answer = getCurrentAnswer();
+            if (answer !== null) {
+                const q = questions[currentQIndex];
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                try {
+                    await updateDoc(studentRef, {
+                        [`answers.${q.id}`]: answer
+                    });
+                } catch (e) {
+                    console.error('Error saving last answer:', e);
+                }
+            }
+
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
+
+                // Check all questions have answers
+                for (let i = 0; i < questions.length; i++) {
+                    if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
+                        showToast(`Question ${i + 1} is missing an answer!`);
+                        currentQIndex = i;
+                        await renderQuestion();
+                        return;
+                    }
+                }
+
+                // Mark as submitted
+                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
+                await updateDoc(studentRef, {
+                    submitted: true
+                });
+
+                try {
+                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
+                } catch (e) {
+                    console.warn('Could not remove from RTDB:', e);
+                }
+
+                await showCompletion();
+            } catch (e) {
+                console.error('Finish error:', e);
+                showToast('Error submitting.', true);
+            }
+        }
+
+        // ========== CORE QUIZ FUNCTIONS ==========
+        async function loadQuestions() {
+            try {
+                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
+                const qSnap = await getDocs(qRef);
+                questions = [];
+                qSnap.forEach(d => questions.push({
+                    id: d.id,
+                    ...d.data()
+                }));
+                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
+                console.log('✅ Questions loaded:', questions.length);
+            } catch (e) {
+                console.error('Load questions error:', e);
+            }
+        }
+
+        async function renderQuestion() {
+            try {
+                if (!questions.length) return;
+
+                const q = questions[currentQIndex];
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const s = sSnap.exists() ? sSnap.data() : {};
+                const existing = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
+
+                const total = questions.length;
+                const pct = Math.round((currentQIndex + 1) / total * 100);
+
+                // Reset submit button
+                const btnSubmit = document.getElementById('btnSubmit');
+                btnSubmit.innerHTML = '<i class="fas fa-save"></i> Save Answer';
+                btnSubmit.classList.remove('saved');
+                btnSubmit.disabled = false;
+
+                function mathSafe(str) {
+                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                }
+
+                const qscreen = document.getElementById('quizScreen');
+                qscreen.innerHTML = `
+<div class="progress-header">
+<div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
+<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+</div>
+
+<div class="q-card">
+<div class="q-header">
+<span class="q-badge"><i class="fas fa-question-circle"></i> Question ${currentQIndex + 1}</span>
+<span class="q-points"><i class="fas fa-star"></i> ${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span>
+</div>
+<div class="q-text">${mathSafe(q.text)}</div>
+${existing !== null ? '<div class="answered-badge"><i class="fas fa-check-circle"></i> Answer Saved</div>' : ''}
+${buildInput(q, existing)}
+</div>`;
+
+                // Update button states
+                document.getElementById('btnPrev').disabled = currentQIndex === 0;
+                document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
+                document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
+
+                // Re-attach option/TF click handlers
+                setupQuestionHandlers();
+
+                renderMath(qscreen);
+            } catch (e) {
+                console.error('Render question error:', e);
+                showToast('Error loading question.', true);
+            }
+        }
+
+        function setupQuestionHandlers() {
+            // Option buttons
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+
+            // True/False buttons
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        }
+
+        function buildInput(q, existing) {
+            function mathSafe(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function escapeAttr(s) {
+                return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
+
+            if (q.type === 'mcq' && q.options && q.options.length) {
+                const letters = 'ABCDEFGHIJ';
+                return `<div class="options-list">${q.options.map((o, i) => `
+<button type="button" class="option-btn ${existing === o ? 'selected' : ''}" data-val="${escapeAttr(o)}">
+<span class="option-letter">${letters[i]}</span>
+<span class="option-text">${mathSafe(o)}</span>
+</button>`).join('')}</div>`;
+            }
+
+            if (q.type === 'truefalse') {
+                return `<div class="tf-row">
+<button type="button" class="tf-btn ${existing === 'True' ? 'selected' : ''}" data-val="True">
+<span class="tf-icon"><i class="fas fa-check" style="color:var(--success)"></i></span>
+<span style="font-weight:700">True</span>
+</button>
+<button type="button" class="tf-btn ${existing === 'False' ? 'selected' : ''}" data-val="False">
+<span class="tf-icon"><i class="fas fa-xmark" style="color:var(--danger)"></i></span>
+<span style="font-weight:700">False</span>
+</button>
+</div>`;
+            }
+
+            if (q.type === 'number') {
+                return `<input type="number" class="answer-number" id="answerInput" placeholder="Enter a number…" value="${existing !== null ? escapeHtml(String(existing)) : ''}">`;
+            }
+
+            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
+        }
+
+        function getCurrentAnswer() {
+            const q = questions[currentQIndex];
+            if (q.type === 'mcq') {
+                const selected = document.querySelector('.option-btn.selected');
+                return selected ? selected.getAttribute('data-val') : null;
+            }
+            if (q.type === 'truefalse') {
+                const selected = document.querySelector('.tf-btn.selected');
+                return selected ? selected.getAttribute('data-val') : null;
+            }
+            const el = document.getElementById('answerInput');
+            return el && el.value.trim() ? el.value.trim() : null;
+        }
+
+        async function canNavigate() {
+            const q = questions[currentQIndex];
+            if (!q) return true;
+
+            const uiAnswer = getCurrentAnswer();
+            if (uiAnswer !== null) return true;
+
+            try {
+                const studentKey = currentStudent.docId || currentStudent.uid;
+                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
+                const data = sSnap.exists() ? sSnap.data() : {};
+
+                if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
+                    return true;
+                }
+            } catch (e) {
+                console.warn("Nav check error:", e);
+                return true;
+            }
+
+            showToast('Please save your answer first');
+            return false;
+        }
+
+        // ========== AUTH & SESSION ==========
         onAuthStateChanged(auth, async (user) => {
             document.getElementById('loadingScreen').style.display = 'none';
             if (!user) {
@@ -1258,53 +1567,41 @@
             try {
                 let studentData = null;
                 let studentDocId = null;
-                console.log('Current user UID:', user.uid);
 
-                // Method 1: Try to find by uid field in students collection
                 const studentsRef = collection(db, 'students');
                 const q = query(studentsRef, where('uid', '==', user.uid));
                 const querySnapshot = await getDocs(q);
-                console.log('Query by uid found:', querySnapshot.size, 'documents');
 
                 if (!querySnapshot.empty) {
                     studentDocId = querySnapshot.docs[0].id;
                     studentData = querySnapshot.docs[0].data();
-                    console.log('✅ Found student by uid field:', studentData);
                 } else {
-                    // Method 2: Try to find by document ID (if it matches auth UID)
                     const docSnap = await getDoc(doc(db, 'students', user.uid));
                     if (docSnap.exists()) {
                         studentData = docSnap.data();
                         studentDocId = user.uid;
-                        console.log('✅ Found student by document ID:', studentData);
                     } else {
-                        // Method 3: Try to find by email
                         const emailQuery = query(studentsRef, where('email', '==', user.email));
                         const emailSnapshot = await getDocs(emailQuery);
                         if (!emailSnapshot.empty) {
                             studentDocId = emailSnapshot.docs[0].id;
                             studentData = emailSnapshot.docs[0].data();
-                            console.log('✅ Found student by email:', studentData);
                         }
                     }
                 }
 
                 if (!studentData) {
-                    console.error("Student profile not found for UID:", user.uid);
-                    console.error("Student email:", user.email);
-                    showErr('Student profile not found. Please contact your teacher to get your account set up correctly.');
+                    showErr('Student profile not found. Please contact your teacher.');
                     await signOut(auth);
                     return;
                 }
 
-                // Check if account is active
                 if (studentData.status === 'inactive' || studentData.active === false) {
                     await signOut(auth);
                     showErr('Your account has been deactivated. Contact your teacher.');
                     return;
                 }
 
-                // Set Global Variables
                 currentStudent = user;
                 studentProfile = studentData;
                 currentStudent.docId = studentDocId;
@@ -1322,7 +1619,7 @@
             }
         });
 
-        window.doStudentLogin = async function() {
+        async function doStudentLogin() {
             const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPass').value;
             const btn = document.getElementById('joinBtn');
@@ -1346,11 +1643,7 @@
                 btn.disabled = false;
                 btn.innerHTML = 'Sign In & Join Session <i class="fas fa-arrow-right"></i>';
             }
-        };
-
-        document.getElementById('loginPass')?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') doStudentLogin();
-        });
+        }
 
         async function findAndJoinOpenSession() {
             try {
@@ -1403,7 +1696,6 @@
                     console.warn('Could not mark present in RTDB:', e);
                 }
 
-                document.getElementById('headerName').textContent = studentProfile.name || currentStudent.email;
                 document.getElementById('headerSession').textContent = [sessionData.grade, sessionData.className, sessionData.title].filter(Boolean).join(' · ') || 'Session';
 
                 if (unsubSession) unsubSession();
@@ -1413,7 +1705,6 @@
                     }
                 });
 
-                // ✅ FIX: Load questions once on session start
                 await loadQuestions();
                 await loadAndShowWelcome();
 
@@ -1431,50 +1722,6 @@
             }
         }
 
-        function showNoSessions() {
-            document.getElementById('app').style.display = 'flex';
-            document.getElementById('welcomeScreen').innerHTML = `
-<div class="panel" style="text-align:center;padding:60px 0">
-<div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-hourglass-half"></i></div>
-<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">No Open Sessions</div>
-<div style="color:var(--text-muted);font-size:1rem">Your teacher hasn't opened a session yet.</div>
-<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
-</div>`;
-            document.getElementById('welcomeScreen').style.display = 'block';
-        }
-
-        window.exitSession = async function() {
-            if (activeSessionId && currentStudent) {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                try {
-                    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey), {
-                        online: false
-                    });
-                    await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                } catch (e) {}
-            }
-            if (unsubSession) unsubSession();
-            await signOut(auth);
-            window.location.href = 'index.html';
-        };
-
-        // ✅ FIX: Load questions only once
-        async function loadQuestions() {
-            try {
-                const qRef = collection(db, 'sessions', activeSessionId, 'questions');
-                const qSnap = await getDocs(qRef);
-                questions = [];
-                qSnap.forEach(d => questions.push({
-                    id: d.id,
-                    ...d.data()
-                }));
-                questions.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
-                console.log('✅ Questions loaded:', questions.length);
-            } catch (e) {
-                console.error('Load questions error:', e);
-            }
-        }
-
         async function loadAndShowWelcome() {
             try {
                 const studentKey = currentStudent.docId || currentStudent.uid;
@@ -1483,7 +1730,7 @@
                 const s = sSnap.exists() ? sSnap.data() : {};
 
                 if (s.submitted) {
-                    showCompletion();
+                    await showCompletion();
                     return;
                 }
                 showWelcome();
@@ -1572,7 +1819,7 @@ ${timeDisplay ? `<div class="sc-meta-item"><div class="sc-meta-label">Time</div>
 ${instrHtml}
 
 <div style="text-align:center">
-<button class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;" onclick="startQuiz()">
+<button class="btn btn-primary" style="padding: 14px 40px; font-size: 1.1rem;" onclick="window.startQuiz()">
 ${answered > 0 ? 'Continue Quiz' : 'Start Quiz'} <i class="fas fa-arrow-right"></i>
 </button>
 </div>`;
@@ -1599,319 +1846,38 @@ ${answered > 0 ? 'Continue Quiz' : 'Start Quiz'} <i class="fas fa-arrow-right"><
                 document.getElementById('welcomeScreen').style.display = 'none';
                 document.getElementById('quizScreen').style.display = 'block';
                 document.getElementById('navFooter').style.display = 'flex';
-                renderQuestion();
+                await renderQuestion();
             } catch (e) {
                 console.error('Start quiz error:', e);
                 showToast('Error loading quiz.', true);
             }
         };
 
-        // ✅ FIX: Simplified renderQuestion - don't re-fetch questions
-        async function renderQuestion() {
-            try {
-                if (!questions.length) return;
-
-                const q = questions[currentQIndex];
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const s = sSnap.exists() ? sSnap.data() : {};
-                const existing = s.answers && s.answers[q.id] !== undefined ? s.answers[q.id] : null;
-
-                const total = questions.length;
-                const pct = Math.round((currentQIndex + 1) / total * 100);
-
-                const btnSubmit = document.getElementById('btnSubmit');
-                btnSubmit.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                btnSubmit.classList.remove('saved');
-                btnSubmit.disabled = false;
-
-                function mathSafe(str) {
-                    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                }
-
-                const qscreen = document.getElementById('quizScreen');
-                qscreen.innerHTML = `
-<div class="progress-header">
-<div class="progress-top"><span class="progress-label">Progress</span><span class="progress-fraction">${currentQIndex + 1} / ${total}</span></div>
-<div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-</div>
-
-<div class="q-card">
-<div class="q-header">
-<span class="q-badge"><i class="fas fa-question-circle"></i> Question ${currentQIndex + 1}</span>
-<span class="q-points"><i class="fas fa-star"></i> ${q.points} pts${q.tag ? ' · ' + escapeHtml(q.tag) : ''}</span>
-</div>
-<div class="q-text">${mathSafe(q.text)}</div>
-${existing !== null ? '<div class="answered-badge"><i class="fas fa-check-circle"></i> Answer Saved</div>' : ''}
-${buildInput(q, existing)}
+        function showNoSessions() {
+            document.getElementById('app').style.display = 'flex';
+            document.getElementById('welcomeScreen').innerHTML = `
+<div class="panel" style="text-align:center;padding:60px 0">
+<div style="font-size:3rem;margin-bottom:16px;color:var(--text-faint)"><i class="fas fa-hourglass-half"></i></div>
+<div style="font-size:1.5rem;font-weight:700;margin-bottom:8px">No Open Sessions</div>
+<div style="color:var(--text-muted);font-size:1rem">Your teacher hasn't opened a session yet.</div>
+<div style="margin-top:24px"><button class="btn btn-secondary" onclick="location.reload()"><i class="fas fa-rotate-right"></i> Refresh</button></div>
 </div>`;
-
-                document.getElementById('btnPrev').disabled = currentQIndex === 0;
-                document.getElementById('btnNext').style.display = currentQIndex < total - 1 ? 'inline-flex' : 'none';
-                document.getElementById('btnFinish').style.display = currentQIndex === total - 1 ? 'inline-flex' : 'none';
-
-                // Re-attach event listeners after DOM update
-                setupButtonListeners();
-
-                renderMath(qscreen);
-            } catch (e) {
-                console.error('Render question error:', e);
-                showToast('Error loading question.', true);
-            }
+            document.getElementById('welcomeScreen').style.display = 'block';
         }
 
-        // ✅ FIX: Re-attach button listeners after DOM updates
-        function setupButtonListeners() {
-            const btnPrev = document.getElementById('btnPrev');
-            const btnSubmit = document.getElementById('btnSubmit');
-            const btnNext = document.getElementById('btnNext');
-            const btnFinish = document.getElementById('btnFinish');
-
-            // Remove old listeners
-            if (btnPrev) btnPrev.replaceWith(btnPrev.cloneNode(true));
-            if (btnSubmit) btnSubmit.replaceWith(btnSubmit.cloneNode(true));
-            if (btnNext) btnNext.replaceWith(btnNext.cloneNode(true));
-            if (btnFinish) btnFinish.replaceWith(btnFinish.cloneNode(true));
-
-            // Re-attach listeners
-            const newBtnPrev = document.getElementById('btnPrev');
-            const newBtnSubmit = document.getElementById('btnSubmit');
-            const newBtnNext = document.getElementById('btnNext');
-            const newBtnFinish = document.getElementById('btnFinish');
-
-            if (newBtnPrev) newBtnPrev.addEventListener('click', prevQ);
-            if (newBtnSubmit) newBtnSubmit.addEventListener('click', submitAnswer);
-            if (newBtnNext) newBtnNext.addEventListener('click', nextQ);
-            if (newBtnFinish) newBtnFinish.addEventListener('click', finishSession);
-        }
-
-        function renderMath(el) {
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
-            }
-        }
-
-        function buildInput(q, existing) {
-            function mathSafe(s) {
-                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            }
-
-            function escapeAttr(s) {
-                return String(s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            }
-
-            if (q.type === 'mcq' && q.options && q.options.length) {
-                const letters = 'ABCDEFGHIJ';
-                return `<div class="options-list">${q.options.map((o, i) => `
-<button class="option-btn ${existing === o ? 'selected' : ''}" data-val="${escapeAttr(o)}" type="button" onclick="selectOption(event)">
-<span class="option-letter">${letters[i]}</span>
-<span class="option-text">${mathSafe(o)}</span>
-</button>`).join('')}</div>`;
-            }
-
-            if (q.type === 'truefalse') {
-                return `<div class="tf-row">
-<button class="tf-btn ${existing === 'True' ? 'selected' : ''}" data-val="True" type="button" onclick="selectTF(event, 'True')">
-<span class="tf-icon"><i class="fas fa-check" style="color:var(--success)"></i></span>
-<span style="font-weight:700">True</span>
-</button>
-<button class="tf-btn ${existing === 'False' ? 'selected' : ''}" data-val="False" type="button" onclick="selectTF(event, 'False')">
-<span class="tf-icon"><i class="fas fa-xmark" style="color:var(--danger)"></i></span>
-<span style="font-weight:700">False</span>
-</button>
-</div>`;
-            }
-
-            if (q.type === 'number') {
-                return `<input class="answer-number" type="number" id="answerInput" placeholder="Enter a number…" value="${existing !== null ? escapeHtml(String(existing)) : ''}">`;
-            }
-
-            return `<textarea class="answer-textarea" id="answerInput" placeholder="Write your answer here…">${existing !== null ? escapeHtml(String(existing)) : ''}</textarea>`;
-        }
-
-        window.selectOption = function(event) {
-            event.preventDefault();
-            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-        };
-
-        window.selectTF = function(event, val) {
-            event.preventDefault();
-            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('selected'));
-            event.currentTarget.classList.add('selected');
-        };
-
-        function getCurrentAnswer() {
-            const q = questions[currentQIndex];
-            if (q.type === 'mcq') {
-                const selected = document.querySelector('.option-btn.selected');
-                return selected ? selected.getAttribute('data-val') : null;
-            }
-            if (q.type === 'truefalse') {
-                const selected = document.querySelector('.tf-btn.selected');
-                return selected ? selected.getAttribute('data-val') : null;
-            }
-            const el = document.getElementById('answerInput');
-            return el && el.value.trim() ? el.value.trim() : null;
-        }
-
-        // ✅ FIX: Improved submitAnswer with proper error handling
-        async function submitAnswer() {
-            if (isSubmittingAnswer) return;
-
-            const answer = getCurrentAnswer();
-            if (answer === null) {
-                showToast('Please provide an answer first');
-                return;
-            }
-
-            const btn = document.getElementById('btnSubmit');
-            btn.innerHTML = 'Saving... <i class="fas fa-spinner fa-spin"></i>';
-            btn.disabled = true;
-            isSubmittingAnswer = true;
-
-            const q = questions[currentQIndex];
-            try {
+        async function exitSession() {
+            if (activeSessionId && currentStudent) {
                 const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: answer
-                });
-
                 try {
-                    await rtdbUpdate(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`), {
-                        lastActivity: Date.now(),
-                        questionsAnswered: currentQIndex + 1
+                    await updateDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey), {
+                        online: false
                     });
-                } catch (e) {
-                    console.warn('Could not update RTDB activity:', e);
-                }
-
-                showToast('Answer saved successfully');
-                btn.innerHTML = '<i class="fas fa-check"></i> Saved';
-                btn.classList.add('saved');
-
-                const qCard = document.querySelector('.q-card');
-                let badge = qCard.querySelector('.answered-badge');
-                if (!badge) {
-                    badge = document.createElement('div');
-                    badge.className = 'answered-badge';
-                    badge.innerHTML = '<i class="fas fa-check-circle"></i> Answer Saved';
-                    const qText = qCard.querySelector('.q-text');
-                    if (qText) qText.insertAdjacentElement('afterend', badge);
-                }
-
-                // Persist visual selection
-                if (q.type === 'mcq') {
-                    document.querySelectorAll('.option-btn').forEach(optBtn => {
-                        if (optBtn.getAttribute('data-val') === answer) optBtn.classList.add('selected');
-                        else optBtn.classList.remove('selected');
-                    });
-                } else if (q.type === 'truefalse') {
-                    document.querySelectorAll('.tf-btn').forEach(tfBtn => {
-                        if (tfBtn.getAttribute('data-val') === answer) tfBtn.classList.add('selected');
-                        else tfBtn.classList.remove('selected');
-                    });
-                }
-
-            } catch (e) {
-                console.error('Submit error:', e);
-                showToast('Failed to save. Please try again.', true);
-                btn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                btn.disabled = false;
-            } finally {
-                isSubmittingAnswer = false;
-            }
-        }
-
-        // ✅ FIX: Simplified navigation
-        async function prevQ() {
-            const btn = document.getElementById('btnPrev');
-            if (btn.disabled) return;
-
-            if (currentQIndex > 0) {
-                currentQIndex--;
-                await renderQuestion();
-            }
-        }
-
-        async function nextQ() {
-            const btn = document.getElementById('btnNext');
-            if (btn.disabled) return;
-
-            if (currentQIndex < questions.length - 1) {
-                if (await canNavigate()) {
-                    currentQIndex++;
-                    await renderQuestion();
-                }
-            }
-        }
-
-        async function canNavigate() {
-            const q = questions[currentQIndex];
-            if (!q) return true;
-
-            const uiAnswer = getCurrentAnswer();
-            if (uiAnswer !== null) return true;
-
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const data = sSnap.exists() ? sSnap.data() : {};
-
-                if (data.answers && data.answers[q.id] !== undefined && data.answers[q.id] !== null) {
-                    return true;
-                }
-            } catch (e) {
-                console.warn("Nav check error:", e);
-                return true;
-            }
-
-            showToast('Please save your answer first');
-            return false;
-        }
-
-        async function finishSession() {
-            const answer = getCurrentAnswer();
-            if (answer !== null) {
-                const q = questions[currentQIndex];
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: answer
-                });
-            }
-
-            try {
-                const studentKey = currentStudent.docId || currentStudent.uid;
-                const sSnap = await getDoc(doc(db, 'sessions', activeSessionId, 'students', studentKey));
-                const savedAnswers = sSnap.exists() ? sSnap.data()?.answers || {} : {};
-
-                for (let i = 0; i < questions.length; i++) {
-                    if (savedAnswers[questions[i].id] === undefined || savedAnswers[questions[i].id] === null) {
-                        showToast(`Question ${i + 1} is missing an answer!`);
-                        currentQIndex = i;
-                        await renderQuestion();
-                        return;
-                    }
-                }
-
-                const studentRef = doc(db, 'sessions', activeSessionId, 'students', studentKey);
-                await updateDoc(studentRef, {
-                    submitted: true
-                });
-
-                try {
                     await remove(ref(rtDB, `liveSessions/${activeSessionId}/students/${currentStudent.uid}`));
-                } catch (e) {
-                    console.warn('Could not remove from RTDB:', e);
-                }
-
-                await showCompletion();
-            } catch (e) {
-                console.error('Finish error:', e);
-                showToast('Error submitting.', true);
+                } catch (e) {}
             }
+            if (unsubSession) unsubSession();
+            await signOut(auth);
+            window.location.href = 'index.html';
         }
 
         async function showCompletion() {
@@ -1984,11 +1950,18 @@ ${fb ? `<div class="feedback-display"><i class="fas fa-comment-dots"></i> ${esca
 ${answersHtml}
 </div>
 
-<button class="btn btn-secondary" onclick="exitSession()" style="margin-top:24px"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</button>`;
+<button class="btn btn-secondary" onclick="window.exitSession()" style="margin-top:24px"><i class="fas fa-arrow-right-from-bracket"></i> Sign Out</button>`;
 
             renderMath(cs);
         }
 
+        function renderMath(el) {
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise(el ? [el] : [document.body]).catch(err => console.warn('MathJax error:', err));
+            }
+        }
+
+        // ========== UTILITY FUNCTIONS ==========
         function showErr(msg) {
             const e = document.getElementById('loginErr');
             e.textContent = msg;
@@ -2016,11 +1989,8 @@ ${answersHtml}
             return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         }
 
-        // Make functions available globally
-        window.prevQ = prevQ;
-        window.nextQ = nextQ;
-        window.submitAnswer = submitAnswer;
-        window.finishSession = finishSession;
+        // Make functions globally available
+        window.exitSession = exitSession;
     </script>
 </body>
 
