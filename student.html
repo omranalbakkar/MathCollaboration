@@ -1112,7 +1112,7 @@ function showFinishWarning(missingQuestions) {
                 <button onclick="
                         document.getElementById('finishWarningModal').remove();
                         window.appState.currentQIndex = ${missingQuestions[0] - 1};
-                        renderQuestion();
+                        window.renderQuestion();
                     "
                     style="
                         padding: 14px; border-radius: 14px; border: 2px solid #6366f1;
@@ -1159,8 +1159,7 @@ function showFinishWarning(missingQuestions) {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) modal.remove();
     });
-}
-        
+}        
 
 // Add this function after the existing utility functions (around line 400-450)
 async function registerStudentInSession(sessionId, studentId, studentName, studentEmail) {
@@ -1761,138 +1760,142 @@ window.finishQuiz = async function(force = false) {
         }
 
         // ===== RENDER QUESTION =====
-        async function renderQuestion() {
-            const state = window.appState;
-            if (!state.questions.length) return;
+       // ===== RENDER QUESTION =====
+async function renderQuestion() {
+    const state = window.appState;
+    if (!state.questions.length) return;
 
-            const q = state.questions[state.currentQIndex];
-            const existingAnswer = state.currentSession.studentProgress?.answers?.[q.id];
-            const total = state.questions.length;
-            const answeredCount = state.currentSession.studentProgress?.answers ?
-                Object.keys(state.currentSession.studentProgress.answers).length : 0;
-            const answers = state.currentSession.studentProgress?.answers || {};
+    const q = state.questions[state.currentQIndex];
+    const existingAnswer = state.currentSession.studentProgress?.answers?.[q.id];
+    const total = state.questions.length;
+    const answeredCount = state.currentSession.studentProgress?.answers ?
+        Object.keys(state.currentSession.studentProgress.answers).length : 0;
+    const answers = state.currentSession.studentProgress?.answers || {};
 
-            // Build question index sidebar
-            let indexHtml = '';
-            for (let i = 0; i < total; i++) {
-                const isAnswered = !!answers[state.questions[i].id];
-                const isCurrent = i === state.currentQIndex;
-                indexHtml += `
-                <button class="q-index-btn ${isCurrent ? 'current' : isAnswered ? 'answered' : ''}"
-                        onclick="window.jumpToQuestion(${i})" title="Question ${i + 1}">
-                    ${i + 1}
-                </button>
-            `;
-            }
+    // Build question index sidebar
+    let indexHtml = '';
+    for (let i = 0; i < total; i++) {
+        const isAnswered = !!answers[state.questions[i].id];
+        const isCurrent = i === state.currentQIndex;
+        indexHtml += `
+        <button class="q-index-btn ${isCurrent ? 'current' : isAnswered ? 'answered' : ''}"
+                onclick="window.jumpToQuestion(${i})" title="Question ${i + 1}">
+            ${i + 1}
+        </button>
+    `;
+    }
 
-            // Build answer input HTML
-            let inputHtml = '';
-            if (q.type === 'mcq' && q.options?.length) {
-                const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                inputHtml = `<div class="options-list">` +
-                    q.options.map((opt, idx) => `
-                    <button class="option-btn ${existingAnswer === opt ? 'selected' : ''}"
-                            data-value="${escapeHtml(opt)}"
-                            onclick="event.preventDefault(); document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
-                        <span class="option-letter">${letters[idx]}</span>
-                        <span>${escapeHtml(opt)}</span>
-                    </button>
-                `).join('') + `</div>`;
-            } else if (q.type === 'truefalse') {
-                inputHtml = `
-                <div class="tf-container">
-                    <button class="tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" data-value="True"
-                            onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
-                        <span class="tf-icon">✅</span>
-                        <span>True</span>
-                    </button>
-                    <button class="tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" data-value="False"
-                            onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
-                        <span class="tf-icon">❌</span>
-                        <span>False</span>
-                    </button>
-                </div>
-            `;
-            } else if (q.type === 'number') {
-                inputHtml = `<input class="answer-number" id="answerInput" type="number" placeholder="Enter your numeric answer..." value="${existingAnswer || ''}">`;
-            } else {
-                inputHtml = `<textarea class="answer-textarea" id="answerInput" rows="5" placeholder="Write your answer here...">${existingAnswer || ''}</textarea>`;
-            }
+    // Build answer input HTML
+    let inputHtml = '';
+    if (q.type === 'mcq' && q.options?.length) {
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        inputHtml = `<div class="options-list">` +
+            q.options.map((opt, idx) => `
+            <button class="option-btn ${existingAnswer === opt ? 'selected' : ''}"
+                    data-value="${escapeHtml(opt)}"
+                    onclick="event.preventDefault(); document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                <span class="option-letter">${letters[idx]}</span>
+                <span>${escapeHtml(opt)}</span>
+            </button>
+        `).join('') + `</div>`;
+    } else if (q.type === 'truefalse') {
+        inputHtml = `
+        <div class="tf-container">
+            <button class="tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" data-value="True"
+                    onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                <span class="tf-icon">✅</span>
+                <span>True</span>
+            </button>
+            <button class="tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" data-value="False"
+                    onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                <span class="tf-icon">❌</span>
+                <span>False</span>
+            </button>
+        </div>
+    `;
+    } else if (q.type === 'number') {
+        inputHtml = `<input class="answer-number" id="answerInput" type="number" placeholder="Enter your numeric answer..." value="${existingAnswer || ''}">`;
+    } else {
+        inputHtml = `<textarea class="answer-textarea" id="answerInput" rows="5" placeholder="Write your answer here...">${existingAnswer || ''}</textarea>`;
+    }
 
-            const quizScreen = document.getElementById('quizScreen');
-            quizScreen.innerHTML = `
-            <div class="quiz-layout">
+    const quizScreen = document.getElementById('quizScreen');
+    quizScreen.innerHTML = `
+    <div class="quiz-layout">
 
-                <!-- Question Index Sidebar -->
-                <div class="question-sidebar">
-                    <div class="glass-card" style="padding: 24px;">
-                        <p class="sidebar-title"><i class="fas fa-list-ol"></i> Questions</p>
-                        <div class="q-index-grid">${indexHtml}</div>
-                        <div style="font-size:0.8rem; color:var(--gray); margin-top:4px;">
-                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                                <div style="width:12px;height:12px;border-radius:3px;background:var(--gradient-1);"></div> Current
-                            </div>
-                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                                <div style="width:12px;height:12px;border-radius:3px;background:#d1fae5;border:1px solid var(--success);"></div> Answered
-                            </div>
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <div style="width:12px;height:12px;border-radius:3px;background:white;border:1px solid var(--border);"></div> Not answered
-                            </div>
-                        </div>
+        <!-- Question Index Sidebar -->
+        <div class="question-sidebar">
+            <div class="glass-card" style="padding: 24px;">
+                <p class="sidebar-title"><i class="fas fa-list-ol"></i> Questions</p>
+                <div class="q-index-grid">${indexHtml}</div>
+                <div style="font-size:0.8rem; color:var(--gray); margin-top:4px;">
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                        <div style="width:12px;height:12px;border-radius:3px;background:var(--gradient-1);"></div> Current
                     </div>
-                </div>
-
-                <!-- Question Main Area -->
-                <div class="question-main">
-
-                    <!-- Progress Bar Card -->
-                    <div class="glass-card question-progress-card">
-                        <div class="progress-top">
-                            <span class="session-title"><i class="fas fa-book-open" style="color:var(--primary);margin-right:8px;"></i>${escapeHtml(state.currentSession.title)}</span>
-                            <span class="progress-count">${answeredCount} / ${total} Answered</span>
-                        </div>
-                        <div class="progress-bar-wrap">
-                            <div class="progress-bar-fill" style="width: ${(answeredCount / total) * 100}%;"></div>
-                        </div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                        <div style="width:12px;height:12px;border-radius:3px;background:#d1fae5;border:1px solid var(--success);"></div> Answered
                     </div>
-
-                    <!-- Question Body Card -->
-                    <div class="glass-card question-body-card">
-                        <div class="question-meta">
-                            <span class="q-number-badge">Question ${state.currentQIndex + 1} of ${total}</span>
-                            <span class="q-points-badge">⭐ ${q.points || 0} pts</span>
-                        </div>
-
-                        <div class="q-text">${escapeHtml(q.text)}</div>
-
-                        ${existingAnswer ? `
-                            <div class="answer-saved-badge">
-                                <i class="fas fa-check-circle"></i>
-                                Answer saved — you can still change it
-                            </div>
-                        ` : ''}
-
-                        ${inputHtml}
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <div style="width:12px;height:12px;border-radius:3px;background:white;border:1px solid var(--border);"></div> Not answered
                     </div>
-
                 </div>
             </div>
-        `;
+        </div>
 
-            // Update nav footer buttons
-            const prevBtn = document.getElementById('btnPrev');
-            const nextBtn = document.getElementById('btnNext');
-            const finishBtn = document.getElementById('btnFinish');
+        <!-- Question Main Area -->
+        <div class="question-main">
 
-            if (prevBtn) prevBtn.disabled = (state.currentQIndex === 0);
-            if (nextBtn) nextBtn.style.display = (state.currentQIndex < total - 1) ? 'inline-flex' : 'none';
-            if (finishBtn) finishBtn.style.display = (state.currentQIndex === total - 1) ? 'inline-flex' : 'none';
+            <!-- Progress Bar Card -->
+            <div class="glass-card question-progress-card">
+                <div class="progress-top">
+                    <span class="session-title"><i class="fas fa-book-open" style="color:var(--primary);margin-right:8px;"></i>${escapeHtml(state.currentSession.title)}</span>
+                    <span class="progress-count">${answeredCount} / ${total} Answered</span>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" style="width: ${(answeredCount / total) * 100}%;"></div>
+                </div>
+            </div>
 
-            // Render MathJax if present
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([quizScreen]).catch(e => console.warn(e));
-            }
-        }
+            <!-- Question Body Card -->
+            <div class="glass-card question-body-card">
+                <div class="question-meta">
+                    <span class="q-number-badge">Question ${state.currentQIndex + 1} of ${total}</span>
+                    <span class="q-points-badge">⭐ ${q.points || 0} pts</span>
+                </div>
+
+                <div class="q-text">${escapeHtml(q.text)}</div>
+
+                ${existingAnswer ? `
+                    <div class="answer-saved-badge">
+                        <i class="fas fa-check-circle"></i>
+                        Answer saved — you can still change it
+                    </div>
+                ` : ''}
+
+                ${inputHtml}
+            </div>
+
+        </div>
+    </div>
+`;
+
+    // Update nav footer buttons
+    const prevBtn = document.getElementById('btnPrev');
+    const nextBtn = document.getElementById('btnNext');
+    const finishBtn = document.getElementById('btnFinish');
+
+    if (prevBtn) prevBtn.disabled = (state.currentQIndex === 0);
+    if (nextBtn) nextBtn.style.display = (state.currentQIndex < total - 1) ? 'inline-flex' : 'none';
+    if (finishBtn) finishBtn.style.display = (state.currentQIndex === total - 1) ? 'inline-flex' : 'none';
+
+    // Render MathJax if present
+    if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([quizScreen]).catch(e => console.warn(e));
+    }
+}
+
+// ===== ADD THIS LINE RIGHT AFTER THE FUNCTION =====
+window.renderQuestion = renderQuestion;
 
         // ===== LOGIN =====
         window.doStudentLogin = async function() {
