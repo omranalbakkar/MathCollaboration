@@ -128,6 +128,41 @@ exports.onStudentUpdated = firestore.onDocumentUpdated(
   }
 );
 
+// ── TRIGGER 5: Cleanup Auth when Teacher/Student is deleted ──────────────────
+exports.onUserDeleted = firestore.onDocumentDeleted(
+  "{collection}/{docId}", // Listens to ANY collection deletion
+  async (event) => {
+    const collection = event.params.collection;
+    const docId = event.params.docId; // This is now the UID since we fixed creation!
+
+    // Only act on teachers or students collections
+    if (collection !== 'teachers' && collection !== 'students') {
+      return;
+    }
+
+    try {
+      // Since we fixed the creation logic, docId === Auth UID.
+      // We attempt to delete the user from Auth.
+      await auth.deleteUser(docId);
+      console.log(`🗑️ Auth user deleted for ${collection}: ${docId}`);
+      
+      // Optional: Also delete from the 'users' collection if it exists
+      await admin.firestore().collection('users').doc(docId).delete();
+      
+    } catch (error) {
+      // If user doesn't exist in Auth (code: auth/user-not-found), ignore it.
+      if (error.code === 'auth/user-not-found') {
+        console.log(`ℹ️ Auth user ${docId} not found, skipping Auth deletion.`);
+      } else {
+        console.error(`❌ Failed to delete Auth user ${docId}:`, error);
+        // Re-throw if it's a real error so you see it in logs
+        throw error; 
+      }
+    }
+  }
+);
+
+
 
 
    ///////   ///////   const firestore = require("firebase-functions/v2/firestore");
