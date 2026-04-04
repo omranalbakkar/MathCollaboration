@@ -947,13 +947,16 @@ function renderSessionList(sessions) {
   
   grid.innerHTML = sessions.map(session => {
     const isActive = session.id === activeSessionId;
+    const isLive = session.active === true || session.isActive === true;
     
     // Format date properly
     let displayDate = 'No Date';
+    let displayStartTime = '';
+    let displayEndTime = '';
+    
     if (session.date) {
       displayDate = session.date;
     } else if (session.startTime) {
-      // If startTime is a Firestore Timestamp
       if (session.startTime.toDate) {
         displayDate = session.startTime.toDate().toLocaleDateString();
       } else if (session.startTime.seconds) {
@@ -961,27 +964,45 @@ function renderSessionList(sessions) {
       } else if (typeof session.startTime === 'string') {
         displayDate = session.startTime.split('T')[0];
       }
-    } else if (session.createdAt) {
-      if (session.createdAt.toDate) {
-        displayDate = session.createdAt.toDate().toLocaleDateString();
-      } else if (session.createdAt.seconds) {
-        displayDate = new Date(session.createdAt.seconds * 1000).toLocaleDateString();
+    }
+    
+    // Format start and end times
+    if (session.startTime) {
+      if (session.startTime.toDate) {
+        displayStartTime = session.startTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (session.startTime.seconds) {
+        displayStartTime = new Date(session.startTime.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (typeof session.startTime === 'string') {
+        displayStartTime = session.startTime.includes('T') ? session.startTime.split('T')[1].slice(0, 5) : session.startTime.slice(0, 5);
       }
     }
     
-    // Format class info
+    if (session.endTime) {
+      if (session.endTime.toDate) {
+        displayEndTime = session.endTime.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (session.endTime.seconds) {
+        displayEndTime = new Date(session.endTime.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (typeof session.endTime === 'string') {
+        displayEndTime = session.endTime.includes('T') ? session.endTime.split('T')[1].slice(0, 5) : session.endTime.slice(0, 5);
+      }
+    }
+    
+    // Format time range
+    const timeRange = (displayStartTime && displayEndTime) ? `🕐 ${displayStartTime} - ${displayEndTime}` : (displayStartTime ? `🕐 ${displayStartTime}` : '');
+    
     const classInfo = session.className || session.class || 'No Class';
     const gradeInfo = session.gradeLevel || session.grade || '';
     const subjectInfo = session.subject || '—';
     
-    return `<div class="session-card ${isActive ? 'active-context' : ''} ${session.active || session.isActive ? 'live-session' : ''}">
+    return `<div class="session-card ${isActive ? 'active-context' : ''} ${isLive ? 'live-session' : ''}">
       <div class="sc-header">
         <div class="sc-title">${escapeHtml(session.title || 'Untitled Session')}</div>
-        ${session.active || session.isActive ? '<span class="pill pill-green" style="font-size:0.7rem;"><i class="fas fa-circle"></i> LIVE</span>' : ''}
+        ${isLive ? '<span class="pill pill-green" style="font-size:0.7rem;"><i class="fas fa-circle"></i> LIVE</span>' : ''}
       </div>
       <div class="sc-meta">
         ${escapeHtml(subjectInfo)} • ${escapeHtml(gradeInfo)} ${gradeInfo && classInfo ? '•' : ''} ${escapeHtml(classInfo)}<br>
         📅 ${displayDate}
+        ${timeRange ? `<br>${timeRange}` : ''}
       </div>
       <div class="sc-actions">
         <button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : 'activateSession(\'' + session.id + '\')'}">${isActive ? 'Viewing' : 'Load'}</button>
@@ -1168,36 +1189,113 @@ renderQuestions();
 }
 
 async function loadStudents() {
-if (!activeSessionId) return;
-try {
-const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-const querySnapshot = await getDocs(studentsRef);
-currentStudents = [];
-querySnapshot.forEach(doc => { currentStudents.push({ id: doc.id, ...doc.data() }); });
-// Sync online status to RTDB for live monitor
-for (const student of currentStudents) {
-const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
-if (student.online === true) {
-await set(rtdbRef, { name: student.name || 'Student', uid: student.id, status: 'active', loginTime: student.loginTime || Date.now(), lastSeen: Date.now() });
-} else {
-await remove(rtdbRef);
-}
-}
-renderStudentCards();
-const onlineCount = currentStudents.filter(s => s.online === true).length;
-const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
-const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
-document.getElementById('statOnline').textContent = onlineCount;
-document.getElementById('statAnswers').textContent = answersCount;
-document.getElementById('statGraded').textContent = gradedCount;
-document.getElementById('liveCount').innerHTML = `<i class="fas fa-circle"></i> ${onlineCount} online`;
-const activeTab = document.querySelector('.tab-pane.active')?.id;
-if (activeTab === 'tab-class-status') await loadClassStatus();
-if (activeTab === 'tab-results') await renderResults();
-} catch (error) {
-console.error('Error loading students:', error);
-showToast('Error loading student data: ' + error.message, true);
-}
+  if (!activeSessionId) return;
+  
+  try {
+    const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
+    const querySnapshot = await getDocs(studentsRef);
+    currentStudents = [];
+    
+    querySnapshot.forEach(doc => { 
+      currentStudents.push({ id: doc.id, ...doc.data() }); 
+    });
+    
+    // Fetch student names from main students collection for better display
+    const mainStudentsMap = new Map();
+    try {
+      const mainStudentsSnap = await getDocs(collection(db, 'students'));
+      mainStudentsSnap.forEach(doc => {
+        const data = doc.data();
+        mainStudentsMap.set(doc.id, data.name || data.displayName || doc.id);
+        if (data.email) mainStudentsMap.set(data.email, data.name || data.displayName || doc.id);
+      });
+    } catch (err) {
+      console.warn('Could not fetch main students:', err);
+    }
+    
+    // Enhance student objects with proper names
+    for (const student of currentStudents) {
+      let properName = student.name || student.displayName;
+      if (!properName || properName === student.id || properName.length < 2) {
+        if (mainStudentsMap.has(student.id)) {
+          properName = mainStudentsMap.get(student.id);
+        } else if (student.email && mainStudentsMap.has(student.email)) {
+          properName = mainStudentsMap.get(student.email);
+        } else {
+          properName = student.id.substring(0, 12) + '...';
+        }
+        student.displayName = properName;
+        student.name = properName;
+      } else {
+        student.displayName = properName;
+      }
+    }
+    
+    // Sync online status to RTDB for live monitor
+    for (const student of currentStudents) {
+      const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students/${student.id}`);
+      if (student.online === true) {
+        await set(rtdbRef, { 
+          name: student.name || student.displayName || 'Student', 
+          uid: student.id, 
+          status: 'active', 
+          loginTime: student.loginTime || Date.now(), 
+          lastSeen: Date.now() 
+        });
+      } else {
+        await remove(rtdbRef);
+      }
+    }
+    
+    // Calculate real-time stats
+    const onlineCount = currentStudents.filter(s => s.online === true).length;
+    const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
+    const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+    const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+    
+    // Update all stats displays
+    // Live Monitor stats
+    const statOnline = document.getElementById('statOnline');
+    const statAnswers = document.getElementById('statAnswers');
+    const statQuestions = document.getElementById('statQuestions');
+    const statGraded = document.getElementById('statGraded');
+    
+    if (statOnline) statOnline.textContent = onlineCount;
+    if (statAnswers) statAnswers.textContent = answersCount;
+    if (statQuestions) statQuestions.textContent = currentQuestions.length;
+    if (statGraded) statGraded.textContent = gradedCount;
+    
+    // Top bar live count
+    const liveCountEl = document.getElementById('liveCount');
+    if (liveCountEl) {
+      liveCountEl.innerHTML = `<i class="fas fa-circle"></i> ${onlineCount} online`;
+    }
+    
+    // Session config tab stats
+    const prevQuestions = document.getElementById('prevQuestions');
+    const prevStudents = document.getElementById('prevStudents');
+    const prevAnswers = document.getElementById('prevAnswers');
+    const prevTotal = document.getElementById('prevTotal');
+    
+    if (prevQuestions) prevQuestions.textContent = currentQuestions.length;
+    if (prevStudents) prevStudents.textContent = onlineCount;
+    if (prevAnswers) prevAnswers.textContent = answersCount;
+    if (prevTotal) prevTotal.textContent = totalPoints;
+    
+    // Render the student cards in Live Monitor
+    renderStudentCards();
+    
+    // Refresh other tabs if they are active
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    if (activeTab === 'tab-class-status') await loadClassStatus();
+    if (activeTab === 'tab-results') await renderResults();
+    
+    console.log('Students loaded:', currentStudents.length, 'Online:', onlineCount, 'Answers:', answersCount);
+    
+  } catch (error) {
+    console.error('Error loading students:', error);
+    showToast('Error loading student data: ' + error.message, true);
+  }
 }
 
 async function loadClassStatus() {
@@ -1435,19 +1533,38 @@ onSnapshot(studentsRef, (snapshot) => { loadStudents(); }, (error) => { console.
 }
 
 function updateStats() {
-const onlineCount = currentStudents.filter(s => s.online === true).length;
-const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
-const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
-const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
-document.getElementById('liveCount').innerHTML = `<i class="fas fa-circle"></i> ${onlineCount} online`;
-document.getElementById('prevQuestions').textContent = currentQuestions.length;
-document.getElementById('prevStudents').textContent = onlineCount;
-document.getElementById('prevAnswers').textContent = answersCount;
-document.getElementById('prevTotal').textContent = totalPoints;
-document.getElementById('statOnline').textContent = onlineCount;
-document.getElementById('statAnswers').textContent = answersCount;
-document.getElementById('statQuestions').textContent = currentQuestions.length;
-document.getElementById('statGraded').textContent = gradedCount;
+  const onlineCount = currentStudents.filter(s => s.online === true).length;
+  const answersCount = currentStudents.reduce((sum, s) => sum + (s.answers ? Object.keys(s.answers).length : 0), 0);
+  const gradedCount = currentStudents.reduce((sum, s) => sum + (s.grades ? Object.keys(s.grades).length : 0), 0);
+  const totalPoints = currentQuestions.reduce((sum, q) => sum + (q.points || 0), 0);
+  
+  // Update top bar
+  const liveCountEl = document.getElementById('liveCount');
+  if (liveCountEl) {
+    liveCountEl.innerHTML = `<i class="fas fa-circle"></i> ${onlineCount} online`;
+  }
+  
+  // Update session config tab stats
+  const prevQuestions = document.getElementById('prevQuestions');
+  const prevStudents = document.getElementById('prevStudents');
+  const prevAnswers = document.getElementById('prevAnswers');
+  const prevTotal = document.getElementById('prevTotal');
+  
+  if (prevQuestions) prevQuestions.textContent = currentQuestions.length;
+  if (prevStudents) prevStudents.textContent = onlineCount;
+  if (prevAnswers) prevAnswers.textContent = answersCount;
+  if (prevTotal) prevTotal.textContent = totalPoints;
+  
+  // Update live monitor stats
+  const statOnline = document.getElementById('statOnline');
+  const statAnswers = document.getElementById('statAnswers');
+  const statQuestions = document.getElementById('statQuestions');
+  const statGraded = document.getElementById('statGraded');
+  
+  if (statOnline) statOnline.textContent = onlineCount;
+  if (statAnswers) statAnswers.textContent = answersCount;
+  if (statQuestions) statQuestions.textContent = currentQuestions.length;
+  if (statGraded) statGraded.textContent = gradedCount;
 }
 
 function renderQuestions() {
@@ -1749,44 +1866,109 @@ document.getElementById('page-subtitle').textContent = config.subject || 'Overvi
 }
 
 function renderStudentCards() {
-const online = currentStudents.filter(s => s.online === true);
-const grid = document.getElementById('studentsGrid');
-const qcount = currentQuestions.length;
-if (!currentStudents.length) {
-grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1"><i class="fas fa-user-slash"></i><h3>No students have joined</h3><p>Students need to enter the session code to join.</p><div style="margin-top:16px;padding:12px;background:var(--surface-2);border-radius:14px;display:inline-block;"><span class="muted">Session ID: </span><code class="mono" style="background:#fff;padding:4px 8px;border-radius:8px;border:1px solid var(--border)">${activeSessionId}</code></div></div>`;
-return;
-}
-if (!online.length) {
-grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1"><i class="fas fa-wifi"></i><h3>All students are offline</h3><p>Make sure the session is OPEN for students to join.</p><button class="btn btn-warning" style="margin-top:12px" onclick="document.getElementById('sessionToggle').click()">Open Session →</button></div>`;
-return;
-}
-const colors = ['#1d4ed8', '#059669', '#d97706', '#dc2626', '#7c3aed', '#ea580c', '#0891b2', '#ca8a04'];
-grid.innerHTML = online.map((student, i) => {
-const answered = student.answers ? Object.keys(student.answers).length : 0;
-const pct = qcount ? Math.round(answered / qcount * 100) : 0;
-const color = colors[i % colors.length];
-const displayName = student.name || student.id || 'Student';
-return `<div class="session-card">
-<div class="sc-header">
-<div style="display:flex;align-items:center;gap:12px;">
-<div class="k-avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
-<div>
-<div class="row-title">${escapeHtml(displayName)}${student.submitted ? '<span class="pill pill-green" style="margin-left:6px;font-size:0.7rem;">SUBMITTED</span>' : ''}</div>
-<div class="row-sub">${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
-</div>
-</div>
-</div>
-<div class="k-progress-bar-bg" style="height:8px;margin:16px 0;"><div class="k-progress-bar-fill" style="width:${pct}%;background:${student.submitted ? 'var(--success)' : 'var(--warning)'}"></div></div>
-<div class="k-progress-text" style="margin-bottom:16px;"><span>${answered}/${qcount} answered</span><span>${pct}%</span></div>
-<div class="sc-actions">
-<button class="btn btn-secondary btn-sm" style="flex:1" onclick="openReview('${student.id}')">Review →</button>
-<button class="icon-btn delete" onclick="clearStudentAnswers('${student.id}')"><i class="fas fa-eraser"></i></button>
-<button class="icon-btn delete" onclick="deleteStudentRecord('${student.id}')"><i class="fas fa-trash"></i></button>
-</div>
-</div>`;
-}).join('');
+  const online = currentStudents.filter(s => s.online === true);
+  const grid = document.getElementById('studentsGrid');
+  const qcount = currentQuestions.length;
+  const isSessionOpen = currentSessionData && (currentSessionData.active === true || currentSessionData.isActive === true);
+  
+  // Check if session is open but no students have joined
+  if (!currentStudents.length) {
+    if (isSessionOpen) {
+      grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1">
+        <i class="fas fa-door-open"></i>
+        <h3>Session is OPEN - Waiting for students to join</h3>
+        <p>Students can join using the session code below.</p>
+        <div style="margin-top:16px; padding:12px; background:var(--surface-2); border-radius:14px; display:inline-block;">
+          <span class="muted">Session Code: </span>
+          <code class="mono" style="background:#fff; padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:1.1rem;">${activeSessionId}</code>
+        </div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="copySessionCode()"><i class="fas fa-copy"></i> Copy Session Code</button>
+      </div>`;
+    } else {
+      grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1">
+        <i class="fas fa-lock"></i>
+        <h3>Session is CLOSED</h3>
+        <p>Toggle the session to "Open" to allow students to join.</p>
+        <button class="btn btn-warning" style="margin-top:12px" onclick="document.getElementById('sessionToggle')?.click()">
+          <i class="fas fa-unlock-alt"></i> Open Session →
+        </button>
+      </div>`;
+    }
+    return;
+  }
+  
+  // Session has students but all are offline
+  if (!online.length) {
+    if (isSessionOpen) {
+      grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1">
+        <i class="fas fa-wifi"></i>
+        <h3>${currentStudents.length} student${currentStudents.length !== 1 ? 's have' : ' has'} joined but ${currentStudents.length !== 1 ? 'are' : 'is'} offline</h3>
+        <p>Students need to be online to participate. Make sure they have internet connection.</p>
+        <div style="margin-top:16px; padding:12px; background:var(--surface-2); border-radius:14px; display:inline-block;">
+          <span class="muted">Session Code: </span>
+          <code class="mono" style="background:#fff; padding:8px 12px; border-radius:8px; border:1px solid var(--border);">${activeSessionId}</code>
+        </div>
+      </div>`;
+    } else {
+      grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1">
+        <i class="fas fa-lock"></i>
+        <h3>Session is CLOSED</h3>
+        <p>Toggle the session to "Open" to allow students to join.</p>
+        <button class="btn btn-warning" style="margin-top:12px" onclick="document.getElementById('sessionToggle')?.click()">
+          <i class="fas fa-unlock-alt"></i> Open Session →
+        </button>
+      </div>`;
+    }
+    return;
+  }
+  
+  // Show online students with proper names
+  const colors = ['#1d4ed8', '#059669', '#d97706', '#dc2626', '#7c3aed', '#ea580c', '#0891b2', '#ca8a04'];
+  grid.innerHTML = online.map((student, i) => {
+    const answered = student.answers ? Object.keys(student.answers).length : 0;
+    const pct = qcount ? Math.round(answered / qcount * 100) : 0;
+    const color = colors[i % colors.length];
+    const displayName = student.displayName || student.name || student.id || 'Student';
+    return `<div class="session-card">
+      <div class="sc-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="k-avatar" style="background:${color}22;color:${color}">${displayName.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="row-title">${escapeHtml(displayName)}${student.submitted ? '<span class="pill pill-green" style="margin-left:6px;font-size:0.7rem;"><i class="fas fa-check"></i> SUBMITTED</span>' : ''}</div>
+            <div class="row-sub">Online since: ${student.loginTime ? new Date(student.loginTime).toLocaleTimeString() : '—'}</div>
+          </div>
+        </div>
+      </div>
+      <div class="k-progress-bar-bg" style="height:8px;margin:16px 0;">
+        <div class="k-progress-bar-fill" style="width:${pct}%; background:${student.submitted ? 'var(--success)' : 'var(--warning)'}; height:8px; border-radius:4px;"></div>
+      </div>
+      <div class="k-progress-text" style="margin-bottom:16px;">
+        <span>${answered}/${qcount} answered</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="sc-actions">
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openReview('${student.id}')"><i class="fas fa-eye"></i> Review →</button>
+        <button class="icon-btn delete" onclick="clearStudentAnswers('${student.id}')" title="Clear answers"><i class="fas fa-eraser"></i></button>
+        <button class="icon-btn delete" onclick="deleteStudentRecord('${student.id}')" title="Remove student"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
+// Helper function to copy session code
+window.copySessionCode = function() {
+  if (!activeSessionId) return;
+  navigator.clipboard.writeText(activeSessionId);
+  showToast('Session code copied to clipboard!', 'success');
+};
+
+// Helper function to copy session code
+window.copySessionCode = function() {
+  if (!activeSessionId) return;
+  navigator.clipboard.writeText(activeSessionId);
+  showToast('Session code copied to clipboard!', 'success');
+};
+  
 window.exportClassStatusExcel = function() {
 if (!currentSessionData) { showToast('No active session loaded', true); return; }
 const headerRow = ["Student Name", "Status", "Login Time", "Progress (%)", "Answers Submitted", "Total Questions"];
