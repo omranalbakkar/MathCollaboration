@@ -939,23 +939,58 @@ showToast('Error loading sessions: ' + error.message, true);
 }
 
 function renderSessionList(sessions) {
-const grid = document.getElementById('sessionListGrid');
-if (!sessions.length) {
-grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1;padding:40px;"><i class="fas fa-video-slash"></i><h3>No sessions yet.</h3><button class="btn btn-primary" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
-return;
+  const grid = document.getElementById('sessionListGrid');
+  if (!sessions.length) {
+    grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1;padding:40px;"><i class="fas fa-video-slash"></i><h3>No sessions yet.</h3><button class="btn btn-primary" style="margin-top:10px" onclick="createNewSession()">Create First Session</button></div>`;
+    return;
+  }
+  
+  grid.innerHTML = sessions.map(session => {
+    const isActive = session.id === activeSessionId;
+    
+    // Format date properly
+    let displayDate = 'No Date';
+    if (session.date) {
+      displayDate = session.date;
+    } else if (session.startTime) {
+      // If startTime is a Firestore Timestamp
+      if (session.startTime.toDate) {
+        displayDate = session.startTime.toDate().toLocaleDateString();
+      } else if (session.startTime.seconds) {
+        displayDate = new Date(session.startTime.seconds * 1000).toLocaleDateString();
+      } else if (typeof session.startTime === 'string') {
+        displayDate = session.startTime.split('T')[0];
+      }
+    } else if (session.createdAt) {
+      if (session.createdAt.toDate) {
+        displayDate = session.createdAt.toDate().toLocaleDateString();
+      } else if (session.createdAt.seconds) {
+        displayDate = new Date(session.createdAt.seconds * 1000).toLocaleDateString();
+      }
+    }
+    
+    // Format class info
+    const classInfo = session.className || session.class || 'No Class';
+    const gradeInfo = session.gradeLevel || session.grade || '';
+    const subjectInfo = session.subject || '—';
+    
+    return `<div class="session-card ${isActive ? 'active-context' : ''} ${session.active || session.isActive ? 'live-session' : ''}">
+      <div class="sc-header">
+        <div class="sc-title">${escapeHtml(session.title || 'Untitled Session')}</div>
+        ${session.active || session.isActive ? '<span class="pill pill-green" style="font-size:0.7rem;"><i class="fas fa-circle"></i> LIVE</span>' : ''}
+      </div>
+      <div class="sc-meta">
+        ${escapeHtml(subjectInfo)} • ${escapeHtml(gradeInfo)} ${gradeInfo && classInfo ? '•' : ''} ${escapeHtml(classInfo)}<br>
+        📅 ${displayDate}
+      </div>
+      <div class="sc-actions">
+        <button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : 'activateSession(\'' + session.id + '\')'}">${isActive ? 'Viewing' : 'Load'}</button>
+        <button class="icon-btn delete" onclick="deleteSession('${session.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
 }
-grid.innerHTML = sessions.map(session => {
-const isActive = session.id === activeSessionId;
-return `<div class="session-card ${isActive ? 'active-context' : ''} ${session.active ? 'live-session' : ''}">
-<div class="sc-header"><div class="sc-title">${escapeHtml(session.title || 'Untitled Session')}</div></div>
-<div class="sc-meta">${escapeHtml(session.subject || '—')} • ${escapeHtml(session.className || 'No Class')}<br>${session.date ? new Date(session.date).toLocaleDateString() : 'No Date'}</div>
-<div class="sc-actions">
-<button class="btn-load ${isActive ? 'is-active' : ''}" onclick="${isActive ? '' : 'activateSession(\'' + session.id + '\')'}">${isActive ? 'Viewing' : 'Load'}</button>
-<button class="icon-btn delete" onclick="deleteSession('${session.id}')"><i class="fas fa-trash"></i></button>
-</div>
-</div>`;
-}).join('');
-}
+  
 
 window.createNewSession = async function() {
   if (!currentTeacher) return;
@@ -1166,109 +1201,231 @@ showToast('Error loading student data: ' + error.message, true);
 }
 
 async function loadClassStatus() {
-if (!activeSessionId || !currentSessionData) return;
-const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
-document.getElementById('csGradeName').textContent = sessionGradeName || 'No Grade Assigned';
+  if (!activeSessionId || !currentSessionData) return;
+  
+  const sessionGradeName = currentSessionData.gradeLevel || currentSessionData.grade || currentSessionData.classGrade || '';
+  document.getElementById('csGradeName').textContent = sessionGradeName || 'No Grade Assigned';
 
-const columns = {
-absent: document.getElementById('list-absent'),
-notStartedOnline: document.getElementById('list-not-started-online'),
-notStartedOffline: document.getElementById('list-not-started-offline'),
-inProgressOnline: document.getElementById('list-in-progress-online'),
-inProgressOffline: document.getElementById('list-in-progress-offline'),
-completedOnline: document.getElementById('list-completed-online'),
-completedOffline: document.getElementById('list-completed-offline')
-};
-const counts = { absent: { total: 0 }, notStarted: { total: 0, online: 0, offline: 0 }, inProgress: { total: 0, online: 0, offline: 0 }, completed: { total: 0, online: 0, offline: 0 } };
-Object.values(columns).forEach(col => col.innerHTML = '');
+  const columns = {
+    absent: document.getElementById('list-absent'),
+    notStartedOnline: document.getElementById('list-not-started-online'),
+    notStartedOffline: document.getElementById('list-not-started-offline'),
+    inProgressOnline: document.getElementById('list-in-progress-online'),
+    inProgressOffline: document.getElementById('list-in-progress-offline'),
+    completedOnline: document.getElementById('list-completed-online'),
+    completedOffline: document.getElementById('list-completed-offline')
+  };
+  
+  const counts = { 
+    absent: { total: 0 }, 
+    notStarted: { total: 0, online: 0, offline: 0 }, 
+    inProgress: { total: 0, online: 0, offline: 0 }, 
+    completed: { total: 0, online: 0, offline: 0 } 
+  };
+  
+  // Clear all columns
+  Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
 
-let assignedStudents = [];
-if (sessionGradeName) {
-try {
-const gradesRef = collection(db, 'grades');
-let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
-let gradeSnap = await getDocs(q);
-let targetGradeId = null;
-if (!gradeSnap.empty) targetGradeId = gradeSnap.docs[0].id;
-else {
-q = query(gradesRef, where('code', '==', sessionGradeName));
-gradeSnap = await getDocs(q);
-if (!gradeSnap.empty) targetGradeId = gradeSnap.docs[0].id;
-}
-if (targetGradeId) {
-const studentsRef = collection(db, 'students');
-let studentQuery = query(studentsRef, where('gradeLevel', '==', targetGradeId));
-let studentSnap = await getDocs(studentQuery);
-if (studentSnap.empty) {
-studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
-studentSnap = await getDocs(studentQuery);
-}
-if (studentSnap.empty) {
-studentQuery = query(studentsRef, where('gradeLevel', '==', sessionGradeName));
-studentSnap = await getDocs(studentQuery);
-}
-studentSnap.forEach(doc => { assignedStudents.push({ id: doc.id, ...doc.data() }); });
-}
-} catch (err) { console.error("Error fetching class status:", err); }
-}
-allAssignedStudents = assignedStudents;
-const sessionStudentsMap = {};
-currentStudents.forEach(s => { sessionStudentsMap[s.id] = s; });
-const totalQs = currentQuestions.length;
-assignedStudents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  let assignedStudents = [];
+  
+  // Fetch students from the grade
+  if (sessionGradeName) {
+    try {
+      const gradesRef = collection(db, 'grades');
+      let q = query(gradesRef, where('nameEn', '==', sessionGradeName));
+      let gradeSnap = await getDocs(q);
+      let targetGradeId = null;
+      
+      if (!gradeSnap.empty) {
+        targetGradeId = gradeSnap.docs[0].id;
+      } else {
+        q = query(gradesRef, where('code', '==', sessionGradeName));
+        gradeSnap = await getDocs(q);
+        if (!gradeSnap.empty) targetGradeId = gradeSnap.docs[0].id;
+      }
+      
+      if (targetGradeId) {
+        const studentsRef = collection(db, 'students');
+        let studentQuery = query(studentsRef, where('gradeLevel', '==', targetGradeId));
+        let studentSnap = await getDocs(studentQuery);
+        
+        if (studentSnap.empty) {
+          studentQuery = query(studentsRef, where('gradeId', '==', targetGradeId));
+          studentSnap = await getDocs(studentQuery);
+        }
+        
+        if (studentSnap.empty) {
+          studentQuery = query(studentsRef, where('gradeLevel', '==', sessionGradeName));
+          studentSnap = await getDocs(studentQuery);
+        }
+        
+        studentSnap.forEach(doc => { 
+          assignedStudents.push({ id: doc.id, ...doc.data() }); 
+        });
+      }
+    } catch (err) { 
+      console.error("Error fetching class status:", err); 
+    }
+  }
+  
+  allAssignedStudents = assignedStudents;
+  const sessionStudentsMap = {};
+  currentStudents.forEach(s => { sessionStudentsMap[s.id] = s; });
+  const totalQs = currentQuestions.length;
+  
+  // Fetch student names from main students collection for better display
+  const mainStudentsMap = new Map();
+  try {
+    const mainStudentsSnap = await getDocs(collection(db, 'students'));
+    mainStudentsSnap.forEach(doc => {
+      const data = doc.data();
+      mainStudentsMap.set(doc.id, data.name || data.displayName || doc.id);
+      // Also map by email if available
+      if (data.email) mainStudentsMap.set(data.email, data.name || data.displayName || doc.id);
+    });
+  } catch (err) {
+    console.warn('Could not fetch main students:', err);
+  }
+  
+  // Sort students by name
+  assignedStudents.sort((a, b) => {
+    const nameA = a.name || a.displayName || '';
+    const nameB = b.name || b.displayName || '';
+    return nameA.localeCompare(nameB);
+  });
 
-assignedStudents.forEach(student => {
-const sessionData = sessionStudentsMap[student.id];
-const isOnline = !!sessionData && sessionData.online === true;
-const answeredCount = sessionData && sessionData.answers ? Object.keys(sessionData.answers).length : 0;
-const isSubmitted = sessionData && sessionData.submitted === true;
-let status = '', badgeClass = '', badgeText = '', barColor = '', actionsHtml = '', targetContainer = null;
+  assignedStudents.forEach(student => {
+    const sessionData = sessionStudentsMap[student.id];
+    const isOnline = !!(sessionData && sessionData.online === true);
+    const answeredCount = sessionData && sessionData.answers ? Object.keys(sessionData.answers).length : 0;
+    const isSubmitted = sessionData && sessionData.submitted === true;
+    
+    // Get proper student name - prioritize from main students collection
+    let studentName = student.name || student.displayName;
+    if (!studentName || studentName === student.id || studentName.length < 2) {
+      if (mainStudentsMap.has(student.id)) {
+        studentName = mainStudentsMap.get(student.id);
+      } else if (student.email && mainStudentsMap.has(student.email)) {
+        studentName = mainStudentsMap.get(student.email);
+      } else if (sessionData && sessionData.name) {
+        studentName = sessionData.name;
+      } else {
+        studentName = student.id.substring(0, 12) + '...';
+      }
+    }
+    
+    let status = '', badgeClass = '', badgeText = '', barColor = '', actionsHtml = '', targetContainer = null;
+    const pct = totalQs ? Math.round((answeredCount / totalQs) * 100) : 0;
 
-if (answeredCount === 0 && !isOnline && !sessionData?.loginTime) {
-status = 'absent'; badgeClass = 'badge-absent'; badgeText = 'Absent'; counts.absent.total++; targetContainer = columns.absent;
-} else if (answeredCount === 0 && isOnline) {
-status = 'notStarted'; badgeClass = 'badge-not-started'; badgeText = 'Not Started'; counts.notStarted.total++; counts.notStarted.online++; targetContainer = columns.notStartedOnline;
-} else if (answeredCount === 0 && !isOnline) {
-status = 'notStarted'; badgeClass = 'badge-not-started'; badgeText = 'Not Started'; counts.notStarted.total++; counts.notStarted.offline++; targetContainer = columns.notStartedOffline;
-} else if ((answeredCount > 0 && answeredCount < totalQs && !isSubmitted) || (answeredCount > 0 && !isOnline && !isSubmitted)) {
-status = 'inProgress'; badgeClass = 'badge-in-progress'; badgeText = 'In Progress'; barColor = 'var(--warning)'; counts.inProgress.total++;
-if (isOnline) { counts.inProgress.online++; targetContainer = columns.inProgressOnline; } else { counts.inProgress.offline++; targetContainer = columns.inProgressOffline; }
-} else if (answeredCount === totalQs || isSubmitted) {
-status = 'completed'; badgeClass = 'badge-completed'; badgeText = 'Completed'; barColor = 'var(--success)'; counts.completed.total++;
-if (isOnline) { counts.completed.online++; targetContainer = columns.completedOnline; } else { counts.completed.offline++; targetContainer = columns.completedOffline; }
-} else {
-status = 'absent'; badgeClass = 'badge-absent'; badgeText = 'Absent'; counts.absent.total++; targetContainer = columns.absent;
-}
+    // Determine status based on answers and online status
+    if (answeredCount === 0 && !isOnline && !sessionData?.loginTime) {
+      status = 'absent';
+      badgeClass = 'badge-absent';
+      badgeText = 'Absent';
+      counts.absent.total++;
+      targetContainer = columns.absent;
+    } else if (answeredCount === 0 && isOnline) {
+      status = 'notStarted';
+      badgeClass = 'badge-not-started';
+      badgeText = 'Not Started';
+      counts.notStarted.total++;
+      counts.notStarted.online++;
+      targetContainer = columns.notStartedOnline;
+    } else if (answeredCount === 0 && !isOnline) {
+      status = 'notStarted';
+      badgeClass = 'badge-not-started';
+      badgeText = 'Not Started';
+      counts.notStarted.total++;
+      counts.notStarted.offline++;
+      targetContainer = columns.notStartedOffline;
+    } else if ((answeredCount > 0 && answeredCount < totalQs && !isSubmitted) || (answeredCount > 0 && !isOnline && !isSubmitted)) {
+      status = 'inProgress';
+      badgeClass = 'badge-in-progress';
+      badgeText = 'In Progress';
+      barColor = 'var(--warning)';
+      counts.inProgress.total++;
+      if (isOnline) { 
+        counts.inProgress.online++; 
+        targetContainer = columns.inProgressOnline; 
+      } else { 
+        counts.inProgress.offline++; 
+        targetContainer = columns.inProgressOffline; 
+      }
+    } else if (answeredCount === totalQs || isSubmitted) {
+      status = 'completed';
+      badgeClass = 'badge-completed';
+      badgeText = 'Completed';
+      barColor = 'var(--success)';
+      counts.completed.total++;
+      if (isOnline) { 
+        counts.completed.online++; 
+        targetContainer = columns.completedOnline; 
+      } else { 
+        counts.completed.offline++; 
+        targetContainer = columns.completedOffline; 
+      }
+    } else {
+      status = 'absent';
+      badgeClass = 'badge-absent';
+      badgeText = 'Absent';
+      counts.absent.total++;
+      targetContainer = columns.absent;
+    }
 
-const pct = totalQs ? Math.round((answeredCount / totalQs) * 100) : 0;
-if (status === 'inProgress' || status === 'completed') actionsHtml = `<button class="btn btn-secondary btn-sm" style="width:100%" onclick="openReview('${student.id}')">Review</button>`;
+    // Add review button for students who have started or completed
+    if (status === 'inProgress' || status === 'completed') {
+      actionsHtml = `<button class="btn btn-secondary btn-sm" style="width:100%" onclick="openReview('${student.id}')"><i class="fas fa-eye"></i> Review</button>`;
+    }
 
-const card = document.createElement('div');
-card.className = 'k-card';
-card.onclick = (e) => { if (!e.target.closest('button')) openReview(student.id); };
-card.innerHTML = `
-<div class="k-student-info">
-<div class="k-avatar">${(student.name || 'S').charAt(0).toUpperCase()}</div>
-<div class="k-name">${escapeHtml(student.name || 'Unknown')} <span style="width:6px;height:6px;border-radius:50%;display:inline-block;background:${isOnline ? 'var(--success)' : 'var(--text-faint)'}"></span></div>
-</div>
-<span class="k-status-badge ${badgeClass}">${badgeText}</span>
-<div class="k-progress-bar-bg"><div class="k-progress-bar-fill" style="width:${pct}%;background:${barColor || 'var(--text-faint)'}"></div></div>
-<div class="k-progress-text"><span>${answeredCount}/${totalQs} Answered</span><span>${pct}%</span></div>
-<div style="margin-top:8px;">${actionsHtml}</div>
-`;
-if (targetContainer) targetContainer.appendChild(card);
-});
+    // Create the card element
+    const card = document.createElement('div');
+    card.className = 'k-card';
+    card.onclick = (e) => { 
+      if (!e.target.closest('button')) openReview(student.id); 
+    };
+    
+    card.innerHTML = `
+      <div class="k-student-info">
+        <div class="k-avatar" style="background: var(--primary-soft); color: var(--primary);">
+          ${escapeHtml(studentName).charAt(0).toUpperCase()}
+        </div>
+        <div class="k-name">
+          ${escapeHtml(studentName)} 
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; margin-left:6px; background:${isOnline ? 'var(--success)' : 'var(--text-faint)'}; box-shadow: ${isOnline ? '0 0 4px var(--success)' : 'none'};"></span>
+        </div>
+      </div>
+      <div style="margin: 8px 0 4px;">
+        <span class="k-status-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      <div class="k-progress-bar-bg" style="margin: 8px 0;">
+        <div class="k-progress-bar-fill" style="width:${pct}%; background:${barColor || 'var(--text-faint)'}; height: 6px; border-radius: 3px;"></div>
+      </div>
+      <div class="k-progress-text">
+        <span>${answeredCount}/${totalQs} Answered</span>
+        <span>${pct}%</span>
+      </div>
+      ${actionsHtml ? `<div style="margin-top: 10px;">${actionsHtml}</div>` : ''}
+    `;
+    
+    if (targetContainer) targetContainer.appendChild(card);
+  });
 
-document.getElementById('count-absent').innerText = counts.absent.total;
-document.getElementById('count-not-started').innerText = counts.notStarted.total;
-document.getElementById('online-not-started').innerText = counts.notStarted.online;
-document.getElementById('offline-not-started').innerText = counts.notStarted.offline;
-document.getElementById('count-in-progress').innerText = counts.inProgress.total;
-document.getElementById('online-in-progress').innerText = counts.inProgress.online;
-document.getElementById('offline-in-progress').innerText = counts.inProgress.offline;
-document.getElementById('count-completed').innerText = counts.completed.total;
-document.getElementById('online-completed').innerText = counts.completed.online;
-document.getElementById('offline-completed').innerText = counts.completed.offline;
+  // Update count displays
+  const updateCount = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = value;
+  };
+  
+  updateCount('count-absent', counts.absent.total);
+  updateCount('count-not-started', counts.notStarted.total);
+  updateCount('online-not-started', counts.notStarted.online);
+  updateCount('offline-not-started', counts.notStarted.offline);
+  updateCount('count-in-progress', counts.inProgress.total);
+  updateCount('online-in-progress', counts.inProgress.online);
+  updateCount('offline-in-progress', counts.inProgress.offline);
+  updateCount('count-completed', counts.completed.total);
+  updateCount('online-completed', counts.completed.online);
+  updateCount('offline-completed', counts.completed.offline);
 }
 
 function setupRealtimeStudentListener() {
@@ -1751,63 +1908,126 @@ showToast('Error deleting student record', true);
 };
 
 window.renderResults = async function() {
-if (!activeSessionId) return;
-if (currentStudents.length === 0) await loadStudents();
-const tbody = document.getElementById('resultsBody');
-const filterStudent = document.getElementById('filterStudent').value;
-const filterQuestion = document.getElementById('filterQuestion').value;
-const studentSelect = document.getElementById('filterStudent');
-if (studentSelect.options.length <= 1) {
-currentStudents.forEach(s => {
-const opt = document.createElement('option');
-opt.value = s.id;
-opt.textContent = s.name || s.id;
-studentSelect.appendChild(opt);
-});
-}
-const questionSelect = document.getElementById('filterQuestion');
-if (questionSelect.options.length <= 1) {
-currentQuestions.forEach((q, i) => {
-const opt = document.createElement('option');
-opt.value = q.id;
-opt.textContent = `Q${i+1}: ${q.text.substring(0, 30)}...`;
-questionSelect.appendChild(opt);
-});
-}
-tbody.innerHTML = '';
-let hasData = false;
-for (const student of currentStudents) {
-if (filterStudent && student.id !== filterStudent) continue;
-for (const q of currentQuestions) {
-if (filterQuestion && q.id !== filterQuestion) continue;
-const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
-const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
-const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
-hasData = true;
-let scoreClass = '';
-if (score !== '-') {
-const num = parseFloat(score);
-if (num >= q.points) scoreClass = 'color:var(--success)';
-else if (num > 0) scoreClass = 'color:var(--warning)';
-else scoreClass = 'color:var(--danger)';
-}
-const row = `
-<tr>
-<td><div class="row-title">${escapeHtml(student.name || student.id)}</div><div class="row-sub">${student.submitted ? 'Submitted' : 'Draft'}</div></td>
-<td><div class="row-sub">Q${currentQuestions.indexOf(q)+1}</div><div class="math-content" style="font-size:0.9rem">${mathHtml(q.text)}</div></td>
-<td><div class="math-content" style="max-width:200px;word-break:break-word;">${answer ? mathHtml(answer) : '<span class="muted" style="font-style:italic">-</span>'}</div></td>
-<td><span class="score-pill" style="${scoreClass}">${score === '-' ? '-' : `${score}/${q.points}`}</span></td>
-<td><div style="font-size:0.85rem;color:var(--text-muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">${escapeHtml(feedback) || '-'}</div></td>
-<td><button class="btn btn-secondary btn-sm" onclick="openReview('${student.id}')">View</button></td>
-</tr>
-`;
-tbody.innerHTML += row;
-}
-}
-if (!hasData) tbody.innerHTML = `<tr><td colspan="6"><div class="empty-shell">No results found for selected filters.</div></td></tr>`;
-if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+  if (!activeSessionId) return;
+  if (currentStudents.length === 0) await loadStudents();
+  
+  const tbody = document.getElementById('resultsBody');
+  const filterStudent = document.getElementById('filterStudent').value;
+  const filterQuestion = document.getElementById('filterQuestion').value;
+  const studentSelect = document.getElementById('filterStudent');
+  
+  // Clear and repopulate student filter with proper names
+  studentSelect.innerHTML = '<option value="">All Students</option>';
+  
+  // Fetch student names from main students collection if needed
+  const mainStudentsMap = new Map();
+  try {
+    const mainStudentsSnap = await getDocs(collection(db, 'students'));
+    mainStudentsSnap.forEach(doc => {
+      const data = doc.data();
+      mainStudentsMap.set(doc.id, data.name || data.displayName || doc.id);
+      // Also map by email
+      if (data.email) mainStudentsMap.set(data.email, data.name || data.displayName || doc.id);
+    });
+  } catch (err) {
+    console.warn('Could not fetch main students:', err);
+  }
+  
+  // Populate student filter and enhance currentStudents with proper names
+  for (const student of currentStudents) {
+    // Try to get proper name from main students collection
+    let properName = student.name;
+    if (!properName || properName === student.id || properName.startsWith('firebase')) {
+      // Look up by ID or email
+      if (mainStudentsMap.has(student.id)) {
+        properName = mainStudentsMap.get(student.id);
+      } else if (student.email && mainStudentsMap.has(student.email)) {
+        properName = mainStudentsMap.get(student.email);
+      } else {
+        properName = student.id.substring(0, 12) + '...';
+      }
+      student.displayName = properName;
+    } else {
+      student.displayName = properName;
+    }
+    
+    const opt = document.createElement('option');
+    opt.value = student.id;
+    opt.textContent = student.displayName;
+    studentSelect.appendChild(opt);
+  }
+  
+  const questionSelect = document.getElementById('filterQuestion');
+  if (questionSelect.options.length <= 1) {
+    currentQuestions.forEach((q, i) => {
+      const opt = document.createElement('option');
+      opt.value = q.id;
+      opt.textContent = `Q${i+1}: ${q.text.substring(0, 40)}${q.text.length > 40 ? '...' : ''}`;
+      questionSelect.appendChild(opt);
+    });
+  }
+  
+  tbody.innerHTML = '';
+  let hasData = false;
+  
+  for (const student of currentStudents) {
+    if (filterStudent && student.id !== filterStudent) continue;
+    
+    const studentDisplayName = student.displayName || student.name || student.id.substring(0, 12) + '...';
+    
+    for (const q of currentQuestions) {
+      if (filterQuestion && q.id !== filterQuestion) continue;
+      
+      const answer = (student.answers && student.answers[q.id]) ? student.answers[q.id] : null;
+      const score = (student.grades && student.grades[q.id] !== undefined) ? student.grades[q.id] : '-';
+      const feedback = (student.feedback && student.feedback[q.id]) ? student.feedback[q.id] : '';
+      hasData = true;
+      
+      let scoreClass = '';
+      if (score !== '-') {
+        const num = parseFloat(score);
+        if (num >= q.points) scoreClass = 'color:var(--success)';
+        else if (num > 0) scoreClass = 'color:var(--warning)';
+        else scoreClass = 'color:var(--danger)';
+      }
+      
+      const row = `
+        <tr>
+          <td>
+            <div class="row-title">${escapeHtml(studentDisplayName)}</div>
+            <div class="row-sub">${student.submitted ? 'Submitted' : 'In Progress'}</div>
+          </td>
+          <td>
+            <div class="row-sub">Q${currentQuestions.indexOf(q)+1}</div>
+            <div class="math-content" style="font-size:0.9rem">${mathHtml(q.text)}</div>
+          </td>
+          <td>
+            <div class="math-content" style="max-width:250px;word-break:break-word;">${answer ? mathHtml(answer) : '<span class="muted" style="font-style:italic">No answer</span>'}</div>
+          </td>
+          <td>
+            <span class="score-pill" style="${scoreClass}">${score === '-' ? '-' : `${score}/${q.points}`}</span>
+          </td>
+          <td>
+            <div style="font-size:0.85rem;color:var(--text-muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(feedback)}">${escapeHtml(feedback) || '-'}</div>
+          </td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="openReview('${student.id}')">Review</button>
+          </td>
+        </tr>
+      `;
+      tbody.innerHTML += row;
+    }
+  }
+  
+  if (!hasData) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-shell">No results found for selected filters.</div></td></tr>`;
+  }
+  
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([tbody]).catch(err => console.log('MathJax error:', err));
+  }
 };
-
+  
 window.exportData = async function() {
 if (!activeSessionId) { showToast('No active session', true); return; }
 showToast('Preparing JSON export...', 'info');
