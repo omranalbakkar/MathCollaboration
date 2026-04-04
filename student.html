@@ -1044,21 +1044,26 @@
     </div>
 
     <script type="module">
-        import {
-            auth,
-            db,
-            onAuthStateChanged,
-            signInWithEmailAndPassword,
-            signOut,
-            getDoc,
-            setDoc,
-            doc,
-            collection,
-            query,
-            where,
-            getDocs,
-            updateDoc
-        } from './firebase-config.js';
+import {
+    auth,
+    db,
+    rtDB,           // ← ADD THIS - Realtime Database instance
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    signOut,
+    getDoc,
+    setDoc,
+    doc,
+    collection,
+    query,
+    where,
+    getDocs,
+    updateDoc,
+    ref,            // ← ADD THIS - for RTDB references
+    set,            // ← ADD THIS - for writing to RTDB
+    onValue,        // ← ADD THIS - for listening to RTDB
+    remove          // ← ADD THIS - for deleting from RTDB
+} from './firebase-config.js';
 
         // ===== APP STATE =====
         window.appState = {
