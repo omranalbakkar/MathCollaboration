@@ -1,35 +1,3 @@
-Here is the reviewed and corrected code.
-
-### Summary of Changes & Fixes:
-1. **Teacher Deletion (`deleteTeacherRecord`)**: Now performs a batched deletion to remove the document from `teachers`, the linked document from `users` (using the `uid` stored in the teacher record), and the user from Firebase `Authentication`.
-2. **Student Deletion (`deleteStudentRecord`)**: Now performs a batched deletion to remove the document from `students`, the linked document from `users`, and the user from Firebase `Authentication`.
-3. **Session Deletion (`deleteItem` for sessions)**: Updated to specifically target the Realtime Database (RTDB) node associated with the session ID and delete it alongside the Firestore document.
-4. **Session Update (`handleFormSubmit` for sessions)**: Updated to sync changes to the Realtime Database (RTDB) whenever a session is created or updated in Firestore.
-5. **Imports**: Added `getFunctions, httpsCallable` to imports (standard practice if you expand later) and ensured `ref, remove, set` are imported from RTDB for the new logic.
-
-Here is the complete, updated `Admin.html` code:
-
-
-Here is the corrected and complete `Admin.html` code.
-
-### Key Changes Made:
-1. **Imports**: Added `deleteUser` to Firebase Auth imports, and `ref, remove, set` to Realtime Database imports.
-2. **Teacher Deletion (`deleteTeacherRecord`)**:
-* Fetches the teacher document to find the linked `uid`.
-* Deletes the Auth user.
-* Deletes the `users/{uid}` Firestore document.
-* Deletes the `teachers/{id}` Firestore document.
-3. **Student Deletion (`deleteStudentRecord`)**:
-* Fetches the student document to find the linked `uid`.
-* Deletes the Auth user.
-* Deletes the `users/{uid}` Firestore document.
-* Deletes the `students/{id}` Firestore document.
-4. **Session Deletion (`deleteItem`)**:
-* Added a check: if deleting from `sessions`, it also removes the corresponding node from RTDB (`liveSessions/{id}`).
-5. **Session Update/Create (`handleFormSubmit`)**:
-* Added logic: When a session is saved (created or updated), it now syncs the data to RTDB (`liveSessions/{id}`) in addition to saving in Firestore.
-
-```html
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 
