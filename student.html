@@ -1437,7 +1437,7 @@ window.saveCurrentAnswer = async function() {
     try {
         const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
 
-        // ✅ Use setDoc with merge:true — creates the doc if it doesn't exist, updates if it does
+        // ✅ setDoc with merge — creates doc if it doesn't exist yet
         await setDoc(studentRef, { [`answers.${q.id}`]: answer }, { merge: true });
 
         showToast('Answer saved!', false);
@@ -1450,8 +1450,12 @@ window.saveCurrentAnswer = async function() {
             }
         }, 1500);
 
+        // ✅ Safely initialize local studentProgress before writing
         if (!state.currentSession.studentProgress) {
             state.currentSession.studentProgress = { answers: {} };
+        }
+        if (!state.currentSession.studentProgress.answers) {
+            state.currentSession.studentProgress.answers = {};
         }
         state.currentSession.studentProgress.answers[q.id] = answer;
 
@@ -1466,6 +1470,8 @@ window.saveCurrentAnswer = async function() {
         state.isSaving = false;
     }
 };
+
+    
         // ===== NAVIGATION =====
         window.prevQuestion = async function() {
             const state = window.appState;
