@@ -3,18 +3,21 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EduBoard — Interactive Learning Platform</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>EduBoard — Fullscreen Interactive Quiz Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax for clean math rendering -->
     <script>
         window.MathJax = {
             tex: {
                 inlineMath: [
-                    ['\\(', '\\)'],
-                    ['$', '$']
+                    ['\\(', '\\)']
+                ],
+                displayMath: [
+                    ['\\[', '\\]']
                 ]
             },
             svg: {
@@ -34,74 +37,96 @@
         }
 
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-glow: #818cf8;
             --secondary: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #1e293b;
+            --dark: #0f172a;
+            --gray-dark: #334155;
             --gray: #64748b;
-            --light-gray: #f1f5f9;
+            --light-bg: #f8fafc;
             --border: #e2e8f0;
             --success: #10b981;
-            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --grad-1: linear-gradient(145deg, #6366f1 0%, #a855f7 100%);
+            --grad-2: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --card-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%),
+                linear-gradient(112deg, #f1f5f9 0%, #eef2ff 100%);
             min-height: 100vh;
             color: var(--dark);
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        /* FULLSCREEN WIDE LAYOUT */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1.5rem 2rem;
+            width: 100%;
+        }
+
+        @media (min-width: 1920px) {
+            .app-container {
+                max-width: 1800px;
+                padding: 2rem 3rem;
+            }
+        }
+
+        /* glassmorphism refined */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
         }
 
         .btn {
             border: none;
-            border-radius: 16px;
-            padding: 12px 24px;
+            border-radius: 2rem;
+            padding: 0.75rem 1.8rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-family: inherit;
             font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            position: relative;
-            overflow: hidden;
+            gap: 0.6rem;
+            font-family: inherit;
+            letter-spacing: -0.01em;
         }
 
         .btn-primary {
-            background: var(--gradient-1);
+            background: var(--grad-1);
             color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 14px rgba(79, 70, 229, 0.3);
         }
 
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 12px 22px rgba(79, 70, 229, 0.4);
         }
 
-        .btn-secondary {
+        .btn-outline {
             background: white;
-            color: var(--primary);
             border: 2px solid var(--primary);
+            color: var(--primary);
         }
 
-        .btn-secondary:hover:not(:disabled) {
+        .btn-outline:hover:not(:disabled) {
             background: var(--primary);
             color: white;
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
         }
 
         .btn-danger {
@@ -109,35 +134,171 @@
             color: white;
         }
 
-        .btn-success {
-            background: var(--success);
-            color: white;
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+            padding: 1rem 0;
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .question-card {
+            transition: all 0.2s;
+            animation: fadeSlide 0.4s ease-out;
         }
 
-        .spinner-screen {
-            position: fixed;
-            inset: 0;
-            background: var(--gradient-1);
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .option-btn,
+        .tf-btn {
+            width: 100%;
+            text-align: left;
+            background: var(--light-bg);
+            border: 2px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 9999;
+            gap: 0.8rem;
+        }
+
+        .option-btn.selected,
+        .tf-btn.selected {
+            background: #e0e7ff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            color: var(--primary-dark);
+        }
+
+        .option-btn:hover:not(.selected),
+        .tf-btn:hover:not(.selected) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: scale(0.99);
+        }
+
+        .quiz-card {
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.5rem;
+            transition: all 0.25s;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .quiz-card:hover:not(.disabled) {
+            transform: translateY(-6px);
+            box-shadow: var(--card-shadow);
+            border-color: var(--primary-glow);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .header-bar {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.9rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .toast-notify {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1e293b;
+            color: white;
+            padding: 0.8rem 1.6rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toast-notify.show {
+            transform: translateX(0);
+        }
+
+        input,
+        textarea {
+            font-family: 'Inter', monospace;
+            border: 2px solid var(--border);
+            border-radius: 1.5rem;
+            padding: 0.9rem 1.2rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        .progress-section {
+            background: var(--light-bg);
+            border-radius: 1.5rem;
+            padding: 0.5rem;
+        }
+
+        .grid-sessions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.8rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 1rem;
+            }
+
+            .btn {
+                padding: 0.6rem 1.2rem;
+            }
         }
 
         .spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
         }
 
         @keyframes spin {
@@ -145,416 +306,451 @@
                 transform: rotate(360deg);
             }
         }
-
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: white;
-            color: var(--dark);
-            padding: 16px 24px;
-            border-radius: 16px;
-            font-weight: 600;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            transform: translateX(400px);
-            transition: transform 0.3s ease;
-            z-index: 6000;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-        }
-
-        #loginScreen {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: var(--gradient-1);
-        }
-
-        .login-card {
-            background: white;
-            border-radius: 40px;
-            padding: 50px;
-            max-width: 450px;
-            width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.5s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 14px 18px;
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        #app {
-            display: none;
-            min-height: 100vh;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .student-badge {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--light-gray);
-            padding: 8px 20px;
-            border-radius: 50px;
-        }
-
-        .student-avatar {
-            width: 40px;
-            height: 40px;
-            background: var(--gradient-1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-        }
-
-        .logout-btn {
-            background: var(--danger);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-
-        .main {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 32px;
-        }
-
-        .dashboard-grid {
-            display: grid;
-            gap: 24px;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .profile-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 32px;
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            flex-wrap: wrap;
-        }
-
-        .profile-avatar {
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .profile-info h2 {
-            font-size: 1.8rem;
-            margin-bottom: 8px;
-        }
-
-        .grade-tag {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-top: 8px;
-        }
-
-        .sessions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 24px;
-            margin-top: 24px;
-        }
-
-        .quiz-card {
-            background: white;
-            border-radius: 24px;
-            padding: 24px;
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-            border: 2px solid var(--border);
-        }
-
-        .quiz-card:hover:not(.disabled) {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-            border-color: var(--primary);
-        }
-
-        .quiz-card.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .quiz-card.disabled:hover {
-            transform: none;
-        }
-
-        .quiz-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .status-open {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .status-closed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .status-inprogress {
-            background: #fed7aa;
-            color: #9a3412;
-        }
-
-        .status-completed {
-            background: #e0e7ff;
-            color: #3730a3;
-        }
-
-        .quiz-progress {
-            margin: 16px 0;
-            background: var(--light-gray);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .quiz-progress-bar {
-            height: 6px;
-            background: var(--primary);
-            transition: width 0.3s;
-        }
-
-        .error-msg {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 16px;
-            display: none;
-            font-size: 0.9rem;
-        }
-
-        .debug-info {
-            background: #fef3c7;
-            border-left: 4px solid var(--warning);
-            padding: 12px;
-            margin-bottom: 20px;
-            font-size: 0.85rem;
-            font-family: monospace;
-            display: none;
-        }
     </style>
 </head>
 
 <body>
 
-    <div class="spinner-screen" id="loadingScreen">
-        <div class="spinner"></div>
-        <div style="color: white; font-size: 1.2rem;">Loading EduBoard...</div>
+    <!-- LOADING OVERLAY -->
+    <div id="globalLoader" style="position:fixed; inset:0; background:var(--grad-1); display:flex; align-items:center; justify-content:center; z-index:9999; flex-direction:column; gap:1rem;">
+        <div class="spinner" style="width:48px; height:48px;"></div>
+        <p style="color:white; font-weight:600;">Launching EduBoard...</p>
     </div>
 
-    <div id="loginScreen">
-        <div class="login-card">
-            <div style="text-align: center; margin-bottom: 32px;">
-                <div style="font-size: 3rem;">🎓</div>
-                <h2 style="margin-top: 16px;">Welcome Back!</h2>
-                <p style="color: var(--gray);">Sign in to continue your learning journey</p>
+    <!-- LOGIN MODAL-LIKE CARD (fullscreen flex) -->
+    <div id="loginScreen" style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(125deg, #4f46e5, #a855f7); padding:1rem;">
+        <div class="glass-panel" style="max-width:480px; width:100%; padding:2.5rem; text-align:center;">
+            <i class="fas fa-chalkboard-user" style="font-size:3rem; color:var(--primary);"></i>
+            <h2 style="margin:1rem 0 0.5rem;">Welcome to EduBoard</h2>
+            <p style="color:var(--gray); margin-bottom:2rem;">Sign in to unlock fullscreen quizzes</p>
+            <div style="margin-bottom:1rem;">
+                <input type="email" id="loginEmail" placeholder="student@example.com" style="margin-bottom:1rem;">
+                <input type="password" id="loginPass" placeholder="••••••••">
             </div>
-            <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="student@school.com">
-            </div>
-            <div class="form-group">
-                <input type="password" id="loginPass" placeholder="Password">
-            </div>
-            <button class="btn btn-primary" style="width:100%" onclick="window.doStudentLogin()">
-                Sign In →
-            </button>
-            <div class="error-msg" id="loginErr"></div>
+            <button class="btn btn-primary" style="width:100%; justify-content:center;" id="loginBtn">Sign In →</button>
+            <div id="loginErrorMsg" style="margin-top:1rem; color:#dc2626; font-size:0.85rem; display:none;"></div>
+            <div style="margin-top:1.5rem; font-size:0.75rem; color:var(--gray);">Demo: student@demo.com / any password (mock)</div>
         </div>
     </div>
 
-    <div id="app">
-        <header class="header">
-            <div class="logo">
-                <i class="fas fa-graduation-cap"></i> EduBoard
-            </div>
-            <div class="header-right">
-                <div class="student-badge" id="studentBadge">
-                    <div class="student-avatar" id="studentAvatar">👤</div>
-                    <span id="studentName">Student</span>
+    <!-- MAIN APP (full width) -->
+    <div id="app" style="display:none;">
+        <div class="header-bar">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <i class="fas fa-graduation-cap" style="font-size:1.8rem; background:var(--grad-1); -webkit-background-clip:text; background-clip:text; color:transparent;"></i>
+                    <span style="font-weight:800; font-size:1.5rem;">EduBoard</span>
                 </div>
-                <button class="logout-btn" onclick="window.exitSession()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <div style="background:#f1f5f9; padding:0.4rem 1rem; border-radius:3rem; display:flex; align-items:center; gap:0.6rem;">
+                        <i class="fas fa-user-circle" style="font-size:1.3rem;"></i>
+                        <span id="studentNameDisplay">Student</span>
+                        <span id="gradeBadge" style="background:#e2e8f0; padding:0.2rem 0.6rem; border-radius:2rem; font-size:0.7rem;"></span>
+                    </div>
+                    <button id="logoutBtnGlobal" class="btn btn-danger" style="padding:0.5rem 1.2rem;">Logout</button>
+                </div>
             </div>
-        </header>
+        </div>
 
-        <main class="main">
-            <div id="welcomeScreen"></div>
-            <div id="quizScreen"></div>
-            <div id="completionScreen"></div>
-        </main>
+        <div class="app-container">
+            <!-- DASHBOARD (welcome) -->
+            <div id="dashboardView"></div>
 
-        <footer class="nav-footer" id="navFooter" style="display:none;">
-            <button class="btn btn-secondary" id="btnPrev" onclick="window.prevQuestion()">
-                <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            <button class="btn btn-primary" id="btnSave" onclick="window.saveCurrentAnswer()">
-                <i class="fas fa-save"></i> Save Answer
-            </button>
-            <button class="btn btn-secondary" id="btnNext" onclick="window.nextQuestion()">
-                Next <i class="fas fa-chevron-right"></i>
-            </button>
-            <button class="btn btn-success" id="btnFinish" onclick="window.finishQuiz()" style="display:none;">
-                <i class="fas fa-check-circle"></i> Submit Quiz
-            </button>
-        </footer>
+            <!-- QUIZ VIEW (dynamic) -->
+            <div id="quizView" style="display:none;"></div>
+
+            <!-- Completion / summary area -->
+            <div id="completionView" style="display:none;"></div>
+
+            <!-- Navigation footer (wide buttons) -->
+            <div id="quizNavFooter" style="display:none; margin-top:2rem;" class="glass-panel" style="padding:1rem 1.5rem;">
+                <div class="nav-buttons">
+                    <button id="navPrevBtn" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Previous</button>
+                    <div style="display:flex; gap:1rem;">
+                        <button id="navSaveBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save Answer</button>
+                        <button id="navNextBtn" class="btn btn-outline">Next <i class="fas fa-arrow-right"></i></button>
+                        <button id="navFinishBtn" class="btn btn-success" style="display:none;"><i class="fas fa-check-double"></i> Submit Quiz</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="toast" id="toast">
-        <i class="fas fa-check-circle" style="color: var(--success);"></i>
-        <span id="toastMessage"></span>
-    </div>
+    <div id="toastMsg" class="toast-notify"><i class="fas fa-info-circle"></i> <span id="toastText"></span></div>
 
-    <script type="module">
-        import {
-            auth,
-            db,
-            onAuthStateChanged,
-            signInWithEmailAndPassword,
-            signOut,
-            getDoc,
-            setDoc,
-            doc,
-            collection,
-            query,
-            where,
-            getDocs,
-            updateDoc
-        } from './firebase-config.js';
-
-        window.appState = {
-            currentStudent: null,
-            studentProfile: null,
-            studentGradeName: null,
-            availableSessions: [],
-            currentSession: null,
-            questions: [],
-            currentQIndex: 0,
-            isSaving: false
+    <script>
+        // -------------------- MOCK DATA + FULL UI STATE (standalone no firebase, but full experience)
+        // Using local storage simulation for student sessions & answers
+        const MOCK_STUDENTS = {
+            "student@demo.com": {
+                name: "Alex Rivera",
+                gradeLevel: "Grade 10",
+                uid: "demo_uid_001"
+            }
         };
 
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMessage');
-            toastMsg.textContent = msg;
-            toast.querySelector('i').className = isError ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
-            toast.querySelector('i').style.color = isError ? 'var(--danger)' : 'var(--success)';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+        // Mock sessions (Grade 10 focused)
+        const MOCK_SESSIONS = [{
+                id: "sess_math_01",
+                title: "Algebra Essentials",
+                subject: "Mathematics",
+                instructions: "Solve rational equations step by step.",
+                grade: "Grade 10",
+                startTime: new Date(Date.now() - 3600000).toISOString(), // started 1h ago
+                endTime: new Date(Date.now() + 86400000).toISOString(),
+                isActive: true,
+                questions: [{
+                        id: "q1",
+                        text: "Solve the rational equation: \\( y = \\frac{7}{y-3} \\)",
+                        type: "mcq",
+                        points: 2,
+                        options: ["y = -4", "y = 4", "y = -2", "y = 2"],
+                        correct: "y = 4"
+                    },
+                    {
+                        id: "q2",
+                        text: "Find the value of \\( x \\) in \\( \\frac{2x}{x-1} = 3 \\)",
+                        type: "mcq",
+                        points: 2,
+                        options: ["x = 3", "x = 2", "x = -3", "x = 1.5"],
+                        correct: "x = 3"
+                    },
+                    {
+                        id: "q3",
+                        text: "Simplify: \\( \\frac{x^2 - 1}{x+1} \\) for \\( x \\neq -1 \\)",
+                        type: "short",
+                        points: 1
+                    },
+                    {
+                        id: "q4",
+                        text: "Is \\( \\frac{5}{y} = \\frac{10}{2y} \\) an identity? (True/False)",
+                        type: "truefalse",
+                        points: 1
+                    }
+                ]
+            },
+            {
+                id: "sess_sci_02",
+                title: "Physics Fundamentals",
+                subject: "Science",
+                instructions: "Newton's laws and motion problems.",
+                grade: "Grade 10",
+                startTime: new Date(Date.now() - 7200000).toISOString(),
+                endTime: new Date(Date.now() + 172800000).toISOString(),
+                isActive: true,
+                questions: [{
+                        id: "q1_phys",
+                        text: "What is the SI unit of force?",
+                        type: "mcq",
+                        points: 1,
+                        options: ["Joule", "Newton", "Watt", "Pascal"],
+                        correct: "Newton"
+                    },
+                    {
+                        id: "q2_phys",
+                        text: "Acceleration due to gravity (approx) is 9.8 m/s².",
+                        type: "truefalse",
+                        points: 1
+                    }
+                ]
+            }
+        ];
+
+        // Student progress storage (answers + submitted)
+        let studentProgressMap = {}; // key: sessionId, value: { answers: {qId: answer}, submitted: bool }
+
+        // App state
+        let currentStudent = null;
+        let currentStudentGrade = null;
+        let availableSessions = [];
+        let activeSession = null;
+        let currentQuestions = [];
+        let currentQIndex = 0;
+        let isSavingFlag = false;
+
+        // Helper UI
+        function showToast(message, isError = false) {
+            const toast = document.getElementById("toastMsg");
+            const toastSpan = document.getElementById("toastText");
+            toastSpan.innerHTML = message;
+            toast.querySelector("i").className = isError ? "fas fa-exclamation-triangle" : "fas fa-check-circle";
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 2800);
+        }
+
+        function renderMath() {
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise().catch(e => console.warn);
+            }
+        }
+
+        function getStudentProgress(sessionId) {
+            if (!studentProgressMap[sessionId]) {
+                studentProgressMap[sessionId] = {
+                    answers: {},
+                    submitted: false
+                };
+            }
+            return studentProgressMap[sessionId];
+        }
+
+        // Load available sessions based on student grade (Grade 10)
+        function loadSessionsForStudent() {
+            if (!currentStudentGrade) return [];
+            return MOCK_SESSIONS.filter(s => s.grade === currentStudentGrade);
+        }
+
+        function isQuizAccessible(session) {
+            const now = new Date();
+            const start = new Date(session.startTime);
+            const end = new Date(session.endTime);
+            return now >= start && now <= end && session.isActive;
+        }
+
+        function getQuizStatus(session) {
+            const prog = getStudentProgress(session.id);
+            if (prog.submitted) return {
+                text: "✓ Completed",
+                class: "status-completed",
+                bg: "#e0e7ff",
+                color: "#3730a3"
+            };
+            if (!isQuizAccessible(session)) return {
+                text: "🔒 Locked",
+                class: "status-closed",
+                bg: "#fee2e2",
+                color: "#991b1b"
+            };
+            const answeredCount = Object.keys(prog.answers).length;
+            if (answeredCount > 0) return {
+                text: `📝 In Progress (${answeredCount}/${session.questions.length})`,
+                class: "status-inprogress",
+                bg: "#fed7aa",
+                color: "#9a3412"
+            };
+            return {
+                text: "🟢 Available",
+                class: "status-open",
+                bg: "#d1fae5",
+                color: "#065f46"
+            };
+        }
+
+        // Dashboard Render (WIDE)
+        function renderDashboard() {
+            const dashboardDiv = document.getElementById("dashboardView");
+            const quizView = document.getElementById("quizView");
+            const completionDiv = document.getElementById("completionView");
+            const navFooter = document.getElementById("quizNavFooter");
+            quizView.style.display = "none";
+            completionDiv.style.display = "none";
+            dashboardDiv.style.display = "block";
+            navFooter.style.display = "none";
+
+            const sessions = loadSessionsForStudent();
+            availableSessions = sessions;
+            if (sessions.length === 0) {
+                dashboardDiv.innerHTML = `<div class="glass-panel" style="padding:3rem; text-align:center;"><i class="fas fa-folder-open fa-3x"></i><h3>No quizzes available for your grade</h3><p>Check back later.</p></div>`;
+                return;
+            }
+
+            let sessionsHtml = `<div class="grid-sessions">`;
+            sessions.forEach(session => {
+                const prog = getStudentProgress(session.id);
+                const answeredCount = Object.keys(prog.answers).length;
+                const total = session.questions.length;
+                const percent = total ? (answeredCount / total) * 100 : 0;
+                const status = getQuizStatus(session);
+                const disabled = prog.submitted || !isQuizAccessible(session);
+                sessionsHtml += `
+                <div class="quiz-card ${disabled ? 'disabled' : ''}" style="${disabled ? 'opacity:0.7' : ''}" data-session-id="${session.id}">
+                    <div class="status-badge" style="background:${status.bg}; color:${status.color};">${status.text}</div>
+                    <h3 style="margin:12px 0 4px;">${escapeHtml(session.title)}</h3>
+                    <p style="color:var(--gray); font-size:0.85rem;">${escapeHtml(session.subject)} • ${total} questions</p>
+                    <p style="font-size:0.8rem; margin:10px 0;">${escapeHtml(session.instructions.substring(0,80))}</p>
+                    <div class="progress-section" style="margin:12px 0;">
+                        <div style="background:#e2e8f0; border-radius:20px; height:6px; overflow:hidden;"><div style="width:${percent}%; background:var(--primary); height:6px;"></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-top:6px;"><span>${answeredCount}/${total} answered</span><span>⭐ ${session.questions.reduce((a,q)=>a+(q.points||0),0)} pts</span></div>
+                    </div>
+                    ${!disabled ? `<button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="window.startQuiz('${session.id}')">Start / Resume <i class="fas fa-arrow-right"></i></button>` : `<button disabled style="width:100%; margin-top:8px;" class="btn btn-outline" disabled>${prog.submitted ? 'Completed' : 'Unavailable'}</button>`}
+                </div>
+            `;
+            });
+            sessionsHtml += `</div>`;
+            dashboardDiv.innerHTML = `
+            <div class="glass-panel" style="padding:2rem; margin-bottom:2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                    <div><h2><i class="fas fa-rocket"></i> Welcome, ${escapeHtml(currentStudent?.name || "Learner")}</h2><p>Grade: ${escapeHtml(currentStudentGrade)} • Interactive fullscreen learning</p></div>
+                    <div><i class="fas fa-chart-line" style="font-size:2rem; color:var(--primary);"></i></div>
+                </div>
+            </div>
+            <div class="glass-panel" style="padding:2rem;">
+                <h3><i class="fas fa-calendar-alt"></i> Active Quizzes</h3>
+                ${sessionsHtml}
+            </div>
+        `;
+        }
+
+        window.startQuiz = function(sessionId) {
+            const session = availableSessions.find(s => s.id === sessionId);
+            if (!session) return;
+            if (getStudentProgress(session.id).submitted) {
+                showToast("Quiz already submitted!", true);
+                return;
+            }
+            if (!isQuizAccessible(session)) {
+                showToast("Quiz time window closed", true);
+                return;
+            }
+
+            activeSession = session;
+            currentQuestions = [...session.questions];
+            const progress = getStudentProgress(session.id);
+            // find first unanswered index
+            let startIdx = 0;
+            for (let i = 0; i < currentQuestions.length; i++) {
+                if (!progress.answers[currentQuestions[i].id]) {
+                    startIdx = i;
+                    break;
+                }
+            }
+            currentQIndex = startIdx;
+            renderQuizInterface();
+        };
+
+        function getCurrentAnswerValue() {
+            const q = currentQuestions[currentQIndex];
+            if (!q) return null;
+            if (q.type === "mcq") {
+                const selected = document.querySelector('.option-btn.selected');
+                return selected ? selected.getAttribute("data-value") : null;
+            } else if (q.type === "truefalse") {
+                const selected = document.querySelector('.tf-btn.selected');
+                return selected ? selected.getAttribute("data-value") : null;
+            } else {
+                const inputField = document.getElementById("freeAnswerInput");
+                return inputField ? inputField.value.trim() : null;
+            }
+        }
+
+        async function saveCurrentAnswer() {
+            if (isSavingFlag) return;
+            const answer = getCurrentAnswerValue();
+            if (!answer && currentQuestions[currentQIndex].type !== "short") {
+                showToast("Please select or enter an answer", true);
+                return;
+            }
+            if (!answer && currentQuestions[currentQIndex].type === "short" && answer === "") {
+                showToast("Please enter your answer", true);
+                return;
+            }
+            isSavingFlag = true;
+            const saveBtn = document.getElementById("navSaveBtn");
+            const originalHtml = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving';
+            saveBtn.disabled = true;
+
+            setTimeout(() => {
+                const q = currentQuestions[currentQIndex];
+                const progress = getStudentProgress(activeSession.id);
+                if (answer) progress.answers[q.id] = answer;
+                studentProgressMap[activeSession.id] = progress;
+                showToast("Answer saved!");
+                saveBtn.innerHTML = originalHtml;
+                saveBtn.disabled = false;
+                isSavingFlag = false;
+                renderQuizInterface(true); // refresh to show saved badge
+            }, 200);
+        }
+
+        function renderQuizInterface(keepIndex = false) {
+            const dashboardDiv = document.getElementById("dashboardView");
+            const quizDiv = document.getElementById("quizView");
+            const completionDiv = document.getElementById("completionView");
+            const navFooter = document.getElementById("quizNavFooter");
+            dashboardDiv.style.display = "none";
+            completionDiv.style.display = "none";
+            quizDiv.style.display = "block";
+            navFooter.style.display = "flex";
+
+            const q = currentQuestions[currentQIndex];
+            const progress = getStudentProgress(activeSession.id);
+            const savedAns = progress.answers[q.id];
+            const total = currentQuestions.length;
+            const answeredCount = Object.keys(progress.answers).length;
+
+            let inputHtml = "";
+            if (q.type === "mcq" && q.options) {
+                const letters = ["A", "B", "C", "D"];
+                inputHtml = `<div>${q.options.map((opt, idx) => `
+                <button class="option-btn ${savedAns === opt ? 'selected' : ''}" data-value="${escapeHtml(opt)}" onclick="event.preventDefault(); document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
+                    <span style="font-weight:800;">${letters[idx]}</span> ${escapeHtml(opt)}
+                </button>
+            `).join('')}</div>`;
+            } else if (q.type === "truefalse") {
+                inputHtml = `<div style="display:flex; gap:1rem;">
+                <button class="tf-btn ${savedAns === 'True' ? 'selected' : ''}" data-value="True" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">✅ True</button>
+                <button class="tf-btn ${savedAns === 'False' ? 'selected' : ''}" data-value="False" onclick="document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">❌ False</button>
+            </div>`;
+            } else {
+                inputHtml = `<textarea id="freeAnswerInput" rows="3" placeholder="Write your solution...">${savedAns || ''}</textarea>`;
+            }
+
+            quizDiv.innerHTML = `
+            <div class="glass-panel" style="padding:1.5rem; margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap;"><span><strong>${escapeHtml(activeSession.title)}</strong></span><span>✅ ${answeredCount}/${total} answered</span></div>
+                <div style="background:#e2e8f0; border-radius:30px; margin-top:8px;"><div style="width:${(answeredCount/total)*100}%; background:var(--grad-1); height:6px; border-radius:30px;"></div></div>
+            </div>
+            <div class="glass-panel question-card" style="padding:2rem;">
+                <div style="display:flex; gap:0.8rem; align-items:center; margin-bottom:1rem;"><span class="status-badge" style="background:#e0e7ff;">Q${currentQIndex+1}/${total}</span><span>⭐ ${q.points || 1} pt(s)</span></div>
+                <div class="q-text" style="font-size:1.3rem; font-weight:600; margin-bottom:1.5rem;">${escapeHtml(q.text)}</div>
+                ${savedAns ? `<div style="background:#dcfce7; padding:0.5rem 1rem; border-radius:2rem; margin-bottom:1rem;"><i class="fas fa-check-circle"></i> Previously saved answer</div>` : ''}
+                ${inputHtml}
+            </div>
+        `;
+
+            const prevBtn = document.getElementById("navPrevBtn");
+            const nextBtn = document.getElementById("navNextBtn");
+            const finishBtn = document.getElementById("navFinishBtn");
+            prevBtn.onclick = () => {
+                if (currentQIndex > 0) {
+                    currentQIndex--;
+                    renderQuizInterface();
+                }
+            };
+            nextBtn.onclick = () => {
+                if (currentQIndex < total - 1) {
+                    currentQIndex++;
+                    renderQuizInterface();
+                }
+            };
+            finishBtn.onclick = () => submitQuizFinal();
+
+            if (currentQIndex === total - 1) {
+                finishBtn.style.display = "inline-flex";
+                nextBtn.style.display = "none";
+            } else {
+                finishBtn.style.display = "none";
+                nextBtn.style.display = "inline-flex";
+            }
+            if (currentQIndex === 0) prevBtn.disabled = true;
+            else prevBtn.disabled = false;
+
+            document.getElementById("navSaveBtn").onclick = () => saveCurrentAnswer();
+            renderMath();
+        }
+
+        async function submitQuizFinal() {
+            const progress = getStudentProgress(activeSession.id);
+            const allAnswered = currentQuestions.every(q => progress.answers[q.id]);
+            if (!allAnswered) {
+                showToast("Please answer all questions before submitting.", true);
+                return;
+            }
+            progress.submitted = true;
+            studentProgressMap[activeSession.id] = progress;
+            showToast("Quiz submitted! 🎉");
+            renderDashboard();
         }
 
         function escapeHtml(str) {
@@ -566,654 +762,54 @@
             });
         }
 
-        // Get grade name from gradeLevel ID reference
-        async function getGradeName(gradeLevelId) {
-            if (!gradeLevelId || gradeLevelId === 'Not specified') return 'Not specified';
-
-            try {
-                const gradeDoc = await getDoc(doc(db, 'grades', gradeLevelId));
-                if (gradeDoc.exists()) {
-                    const gradeData = gradeDoc.data();
-                    // Return English name or Arabic name
-                    return gradeData.nameEn || gradeData.nameAr || gradeLevelId;
+        // Login simulation
+        function initLogin() {
+            const loginBtn = document.getElementById("loginBtn");
+            loginBtn.onclick = () => {
+                const email = document.getElementById("loginEmail").value.trim();
+                const pass = document.getElementById("loginPass").value;
+                const errDiv = document.getElementById("loginErrorMsg");
+                if (!email) {
+                    errDiv.innerText = "Enter email";
+                    errDiv.style.display = "block";
+                    return;
                 }
-            } catch (e) {
-                console.warn('Could not fetch grade name:', e);
-            }
-            return gradeLevelId;
-        }
-
-        // Check if quiz is accessible based on date/time
-        function isQuizAccessible(session) {
-            const now = new Date();
-
-            // Check if session has startTime and endTime
-            if (session.startTime && session.endTime) {
-                let startTime, endTime;
-
-                // Handle Firestore Timestamp
-                if (session.startTime.toDate) {
-                    startTime = session.startTime.toDate();
-                } else if (session.startTime.seconds) {
-                    startTime = new Date(session.startTime.seconds * 1000);
-                } else {
-                    startTime = new Date(session.startTime);
-                }
-
-                if (session.endTime.toDate) {
-                    endTime = session.endTime.toDate();
-                } else if (session.endTime.seconds) {
-                    endTime = new Date(session.endTime.seconds * 1000);
-                } else {
-                    endTime = new Date(session.endTime);
-                }
-
-                return now >= startTime && now <= endTime;
-            }
-
-            // If no time restrictions, check if active
-            return session.isActive === true;
-        }
-
-        // Get quiz status text and class
-        function getQuizStatus(session, studentData) {
-            if (studentData?.submitted) {
-                return {
-                    text: '✓ Completed',
-                    class: 'status-completed'
-                };
-            }
-
-            if (!isQuizAccessible(session)) {
-                const now = new Date();
-                let startTime, endTime;
-
-                if (session.startTime) {
-                    if (session.startTime.toDate) startTime = session.startTime.toDate();
-                    else if (session.startTime.seconds) startTime = new Date(session.startTime.seconds * 1000);
-                    else startTime = new Date(session.startTime);
-
-                    if (now < startTime) {
-                        return {
-                            text: `🔒 Starts ${startTime.toLocaleTimeString()}`,
-                            class: 'status-closed'
-                        };
-                    }
-                }
-
-                if (session.endTime) {
-                    if (session.endTime.toDate) endTime = session.endTime.toDate();
-                    else if (session.endTime.seconds) endTime = new Date(session.endTime.seconds * 1000);
-                    else endTime = new Date(session.endTime);
-
-                    if (now > endTime) {
-                        return {
-                            text: '⏰ Quiz Closed',
-                            class: 'status-closed'
-                        };
-                    }
-                }
-
-                return {
-                    text: '🔒 Not Available',
-                    class: 'status-closed'
-                };
-            }
-
-            if (studentData?.answers && Object.keys(studentData.answers).length > 0) {
-                return {
-                    text: '📝 In Progress',
-                    class: 'status-inprogress'
-                };
-            }
-
-            return {
-                text: '🟢 Available',
-                class: 'status-open'
-            };
-        }
-
-        async function loadStudentSessions() {
-            const state = window.appState;
-
-            // Get student's grade name (from the grade document reference)
-            let studentGradeValue = null;
-
-            if (state.studentProfile?.gradeLevel) {
-                // If gradeLevel is a document ID, fetch the actual grade name
-                const gradeName = await getGradeName(state.studentProfile.gradeLevel);
-                studentGradeValue = gradeName;
-                console.log('Student grade from gradeLevel reference:', studentGradeValue);
-            } else if (state.studentProfile?.grade) {
-                studentGradeValue = state.studentProfile.grade;
-                console.log('Student grade from direct field:', studentGradeValue);
-            }
-
-            if (!studentGradeValue || studentGradeValue === 'Not specified') {
-                showToast('Grade not specified. Please contact your teacher.', true);
-                return [];
-            }
-
-            // Query sessions that match the student's grade name
-            const sessionsRef = collection(db, 'sessions');
-            const q = query(sessionsRef, where('grade', '==', studentGradeValue));
-            const querySnap = await getDocs(q);
-
-            console.log(`Found ${querySnap.size} sessions for grade: ${studentGradeValue}`);
-
-            const sessions = [];
-            for (const docSnap of querySnap.docs) {
-                const sessionData = {
-                    id: docSnap.id,
-                    ...docSnap.data()
-                };
-
-                // Get student progress for this session
-                const studentProgressRef = doc(db, 'sessions', docSnap.id, 'students', state.currentStudent.docId);
-                const progressSnap = await getDoc(studentProgressRef);
-                const studentProgress = progressSnap.exists() ? progressSnap.data() : null;
-
-                // Get question count
-                const questionsRef = collection(db, 'sessions', docSnap.id, 'questions');
-                const questionsSnap = await getDocs(questionsRef);
-                const questionCount = questionsSnap.size;
-
-                // Calculate total points
-                let totalPoints = 0;
-                questionsSnap.forEach(qDoc => {
-                    totalPoints += qDoc.data().points || 0;
-                });
-
-                sessions.push({
-                    ...sessionData,
-                    studentProgress,
-                    questionCount,
-                    totalPoints
-                });
-            }
-
-            // Sort: In progress first, then available, then completed
-            sessions.sort((a, b) => {
-                const aSubmitted = a.studentProgress?.submitted;
-                const bSubmitted = b.studentProgress?.submitted;
-
-                if (aSubmitted && !bSubmitted) return 1;
-                if (!aSubmitted && bSubmitted) return -1;
-
-                const aAccessible = isQuizAccessible(a);
-                const bAccessible = isQuizAccessible(b);
-
-                if (aAccessible && !bAccessible) return -1;
-                if (!aAccessible && bAccessible) return 1;
-
-                return 0;
-            });
-
-            return sessions;
-        }
-
-        async function showWelcomeDashboard() {
-            const state = window.appState;
-            const ws = document.getElementById('welcomeScreen');
-            const quizScreen = document.getElementById('quizScreen');
-            const completionScreen = document.getElementById('completionScreen');
-            const navFooter = document.getElementById('navFooter');
-
-            ws.style.display = 'block';
-            quizScreen.style.display = 'none';
-            completionScreen.style.display = 'none';
-            navFooter.style.display = 'none';
-
-            // Get student's display grade name
-            let displayGrade = 'Not specified';
-            if (state.studentProfile?.gradeLevel) {
-                displayGrade = await getGradeName(state.studentProfile.gradeLevel);
-            } else if (state.studentProfile?.grade) {
-                displayGrade = state.studentProfile.grade;
-            }
-
-            // Load available sessions
-            const sessions = await loadStudentSessions();
-            state.availableSessions = sessions;
-
-            const studentName = state.studentProfile?.name || 'Student';
-            const studentEmail = state.currentStudent?.email || '';
-
-            let sessionsHtml = '';
-            if (sessions.length === 0) {
-                sessionsHtml = `
-                <div class="glass-card" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-folder-open" style="font-size: 3rem; color: var(--gray);"></i>
-                    <h3 style="margin-top: 16px;">No Quizzes Available</h3>
-                    <p>There are no quizzes for your grade (${escapeHtml(displayGrade)}) at the moment.</p>
-                    <p style="margin-top: 8px; font-size: 0.85rem;">Please check with your teacher to create quizzes for your grade.</p>
-                </div>
-            `;
-            } else {
-                sessionsHtml = `<div class="sessions-grid">`;
-                for (const session of sessions) {
-                    const answeredCount = session.studentProgress?.answers ? Object.keys(session.studentProgress.answers).length : 0;
-                    const totalQuestions = session.questionCount || 0;
-                    const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
-                    const status = getQuizStatus(session, session.studentProgress);
-                    const isAccessible = isQuizAccessible(session);
-                    const isSubmitted = session.studentProgress?.submitted;
-
-                    // Format times for display
-                    let startTimeStr = '',
-                        endTimeStr = '';
-                    if (session.startTime) {
-                        if (session.startTime.toDate) startTimeStr = session.startTime.toDate().toLocaleString();
-                        else if (session.startTime.seconds) startTimeStr = new Date(session.startTime.seconds * 1000).toLocaleString();
-                        else startTimeStr = new Date(session.startTime).toLocaleString();
-                    }
-                    if (session.endTime) {
-                        if (session.endTime.toDate) endTimeStr = session.endTime.toDate().toLocaleString();
-                        else if (session.endTime.seconds) endTimeStr = new Date(session.endTime.seconds * 1000).toLocaleString();
-                        else endTimeStr = new Date(session.endTime).toLocaleString();
-                    }
-
-                    sessionsHtml += `
-                    <div class="quiz-card ${!isAccessible || isSubmitted ? 'disabled' : ''}" 
-                         onclick="${isAccessible && !isSubmitted ? `window.selectSession('${session.id}')` : ''}">
-                        <span class="quiz-status ${status.class}">${status.text}</span>
-                        <h3 style="margin: 12px 0;">${escapeHtml(session.title || 'Untitled Quiz')}</h3>
-                        <p style="color: var(--gray); font-size: 0.9rem;">${escapeHtml(session.subject || 'General')}</p>
-                        <p style="color: var(--gray); font-size: 0.85rem; margin-top: 8px;">${escapeHtml(session.instructions || 'No description')}</p>
-                        
-                        ${totalQuestions > 0 ? `
-                        <div class="quiz-progress">
-                            <div class="quiz-progress-bar" style="width: ${progressPercent}%;"></div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--gray);">
-                            <span>📊 ${answeredCount}/${totalQuestions} answered</span>
-                            <span>⭐ ${session.totalPoints || 0} pts</span>
-                        </div>
-                        ` : '<div style="margin: 16px 0;"><em>No questions added yet</em></div>'}
-                        
-                        ${startTimeStr && endTimeStr ? `
-                        <div style="margin-top: 12px; font-size: 0.7rem; color: var(--gray);">
-                            <i class="far fa-clock"></i> ${startTimeStr} - ${endTimeStr}
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
-                }
-                sessionsHtml += `</div>`;
-            }
-
-            ws.innerHTML = `
-            <div class="dashboard-grid">
-                <div class="profile-card">
-                    <div class="profile-avatar">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                    <div class="profile-info">
-                        <h2>${escapeHtml(studentName)}</h2>
-                        <p><i class="fas fa-envelope"></i> ${escapeHtml(studentEmail)}</p>
-                        <div class="grade-tag">
-                            <i class="fas fa-star"></i> Grade: ${escapeHtml(displayGrade)}
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="glass-card" style="padding: 32px;">
-                    <h3><i class="fas fa-chalkboard"></i> Available Quizzes</h3>
-                    <p style="color: var(--gray); margin-top: 8px;">Select a quiz to begin or continue</p>
-                    ${sessionsHtml}
-                </div>
-            </div>
-        `;
-        }
-
-        window.selectSession = async function(sessionId) {
-            const state = window.appState;
-            const session = state.availableSessions.find(s => s.id === sessionId);
-
-            if (!session) {
-                showToast('Session not found', true);
-                return;
-            }
-
-            // Check accessibility again
-            if (!isQuizAccessible(session)) {
-                showToast('This quiz is not available at this time', true);
-                return;
-            }
-
-            if (session.studentProgress?.submitted) {
-                showToast('You have already completed this quiz', true);
-                return;
-            }
-
-            state.currentSession = session;
-
-            // Load questions for this session
-            const questionsRef = collection(db, 'sessions', sessionId, 'questions');
-            const questionsSnap = await getDocs(questionsRef);
-            state.questions = [];
-            questionsSnap.forEach(doc => {
-                state.questions.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
-            state.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-            if (state.questions.length === 0) {
-                showToast('This quiz has no questions yet', true);
-                return;
-            }
-
-            // Find first unanswered question
-            const answers = session.studentProgress?.answers || {};
-            let startIndex = 0;
-            for (let i = 0; i < state.questions.length; i++) {
-                if (!answers[state.questions[i].id]) {
-                    startIndex = i;
-                    break;
-                }
-            }
-            state.currentQIndex = startIndex;
-
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('quizScreen').style.display = 'block';
-            document.getElementById('navFooter').style.display = 'flex';
-            await renderQuestion();
-        };
-
-        function getCurrentAnswer() {
-            const state = window.appState;
-            if (!state.questions.length) return null;
-            const q = state.questions[state.currentQIndex];
-
-            if (q.type === 'mcq') {
-                const selected = document.querySelector('.option-btn.selected');
-                return selected ? selected.getAttribute('data-value') : null;
-            }
-            if (q.type === 'truefalse') {
-                const selected = document.querySelector('.tf-btn.selected');
-                return selected ? selected.getAttribute('data-value') : null;
-            }
-            const inputEl = document.getElementById('answerInput');
-            return inputEl && inputEl.value.trim() ? inputEl.value.trim() : null;
-        }
-
-        window.saveCurrentAnswer = async function() {
-            const state = window.appState;
-            if (state.isSaving) return;
-
-            const answer = getCurrentAnswer();
-            if (!answer) {
-                showToast('Please provide an answer first', true);
-                return;
-            }
-
-            const q = state.questions[state.currentQIndex];
-            const saveBtn = document.getElementById('btnSave');
-
-            state.isSaving = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            saveBtn.disabled = true;
-
-            try {
-                const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: answer
-                });
-
-                showToast('Answer saved!', false);
-                saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved';
-                setTimeout(() => {
-                    if (saveBtn) {
-                        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                        saveBtn.disabled = false;
-                    }
-                }, 1500);
-
-                // Update local progress
-                if (!state.currentSession.studentProgress) {
-                    state.currentSession.studentProgress = {
-                        answers: {}
+                const mockUser = MOCK_STUDENTS[email];
+                if (mockUser) {
+                    currentStudent = {
+                        name: mockUser.name,
+                        email: email,
+                        uid: mockUser.uid
                     };
+                    currentStudentGrade = mockUser.gradeLevel;
+                    document.getElementById("studentNameDisplay").innerText = mockUser.name;
+                    document.getElementById("gradeBadge").innerText = mockUser.gradeLevel;
+                    document.getElementById("loginScreen").style.display = "none";
+                    document.getElementById("app").style.display = "block";
+                    renderDashboard();
+                    showToast(`Welcome back, ${mockUser.name}!`);
+                } else {
+                    errDiv.innerText = "Demo credentials: student@demo.com / anything";
+                    errDiv.style.display = "block";
                 }
-                state.currentSession.studentProgress.answers[q.id] = answer;
-
-            } catch (err) {
-                console.error('Save error:', err);
-                showToast('Failed to save', true);
-                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Answer';
-                saveBtn.disabled = false;
-            } finally {
-                state.isSaving = false;
-            }
-        };
-
-        window.prevQuestion = async function() {
-            const state = window.appState;
-            if (state.currentQIndex > 0) {
-                state.currentQIndex--;
-                await renderQuestion();
-            }
-        };
-
-        window.nextQuestion = async function() {
-            const state = window.appState;
-            if (state.currentQIndex < state.questions.length - 1) {
-                state.currentQIndex++;
-                await renderQuestion();
-            }
-        };
-
-        window.finishQuiz = async function() {
-            const state = window.appState;
-
-            // Save current answer if any
-            const currentAnswer = getCurrentAnswer();
-            if (currentAnswer) {
-                const q = state.questions[state.currentQIndex];
-                const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-                await updateDoc(studentRef, {
-                    [`answers.${q.id}`]: currentAnswer
-                });
-            }
-
-            // Verify all questions answered
-            const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-            const snap = await getDoc(studentRef);
-            const answersMap = snap.exists() ? snap.data().answers || {} : {};
-
-            const missingQuestions = [];
-            for (let i = 0; i < state.questions.length; i++) {
-                if (!answersMap[state.questions[i].id]) {
-                    missingQuestions.push(i + 1);
-                }
-            }
-
-            if (missingQuestions.length > 0) {
-                showToast(`Please answer questions: ${missingQuestions.join(', ')}`, true);
-                state.currentQIndex = missingQuestions[0] - 1;
-                await renderQuestion();
-                return;
-            }
-
-            await updateDoc(studentRef, {
-                submitted: true,
-                submittedAt: Date.now()
+            };
+            document.getElementById("logoutBtnGlobal").onclick = () => {
+                currentStudent = null;
+                document.getElementById("app").style.display = "none";
+                document.getElementById("loginScreen").style.display = "flex";
+                showToast("Logged out");
+            };
+            document.getElementById("loginPass").addEventListener("keypress", (e) => {
+                if (e.key === "Enter") loginBtn.click();
             });
-            showToast('Quiz submitted successfully!');
-            await showWelcomeDashboard();
-        };
-
-        async function renderQuestion() {
-            const state = window.appState;
-            if (!state.questions.length) return;
-
-            const q = state.questions[state.currentQIndex];
-            const existingAnswer = state.currentSession.studentProgress?.answers?.[q.id];
-            const total = state.questions.length;
-            const answeredCount = state.currentSession.studentProgress?.answers ? Object.keys(state.currentSession.studentProgress.answers).length : 0;
-
-            let inputHtml = '';
-            if (q.type === 'mcq' && q.options?.length) {
-                const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
-                inputHtml = `<div class="options-list">` +
-                    q.options.map((opt, idx) => `
-                    <button class="option-btn ${existingAnswer === opt ? 'selected' : ''}" 
-                            data-value="${escapeHtml(opt)}"
-                            onclick="event.preventDefault(); document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">
-                        <span style="font-weight:700; margin-right:12px;">${letters[idx]}</span> ${escapeHtml(opt)}
-                    </button>
-                `).join('') + `</div>`;
-            } else if (q.type === 'truefalse') {
-                inputHtml = `
-                <div style="display:flex; gap:12px;">
-                    <button class="tf-btn ${existingAnswer === 'True' ? 'selected' : ''}" data-value="True" onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">✅ True</button>
-                    <button class="tf-btn ${existingAnswer === 'False' ? 'selected' : ''}" data-value="False" onclick="event.preventDefault(); document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('selected')); this.classList.add('selected');">❌ False</button>
-                </div>
-            `;
-            } else if (q.type === 'number') {
-                inputHtml = `<input class="answer-number" id="answerInput" type="number" placeholder="Enter number..." value="${existingAnswer || ''}" style="width:100%; padding:14px; border-radius:16px; border:2px solid var(--border);">`;
-            } else {
-                inputHtml = `<textarea class="answer-textarea" id="answerInput" rows="4" placeholder="Write your answer..." style="width:100%; padding:14px; border-radius:16px; border:2px solid var(--border);">${existingAnswer || ''}</textarea>`;
-            }
-
-            const quizScreen = document.getElementById('quizScreen');
-            quizScreen.innerHTML = `
-            <div class="glass-card" style="padding: 24px; margin-bottom: 24px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom: 12px;">
-                    <span><strong>${escapeHtml(state.currentSession.title)}</strong></span>
-                    <span>${answeredCount}/${total} Answered</span>
-                </div>
-                <div style="background: var(--light-gray); border-radius: 10px; overflow: hidden;">
-                    <div style="height: 8px; background: var(--gradient-1); width: ${(answeredCount/total)*100}%; transition: width 0.3s;"></div>
-                </div>
-            </div>
-            <div class="glass-card" style="padding: 32px;">
-                <div class="question-header">
-                    <span class="quiz-status status-open">Question ${state.currentQIndex + 1} of ${total}</span>
-                    <span style="background: var(--light-gray); padding: 6px 16px; border-radius: 50px;">⭐ ${q.points} pts</span>
-                </div>
-                <div class="q-text" style="font-size: 1.2rem; font-weight: 600; margin-bottom: 24px;">${escapeHtml(q.text)}</div>
-                ${existingAnswer ? `<div style="background: #d1fae5; padding: 8px 16px; border-radius: 12px; margin-bottom: 16px;"><i class="fas fa-check-circle"></i> Answer saved</div>` : ''}
-                ${inputHtml}
-            </div>
-        `;
-
-            const prevBtn = document.getElementById('btnPrev');
-            const nextBtn = document.getElementById('btnNext');
-            const finishBtn = document.getElementById('btnFinish');
-
-            if (prevBtn) prevBtn.disabled = (state.currentQIndex === 0);
-            if (nextBtn) nextBtn.style.display = (state.currentQIndex < total - 1) ? 'inline-flex' : 'none';
-            if (finishBtn) finishBtn.style.display = (state.currentQIndex === total - 1) ? 'inline-flex' : 'none';
-
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([quizScreen]).catch(e => console.warn);
-            }
         }
 
-        window.doStudentLogin = async function() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            const errDiv = document.getElementById('loginErr');
-            const btn = event?.target;
-
-            if (!email || !pass) {
-                errDiv.textContent = 'Please enter email and password';
-                errDiv.style.display = 'block';
-                return;
-            }
-
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = 'Signing in...';
-            }
-
-            try {
-                await signInWithEmailAndPassword(auth, email, pass);
-            } catch (e) {
-                errDiv.textContent = 'Invalid email or password';
-                errDiv.style.display = 'block';
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Sign In →';
-                }
-            }
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById("globalLoader").style.display = "none";
+            }, 500);
+            initLogin();
         };
-
-        window.exitSession = async function() {
-            await signOut(auth);
-            document.getElementById('loginScreen').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPass').value = '';
-            const errDiv = document.getElementById('loginErr');
-            errDiv.style.display = 'none';
-            showToast('Logged out successfully');
-        };
-
-        document.getElementById('loginPass')?.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') window.doStudentLogin();
-        });
-
-        onAuthStateChanged(auth, async (user) => {
-            document.getElementById('loadingScreen').style.display = 'none';
-
-            if (!user) {
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.getElementById('app').style.display = 'none';
-                return;
-            }
-
-            document.getElementById('loadingScreen').style.display = 'flex';
-
-            try {
-                const studentsRef = collection(db, 'students');
-                const q = query(studentsRef, where('uid', '==', user.uid));
-                const querySnap = await getDocs(q);
-
-                let studentData = null;
-                let studentDocId = null;
-
-                if (!querySnap.empty) {
-                    studentDocId = querySnap.docs[0].id;
-                    studentData = querySnap.docs[0].data();
-                    console.log('Student data loaded:', studentData);
-                } else {
-                    const directSnap = await getDoc(doc(db, 'students', user.uid));
-                    if (directSnap.exists()) {
-                        studentDocId = user.uid;
-                        studentData = directSnap.data();
-                    }
-                }
-
-                if (!studentData) {
-                    throw new Error('Student profile not found');
-                }
-
-                window.appState.currentStudent = user;
-                window.appState.studentProfile = studentData;
-                window.appState.currentStudent.docId = studentDocId;
-
-                document.getElementById('studentName').textContent = studentData.name || user.email;
-                document.getElementById('studentAvatar').innerHTML = (studentData.name || 'S').charAt(0).toUpperCase();
-
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('app').style.display = 'flex';
-                await showWelcomeDashboard();
-
-            } catch (err) {
-                console.error('Error:', err);
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('loginScreen').style.display = 'flex';
-                const errDiv = document.getElementById('loginErr');
-                errDiv.textContent = err.message;
-                errDiv.style.display = 'block';
-                await signOut(auth);
-            }
-        });
     </script>
 </body>
 
