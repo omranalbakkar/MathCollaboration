@@ -1864,93 +1864,7 @@ async function exportResultsAsPDF(data) {
     const grades = data.grades || {};
     const feedback = data.feedback || {};
     
-    // Create header section (appears on every page)
-    const createHeader = () => `
-        <div class="header">
-            <h1>${escapeHtml(sessionTitle)}</h1>
-            <div class="subtitle">Quiz Results Report</div>
-        </div>
-        
-        <!-- Session Details -->
-        <div class="info-section">
-            <div class="info-title">📋 Session Information</div>
-            <div class="info-grid">
-                <div class="info-item">📚 <strong>Subject:</strong> ${escapeHtml(subject)}</div>
-                <div class="info-item">📖 <strong>Grade Level:</strong> ${escapeHtml(gradeLevel)}</div>
-                <div class="info-item">🏫 <strong>Class:</strong> ${escapeHtml(className)}</div>
-                <div class="info-item">👨‍🏫 <strong>Teacher:</strong> ${escapeHtml(teacherName)}</div>
-                <div class="info-item">📅 <strong>Date:</strong> ${escapeHtml(sessionDate)}</div>
-                <div class="info-item">⏰ <strong>Start Time:</strong> ${escapeHtml(startTime)}</div>
-                <div class="info-item">⏰ <strong>End Time:</strong> ${escapeHtml(endTime)}</div>
-                <div class="info-item">🆔 <strong>Session ID:</strong> ${escapeHtml(sessionId)}</div>
-            </div>
-        </div>
-        
-        <!-- Student Details -->
-        <div class="info-section">
-            <div class="info-title">👤 Student Information</div>
-            <div class="info-grid">
-                <div class="info-item">👨‍🎓 <strong>Name:</strong> ${escapeHtml(studentName)}</div>
-                <div class="info-item">📧 <strong>Email:</strong> ${escapeHtml(studentEmail)}</div>
-                <div class="info-item">📅 <strong>Report Date:</strong> ${reportDate}</div>
-                <div class="info-item">✅ <strong>Status:</strong> Completed</div>
-            </div>
-        </div>
-        
-        <!-- Score Summary -->
-        <div class="score-summary">
-            <div class="score-item">
-                <div class="score-value">${totalEarned} / ${totalPossible}</div>
-                <div class="score-label">Total Score</div>
-            </div>
-            <div class="score-item">
-                <div class="score-value">${percentage}%</div>
-                <div class="score-label">Percentage</div>
-            </div>
-            <div class="score-item">
-                <div class="score-value">${questions.length}</div>
-                <div class="score-label">Questions</div>
-            </div>
-        </div>
-    `;
-    
-    // Create a single question block
-    const createQuestionBlock = (q, idx) => {
-        const questionText = q.text || q.questionText || q.question || 'Question text not available';
-        const studentAnswer = answers[q.id] || 'No answer provided';
-        const score = grades[q.id];
-        const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
-        const feedbackText = feedback[q.id] || 'No feedback';
-        const isCorrect = (score !== undefined && score !== null && score !== '') ? (score >= (q.points || 0)) : false;
-        
-        return `
-            <div class="question-block">
-                <div class="question-header">
-                    <div>
-                        <span class="q-badge">Question ${idx + 1}</span>
-                        <span class="points-badge">${q.points || 0} points</span>
-                    </div>
-                    <span class="score-badge ${isCorrect ? 'score-correct' : 'score-incorrect'}">
-                        Score: ${scoreDisplay}
-                    </span>
-                </div>
-                <div class="question-text">
-                    <div class="section-label">📖 Question:</div>
-                    <div class="math-content">${formatMathForPDF(questionText)}</div>
-                </div>
-                <div class="answer-section">
-                    <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
-                    <div class="math-content">${formatMathForPDF(studentAnswer)}</div>
-                </div>
-                <div class="feedback-section">
-                    <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
-                    <div>${escapeHtml(feedbackText)}</div>
-                </div>
-            </div>
-        `;
-    };
-    
-    // Build the complete HTML with proper styling for page breaks
+    // Style with better print/page-break support
     const style = `
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1959,7 +1873,7 @@ async function exportResultsAsPDF(data) {
                 line-height: 1.5;
                 color: #1e293b;
                 background: white;
-                padding: 20mm;
+                padding: 15mm;
             }
             .header {
                 text-align: center;
@@ -1981,6 +1895,8 @@ async function exportResultsAsPDF(data) {
                 border-radius: 12px;
                 margin-bottom: 20px;
                 overflow: hidden;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             .info-title {
                 background: #e2e8f0;
@@ -2012,6 +1928,8 @@ async function exportResultsAsPDF(data) {
                 text-align: center;
                 flex-wrap: wrap;
                 gap: 15px;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             .score-item {
                 text-align: center;
@@ -2033,15 +1951,18 @@ async function exportResultsAsPDF(data) {
                 margin: 20px 0 12px 0;
                 padding-bottom: 6px;
                 border-bottom: 2px solid #e2e8f0;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             .question-block {
                 margin-bottom: 20px;
-                page-break-inside: avoid;
-                break-inside: avoid;
                 border: 1px solid #e2e8f0;
                 border-radius: 12px;
                 overflow: hidden;
                 background: white;
+                break-inside: avoid;
+                page-break-inside: avoid;
+                page-break-after: avoid;
             }
             .question-header {
                 background: #f8fafc;
@@ -2115,15 +2036,104 @@ async function exportResultsAsPDF(data) {
                 color: #94a3b8;
                 border-top: 1px solid #e2e8f0;
                 padding-top: 12px;
+                break-inside: avoid;
+                page-break-inside: avoid;
             }
             @media print {
                 body { margin: 0; padding: 0; }
-                .question-block { page-break-inside: avoid; break-inside: avoid; }
+                .question-block { 
+                    break-inside: avoid; 
+                    page-break-inside: avoid;
+                    page-break-after: avoid;
+                }
             }
         </style>
     `;
     
-    // Build the complete HTML with all questions
+    // Create header section
+    const createHeader = () => `
+        <div class="header">
+            <h1>${escapeHtml(sessionTitle)}</h1>
+            <div class="subtitle">Quiz Results Report</div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-title">📋 Session Information</div>
+            <div class="info-grid">
+                <div class="info-item">📚 <strong>Subject:</strong> ${escapeHtml(subject)}</div>
+                <div class="info-item">📖 <strong>Grade Level:</strong> ${escapeHtml(gradeLevel)}</div>
+                <div class="info-item">🏫 <strong>Class:</strong> ${escapeHtml(className)}</div>
+                <div class="info-item">👨‍🏫 <strong>Teacher:</strong> ${escapeHtml(teacherName)}</div>
+                <div class="info-item">📅 <strong>Date:</strong> ${escapeHtml(sessionDate)}</div>
+                <div class="info-item">⏰ <strong>Start Time:</strong> ${escapeHtml(startTime)}</div>
+                <div class="info-item">⏰ <strong>End Time:</strong> ${escapeHtml(endTime)}</div>
+                <div class="info-item">🆔 <strong>Session ID:</strong> ${escapeHtml(sessionId)}</div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-title">👤 Student Information</div>
+            <div class="info-grid">
+                <div class="info-item">👨‍🎓 <strong>Name:</strong> ${escapeHtml(studentName)}</div>
+                <div class="info-item">📧 <strong>Email:</strong> ${escapeHtml(studentEmail)}</div>
+                <div class="info-item">📅 <strong>Report Date:</strong> ${reportDate}</div>
+                <div class="info-item">✅ <strong>Status:</strong> Completed</div>
+            </div>
+        </div>
+        
+        <div class="score-summary">
+            <div class="score-item">
+                <div class="score-value">${totalEarned} / ${totalPossible}</div>
+                <div class="score-label">Total Score</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value">${percentage}%</div>
+                <div class="score-label">Percentage</div>
+            </div>
+            <div class="score-item">
+                <div class="score-value">${questions.length}</div>
+                <div class="score-label">Questions</div>
+            </div>
+        </div>
+    `;
+    
+    // Create a single question block
+    const createQuestionBlock = (q, idx) => {
+        const questionText = q.text || q.questionText || q.question || 'Question text not available';
+        const studentAnswer = answers[q.id] || 'No answer provided';
+        const score = grades[q.id];
+        const scoreDisplay = (score !== undefined && score !== null && score !== '') ? `${score}/${q.points}` : 'Not graded';
+        const feedbackText = feedback[q.id] || 'No feedback';
+        const isCorrect = (score !== undefined && score !== null && score !== '') ? (score >= (q.points || 0)) : false;
+        
+        return `
+            <div class="question-block">
+                <div class="question-header">
+                    <div>
+                        <span class="q-badge">Question ${idx + 1}</span>
+                        <span class="points-badge">${q.points || 0} points</span>
+                    </div>
+                    <span class="score-badge ${isCorrect ? 'score-correct' : 'score-incorrect'}">
+                        Score: ${scoreDisplay}
+                    </span>
+                </div>
+                <div class="question-text">
+                    <div class="section-label">📖 Question:</div>
+                    <div class="math-content">${formatMathForPDF(questionText)}</div>
+                </div>
+                <div class="answer-section">
+                    <div class="section-label"><i class="fas fa-user-edit"></i> Your Answer</div>
+                    <div class="math-content">${formatMathForPDF(studentAnswer)}</div>
+                </div>
+                <div class="feedback-section">
+                    <div class="section-label"><i class="fas fa-comment-dots"></i> Teacher's Feedback</div>
+                    <div>${escapeHtml(feedbackText)}</div>
+                </div>
+            </div>
+        `;
+    };
+    
+    // Build questions HTML
     let questionsHtml = '';
     if (questions && questions.length > 0) {
         questions.forEach((q, idx) => {
@@ -2133,6 +2143,7 @@ async function exportResultsAsPDF(data) {
         questionsHtml = '<div style="text-align: center; padding: 40px; color: #64748b;">No questions found for this quiz.</div>';
     }
     
+    // Build the complete HTML
     pdfContainer.innerHTML = `
         <!DOCTYPE html>
         <html>
@@ -2164,7 +2175,8 @@ async function exportResultsAsPDF(data) {
         }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Wait a bit longer for rendering to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
         if (typeof window.jspdf === 'undefined' || !window.jspdf.jsPDF) {
@@ -2176,60 +2188,62 @@ async function exportResultsAsPDF(data) {
         const { jsPDF } = window.jspdf;
         const element = pdfContainer;
         
-        // Get element dimensions
+        // Get the exact dimensions
         const elementHeight = element.scrollHeight;
         const elementWidth = element.scrollWidth;
         
-        // A4 dimensions in pixels (at 96 DPI)
-        const a4WidthPx = 793;  // 210mm ≈ 793px at 96 DPI
-        const a4HeightPx = 1122; // 297mm ≈ 1122px at 96 DPI
+        console.log(`Element dimensions: ${elementWidth} x ${elementHeight}`);
         
-        // Calculate scale factor to fit A4 width
-        const scale = a4WidthPx / elementWidth;
-        const scaledHeight = elementHeight * scale;
-        
-        // Calculate number of pages needed
-        const pageCount = Math.ceil(scaledHeight / a4HeightPx);
-        
-        console.log(`PDF Generation: Element height=${elementHeight}px, Scaled height=${scaledHeight}px, Pages needed=${pageCount}`);
-        
-        // Create canvas with full height
+        // Use html2canvas with higher quality
         const canvas = await html2canvas(element, {
-            scale: 2,
+            scale: 2.5,
             backgroundColor: '#ffffff',
             logging: false,
             useCORS: true,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight
+            windowWidth: elementWidth,
+            windowHeight: elementHeight,
+            onclone: (clonedDoc, element) => {
+                // Ensure styles are applied in the cloned document
+                const style = clonedDoc.createElement('style');
+                style.textContent = `
+                    .question-block { break-inside: avoid; page-break-inside: avoid; }
+                `;
+                clonedDoc.head.appendChild(style);
+            }
         });
         
         const imgData = canvas.toDataURL('image/png');
+        
+        // Create PDF
         const pdf = new jsPDF({
             orientation: 'portrait',
-            unit: 'px',
+            unit: 'mm',
             format: 'a4'
         });
         
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        // Calculate image dimensions
+        // Calculate image dimensions to fit A4 width
         const imgWidth = pdfWidth;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        let yPosition = 0;
+        console.log(`PDF dimensions: ${pdfWidth} x ${pdfHeight}, Image: ${imgWidth} x ${imgHeight}`);
+        
+        let heightLeft = imgHeight;
+        let position = 0;
         let pageNum = 1;
         
         // Add first page
-        pdf.addImage(imgData, 'PNG', 0, yPosition, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
         
-        // Add additional pages if needed
-        let remainingHeight = imgHeight - pdfHeight;
-        while (remainingHeight > 0) {
-            yPosition -= pdfHeight;
+        // Add additional pages
+        while (heightLeft > 0) {
+            position -= pdfHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, yPosition, imgWidth, imgHeight);
-            remainingHeight -= pdfHeight;
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
             pageNum++;
         }
         
@@ -2243,8 +2257,6 @@ async function exportResultsAsPDF(data) {
         pdfContainer.remove();
     }
 }
-
-        
 
         
 
