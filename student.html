@@ -1493,23 +1493,35 @@ window.saveCurrentAnswer = async function() {
 window.finishQuiz = async function() {
     const state = window.appState;
 
-    // Save current answer if any
+    // Save current answer if any (with local state guard)
     const currentAnswer = getCurrentAnswer();
     if (currentAnswer) {
         const q = state.questions[state.currentQIndex];
         const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
-        // ✅ setDoc with merge
+        
+        // ✅ Firestore: setDoc with merge (creates if missing)
         await setDoc(studentRef, { [`answers.${q.id}`]: currentAnswer }, { merge: true });
+        
+        // ✅ Local state: safely initialize studentProgress.answers
+        if (!state.currentSession.studentProgress) {
+            state.currentSession.studentProgress = { answers: {} };
+        }
+        if (!state.currentSession.studentProgress.answers) {
+            state.currentSession.studentProgress.answers = {};
+        }
+        state.currentSession.studentProgress.answers[q.id] = currentAnswer;
     }
 
-    // Verify all questions answered
+    // Verify all questions answered (refetch fresh data)
     const studentRef = doc(db, 'sessions', state.currentSession.id, 'students', state.currentStudent.docId);
     const snap = await getDoc(studentRef);
-    const answersMap = snap.exists() ? snap.data().answers || {} : {};
+    const answersMap = snap.exists() ? (snap.data().answers || {}) : {};
 
     const missingQuestions = [];
     for (let i = 0; i < state.questions.length; i++) {
-        if (!answersMap[state.questions[i].id]) missingQuestions.push(i + 1);
+        if (!answersMap[state.questions[i].id]) {
+            missingQuestions.push(i + 1);
+        }
     }
 
     if (missingQuestions.length > 0) {
@@ -1519,8 +1531,12 @@ window.finishQuiz = async function() {
         return;
     }
 
-    // ✅ setDoc with merge for submission flag
-    await setDoc(studentRef, { submitted: true, submittedAt: Date.now() }, { merge: true });
+    // Mark quiz as submitted (with merge)
+    await setDoc(studentRef, { 
+        submitted: true, 
+        submittedAt: new Date() // ✅ Use Date object for Firestore
+    }, { merge: true });
+
     showToast('Quiz submitted successfully! 🎉');
     await showWelcomeDashboard();
 };
