@@ -1167,14 +1167,13 @@
         }
 
         // ===== LOAD STUDENT SESSIONS =====
-        async function loadStudentSessions() {
+
+async function loadStudentSessions() {
     const state = window.appState;
-    
-    // Get student's grade name (from the grade document reference)
     let studentGradeValue = null;
-    
+
     if (state.studentProfile?.gradeLevel) {
-        // If gradeLevel is a document ID, fetch the actual grade name
+        // gradeLevel is a doc ID → resolve to name
         const gradeName = await getGradeName(state.studentProfile.gradeLevel);
         studentGradeValue = gradeName;
         console.log('Student grade from gradeLevel reference:', studentGradeValue);
@@ -1182,27 +1181,54 @@
         studentGradeValue = state.studentProfile.grade;
         console.log('Student grade from direct field:', studentGradeValue);
     }
-    
+
     if (!studentGradeValue || studentGradeValue === 'Not specified') {
         showToast('Grade not specified. Please contact your teacher.', true);
         return [];
     }
-    
-    // ✅ FIXED: Use 'gradeLevel' field name to match your sessions data
-    console.log('🔍 Querying sessions with gradeLevel ==', studentGradeValue);
+
     const sessionsRef = collection(db, 'sessions');
+
+    // ✅ Fixed: sessions use 'gradeLevel' field, not 'grade'
     const q = query(sessionsRef, where('gradeLevel', '==', studentGradeValue));
     const querySnap = await getDocs(q);
-    
-    console.log(`Found ${querySnap.size} sessions for gradeLevel: "${studentGradeValue}"`);
-    
+
+    console.log(`Found ${querySnap.size} sessions for grade: ${studentGradeValue}`);
+
     const sessions = [];
     for (const docSnap of querySnap.docs) {
         const sessionData = { id: docSnap.id, ...docSnap.data() };
-        
-        // Get student progress for this session
+
         const studentProgressRef = doc(db, 'sessions', docSnap.id, 'students', state.currentStudent.docId);
-        const progressSnap =
+        const progressSnap = await getDoc(studentProgressRef);
+        const studentProgress = progressSnap.exists() ? progressSnap.data() : null;
+
+        const questionsRef = collection(db, 'sessions', docSnap.id, 'questions');
+        const questionsSnap = await getDocs(questionsRef);
+        const questionCount = questionsSnap.size;
+
+        let totalPoints = 0;
+        questionsSnap.forEach(qDoc => { totalPoints += qDoc.data().points || 0; });
+
+        sessions.push({ ...sessionData, studentProgress, questionCount, totalPoints });
+    }
+
+    // Sort: In progress → available → completed
+    sessions.sort((a, b) => {
+        const aSubmitted = a.studentProgress?.submitted;
+        const bSubmitted = b.studentProgress?.submitted;
+        if (aSubmitted && !bSubmitted) return 1;
+        if (!aSubmitted && bSubmitted) return -1;
+        const aAccessible = isQuizAccessible(a);
+        const bAccessible = isQuizAccessible(b);
+        if (aAccessible && !bAccessible) return -1;
+        if (!aAccessible && bAccessible) return 1;
+        return 0;
+    });
+
+    return sessions;
+}
+        
 
         // ===== SHOW WELCOME DASHBOARD =====
         async function showWelcomeDashboard() {
