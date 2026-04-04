@@ -2146,100 +2146,113 @@
             await addDoc(collection(db, collectionName), payload);
         }
 
-        async function createAuthTeacherUser(data) {
-            if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
 
-            // Use a SECONDARY app so superadmin session is NOT disturbed
-            const secondaryApp = initializeApp(firebaseConfig, 'teacherCreation_' + Date.now());
-            const secondaryAuth = getAuth(secondaryApp);
+async function createAuthTeacherUser(data) {
+    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
 
-            let uid;
-            try {
-                // 1. Create Auth user in secondary app
-                const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
-                uid = authResult.user.uid;
+    // Use a SECONDARY app so superadmin session is NOT disturbed
+    const secondaryApp = initializeApp(firebaseConfig, 'teacherCreation_' + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
 
-                // 2. Sign out of secondary app immediately
-                await signOut(secondaryAuth);
-            } finally {
-                // 3. Delete secondary app instance
-                await deleteApp(secondaryApp);
-            }
+    let uid;
+    try {
+        // 1. Create Auth user in secondary app FIRST to get the UID
+        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+        uid = authResult.user.uid; // <--- Capture the REAL Auth UID
 
-            // 4. Create teachers doc
-            const teacherRef = doc(collection(db, 'teachers'));
-            await setDoc(teacherRef, {
-                name: data.name,
-                email: data.email,
-                role: 'teacher',
-                assignedGrades: data.assignedGrades || [],
-                assignedSubjects: data.assignedSubjects || [],
-                status: data.status || 'Active',
-                authProvisioned: true,
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid,
-                updatedAt: serverTimestamp(),
-                updatedBy: currentUser.uid
-            });
+        // 2. Sign out of secondary app immediately
+        await signOut(secondaryAuth);
+    } finally {
+        // 3. Delete secondary app instance
+        await deleteApp(secondaryApp);
+    }
 
-            // 5. Create users/<uid> doc
-            await setDoc(doc(db, 'users', uid), {
-                uid: uid,
-                email: data.email,
-                name: data.name,
-                role: 'teacher',
-                teacherDocId: teacherRef.id,
-                active: true,
-                status: data.status || 'Active',
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid
-            });
-        }
+    // 4. Create teachers doc USING THE AUTH UID AS THE DOCUMENT ID
+    // This ensures event.params.teacherId matches the Auth UID later!
+    const teacherRef = doc(db, 'teachers', uid); 
+    
+    await setDoc(teacherRef, {
+        name: data.name,
+        email: data.email,
+        role: 'teacher',
+        assignedGrades: data.assignedGrades || [],
+        assignedSubjects: data.assignedSubjects || [],
+        status: data.status || 'Active',
+        uid: uid, // Store it explicitly for reference
+        authProvisioned: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid
+    });
 
-        async function createAuthStudentUser(data) {
-            if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
+    // 5. Create users/<uid> doc (ID matches naturally now)
+    await setDoc(doc(db, 'users', uid), {
+        uid: uid,
+        email: data.email,
+        name: data.name,
+        role: 'teacher',
+        teacherDocId: uid,
+        active: true,
+        status: data.status || 'Active',
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid
+    });
+}
 
-            // Secondary app so superadmin session is NOT disturbed
-            const secondaryApp = initializeApp(firebaseConfig, 'studentCreation_' + Date.now());
-            const secondaryAuth = getAuth(secondaryApp);
+        
+async function createAuthStudentUser(data) {
+    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
 
-            let uid;
-            try {
-                const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
-                uid = authResult.user.uid;
-                await signOut(secondaryAuth);
-            } finally {
-                await deleteApp(secondaryApp);
-            }
+    // Secondary app so superadmin session is NOT disturbed
+    const secondaryApp = initializeApp(firebaseConfig, 'studentCreation_' + Date.now());
+    const secondaryAuth = getAuth(secondaryApp);
 
-            // Create students doc
-            const studentRef = doc(collection(db, 'students'));
-            await setDoc(studentRef, {
-                name: data.name,
-                email: data.email,
-                role: 'student',
-                gradeLevel: data.gradeLevel || '',
-                status: data.status || 'Active',
-                authProvisioned: true,
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid,
-                updatedAt: serverTimestamp(),
-                updatedBy: currentUser.uid
-            });
+    let uid;
+    try {
+        // 1. Create Auth user FIRST to get the real UID
+        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+        uid = authResult.user.uid; // <--- Capture the REAL Auth UID
+        
+        await signOut(secondaryAuth);
+    } finally {
+        await deleteApp(secondaryApp);
+    }
 
-            // Create users/<uid> doc
-            await setDoc(doc(db, 'users', uid), {
-                uid: uid,
-                email: data.email,
-                name: data.name,
-                role: 'student',
-                studentDocId: studentRef.id,
-                active: true,
-                status: data.status || 'Active',
-                createdAt: serverTimestamp(),
-                createdBy: currentUser.uid
-            });
-        }
+    // 2. Create students doc USING THE AUTH UID AS THE DOCUMENT ID
+    // This ensures event.params.studentId matches the Auth UID later!
+    const studentRef = doc(db, 'students', uid); 
+    
+    await setDoc(studentRef, {
+        name: data.name,
+        email: data.email,
+        role: 'student',
+        gradeLevel: data.gradeLevel || '',
+        status: data.status || 'Active',
+        uid: uid, // Store it explicitly for reference
+        authProvisioned: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid
+    });
+
+    // 3. Create users/<uid> doc (ID matches naturally now)
+    await setDoc(doc(db, 'users', uid), {
+        uid: uid,
+        email: data.email,
+        name: data.name,
+        role: 'student',
+        studentDocId: uid,
+        active: true,
+        status: data.status || 'Active',
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid
+    });
+}
+        
+
+        
 
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
