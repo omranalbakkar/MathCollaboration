@@ -3459,7 +3459,7 @@ document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active')
 document.getElementById('tab-' + id).classList.add('active');
 if(btn) btn.classList.add('active');
 if (!activeSessionId && !['manage', 'settings'].includes(id)) {
-showToast('Please select or create a session first', true);
+showToast('Please select or create a session first', 'warning');
 switchTab('manage', document.querySelector('.nav-link'));
 return;
 }
