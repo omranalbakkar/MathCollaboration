@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" dir="ltr" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -19,7 +19,7 @@
 
   <style>
     /* ============================================================
-       DESIGN SYSTEM — Unified tokens matching admin/teacher/student
+       DESIGN SYSTEM
        ============================================================ */
     :root {
       --bg:           #f4f7fb;
@@ -41,7 +41,6 @@
       --purple:       #7c3aed;
       --purple-soft:  #ede9fe;
       --border:       #e2e8f0;
-      --border-strong:#cbd5e1;
       --shadow-sm:    0 2px 10px rgba(15,23,42,0.05);
       --shadow-md:    0 12px 30px rgba(15,23,42,0.08);
       --shadow-lg:    0 24px 60px rgba(15,23,42,0.12);
@@ -49,6 +48,14 @@
       --radius-md:    16px;
       --radius-lg:    22px;
       --gradient-hero: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
+    }
+
+    /* ============================================================
+       ARABIC FONT OVERRIDE
+       ============================================================ */
+    [lang="ar"] body,
+    html[lang="ar"] body {
+      font-family: 'Cairo', system-ui, sans-serif;
     }
 
     /* ============================================================
@@ -62,10 +69,22 @@
       color: var(--text);
       min-height: 100vh;
       overflow-x: hidden;
+      transition: font-family 0.2s;
+    }
+    html[lang="ar"] body { font-family: 'Cairo', system-ui, sans-serif; }
+
+    /* RTL Playfair fallback — use Cairo for Arabic headings */
+    html[lang="ar"] .hero-main-title,
+    html[lang="ar"] .section-title,
+    html[lang="ar"] .portal-name,
+    html[lang="ar"] .footer-brand,
+    html[lang="ar"] .step-num {
+      font-family: 'Cairo', system-ui, sans-serif;
+      letter-spacing: 0;
     }
 
     /* ============================================================
-       SKIP LINK — Accessibility
+       SKIP LINK
        ============================================================ */
     .skip-link {
       position: absolute; top: -48px; left: 16px; z-index: 9999;
@@ -100,6 +119,7 @@
     }
     .brand-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
     .brand-sub   { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+    html[lang="ar"] .brand-title { letter-spacing: 0; }
 
     .nav-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .nav-pill {
@@ -112,6 +132,20 @@
     }
     .nav-pill:hover { background: var(--surface-3); color: var(--primary); border-color: var(--primary-soft); }
     .nav-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Language toggle button */
+    .lang-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 18px; border-radius: 999px;
+      font-size: 0.85rem; font-weight: 700;
+      border: 2px solid var(--primary);
+      background: transparent; color: var(--primary);
+      cursor: pointer; transition: all 0.18s;
+      font-family: inherit;
+    }
+    .lang-btn:hover { background: var(--primary); color: #fff; }
+    html[lang="ar"] .lang-btn { font-family: 'Cairo', sans-serif; }
+
     .navbar-toggler {
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       padding: 6px 10px; background: #fff;
@@ -133,7 +167,7 @@
     }
 
     /* ============================================================
-       HERO — PORTALS (first section, full-width gradient)
+       HERO — ACCESS PORTALS
        ============================================================ */
     .hero-portals {
       background: var(--gradient-hero);
@@ -146,8 +180,6 @@
       background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       pointer-events: none;
     }
-
-    /* Hero heading area */
     .hero-tag {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.28);
@@ -156,6 +188,7 @@
       color: #fff; margin-bottom: 18px;
       animation: fadeUp 0.5s ease both;
     }
+    html[lang="ar"] .hero-tag { letter-spacing: 0; font-size: 0.85rem; }
     .hero-tag .pulse-dot {
       width: 8px; height: 8px; border-radius: 50%; background: #34d399;
       animation: pulse 2s infinite;
@@ -173,7 +206,9 @@
       animation: fadeUp 0.5s 0.16s ease both;
     }
 
-    /* Portal cards (on gradient bg) */
+    /* ============================================================
+       PORTAL CARDS
+       ============================================================ */
     .portal-card {
       background: rgba(255,255,255,0.97);
       border: 1px solid rgba(255,255,255,0.5);
@@ -197,14 +232,8 @@
       font-family: 'Playfair Display', serif;
       font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: var(--text);
     }
-    .portal-desc {
-      font-size: 0.86rem; color: var(--text-muted);
-      line-height: 1.65; margin-bottom: 20px;
-    }
-    .portal-features {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      justify-content: center; margin-bottom: 22px;
-    }
+    .portal-desc { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 20px; }
+    .portal-features { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 22px; }
     .feat-pill {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 4px 10px; border-radius: 999px;
@@ -223,18 +252,20 @@
       text-decoration: none; border: none; cursor: pointer;
       transition: all 0.2s; width: 100%;
     }
+    html[lang="ar"] .btn-portal { font-family: 'Cairo', sans-serif; }
     .btn-portal:hover { transform: translateY(-1px); filter: brightness(1.06); }
     .btn-portal.admin   { background: var(--danger);   color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.28); }
     .btn-portal.teacher { background: var(--gradient-hero); color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,0.28); }
     .btn-portal.student { background: var(--success);  color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.28); }
 
     /* ============================================================
-       SECTION SHARED STYLES
+       SHARED SECTION STYLES
        ============================================================ */
     .section-tag {
       font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--primary); margin-bottom: 10px;
     }
+    html[lang="ar"] .section-tag { letter-spacing: 0; font-size: 0.82rem; }
     .section-title {
       font-family: 'Playfair Display', serif;
       font-size: clamp(1.7rem, 3vw, 2.4rem);
@@ -252,13 +283,15 @@
       font-family: 'Playfair Display', serif;
       font-size: 2.6rem; font-weight: 900; line-height: 1;
     }
+    html[lang="ar"] .stats-strip .s-num { font-family: 'Cairo', sans-serif; }
     .stats-strip .s-lbl {
       font-size: 0.8rem; font-weight: 600; opacity: 0.55;
       text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
     }
+    html[lang="ar"] .stats-strip .s-lbl { letter-spacing: 0; font-size: 0.88rem; }
 
     /* ============================================================
-       FEATURES SECTION
+       FEATURES
        ============================================================ */
     .features-section {
       padding: 80px 0;
@@ -269,8 +302,7 @@
     .feat-card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius-md); padding: 26px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      height: 100%;
+      transition: transform 0.2s, box-shadow 0.2s; height: 100%;
     }
     .feat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
     .feat-card-icon {
@@ -306,6 +338,7 @@
       background: var(--gradient-hero);
       box-shadow: 0 4px 10px rgba(29,78,216,0.3);
     }
+    html[lang="ar"] .step-badge { right: auto; left: 20px; }
 
     /* ============================================================
        TESTIMONIALS
@@ -327,10 +360,14 @@
       font-size: 4rem; line-height: 1; color: var(--primary-soft);
       font-family: Georgia, serif; pointer-events: none;
     }
+    html[lang="ar"] .quote-card::before {
+      content: '\201D'; left: auto; right: 20px;
+    }
     .quote-text {
       font-size: 0.92rem; line-height: 1.75; color: var(--text-muted);
       padding-top: 32px; margin-bottom: 20px; font-style: italic;
     }
+    html[lang="ar"] .quote-text { font-style: normal; line-height: 1.9; }
     .quote-author { display: flex; align-items: center; gap: 10px; }
     .quote-avatar {
       width: 40px; height: 40px; border-radius: 50%;
@@ -359,6 +396,7 @@
       font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-bottom: 14px;
     }
+    html[lang="ar"] .footer-heading { letter-spacing: 0; font-size: 0.82rem; }
     .footer-link {
       display: block; color: rgba(255,255,255,0.62);
       text-decoration: none; font-size: 0.88rem;
@@ -376,7 +414,6 @@
     @keyframes spin      { to { transform: rotate(360deg); } }
     @keyframes pulse     { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.5; transform:scale(0.8); } }
 
-    /* Scroll-triggered reveal */
     .reveal { opacity:0; transform:translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
     .reveal.visible { opacity:1; transform:translateY(0); }
 
@@ -392,8 +429,7 @@
 </head>
 <body>
 
-  <!-- Skip to content — Accessibility -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main-content" class="skip-link" data-i18n="skip">Skip to main content</a>
 
   <!-- ============================================================
        NAVBAR
@@ -402,12 +438,10 @@
     <div class="container">
 
       <a href="index.html" class="nav-brand navbar-brand me-auto" aria-label="EduBoard Home">
-        <div class="brand-icon" aria-hidden="true">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
+        <div class="brand-icon" aria-hidden="true"><i class="fas fa-graduation-cap"></i></div>
         <div>
           <div class="brand-title">EduBoard</div>
-          <div class="brand-sub">School Learning Platform</div>
+          <div class="brand-sub" data-i18n="brand_sub">School Learning Platform</div>
         </div>
       </a>
 
@@ -419,16 +453,20 @@
 
       <div class="collapse navbar-collapse" id="mainNav">
         <div class="nav-links ms-auto py-2 py-lg-0">
-          <!-- Auth redirect banner sits inline in nav -->
           <div id="authBanner" role="status" aria-live="polite">
             <div class="auth-spinner" aria-hidden="true"></div>
-            <span id="authBannerText">Checking your session…</span>
+            <span id="authBannerText" data-i18n="checking_session">Checking your session…</span>
           </div>
-          <a href="#features"    class="nav-pill"><i class="fas fa-star"></i> Features</a>
-          <a href="#how"         class="nav-pill"><i class="fas fa-list-ol"></i> How It Works</a>
-          <a href="admin.html"   class="nav-pill" aria-label="Admin portal"><i class="fas fa-shield-halved"></i> Admin</a>
-          <a href="teacher.html" class="nav-pill" aria-label="Teacher portal"><i class="fas fa-chalkboard-user"></i> Teacher</a>
-          <a href="student.html" class="nav-pill active" aria-label="Student portal"><i class="fas fa-user-graduate"></i> Student</a>
+          <a href="#features" class="nav-pill"><i class="fas fa-star"></i> <span data-i18n="nav_features">Features</span></a>
+          <a href="#how"      class="nav-pill"><i class="fas fa-list-ol"></i> <span data-i18n="nav_how">How It Works</span></a>
+          <a href="admin.html"   class="nav-pill"><i class="fas fa-shield-halved"></i> <span data-i18n="nav_admin">Admin</span></a>
+          <a href="teacher.html" class="nav-pill"><i class="fas fa-chalkboard-user"></i> <span data-i18n="nav_teacher">Teacher</span></a>
+          <a href="student.html" class="nav-pill active"><i class="fas fa-user-graduate"></i> <span data-i18n="nav_student">Student</span></a>
+          <!-- Language Toggle -->
+          <button class="lang-btn" id="langToggle" onclick="toggleLang()" aria-label="Switch language">
+            <i class="fas fa-globe"></i>
+            <span id="langLabel">العربية</span>
+          </button>
         </div>
       </div>
     </div>
@@ -439,45 +477,38 @@
        ============================================================ -->
   <main id="main-content">
 
-    <!-- ══════════════════════════════════════════════════════════
-         HERO — ACCESS PORTALS (top of page)
-         ══════════════════════════════════════════════════════════ -->
+    <!-- HERO — ACCESS PORTALS -->
     <section class="hero-portals" id="portals" aria-labelledby="portals-heading">
       <div class="container">
-
-        <!-- Section label + heading -->
         <div class="text-center mb-5">
           <div class="hero-tag">
             <span class="pulse-dot" aria-hidden="true"></span>
-            Access Portals
+            <span data-i18n="hero_tag">Access Portals</span>
           </div>
-          <h1 id="portals-heading" class="hero-main-title">
+          <h1 id="portals-heading" class="hero-main-title" data-i18n="hero_title">
             Choose your role to get started.
           </h1>
-          <p class="hero-main-sub">
+          <p class="hero-main-sub" data-i18n="hero_sub">
             Secure, role-based access for every member of your school community.
           </p>
         </div>
 
-        <!-- Three portal cards -->
         <div class="row g-4 justify-content-center">
 
           <!-- Admin -->
           <div class="col-md-4 reveal">
             <div class="portal-card" role="article" aria-label="Super Admin portal">
-              <div class="portal-icon-wrap admin" aria-hidden="true">
-                <i class="fas fa-shield-halved"></i>
+              <div class="portal-icon-wrap admin" aria-hidden="true"><i class="fas fa-shield-halved"></i></div>
+              <h2 class="portal-name" data-i18n="admin_name">Super Admin</h2>
+              <p class="portal-desc" data-i18n="admin_desc">Full system administration — manage grades, subjects, teachers, students, and all sessions from one control centre.</p>
+              <div class="portal-features">
+                <span class="feat-pill red"><i class="fas fa-layer-group"></i> <span data-i18n="pill_grades">Grades</span></span>
+                <span class="feat-pill purple"><i class="fas fa-book-open"></i> <span data-i18n="pill_subjects">Subjects</span></span>
+                <span class="feat-pill red"><i class="fas fa-users"></i> <span data-i18n="pill_users">Users</span></span>
+                <span class="feat-pill orange"><i class="fas fa-video"></i> <span data-i18n="pill_sessions">Sessions</span></span>
               </div>
-              <h2 class="portal-name">Super Admin</h2>
-              <p class="portal-desc">Full system administration — manage grades, subjects, teachers, students, and all sessions from one control centre.</p>
-              <div class="portal-features" aria-label="Admin features">
-                <span class="feat-pill red"><i class="fas fa-layer-group"></i> Grades</span>
-                <span class="feat-pill purple"><i class="fas fa-book-open"></i> Subjects</span>
-                <span class="feat-pill red"><i class="fas fa-users"></i> Users</span>
-                <span class="feat-pill orange"><i class="fas fa-video"></i> Sessions</span>
-              </div>
-              <a href="admin.html" class="btn-portal admin" aria-label="Enter Admin Portal">
-                <i class="fas fa-arrow-right-to-bracket"></i> Admin Portal
+              <a href="admin.html" class="btn-portal admin">
+                <i class="fas fa-arrow-right-to-bracket"></i> <span data-i18n="admin_btn">Admin Portal</span>
               </a>
             </div>
           </div>
@@ -485,19 +516,17 @@
           <!-- Teacher -->
           <div class="col-md-4 reveal">
             <div class="portal-card" role="article" aria-label="Teacher portal">
-              <div class="portal-icon-wrap teacher" aria-hidden="true">
-                <i class="fas fa-chalkboard-user"></i>
+              <div class="portal-icon-wrap teacher" aria-hidden="true"><i class="fas fa-chalkboard-user"></i></div>
+              <h2 class="portal-name" data-i18n="teacher_name">Teacher</h2>
+              <p class="portal-desc" data-i18n="teacher_desc">Create and manage sessions, build question banks, monitor live student activity, and review results with instant feedback tools.</p>
+              <div class="portal-features">
+                <span class="feat-pill blue"><i class="fas fa-question-circle"></i> <span data-i18n="pill_questions">Questions</span></span>
+                <span class="feat-pill blue"><i class="fas fa-signal"></i> <span data-i18n="pill_monitor">Live Monitor</span></span>
+                <span class="feat-pill purple"><i class="fas fa-star"></i> <span data-i18n="pill_grading">Grading</span></span>
+                <span class="feat-pill orange"><i class="fas fa-file-export"></i> <span data-i18n="pill_export">Export</span></span>
               </div>
-              <h2 class="portal-name">Teacher</h2>
-              <p class="portal-desc">Create and manage sessions, build question banks, monitor live student activity, and review results with instant feedback tools.</p>
-              <div class="portal-features" aria-label="Teacher features">
-                <span class="feat-pill blue"><i class="fas fa-question-circle"></i> Questions</span>
-                <span class="feat-pill blue"><i class="fas fa-signal"></i> Live Monitor</span>
-                <span class="feat-pill purple"><i class="fas fa-star"></i> Grading</span>
-                <span class="feat-pill orange"><i class="fas fa-file-export"></i> Export</span>
-              </div>
-              <a href="teacher.html" class="btn-portal teacher" aria-label="Enter Teacher Portal">
-                <i class="fas fa-arrow-right-to-bracket"></i> Teacher Portal
+              <a href="teacher.html" class="btn-portal teacher">
+                <i class="fas fa-arrow-right-to-bracket"></i> <span data-i18n="teacher_btn">Teacher Portal</span>
               </a>
             </div>
           </div>
@@ -505,130 +534,122 @@
           <!-- Student -->
           <div class="col-md-4 reveal">
             <div class="portal-card" role="article" aria-label="Student portal">
-              <div class="portal-icon-wrap student" aria-hidden="true">
-                <i class="fas fa-user-graduate"></i>
+              <div class="portal-icon-wrap student" aria-hidden="true"><i class="fas fa-user-graduate"></i></div>
+              <h2 class="portal-name" data-i18n="student_name">Student</h2>
+              <p class="portal-desc" data-i18n="student_desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time from any device.</p>
+              <div class="portal-features">
+                <span class="feat-pill green"><i class="fas fa-pencil"></i> <span data-i18n="pill_answer">Answer</span></span>
+                <span class="feat-pill green"><i class="fas fa-chart-line"></i> <span data-i18n="pill_results">Results</span></span>
+                <span class="feat-pill blue"><i class="fas fa-mobile-screen"></i> <span data-i18n="pill_device">Any Device</span></span>
+                <span class="feat-pill purple"><i class="fas fa-file-pdf"></i> <span data-i18n="pill_pdf">PDF Report</span></span>
               </div>
-              <h2 class="portal-name">Student</h2>
-              <p class="portal-desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time from any device.</p>
-              <div class="portal-features" aria-label="Student features">
-                <span class="feat-pill green"><i class="fas fa-pencil"></i> Answer</span>
-                <span class="feat-pill green"><i class="fas fa-chart-line"></i> Results</span>
-                <span class="feat-pill blue"><i class="fas fa-mobile-screen"></i> Any Device</span>
-                <span class="feat-pill purple"><i class="fas fa-file-pdf"></i> PDF Report</span>
-              </div>
-              <a href="student.html" class="btn-portal student" aria-label="Enter Student Portal">
-                <i class="fas fa-arrow-right-to-bracket"></i> Student Portal
+              <a href="student.html" class="btn-portal student">
+                <i class="fas fa-arrow-right-to-bracket"></i> <span data-i18n="student_btn">Student Portal</span>
               </a>
             </div>
           </div>
 
-        </div><!-- /row -->
+        </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════════════════════
-         STATS STRIP
-         ══════════════════════════════════════════════════════════ -->
+    <!-- STATS STRIP -->
     <section class="stats-strip" aria-label="Platform highlights">
       <div class="container">
         <div class="row g-4 text-center">
           <div class="col-6 col-md-3 reveal">
             <div class="stat-item">
               <div class="s-num">3</div>
-              <div class="s-lbl">Role Portals</div>
+              <div class="s-lbl" data-i18n="stat_portals">Role Portals</div>
             </div>
           </div>
           <div class="col-6 col-md-3 reveal">
             <div class="stat-item">
               <div class="s-num">4</div>
-              <div class="s-lbl">Question Types</div>
+              <div class="s-lbl" data-i18n="stat_qtypes">Question Types</div>
             </div>
           </div>
           <div class="col-6 col-md-3 reveal">
             <div class="stat-item">
               <div class="s-num">&lt;1s</div>
-              <div class="s-lbl">Live Sync</div>
+              <div class="s-lbl" data-i18n="stat_sync">Live Sync</div>
             </div>
           </div>
           <div class="col-6 col-md-3 reveal">
             <div class="stat-item">
               <div class="s-num">100%</div>
-              <div class="s-lbl">Browser-Based</div>
+              <div class="s-lbl" data-i18n="stat_browser">Browser-Based</div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════════════════════
-         FEATURES
-         ══════════════════════════════════════════════════════════ -->
+    <!-- FEATURES -->
     <section class="features-section" id="features" aria-labelledby="features-heading">
       <div class="container">
         <div class="row mb-5 reveal">
           <div class="col-lg-6">
-            <div class="section-tag">What's Inside</div>
-            <h2 id="features-heading" class="section-title">Built for the real classroom.</h2>
-            <p class="section-sub">Every feature is purpose-built for live academic sessions — no filler, no fluff.</p>
+            <div class="section-tag" data-i18n="feat_tag">What's Inside</div>
+            <h2 id="features-heading" class="section-title" data-i18n="feat_title">Built for the real classroom.</h2>
+            <p class="section-sub" data-i18n="feat_sub">Every feature is purpose-built for live academic sessions — no filler, no fluff.</p>
           </div>
         </div>
         <div class="row g-4">
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--primary-soft);color:var(--primary);"><i class="fas fa-list-check"></i></div>
-              <h3 class="feat-card-title">Smart Question Bank</h3>
-              <p class="feat-card-desc">Create open-text, multiple-choice, true/false, and numeric questions. Set points, correct answers, and subject tags — then import or export as JSON or HTML.</p>
+              <h3 class="feat-card-title" data-i18n="f1_title">Smart Question Bank</h3>
+              <p class="feat-card-desc" data-i18n="f1_desc">Create open-text, multiple-choice, true/false, and numeric questions. Set points, correct answers, and subject tags — then import or export as JSON or HTML.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--success-soft);color:var(--success);"><i class="fas fa-signal"></i></div>
-              <h3 class="feat-card-title">Live Student Monitor</h3>
-              <p class="feat-card-desc">Watch every student's progress in real time via a Kanban-style board. See who is absent, in progress, or completed the moment their status changes.</p>
+              <h3 class="feat-card-title" data-i18n="f2_title">Live Student Monitor</h3>
+              <p class="feat-card-desc" data-i18n="f2_desc">Watch every student's progress in real time via a Kanban-style board. See who is absent, in progress, or completed the moment their status changes.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--warning-soft);color:var(--warning);"><i class="fas fa-star"></i></div>
-              <h3 class="feat-card-title">Instant Grading</h3>
-              <p class="feat-card-desc">Review each student's answers question-by-question. Assign numeric scores and written feedback that students see immediately on their screen.</p>
+              <h3 class="feat-card-title" data-i18n="f3_title">Instant Grading</h3>
+              <p class="feat-card-desc" data-i18n="f3_desc">Review each student's answers question-by-question. Assign numeric scores and written feedback that students see immediately on their screen.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--danger-soft);color:var(--danger);"><i class="fas fa-shield-halved"></i></div>
-              <h3 class="feat-card-title">Secure Role Access</h3>
-              <p class="feat-card-desc">Firebase Authentication with Firestore role documents. Every portal enforces backend security rules — not just hidden front-end links.</p>
+              <h3 class="feat-card-title" data-i18n="f4_title">Secure Role Access</h3>
+              <p class="feat-card-desc" data-i18n="f4_desc">Firebase Authentication with Firestore role documents. Every portal enforces backend security rules — not just hidden front-end links.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--purple-soft);color:var(--purple);"><i class="fas fa-mobile-screen"></i></div>
-              <h3 class="feat-card-title">Any Device</h3>
-              <p class="feat-card-desc">Students join from phones, tablets, or laptops. No app install needed — just a browser and a school login to access all quizzes and results.</p>
+              <h3 class="feat-card-title" data-i18n="f5_title">Any Device</h3>
+              <p class="feat-card-desc" data-i18n="f5_desc">Students join from phones, tablets, or laptops. No app install needed — just a browser and a school login to access all quizzes and results.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-4 reveal">
             <div class="feat-card">
               <div class="feat-card-icon" style="background:var(--primary-soft);color:var(--primary-2);"><i class="fas fa-cloud-arrow-up"></i></div>
-              <h3 class="feat-card-title">Firebase Sync</h3>
-              <p class="feat-card-desc">Powered by Firestore + Realtime Database. The free tier handles hundreds of concurrent users with sub-second sync and full offline resilience.</p>
+              <h3 class="feat-card-title" data-i18n="f6_title">Firebase Sync</h3>
+              <p class="feat-card-desc" data-i18n="f6_desc">Powered by Firestore + Realtime Database. The free tier handles hundreds of concurrent users with sub-second sync and full offline resilience.</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════════════════════
-         HOW IT WORKS
-         ══════════════════════════════════════════════════════════ -->
+    <!-- HOW IT WORKS -->
     <section class="how-section" id="how" aria-labelledby="how-heading">
       <div class="container">
         <div class="row mb-5 reveal">
           <div class="col-lg-6">
-            <div class="section-tag">How It Works</div>
-            <h2 id="how-heading" class="section-title">Up and running in minutes.</h2>
-            <p class="section-sub">Four clear steps take you from a blank platform to a live graded session.</p>
+            <div class="section-tag" data-i18n="how_tag">How It Works</div>
+            <h2 id="how-heading" class="section-title" data-i18n="how_title">Up and running in minutes.</h2>
+            <p class="section-sub" data-i18n="how_sub">Four clear steps take you from a blank platform to a live graded session.</p>
           </div>
         </div>
         <div class="row g-4">
@@ -636,122 +657,118 @@
             <div class="step-card">
               <div class="step-badge" aria-hidden="true">1</div>
               <div class="step-num" aria-hidden="true">01</div>
-              <h3 class="step-title">Admin sets up the platform</h3>
-              <p class="step-desc">Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal using the dashboard or bulk Excel import.</p>
+              <h3 class="step-title" data-i18n="s1_title">Admin sets up the platform</h3>
+              <p class="step-desc" data-i18n="s1_desc">Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal using the dashboard or bulk Excel import.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3 reveal">
             <div class="step-card">
               <div class="step-badge" aria-hidden="true">2</div>
               <div class="step-num" aria-hidden="true">02</div>
-              <h3 class="step-title">Teacher creates a session</h3>
-              <p class="step-desc">Teacher logs in, creates a session for their assigned grade and subject, builds the question bank, and toggles the session open.</p>
+              <h3 class="step-title" data-i18n="s2_title">Teacher creates a session</h3>
+              <p class="step-desc" data-i18n="s2_desc">Teacher logs in, creates a session for their assigned grade and subject, builds the question bank, and toggles the session open.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3 reveal">
             <div class="step-card">
               <div class="step-badge" aria-hidden="true">3</div>
               <div class="step-num" aria-hidden="true">03</div>
-              <h3 class="step-title">Students answer live</h3>
-              <p class="step-desc">Students log in securely, see their available quizzes, and submit answers one-by-one. The teacher sees every response arrive in real time.</p>
+              <h3 class="step-title" data-i18n="s3_title">Students answer live</h3>
+              <p class="step-desc" data-i18n="s3_desc">Students log in securely, see their available quizzes, and submit answers one-by-one. The teacher sees every response arrive in real time.</p>
             </div>
           </div>
           <div class="col-md-6 col-lg-3 reveal">
             <div class="step-card">
               <div class="step-badge" aria-hidden="true">4</div>
               <div class="step-num" aria-hidden="true">04</div>
-              <h3 class="step-title">Review, grade &amp; feedback</h3>
-              <p class="step-desc">Teachers assign scores and written feedback per question. Students instantly see their full results and can download a detailed PDF report.</p>
+              <h3 class="step-title" data-i18n="s4_title">Review, grade &amp; feedback</h3>
+              <p class="step-desc" data-i18n="s4_desc">Teachers assign scores and written feedback per question. Students instantly see their full results and can download a detailed PDF report.</p>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════════════════════
-         TESTIMONIALS
-         ══════════════════════════════════════════════════════════ -->
+    <!-- TESTIMONIALS -->
     <section class="quotes-section" aria-labelledby="quotes-heading">
       <div class="container">
         <div class="row mb-5 reveal">
           <div class="col">
-            <div class="section-tag">Voices from the Classroom</div>
-            <h2 id="quotes-heading" class="section-title">Trusted by educators &amp; learners.</h2>
-            <p class="section-sub">From the admin who set it all up, to the teacher running live sessions, to the students completing quizzes every day.</p>
+            <div class="section-tag" data-i18n="quotes_tag">Voices from the Classroom</div>
+            <h2 id="quotes-heading" class="section-title" data-i18n="quotes_title">Trusted by educators &amp; learners.</h2>
+            <p class="section-sub" data-i18n="quotes_sub">From the admin who set it all up, to the teacher running live sessions, to the students completing quizzes every day.</p>
           </div>
         </div>
-
         <div class="row g-4">
 
-          <!-- Admin — Omran Al Bakkar -->
+          <!-- Omran Al Bakkar — Admin -->
           <div class="col-md-6 col-lg-4 reveal">
             <div class="quote-card">
-              <p class="quote-text">"Setting up the entire school — grades, subjects, all teachers and students — took under an hour with the Excel import. The admin panel is exactly what we needed."</p>
+              <p class="quote-text" data-i18n="q1_text">"Setting up the entire school — grades, subjects, all teachers and students — took under an hour with the Excel import. The admin panel is exactly what we needed."</p>
               <div class="quote-author">
-                <div class="quote-avatar admin" aria-hidden="true">O</div>
+                <div class="quote-avatar admin" aria-hidden="true">ع</div>
                 <div>
                   <div class="quote-name">Omran Al Bakkar</div>
                   <div class="quote-role">
-                    <i class="fas fa-shield-halved" style="color:var(--primary);font-size:0.7rem;margin-right:4px;"></i>
-                    System Administrator
+                    <i class="fas fa-shield-halved" style="color:var(--primary);font-size:0.7rem;margin-inline-end:4px;"></i>
+                    <span data-i18n="q1_role">System Administrator</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Teacher — Aya Khaled -->
+          <!-- Aya Khaled — Teacher -->
           <div class="col-md-6 col-lg-4 reveal">
             <div class="quote-card">
-              <p class="quote-text">"Seeing every student's answer roll in while I'm explaining completely changed how I pace my lessons. I can spot confusion the moment it happens and adjust instantly."</p>
+              <p class="quote-text" data-i18n="q2_text">"Seeing every student's answer roll in while I'm explaining completely changed how I pace my lessons. I can spot confusion the moment it happens and adjust instantly."</p>
               <div class="quote-author">
-                <div class="quote-avatar teacher" aria-hidden="true">A</div>
+                <div class="quote-avatar teacher" aria-hidden="true">آ</div>
                 <div>
                   <div class="quote-name">Aya Khaled</div>
                   <div class="quote-role">
-                    <i class="fas fa-chalkboard-user" style="color:var(--success);font-size:0.7rem;margin-right:4px;"></i>
-                    Teacher
+                    <i class="fas fa-chalkboard-user" style="color:var(--success);font-size:0.7rem;margin-inline-end:4px;"></i>
+                    <span data-i18n="q2_role">Teacher</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Students — Seren & Ali Bakkar -->
+          <!-- Seren & Ali Bakkar — Students -->
           <div class="col-md-12 col-lg-4 reveal">
             <div class="quote-card" style="height:100%;">
-              <p class="quote-text">"I love seeing my score and feedback right away. It helps me know what to study next!"</p>
+              <p class="quote-text" data-i18n="q3_text">"I love seeing my score and feedback right away. It helps me know what to study next!"</p>
               <div class="quote-author mb-3">
-                <div class="quote-avatar student" aria-hidden="true">S</div>
+                <div class="quote-avatar student" aria-hidden="true">س</div>
                 <div>
                   <div class="quote-name">Seren Bakkar</div>
                   <div class="quote-role">
-                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-right:4px;"></i>
-                    Student — Grade 3
+                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-inline-end:4px;"></i>
+                    <span data-i18n="q3_role">Student — Grade 3</span>
                   </div>
                 </div>
               </div>
-              <!-- Divider -->
               <hr style="border-color:var(--border);margin:16px 0;">
-              <p class="quote-text" style="padding-top:0;">"The quizzes are easy to open on my tablet. I can answer all the questions and see if I got them right!"</p>
+              <p class="quote-text" style="padding-top:0;" data-i18n="q4_text">"The quizzes are easy to open on my tablet. I can answer all the questions and see if I got them right!"</p>
               <div class="quote-author">
-                <div class="quote-avatar student" aria-hidden="true">A</div>
+                <div class="quote-avatar student" aria-hidden="true">ع</div>
                 <div>
                   <div class="quote-name">Ali Bakkar</div>
                   <div class="quote-role">
-                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-right:4px;"></i>
-                    Student — Grade 2
+                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-inline-end:4px;"></i>
+                    <span data-i18n="q4_role">Student — Grade 2</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-        </div><!-- /row -->
+        </div>
       </div>
     </section>
 
-  </main><!-- /#main-content -->
+  </main>
 
   <!-- ============================================================
        FOOTER
@@ -759,44 +776,42 @@
   <footer class="site-footer" role="contentinfo">
     <div class="container">
       <div class="row g-4">
-        <div class="col-md-4">
+
+        <!-- Brand -->
+        <div class="col-md-5">
           <div class="footer-brand">
-            <i class="fas fa-graduation-cap" style="color:#60a5fa;margin-right:8px;" aria-hidden="true"></i>EduBoard
+            <i class="fas fa-graduation-cap" style="color:#60a5fa;margin-inline-end:8px;" aria-hidden="true"></i>EduBoard
           </div>
-          <div class="footer-brand-sub">School Learning Platform · 2026</div>
-          <p style="font-size:0.83rem;margin-top:14px;opacity:0.5;line-height:1.7;">
+          <div class="footer-brand-sub" data-i18n="footer_brand_sub">School Learning Platform · 2026</div>
+          <p style="font-size:0.83rem;margin-top:14px;opacity:0.5;line-height:1.8;" data-i18n="footer_desc">
             A real-time quiz system connecting teachers and students across devices, built on Firebase and designed for the modern classroom.
           </p>
         </div>
-        <div class="col-md-2 offset-md-1">
-          <div class="footer-heading">Portals</div>
-          <a href="admin.html"   class="footer-link"><i class="fas fa-shield-halved me-2"></i>Admin</a>
-          <a href="teacher.html" class="footer-link"><i class="fas fa-chalkboard-user me-2"></i>Teacher</a>
-          <a href="student.html" class="footer-link"><i class="fas fa-user-graduate me-2"></i>Student</a>
+
+        <!-- Portals -->
+        <div class="col-md-3 offset-md-1">
+          <div class="footer-heading" data-i18n="footer_portals_heading">Portals</div>
+          <a href="admin.html"   class="footer-link"><i class="fas fa-shield-halved me-2"></i><span data-i18n="nav_admin">Admin</span></a>
+          <a href="teacher.html" class="footer-link"><i class="fas fa-chalkboard-user me-2"></i><span data-i18n="nav_teacher">Teacher</span></a>
+          <a href="student.html" class="footer-link"><i class="fas fa-user-graduate me-2"></i><span data-i18n="nav_student">Student</span></a>
         </div>
-        <div class="col-md-2">
-          <div class="footer-heading">Platform</div>
-          <a href="#features" class="footer-link">Features</a>
-          <a href="#how"      class="footer-link">How It Works</a>
-          <a href="#portals"  class="footer-link">Get Started</a>
-        </div>
+
+        <!-- Platform -->
         <div class="col-md-3">
-          <div class="footer-heading">Built With</div>
-          <a href="https://firebase.google.com" class="footer-link" target="_blank" rel="noopener">
-            <i class="fas fa-fire me-2" style="color:#f59e0b;"></i>Firebase &amp; Firestore
-          </a>
-          <a href="https://getbootstrap.com" class="footer-link" target="_blank" rel="noopener">
-            <i class="fab fa-bootstrap me-2" style="color:#7c3aed;"></i>Bootstrap 5
-          </a>
-          <a href="https://fontawesome.com" class="footer-link" target="_blank" rel="noopener">
-            <i class="fas fa-icons me-2" style="color:#60a5fa;"></i>Font Awesome 6
-          </a>
+          <div class="footer-heading" data-i18n="footer_platform_heading">Platform</div>
+          <a href="#features" class="footer-link" data-i18n="nav_features">Features</a>
+          <a href="#how"      class="footer-link" data-i18n="nav_how">How It Works</a>
+          <a href="#portals"  class="footer-link" data-i18n="footer_get_started">Get Started</a>
         </div>
+
       </div>
       <hr class="footer-divider" />
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div class="footer-bottom">Developed by <strong style="color:rgba(255,255,255,0.6);">Omran Al Bakkar</strong> — 2026</div>
-        <div class="footer-bottom">EduBoard is for educational use only.</div>
+        <div class="footer-bottom">
+          <span data-i18n="footer_credit">Developed by</span>
+          <strong style="color:rgba(255,255,255,0.6);"> Omran Al Bakkar</strong> — 2026
+        </div>
+        <div class="footer-bottom" data-i18n="footer_note">EduBoard is for educational use only.</div>
       </div>
     </div>
   </footer>
@@ -804,26 +819,247 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Scroll Reveal — Intersection Observer -->
+  <!-- Scroll Reveal -->
   <script>
     (function () {
-      'use strict';
       const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add('visible');
-              observer.unobserve(e.target);
-            }
-          });
-        },
+        (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }),
         { threshold: 0.12 }
       );
-      document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+      document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     })();
   </script>
 
-  <!-- Firebase Module — Auth redirect only (no stats since card removed) -->
+  <!-- ============================================================
+       BILINGUAL i18n ENGINE
+       ============================================================ -->
+  <script>
+    /* ── Translation strings ─────────────────────────────────── */
+    const i18n = {
+      en: {
+        skip:                   'Skip to main content',
+        brand_sub:              'School Learning Platform',
+        checking_session:       'Checking your session…',
+        redirecting:            'You are signed in. Redirecting…',
+        nav_features:           'Features',
+        nav_how:                'How It Works',
+        nav_admin:              'Admin',
+        nav_teacher:            'Teacher',
+        nav_student:            'Student',
+        hero_tag:               'Access Portals',
+        hero_title:             'Choose your role to get started.',
+        hero_sub:               'Secure, role-based access for every member of your school community.',
+        admin_name:             'Super Admin',
+        admin_desc:             'Full system administration — manage grades, subjects, teachers, students, and all sessions from one control centre.',
+        admin_btn:              'Admin Portal',
+        teacher_name:           'Teacher',
+        teacher_desc:           'Create and manage sessions, build question banks, monitor live student activity, and review results with instant feedback tools.',
+        teacher_btn:            'Teacher Portal',
+        student_name:           'Student',
+        student_desc:           'Join sessions, answer questions, and view your graded results and teacher feedback in real time from any device.',
+        student_btn:            'Student Portal',
+        pill_grades:            'Grades',
+        pill_subjects:          'Subjects',
+        pill_users:             'Users',
+        pill_sessions:          'Sessions',
+        pill_questions:         'Questions',
+        pill_monitor:           'Live Monitor',
+        pill_grading:           'Grading',
+        pill_export:            'Export',
+        pill_answer:            'Answer',
+        pill_results:           'Results',
+        pill_device:            'Any Device',
+        pill_pdf:               'PDF Report',
+        stat_portals:           'Role Portals',
+        stat_qtypes:            'Question Types',
+        stat_sync:              'Live Sync',
+        stat_browser:           'Browser-Based',
+        feat_tag:               "What's Inside",
+        feat_title:             'Built for the real classroom.',
+        feat_sub:               'Every feature is purpose-built for live academic sessions — no filler, no fluff.',
+        f1_title:               'Smart Question Bank',
+        f1_desc:                'Create open-text, multiple-choice, true/false, and numeric questions. Set points, correct answers, and subject tags — then import or export as JSON or HTML.',
+        f2_title:               'Live Student Monitor',
+        f2_desc:                "Watch every student's progress in real time via a Kanban-style board. See who is absent, in progress, or completed the moment their status changes.",
+        f3_title:               'Instant Grading',
+        f3_desc:                "Review each student's answers question-by-question. Assign numeric scores and written feedback that students see immediately on their screen.",
+        f4_title:               'Secure Role Access',
+        f4_desc:                'Firebase Authentication with Firestore role documents. Every portal enforces backend security rules — not just hidden front-end links.',
+        f5_title:               'Any Device',
+        f5_desc:                'Students join from phones, tablets, or laptops. No app install needed — just a browser and a school login to access all quizzes and results.',
+        f6_title:               'Firebase Sync',
+        f6_desc:                'Powered by Firestore + Realtime Database. The free tier handles hundreds of concurrent users with sub-second sync and full offline resilience.',
+        how_tag:                'How It Works',
+        how_title:              'Up and running in minutes.',
+        how_sub:                'Four clear steps take you from a blank platform to a live graded session.',
+        s1_title:               'Admin sets up the platform',
+        s1_desc:                'Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal using the dashboard or bulk Excel import.',
+        s2_title:               'Teacher creates a session',
+        s2_desc:                'Teacher logs in, creates a session for their assigned grade and subject, builds the question bank, and toggles the session open.',
+        s3_title:               'Students answer live',
+        s3_desc:                'Students log in securely, see their available quizzes, and submit answers one-by-one. The teacher sees every response arrive in real time.',
+        s4_title:               'Review, grade & feedback',
+        s4_desc:                'Teachers assign scores and written feedback per question. Students instantly see their full results and can download a detailed PDF report.',
+        quotes_tag:             'Voices from the Classroom',
+        quotes_title:           'Trusted by educators & learners.',
+        quotes_sub:             'From the admin who set it all up, to the teacher running live sessions, to the students completing quizzes every day.',
+        q1_text:                '"Setting up the entire school — grades, subjects, all teachers and students — took under an hour with the Excel import. The admin panel is exactly what we needed."',
+        q1_role:                'System Administrator',
+        q2_text:                '"Seeing every student\'s answer roll in while I\'m explaining completely changed how I pace my lessons. I can spot confusion the moment it happens and adjust instantly."',
+        q2_role:                'Teacher',
+        q3_text:                '"I love seeing my score and feedback right away. It helps me know what to study next!"',
+        q3_role:                'Student — Grade 3',
+        q4_text:                '"The quizzes are easy to open on my tablet. I can answer all the questions and see if I got them right!"',
+        q4_role:                'Student — Grade 2',
+        footer_brand_sub:       'School Learning Platform · 2026',
+        footer_desc:            'A real-time quiz system connecting teachers and students across devices, built on Firebase and designed for the modern classroom.',
+        footer_portals_heading: 'Portals',
+        footer_platform_heading:'Platform',
+        footer_get_started:     'Get Started',
+        footer_credit:          'Developed by',
+        footer_note:            'EduBoard is for educational use only.',
+      },
+      ar: {
+        skip:                   'انتقل إلى المحتوى الرئيسي',
+        brand_sub:              'منصة التعلم المدرسي',
+        checking_session:       'جارٍ التحقق من جلستك…',
+        redirecting:            'أنت مسجّل الدخول. جارٍ التحويل…',
+        nav_features:           'الميزات',
+        nav_how:                'كيف يعمل',
+        nav_admin:              'الإدارة',
+        nav_teacher:            'المعلم',
+        nav_student:            'الطالب',
+        hero_tag:               'بوابات الدخول',
+        hero_title:             'اختر دورك للبدء.',
+        hero_sub:               'وصول آمن قائم على الأدوار لكل عضو في مجتمعك المدرسي.',
+        admin_name:             'المشرف العام',
+        admin_desc:             'إدارة شاملة للنظام — أدِر الصفوف والمواد والمعلمين والطلاب وجميع الجلسات من مكان واحد.',
+        admin_btn:              'بوابة الإدارة',
+        teacher_name:           'المعلم',
+        teacher_desc:           'أنشئ الجلسات وادِرها، وابنِ بنك الأسئلة، وراقب نشاط الطلاب مباشرةً، واستعرض النتائج مع أدوات التغذية الراجعة الفورية.',
+        teacher_btn:            'بوابة المعلم',
+        student_name:           'الطالب',
+        student_desc:           'انضم إلى الجلسات وأجب على الأسئلة واستعرض نتائجك وتعليقات معلمك فوراً من أي جهاز.',
+        student_btn:            'بوابة الطالب',
+        pill_grades:            'الصفوف',
+        pill_subjects:          'المواد',
+        pill_users:             'المستخدمون',
+        pill_sessions:          'الجلسات',
+        pill_questions:         'الأسئلة',
+        pill_monitor:           'المراقبة المباشرة',
+        pill_grading:           'التصحيح',
+        pill_export:            'تصدير',
+        pill_answer:            'الإجابة',
+        pill_results:           'النتائج',
+        pill_device:            'أي جهاز',
+        pill_pdf:               'تقرير PDF',
+        stat_portals:           'بوابات الأدوار',
+        stat_qtypes:            'أنواع الأسئلة',
+        stat_sync:              'مزامنة مباشرة',
+        stat_browser:           'يعمل في المتصفح',
+        feat_tag:               'ما بداخله',
+        feat_title:             'مُصمَّم للفصل الدراسي الحقيقي.',
+        feat_sub:               'كل ميزة مبنية خصيصاً للجلسات الأكاديمية المباشرة.',
+        f1_title:               'بنك أسئلة ذكي',
+        f1_desc:                'أنشئ أسئلة مفتوحة ومتعددة الخيارات وصح/خطأ ورقمية. حدد الدرجات والإجابات الصحيحة والوسوم — ثم استورد أو صدّر بصيغة JSON أو HTML.',
+        f2_title:               'مراقبة الطلاب مباشرة',
+        f2_desc:                'تابع تقدم كل طالب لحظةً بلحظة عبر لوحة Kanban. شاهد من غائب أو في التقدم أو أتم الاختبار فور تغيير حالته.',
+        f3_title:               'تصحيح فوري',
+        f3_desc:                'راجع إجابات كل طالب سؤالاً بسؤال. خصص درجات رقمية وتغذية راجعة مكتوبة يراها الطلاب على الفور.',
+        f4_title:               'وصول آمن بالأدوار',
+        f4_desc:                'مصادقة Firebase مع وثائق أدوار Firestore. كل بوابة تطبق قواعد الأمان من الخادم — وليس مجرد روابط مخفية.',
+        f5_title:               'أي جهاز',
+        f5_desc:                'ينضم الطلاب من الهواتف والأجهزة اللوحية والحواسيب. لا حاجة لتثبيت تطبيق — فقط متصفح وحساب مدرسي.',
+        f6_title:               'مزامنة Firebase',
+        f6_desc:                'مدعوم بـ Firestore وقاعدة البيانات في الوقت الفعلي. يدعم الطبقة المجانية مئات المستخدمين المتزامنين بمزامنة أقل من ثانية.',
+        how_tag:                'كيف يعمل',
+        how_title:              'جاهز للعمل في دقائق.',
+        how_sub:                'أربع خطوات واضحة تأخذك من منصة فارغة إلى جلسة مصحَّحة مباشرة.',
+        s1_title:               'المشرف يُعد المنصة',
+        s1_desc:                'يُنشئ المشرف العام الصفوف والمواد وحسابات المعلمين والطلاب من بوابة الإدارة عبر لوحة التحكم أو الاستيراد الجماعي من Excel.',
+        s2_title:               'المعلم ينشئ جلسة',
+        s2_desc:                'يسجل المعلم الدخول ويُنشئ جلسة لصفه ومادته ويبني بنك الأسئلة ثم يفتح الجلسة للطلاب.',
+        s3_title:               'الطلاب يجيبون مباشرة',
+        s3_desc:                'يسجل الطلاب دخولهم بأمان ويرون اختباراتهم المتاحة ويجيبون سؤالاً بسؤال. يرى المعلم كل إجابة فور إرسالها.',
+        s4_title:               'مراجعة وتصحيح وتغذية راجعة',
+        s4_desc:                'يخصص المعلمون الدرجات والتعليقات لكل سؤال. يرى الطلاب نتائجهم الكاملة فوراً ويمكنهم تنزيل تقرير PDF مفصل.',
+        quotes_tag:             'أصوات من الفصل الدراسي',
+        quotes_title:           'موثوق به من المعلمين والمتعلمين.',
+        quotes_sub:             'من المشرف الذي أعد المنصة، إلى المعلمة التي تدير الجلسات، إلى الطلاب الذين يجيبون كل يوم.',
+        q1_text:                '"إعداد المدرسة بأكملها — الصفوف والمواد وجميع المعلمين والطلاب — استغرق أقل من ساعة باستخدام استيراد Excel. لوحة الإدارة هي بالضبط ما احتجناه."',
+        q1_role:                'مشرف النظام',
+        q2_text:                '"رؤية إجابات كل طالب تتدفق أثناء شرحي غيّرت تماماً طريقة إدارتي للدرس. أستطيع اكتشاف الاستفسارات فور حدوثها وأتكيف على الفور."',
+        q2_role:                'معلمة',
+        q3_text:                '"أحب أن أرى درجتي وتعليق المعلمة فوراً. يساعدني ذلك على معرفة ما يجب أن أذاكره!"',
+        q3_role:                'طالبة — الصف الثالث',
+        q4_text:                '"الاختبارات سهلة الفتح على جهازي اللوحي. أستطيع الإجابة على جميع الأسئلة ومعرفة ما إذا كنت قد أجبت بشكل صحيح!"',
+        q4_role:                'طالب — الصف الثاني',
+        footer_brand_sub:       'منصة التعلم المدرسي · 2026',
+        footer_desc:            'نظام اختبارات في الوقت الفعلي يربط المعلمين والطلاب عبر الأجهزة، مبني على Firebase ومصمم للفصل الدراسي الحديث.',
+        footer_portals_heading: 'البوابات',
+        footer_platform_heading:'المنصة',
+        footer_get_started:     'ابدأ الآن',
+        footer_credit:          'طوّره',
+        footer_note:            'EduBoard للاستخدام التعليمي فقط.',
+      }
+    };
+
+    /* ── Current language state ──────────────────────────────── */
+    let currentLang = localStorage.getItem('eduboard_lang') || 'en';
+
+    /* ── Apply translations ──────────────────────────────────── */
+    function applyLang(lang) {
+      const strings = i18n[lang];
+      const html    = document.documentElement;
+
+      /* Direction + lang attr */
+      html.setAttribute('lang', lang);
+      html.setAttribute('dir',  lang === 'ar' ? 'rtl' : 'ltr');
+      document.body.style.fontFamily = lang === 'ar'
+        ? "'Cairo', system-ui, sans-serif"
+        : "'Inter', system-ui, sans-serif";
+
+      /* Translate all data-i18n elements */
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (strings[key] !== undefined) el.textContent = strings[key];
+      });
+
+      /* Update toggle button label */
+      document.getElementById('langLabel').textContent = lang === 'ar' ? 'English' : 'العربية';
+
+      /* Page title */
+      document.title = lang === 'ar'
+        ? 'EduBoard — منصة التعلم المدرسي'
+        : 'EduBoard — School Learning Platform';
+
+      /* Bootstrap RTL: swap stylesheet */
+      let bsLink = document.getElementById('bs-css');
+      if (lang === 'ar') {
+        bsLink.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css';
+      } else {
+        bsLink.href = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css';
+      }
+
+      localStorage.setItem('eduboard_lang', lang);
+      currentLang = lang;
+    }
+
+    /* ── Toggle function (called from button) ────────────────── */
+    function toggleLang() {
+      applyLang(currentLang === 'en' ? 'ar' : 'en');
+    }
+
+    /* ── Init on load ────────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => applyLang(currentLang));
+  </script>
+
+  <!-- Swap Bootstrap CSS id so JS can find it -->
+  <script>
+    document.querySelector('link[href*="bootstrap"]').id = 'bs-css';
+  </script>
+
+  <!-- Firebase Module — Auth redirect -->
   <script type="module">
     import {
       auth, db,
@@ -831,14 +1067,12 @@
       getDoc, doc
     } from './firebase-config.js';
 
-    /* ── AUTH REDIRECT ─────────────────────────────────────────── */
     onAuthStateChanged(auth, async (user) => {
       if (!user) return;
-
       const banner = document.getElementById('authBanner');
       banner.classList.add('show');
-      document.getElementById('authBannerText').textContent = 'You are signed in. Redirecting…';
-
+      const strings = i18n[currentLang];
+      document.getElementById('authBannerText').textContent = strings.redirecting;
       try {
         const snap = await getDoc(doc(db, 'users', user.uid));
         if (snap.exists()) {
