@@ -1061,7 +1061,6 @@
             width: 40px;
             text-align: center;
         }
-
         .student-checkbox {
             width: 40px;
             text-align: center;
@@ -1110,10 +1109,10 @@
             display: none;
             width: 38px;
             height: 38px;
-            border: 1px solid rgba(255, 255, 255, .15);
+            border: 1px solid rgba(255,255,255,.15);
             border-radius: 12px;
-            background: rgba(255, 255, 255, .08);
-            color: rgba(255, 255, 255, .85);
+            background: rgba(255,255,255,.08);
+            color: rgba(255,255,255,.85);
             align-items: center;
             justify-content: center;
             cursor: pointer;
@@ -1123,7 +1122,7 @@
         }
 
         .sidebar-close:hover {
-            background: rgba(255, 255, 255, .16);
+            background: rgba(255,255,255,.16);
         }
 
         /* --- Table scroll wrapper (all viewports) --- */
@@ -1149,7 +1148,6 @@
                 left: 12px;
                 top: 12px;
             }
-
             .toast {
                 min-width: unset;
                 max-width: 100%;
@@ -1162,14 +1160,11 @@
                 grid-template-columns: 1fr;
                 max-width: 480px;
             }
-
             .login-side {
                 padding: 28px;
             }
-
             .login-feature-list {
-                display: none;
-                /* collapsed on small screens */
+                display: none; /* collapsed on small screens */
             }
         }
 
@@ -1179,19 +1174,15 @@
                 align-items: flex-start;
                 padding-top: 40px;
             }
-
             .login-box {
                 padding: 24px 20px;
             }
-
             .login-side {
                 padding: 22px;
             }
-
             .login-hero h1 {
                 font-size: 1.5rem;
             }
-
             .login-box h2 {
                 font-size: 1.3rem;
             }
@@ -1208,7 +1199,7 @@
                 width: 280px;
                 z-index: 200;
                 transform: translateX(-100%);
-                transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+                transition: transform .3s cubic-bezier(.4,0,.2,1);
                 overflow-y: auto;
             }
 
@@ -1236,7 +1227,6 @@
                 transform: none !important;
                 transition: none;
             }
-
             .main {
                 margin-left: 290px;
                 width: calc(100% - 290px);
@@ -1277,15 +1267,12 @@
                 padding: 14px 16px;
                 gap: 10px;
             }
-
             .topbar-actions {
                 flex-wrap: wrap;
                 gap: 8px;
             }
-
             .topbar p {
-                display: none;
-                /* hide subtitle on very small screens */
+                display: none; /* hide subtitle on very small screens */
             }
         }
 
@@ -1389,7 +1376,6 @@
                 flex: 1;
                 min-width: 0;
             }
-
             .toolbar-right {
                 width: auto;
                 flex-wrap: nowrap;
@@ -1472,11 +1458,9 @@
                 width: 100%;
                 border-radius: 20px 20px 0 0;
             }
-
             .modal {
                 align-items: flex-end;
             }
-
             .modal-header,
             .modal-body,
             .modal-footer {
@@ -1513,7 +1497,6 @@
             .col-hide-sm {
                 display: none;
             }
-
             .table-shell td,
             .table-shell th {
                 padding: 12px 10px;
@@ -1569,7 +1552,6 @@
             .modal-footer {
                 padding-bottom: calc(16px + env(safe-area-inset-bottom));
             }
-
             .sidebar {
                 padding-bottom: calc(22px + env(safe-area-inset-bottom));
             }
@@ -1577,7 +1559,6 @@
 
         /* --- Print: hide sidebar/topbar --- */
         @media print {
-
             .sidebar,
             .topbar,
             .toolbar,
@@ -1586,12 +1567,10 @@
             #toast-container {
                 display: none !important;
             }
-
             .main {
                 margin-left: 0 !important;
                 width: 100% !important;
             }
-
             .content {
                 padding: 0 !important;
             }
@@ -1814,22 +1793,20 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('grade')"><i class="fas fa-plus"></i> Add Grade</button>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <div class="table-shell">
-                            <table id="grades-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th class="col-hide-sm">Name (AR)</th>
-                                        <th class="col-hide-sm">Code</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-scroll"><div class="table-shell">
+                        <table id="grades-table">
+                            <thead>
+                                <tr>
+                                    <th>Name (EN)</th>
+                                    <th class="col-hide-sm">Name (AR)</th>
+                                    <th class="col-hide-sm">Code</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div></div>
                 </section>
 
                 <section id="subjects" class="page-section">
@@ -1845,22 +1822,20 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('subject')"><i class="fas fa-plus"></i> Add Subject</button>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <div class="table-shell">
-                            <table id="subjects-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name (EN)</th>
-                                        <th class="col-hide-sm">Name (AR)</th>
-                                        <th class="col-hide-sm">Code</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-scroll"><div class="table-shell">
+                        <table id="subjects-table">
+                            <thead>
+                                <tr>
+                                    <th>Name (EN)</th>
+                                    <th class="col-hide-sm">Name (AR)</th>
+                                    <th class="col-hide-sm">Code</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div></div>
                 </section>
 
                 <section id="teachers" class="page-section">
@@ -1880,22 +1855,20 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('teacher')"><i class="fas fa-plus"></i> Add Teacher</button>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <div class="table-shell">
-                            <table id="teachers-table">
-                                <thead>
-                                    <tr>
-                                        <th>Teacher</th>
-                                        <th class="col-hide-sm">Assignments</th>
-                                        <th class="col-hide-xs">Pending Password</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-scroll"><div class="table-shell">
+                        <table id="teachers-table">
+                            <thead>
+                                <tr>
+                                    <th>Teacher</th>
+                                    <th class="col-hide-sm">Assignments</th>
+                                    <th class="col-hide-xs">Pending Password</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div></div>
                 </section>
 
                 <section id="students" class="page-section">
@@ -1921,23 +1894,21 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('student')"><i class="fas fa-user-plus"></i> Add Student</button>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <div class="table-shell">
-                            <table id="students-table">
-                                <thead>
-                                    <tr>
-                                        <th class="checkbox-col"><input type="checkbox" id="selectAllStudents" onchange="toggleSelectAllStudents()"></th>
-                                        <th>Student</th>
-                                        <th class="col-hide-sm">Grade</th>
-                                        <th class="col-hide-xs">Pending Password</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-scroll"><div class="table-shell">
+                        <table id="students-table">
+                            <thead>
+                                <tr>
+                                    <th class="checkbox-col"><input type="checkbox" id="selectAllStudents" onchange="toggleSelectAllStudents()"></th>
+                                    <th>Student</th>
+                                    <th class="col-hide-sm">Grade</th>
+                                    <th class="col-hide-xs">Pending Password</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div></div>
                 </section>
 
                 <section id="sessions" class="page-section">
@@ -1953,24 +1924,22 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('session')"><i class="fas fa-plus"></i> Create Session</button>
                         </div>
                     </div>
-                    <div class="table-scroll">
-                        <div class="table-shell">
-                            <table id="sessions-table">
-                                <thead>
-                                    <tr>
-                                        <th>Title</th>
-                                        <th>Teacher</th>
-                                        <th>Grade</th>
-                                        <th>Subject</th>
-                                        <th class="col-hide-sm">Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="table-scroll"><div class="table-shell">
+                        <table id="sessions-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Teacher</th>
+                                    <th>Grade</th>
+                                    <th>Subject</th>
+                                    <th class="col-hide-sm">Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div></div>
                 </section>
             </div>
         </main>
@@ -2041,7 +2010,6 @@
             document.getElementById('sidebar-overlay').classList.add('active');
             document.body.classList.add('sidebar-lock');
         }
-
         function closeSidebar() {
             document.querySelector('.sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').classList.remove('active');
@@ -2066,17 +2034,11 @@
 
         // Swipe-to-close gesture (touch)
         let touchStartX = 0;
-        document.addEventListener('touchstart', e => {
-            touchStartX = e.touches[0].clientX;
-        }, {
-            passive: true
-        });
+        document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
         document.addEventListener('touchend', e => {
             const dx = touchStartX - e.changedTouches[0].clientX;
             if (dx > 60 && document.querySelector('.sidebar').classList.contains('open')) closeSidebar();
-        }, {
-            passive: true
-        });
+        }, { passive: true });
     </script>
 
     <script type="module">
@@ -2139,9 +2101,7 @@
         let allGrades = [];
         let allSubjects = [];
         let allTeachers = [];
-        let liveDataCache = {
-            sessions: null
-        };
+        let liveDataCache = { sessions: null };
         let selectedStudents = new Set();
 
         const pageMeta = {
@@ -2201,10 +2161,7 @@
         }
 
         function scrollToTopFast() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         window.scrollToTopFast = scrollToTopFast;
 
@@ -2253,22 +2210,22 @@
                 toast('No students selected', 'error');
                 return;
             }
-
+            
             if (!confirm(`Are you sure you want to delete ${selectedStudents.size} student(s)? This will also delete their Auth accounts and cannot be undone.`)) {
                 return;
             }
-
+            
             showLoading(true);
             let deleted = 0;
             let failed = 0;
-
+            
             for (const studentId of selectedStudents) {
                 try {
                     const studentDoc = await getDoc(doc(db, 'students', studentId));
                     if (studentDoc.exists()) {
                         const studentData = studentDoc.data();
                         const uid = studentData.uid || studentId;
-
+                        
                         // Delete Auth user
                         try {
                             const secondaryApp = initializeApp(firebaseConfig, 'deleteStudent_' + Date.now());
@@ -2284,13 +2241,13 @@
                         } catch (authErr) {
                             console.warn('Auth delete error:', authErr);
                         }
-
+                        
                         // Delete users collection document
                         await deleteDoc(doc(db, 'users', uid));
-
+                        
                         // Delete student document
                         await deleteDoc(doc(db, 'students', studentId));
-
+                        
                         deleted++;
                     } else {
                         failed++;
@@ -2300,14 +2257,14 @@
                     failed++;
                 }
             }
-
+            
             selectedStudents.clear();
             const selectAll = document.getElementById('selectAllStudents');
             if (selectAll) selectAll.checked = false;
-
+            
             await loadStudents();
             await initDashboard();
-
+            
             showLoading(false);
             toast(`Deleted: ${deleted} student(s), Failed: ${failed}`, deleted > 0 ? 'success' : 'error');
         };
@@ -2359,9 +2316,7 @@
             } catch (e) {
                 console.error(e);
                 toast('Auth verification failed: ' + e.message, 'error');
-                try {
-                    await signOut(auth);
-                } catch {}
+                try { await signOut(auth); } catch {}
             } finally {
                 showLoading(false);
             }
@@ -2403,18 +2358,9 @@
                     getDocs(collection(db, 'students'))
                 ]);
 
-                allGrades = gradesSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                allSubjects = subjectsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                allTeachers = teachersSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allGrades = gradesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allSubjects = subjectsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allTeachers = teachersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 document.getElementById('dashGrades').textContent = gradesSnap.size;
                 document.getElementById('dashSubjects').textContent = subjectsSnap.size;
@@ -2477,10 +2423,7 @@
             sessions.forEach(([, s]) => {
                 if (s.students) {
                     Object.values(s.students).forEach(st => {
-                        allLiveStudents.push({
-                            ...st,
-                            sessionTitle: s.title || 'Untitled Session'
-                        });
+                        allLiveStudents.push({ ...st, sessionTitle: s.title || 'Untitled Session' });
                     });
                 }
             });
@@ -2513,10 +2456,7 @@
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'grades'));
-                allGrades = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allGrades = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 populateGradeFilter();
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
@@ -2546,10 +2486,7 @@
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'subjects'));
-                allSubjects = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allSubjects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     return `
@@ -2578,10 +2515,7 @@
             tbody.innerHTML = '<td><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'teachers'));
-                allTeachers = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allTeachers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     const gradeChips = toArray(d.assignedGrades).map(id => `<span class="chip"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(id, allGrades))}</span>`).join('') || '<span class="muted">No grades</span>';
@@ -2658,10 +2592,7 @@
             const tbody = document.querySelector('#sessions-table tbody');
             tbody.innerHTML = '<td><td colspan="7">Loading...</td></tr>';
             try {
-                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
                 const snap = await getDocs(collection(db, 'sessions'));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
@@ -2804,7 +2735,7 @@
                 await deleteApp(secondaryApp);
             }
 
-            const teacherRef = doc(db, 'teachers', uid);
+            const teacherRef = doc(db, 'teachers', uid); 
             await setDoc(teacherRef, {
                 name: data.name,
                 email: data.email,
@@ -2848,7 +2779,7 @@
                 await deleteApp(secondaryApp);
             }
 
-            const studentRef = doc(db, 'students', uid);
+            const studentRef = doc(db, 'students', uid); 
             await setDoc(studentRef, {
                 name: data.name,
                 email: data.email,
@@ -2904,9 +2835,7 @@
                 } else if (type === 'teacher') {
                     if (!data.pendingPassword) throw new Error('Pending Password is required.');
                     if (id) {
-                        const updatePayload = {
-                            ...data
-                        };
+                        const updatePayload = { ...data };
                         delete updatePayload.email;
                         await updateDoc(doc(db, 'teachers', id), updatePayload);
                     } else {
@@ -2915,9 +2844,7 @@
                 } else if (type === 'student') {
                     if (!data.pendingPassword) throw new Error('Pending Password is required.');
                     if (id) {
-                        const updatePayload = {
-                            ...data
-                        };
+                        const updatePayload = { ...data };
                         delete updatePayload.email;
                         await updateDoc(doc(db, 'students', id), updatePayload);
                     } else {
@@ -2928,9 +2855,7 @@
                     if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
                     data.isActive = data.isActive === 'true';
 
-                    const rtdbData = {
-                        ...data
-                    };
+                    const rtdbData = { ...data };
                     if (rtdbData.startTime?.seconds) rtdbData.startTime = new Date(rtdbData.startTime.seconds * 1000).toISOString();
                     if (rtdbData.endTime?.seconds) rtdbData.endTime = new Date(rtdbData.endTime.seconds * 1000).toISOString();
 
@@ -2941,10 +2866,7 @@
                         data.createdAt = serverTimestamp();
                         data.createdBy = currentUser.uid;
                         const newSessionRef = await addDoc(collection(db, 'sessions'), data);
-                        await set(ref(rtdb, `liveSessions/${newSessionRef.id}`), {
-                            ...rtdbData,
-                            id: newSessionRef.id
-                        });
+                        await set(ref(rtdb, `liveSessions/${newSessionRef.id}`), { ...rtdbData, id: newSessionRef.id });
                     }
                 }
 
@@ -3122,8 +3044,7 @@
 
         window.downloadTemplate = (type) => {
             const wb = XLSX.utils.book_new();
-            let headers = [],
-                sampleRow = [];
+            let headers = [], sampleRow = [];
             if (type === 'grades') {
                 headers = ['nameEn', 'nameAr', 'code', 'status'];
                 sampleRow = ['Grade 10', 'الصف العاشر', 'G10', 'Active'];
@@ -3154,32 +3075,14 @@
             }
             showLoading(true);
             try {
-                if (allGrades.length === 0) allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                if (allGrades.length === 0) allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
 
                 const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
                 const snap = await getDocs(collection(db, colName));
-                const rows = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                })).map(row => {
-                    const {
-                        createdAt,
-                        updatedAt,
-                        createdBy,
-                        updatedBy,
-                        ...cleanRow
-                    } = row;
+                const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).map(row => {
+                    const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
                     if (type === 'teachers') {
                         cleanRow.assignedGrades = toArray(row.assignedGrades).map(id => getNameById(id, allGrades)).join(', ');
                         cleanRow.assignedSubjects = toArray(row.assignedSubjects).map(id => getNameById(id, allSubjects)).join(', ');
@@ -3233,32 +3136,19 @@
             reader.onload = async (e) => {
                 try {
                     if ((type === 'teachers' || type === 'students') && allGrades.length === 0) {
-                        allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
                     if (type === 'teachers' && allSubjects.length === 0) {
-                        allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
                     if ((type === 'sessions' || type === 'teachers') && allTeachers.length === 0) {
-                        allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
 
-                    const workbook = XLSX.read(e.target.result, {
-                        type: 'array'
-                    });
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
                     let jsonData = [];
                     for (const sheetName of workbook.SheetNames) {
-                        const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-                            defval: ''
-                        });
+                        const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
                         if (raw.length > 0) {
                             jsonData = raw;
                             break;
@@ -3285,9 +3175,7 @@
 
                     let batch = writeBatch(db);
                     let batchCount = 0;
-                    let inserted = 0,
-                        updated = 0,
-                        skipped = 0;
+                    let inserted = 0, updated = 0, skipped = 0;
 
                     for (const row of normalized) {
                         if (!row || (!row.nameen && !row.code && !row.email && !row.title && !row.name)) {
@@ -3330,13 +3218,9 @@
                                 continue;
                             }
                             targetId = existingMap.get(email) || null;
-
+                            
                             if (targetId) {
-                                batch.update(doc(db, 'teachers', targetId), {
-                                    ...docData,
-                                    updatedAt: serverTimestamp(),
-                                    updatedBy: currentUser.uid
-                                });
+                                batch.update(doc(db, 'teachers', targetId), { ...docData, updatedAt: serverTimestamp(), updatedBy: currentUser.uid });
                                 updated++;
                             } else {
                                 // Create new teacher with Auth
@@ -3350,7 +3234,7 @@
                                 } finally {
                                     await deleteApp(secondaryApp);
                                 }
-
+                                
                                 await setDoc(doc(db, 'teachers', uid), {
                                     ...docData,
                                     uid: uid,
@@ -3379,7 +3263,7 @@
                             }
                             const gradeId = resolveNameToId(row.gradelevel || '', allGrades);
                             targetId = existingMap.get(email) || null;
-
+                            
                             if (targetId) {
                                 // Update existing student
                                 docData = {
@@ -3405,7 +3289,7 @@
                                 } finally {
                                     await deleteApp(secondaryApp);
                                 }
-
+                                
                                 await setDoc(doc(db, 'students', uid), {
                                     name: row.name || '',
                                     email: email,
@@ -3419,7 +3303,7 @@
                                     updatedAt: serverTimestamp(),
                                     updatedBy: currentUser.uid
                                 });
-
+                                
                                 // ✅ CRITICAL: Create users collection document
                                 await setDoc(doc(db, 'users', uid), {
                                     uid: uid,
@@ -3440,8 +3324,7 @@
                                 const foundTeacher = allTeachers.find(t => (t.email || '').toLowerCase() === teacherId.toLowerCase());
                                 if (foundTeacher) teacherId = foundTeacher.id;
                             }
-                            let startTime = null,
-                                endTime = null;
+                            let startTime = null, endTime = null;
                             if (row.starttime) {
                                 const d = new Date(row.starttime);
                                 if (!isNaN(d)) startTime = Timestamp.fromDate(d);
@@ -3459,10 +3342,10 @@
                                 endTime,
                                 isActive: String(row.isactive || '').toLowerCase() === 'true'
                             };
-
+                            
                             docData.updatedAt = serverTimestamp();
                             docData.updatedBy = currentUser.uid;
-
+                            
                             if (targetId) {
                                 batch.update(doc(db, 'sessions', targetId), docData);
                                 updated++;
@@ -3473,7 +3356,7 @@
                                 inserted++;
                             }
                         }
-
+                        
                         batchCount++;
                         if (batchCount >= 400) {
                             await batch.commit();
@@ -3510,4 +3393,12 @@
         };
 
         window.addEventListener('click', (e) => {
-                    const genericModal = document.getElementById('generic-modal');
+            const genericModal = document.getElementById('generic-modal');
+            if (e.target === genericModal) window.closeModal();
+            const passwordModal = document.getElementById('password-modal');
+            if (e.target === passwordModal) window.closePasswordModal();
+        });
+
+    </script>
+</body>
+</html>
