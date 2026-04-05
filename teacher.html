@@ -76,10 +76,39 @@ button { cursor: pointer; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 #toast-container { position: fixed; right: 20px; top: 20px; z-index: 6000; display: flex; flex-direction: column; gap: 10px; }
-.toast { min-width: 280px; max-width: 420px; padding: 14px 16px; border-radius: 14px; color: #fff; box-shadow: var(--shadow-md); animation: fadeSlide .25s ease; display: flex; align-items: center; gap: 10px; }
-.toast.success { background: var(--success); }
-.toast.error { background: var(--danger); }
-.toast.info { background: var(--primary); }
+.toast { 
+    min-width: 280px; 
+    max-width: 420px; 
+    padding: 14px 16px; 
+    border-radius: 14px; 
+    color: #000000; /* Forces Black Text */
+    box-shadow: var(--shadow-md); 
+    animation: fadeSlide .25s ease; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    font-weight: 600; /* Makes text slightly bolder for readability */
+}
+
+.toast.success { 
+    background: #dcfce7; /* Light Green Background */
+    border: 1px solid #86efac;
+}
+
+.toast.warning { 
+    background: #ffedd5; /* Light Orange Background */
+    border: 1px solid #fdba74;
+}
+
+.toast.error { 
+    background: #fee2e2; /* Light Red Background */
+    border: 1px solid #fca5a5;
+}
+
+.toast.info { 
+    background: #dbeafe; /* Light Blue Background */
+    border: 1px solid #93c5fd;
+}
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Login Screen */
