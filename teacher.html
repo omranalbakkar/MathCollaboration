@@ -76,9 +76,7 @@ button { cursor: pointer; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 #toast-container { position: fixed; right: 20px; top: 20px; z-index: 6000; display: flex; flex-direction: column; gap: 10px; }
-
-
-    /* Replace the existing .toast styles with this */
+/* Replace the existing .toast styles with this */
 .toast { 
     min-width: 280px; 
     max-width: 420px; 
@@ -125,7 +123,6 @@ button { cursor: pointer; }
     color: #1e40af; /* Dark blue text */
 }
 .toast.info i { color: #1e40af; }
-    
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Login Screen */
@@ -338,266 +335,23 @@ button { cursor: pointer; }
 .print-a-text { font-size: 15px; margin-top: 2px; padding: 5px; background: #f9f9f9; border-left: 3px solid #ccc; }
 .print-score { float: right; font-weight: bold; border: 1px solid #000; padding: 2px 8px; }
 
-/* ============================================================
-   RESPONSIVE ENHANCEMENTS — full mobile / tablet / desktop
-   ============================================================ */
-
-/* --- Sidebar overlay backdrop --- */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, .55);
-  backdrop-filter: blur(2px);
-  z-index: 199;
-}
-.sidebar-overlay.active { display: block; }
-
-/* --- Hamburger toggle button --- */
-.hamburger {
-  display: none;
-  width: 44px; height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--text);
-  align-items: center; justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: .2s ease;
-}
-.hamburger:hover { background: var(--surface-2); }
-
-/* --- Sidebar close button (inside sidebar on mobile) --- */
-.sidebar-close {
-  display: none;
-  width: 38px; height: 38px;
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 12px;
-  background: rgba(255,255,255,.08);
-  color: rgba(255,255,255,.85);
-  align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: .2s ease;
-}
-.sidebar-close:hover { background: rgba(255,255,255,.16); }
-
-/* --- Topbar grouping --- */
-.topbar-left-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-.topbar-text { min-width: 0; }
-.topbar-text h1,
-.topbar-text p {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* --- Table scroll wrapper --- */
-.table-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.table-scroll .table-shell { overflow: visible; }
-.table-shell table { min-width: unset; width: 100%; }
-
-/* --- Review panel full-width on mobile --- */
-@media (max-width: 640px) {
-  #review-panel {
-    width: 100%;
-    right: -100%;
-    padding: 20px 16px;
-  }
-  #review-panel.open { right: 0; }
-}
-
-/* --- Toast mobile --- */
-@media (max-width: 560px) {
-  #toast-container { right: 12px; left: 12px; top: 12px; }
-  .toast { min-width: unset; max-width: 100%; }
-}
-
-/* --- Login screen --- */
-@media (max-width: 900px) {
-  .login-shell { grid-template-columns: 1fr; max-width: 480px; }
-  .login-side { display: none; }
-}
-@media (max-width: 480px) {
-  #login-screen { padding: 16px; align-items: flex-start; padding-top: 40px; }
-  .login-box { padding: 24px 20px; }
-  .login-box h2 { font-size: 1.3rem; }
-}
-
-/* --- App shell: sidebar as drawer on tablet/mobile --- */
-@media (max-width: 1024px) {
-  .sidebar {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 280px;
-    z-index: 200;
-    transform: translateX(-100%);
-    transition: transform .3s cubic-bezier(.4,0,.2,1);
-    overflow-y: auto;
-  }
-  .sidebar.open { transform: translateX(0); }
-  .sidebar-close { display: flex; }
-  .hamburger { display: flex; }
-  .main { margin-left: 0 !important; width: 100% !important; }
-}
-@media (min-width: 1025px) {
-  .sidebar { transform: none !important; transition: none; }
-  .main { margin-left: 290px; width: calc(100% - 290px); }
-}
-
-/* --- App shell flex layout --- */
-#app-shell {
-  display: none;
-  min-height: 100vh;
-  flex-direction: row;
-  align-items: stretch;
-}
-
-/* --- Topbar --- */
-.topbar {
-  padding: clamp(14px, 2vw, 20px) clamp(16px, 3vw, 28px);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.topbar h1 { font-size: clamp(1.1rem, 3vw, 1.5rem); }
-@media (max-width: 640px) {
-  .topbar p { display: none; }
-  .topbar-actions { gap: 8px; }
-}
-
-/* --- Content padding --- */
-.content { padding: clamp(16px, 3vw, 28px); }
-
-/* --- Stats grid --- */
+/* Responsive */
+@media (max-width: 1180px) {
 .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 900px) {
-  .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kanban-board { grid-template-columns: repeat(2, 1fr); height: auto; }
 }
-.stat-value { font-size: clamp(1.4rem, 3vw, 2rem); }
-
-/* --- Session cards grid --- */
-.session-master-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
+@media (max-width: 980px) {
+.sidebar { position: static; width: 100%; }
+.main { margin-left: 0; width: 100%; }
+#app-shell { display: block; }
+.login-shell { grid-template-columns: 1fr; }
+.login-side { display: none; }
 }
-
-/* --- Toolbar responsive --- */
-.toolbar {
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-@media (min-width: 768px) {
-  .toolbar { flex-direction: row; padding: 14px; }
-}
-.toolbar-left, .toolbar-right {
-  width: 100%;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-@media (min-width: 768px) {
-  .toolbar-left { flex: 1; min-width: 0; }
-  .toolbar-right { width: auto; }
-}
-.search-wrap { min-width: 0; flex: 1; }
-@media (max-width: 767px) {
-  .search-wrap { width: 100%; }
-  .toolbar-right .btn {
-    flex: 1;
-    min-width: calc(50% - 4px);
-    justify-content: center;
-    font-size: .82rem;
-    padding: 10px 8px;
-  }
-  .toolbar-right .btn-primary { flex: 0 0 100%; }
-}
-@media (max-width: 400px) {
-  .toolbar-right .btn { min-width: 100%; }
-}
-
-/* --- Form rows --- */
+@media (max-width: 760px) {
+.content, .topbar { padding: 18px; }
 .form-row { grid-template-columns: 1fr; }
-@media (min-width: 500px) {
-  .form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-/* --- Settings grid --- */
+.toolbar { padding: 12px; }
 .settings-grid { grid-template-columns: 1fr; }
-@media (min-width: 768px) {
-  .settings-grid { grid-template-columns: 1fr 1fr; }
-}
-
-/* --- Kanban board --- */
-.kanban-board {
-  grid-template-columns: 1fr;
-  height: auto;
-  overflow: visible;
-}
-@media (min-width: 640px) {
-  .kanban-board { grid-template-columns: repeat(2, 1fr); }
-}
-@media (min-width: 1100px) {
-  .kanban-board {
-    grid-template-columns: repeat(4, 1fr);
-    height: calc(100vh - 250px);
-    overflow: hidden;
-  }
-}
-
-/* --- Results controls --- */
-.results-controls { flex-wrap: wrap; gap: 10px; }
-.select-styled { flex: 1; min-width: 140px; }
-
-/* --- Question card actions wrap --- */
-.q-actions { flex-wrap: wrap; }
-.sc-actions { flex-wrap: wrap; }
-
-/* --- Grade row in review panel --- */
-.grade-row { flex-wrap: wrap; }
-
-/* --- Panel header wraps on small --- */
-.panel-header { flex-wrap: wrap; gap: 8px; }
-
-/* --- Brand wrap: accommodate close button --- */
-.brand-wrap {
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* --- Session config save button full-width on mobile --- */
-@media (max-width: 500px) {
-  .session-config-card > div[style*="justify-content: flex-end"] {
-    justify-content: stretch !important;
-  }
-  .session-config-card > div[style*="justify-content: flex-end"] .btn {
-    width: 100%;
-  }
-}
-
-/* --- iOS safe-area insets --- */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .sidebar { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
-  #review-panel { padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
-}
-
-/* --- Prevent body scroll when sidebar open --- */
-body.sidebar-lock { overflow: hidden; }
-
-/* --- Print styles --- */
-@media print {
-  .sidebar, .topbar, .toolbar, .topbar-actions,
-  #loading-overlay, #toast-container, #review-panel, .overlay { display: none !important; }
-  .main { margin-left: 0 !important; width: 100% !important; }
-  .content { padding: 0 !important; }
-  #print-container { position: static; left: auto; width: 100%; }
 }
 </style>
 </head>
@@ -608,7 +362,6 @@ body.sidebar-lock { overflow: hidden; }
 </div>
 
 <div id="toast-container"></div>
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <!-- Login Screen -->
 <div id="login-screen">
@@ -647,14 +400,11 @@ body.sidebar-lock { overflow: hidden; }
 <div id="app-shell">
 <aside class="sidebar">
 <div class="brand-wrap">
-<div style="display:flex;align-items:center;gap:12px;">
 <div class="brand-icon"><i class="fas fa-school"></i></div>
 <div>
 <div class="brand-title">EduBoard</div>
 <div class="brand-sub">Teacher Portal</div>
 </div>
-</div>
-<button class="sidebar-close" onclick="closeSidebar()" aria-label="Close navigation"><i class="fas fa-times"></i></button>
 </div>
 <div class="teacher-card">
 <div class="teacher-role-badge"><i class="fas fa-chalkboard-user"></i> Teacher</div>
@@ -678,12 +428,9 @@ body.sidebar-lock { overflow: hidden; }
 
 <main class="main">
 <div class="topbar">
-<div class="topbar-left-group">
-<button class="hamburger" onclick="openSidebar()" aria-label="Open navigation"><i class="fas fa-bars"></i></button>
-<div class="topbar-text">
+<div>
 <h1 id="page-title">Dashboard</h1>
 <p id="page-subtitle">Overview of your teaching activities.</p>
-</div>
 </div>
 <div class="topbar-actions">
 <span class="pill pill-blue" id="topSessionChip"><i class="fas fa-video"></i> No Active Session</span>
@@ -958,7 +705,7 @@ body.sidebar-lock { overflow: hidden; }
 <option value="">All Questions</option>
 </select>
 </div>
-<div class="table-scroll"><div class="table-shell">
+<div class="table-shell">
 <table>
 <thead>
 <tr>
@@ -972,7 +719,7 @@ body.sidebar-lock { overflow: hidden; }
 </thead>
 <tbody id="resultsBody"></tbody>
 </table>
-</div></div>
+</div>
 </div>
 
 <!-- SETTINGS TAB -->
@@ -1012,44 +759,6 @@ body.sidebar-lock { overflow: hidden; }
 </div>
 
 <div id="print-container"></div>
-
-<script>
-// ── Responsive sidebar toggle ──────────────────────────────
-function openSidebar() {
-  document.querySelector('.sidebar').classList.add('open');
-  document.getElementById('sidebar-overlay').classList.add('active');
-  document.body.classList.add('sidebar-lock');
-}
-function closeSidebar() {
-  document.querySelector('.sidebar').classList.remove('open');
-  document.getElementById('sidebar-overlay').classList.remove('active');
-  document.body.classList.remove('sidebar-lock');
-}
-window.openSidebar = openSidebar;
-window.closeSidebar = closeSidebar;
-
-// Close sidebar when a nav link is clicked on mobile
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 1024) closeSidebar();
-    });
-  });
-});
-
-// Auto-close on resize to desktop
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 1024) closeSidebar();
-});
-
-// Swipe-left to close (touch)
-let _touchStartX = 0;
-document.addEventListener('touchstart', e => { _touchStartX = e.touches[0].clientX; }, { passive: true });
-document.addEventListener('touchend', e => {
-  const dx = _touchStartX - e.changedTouches[0].clientX;
-  if (dx > 60 && document.querySelector('.sidebar').classList.contains('open')) closeSidebar();
-}, { passive: true });
-</script>
 
 <script type="module">
 import {
@@ -1141,7 +850,7 @@ el.style.display = 'block';
 
 function showApp() {
 document.getElementById('login-screen').style.display = 'none';
-document.getElementById('app-shell').style.display = 'flex';
+document.getElementById('app-shell').style.display = 'block';
 }
 
 window.doLogin = async function() {
@@ -1662,8 +1371,17 @@ async function loadClassStatus() {
     completed: { total: 0, online: 0, offline: 0 } 
   };
   
-  // Clear all columns
-  Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
+  // Clear ALL column containers — using explicit IDs to guarantee nothing is missed
+  const allColIds = [
+    'list-absent',
+    'list-not-started-online', 'list-not-started-offline',
+    'list-in-progress-online', 'list-in-progress-offline',
+    'list-completed-online',   'list-completed-offline'
+  ];
+  allColIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
 
   let assignedStudents = [];
   
@@ -1867,71 +1585,61 @@ async function loadClassStatus() {
   updateCount('offline-completed', counts.completed.offline);
 }
 
+// ── Debounce helper: prevents rapid consecutive calls ──────────────────────
+let _refreshDebounceTimer = null;
+function _scheduleRefresh() {
+  clearTimeout(_refreshDebounceTimer);
+  _refreshDebounceTimer = setTimeout(async () => {
+    updateStats();
+    renderStudentCards();
+    const activeTab = document.querySelector('.tab-pane.active')?.id;
+    if (activeTab === 'tab-class-status') await loadClassStatus();
+    if (activeTab === 'tab-results') await renderResults();
+  }, 300); // wait 300ms after last event before refreshing UI
+}
+
+// ── Unsubscribe holders so we never register the same listener twice ────────
+let _firestoreUnsub = null;
+let _rtdbUnsub = null;
+
 function setupRealtimeStudentListener() {
   if (!activeSessionId) return;
-  
-  console.log('Setting up real-time listener for session:', activeSessionId);
-  
-  // Listen to students subcollection in Firestore
+
+  // ── Tear down any previous listeners first ──────────────────────────────
+  if (_firestoreUnsub) { _firestoreUnsub(); _firestoreUnsub = null; }
+  if (_rtdbUnsub)      { _rtdbUnsub();      _rtdbUnsub = null; }
+
+  // ── 1. Firestore listener: source of truth for student records ──────────
   const studentsRef = collection(db, 'sessions', activeSessionId, 'students');
-  
-  onSnapshot(studentsRef, async (snapshot) => {
-    console.log('Real-time update: Students changed, count:', snapshot.size);
-    
-    // Update currentStudents array
+  _firestoreUnsub = onSnapshot(studentsRef, async (snapshot) => {
     currentStudents = [];
-    snapshot.forEach(doc => {
-      currentStudents.push({ id: doc.id, ...doc.data() });
-    });
-    
-    // Fetch proper names from main students collection
+    snapshot.forEach(d => currentStudents.push({ id: d.id, ...d.data() }));
     await enrichStudentNames();
-    
-    // Update all UI components
-    updateStats();
-    renderStudentCards();
-    
-    // Refresh active tab if needed
-    const activeTab = document.querySelector('.tab-pane.active')?.id;
-    if (activeTab === 'tab-class-status') {
-      await loadClassStatus();
-    }
-    if (activeTab === 'tab-results') {
-      await renderResults();
-    }
-    
+    _scheduleRefresh();   // debounced — won't double-fire with RTDB update
   }, (error) => {
-    console.error('Real-time listener error:', error);
+    console.error('Firestore listener error:', error);
   });
-  
-  // Also listen to RTDB for online status changes
+
+  // ── 2. RTDB listener: only updates online status, never triggers full reload
   const rtdbRef = ref(rtDB, `liveSessions/${activeSessionId}/students`);
-  onValue(rtdbRef, async (snapshot) => {
+  _rtdbUnsub = onValue(rtdbRef, async (snapshot) => {
     const rtdbStudents = snapshot.val() || {};
-    console.log('RTDB update: Online status changed:', Object.keys(rtdbStudents).length, 'online');
-    
-    // Update online status in currentStudents based on RTDB
+    let changed = false;
+
     for (const student of currentStudents) {
-      const wasOnline = student.online;
       const isOnline = !!rtdbStudents[student.id];
-      
-      if (wasOnline !== isOnline) {
+      if (student.online !== isOnline) {
         student.online = isOnline;
-        
-        // Update Firestore to keep in sync
-        const studentRef = doc(db, 'sessions', activeSessionId, 'students', student.id);
-        await updateDoc(studentRef, { online: isOnline, lastSeen: Date.now() });
+        changed = true;
+        // Sync back to Firestore quietly (no await to avoid blocking UI)
+        updateDoc(
+          doc(db, 'sessions', activeSessionId, 'students', student.id),
+          { online: isOnline, lastSeen: Date.now() }
+        ).catch(e => console.warn('Online sync error:', e));
       }
     }
-    
-    // Update UI
-    updateStats();
-    renderStudentCards();
-    
-    const activeTab = document.querySelector('.tab-pane.active')?.id;
-    if (activeTab === 'tab-class-status') {
-      await loadClassStatus();
-    }
+
+    if (changed) _scheduleRefresh(); // only re-render if something actually changed
   });
 }
 
