@@ -1,395 +1,1016 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduBoard — School Learning Platform</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --ink:    #1a1410;
-  --cream:  #faf7f2;
-  --paper:  #f2ede3;
-  --warm:   #e8dfd0;
-  --border: #d8cfc0;
-  --rust:   #c0522a;
-  --rust-l: rgba(192,82,42,0.08);
-  --teal:   #2a7a6a;
-  --teal-l: rgba(42,122,106,0.08);
-  --gold:   #b8860b;
-  --muted:  #7a6e62;
-  --shadow: 0 8px 40px rgba(26,20,16,0.1);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;overflow-x:hidden;}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:0.4;}
-header{padding:22px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--cream);position:sticky;top:0;z-index:50;}
-.logo{display:flex;align-items:center;gap:12px;}
-.logo-mark{width:38px;height:38px;background:var(--ink);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--cream);font-size:18px;}
-.logo-text{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:-0.5px;}
-.header-nav{display:flex;gap:10px;align-items:center;}
-.nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;padding:7px 16px;border-radius:20px;transition:all 0.15s;border:1px solid transparent;}
-.nav-link:hover{color:var(--ink);background:var(--warm);border-color:var(--border);}
-.nav-link.primary{background:var(--ink);color:var(--cream);border-color:var(--ink);}
-.nav-link.primary:hover{background:#2a2018;color:var(--cream);}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduBoard — School Learning Platform</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
 
-/* AUTH REDIRECT BANNER */
-.auth-banner{background:rgba(42,122,106,0.08);border:1px solid rgba(42,122,106,0.25);border-radius:14px;padding:14px 20px;display:none;align-items:center;gap:12px;margin:20px 48px 0;font-size:13px;color:var(--ink);}
-.auth-banner.show{display:flex;}
-.auth-banner-spinner{width:16px;height:16px;border:2px solid rgba(42,122,106,0.3);border-top-color:var(--teal);border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0;}
-@keyframes spin{to{transform:rotate(360deg)}}
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet" />
 
-.hero{min-height:88vh;display:flex;align-items:center;padding:60px 48px;position:relative;overflow:hidden;}
-.hero::before{content:'';position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(192,82,42,0.06) 0%,transparent 65%);right:-200px;top:-200px;pointer-events:none;}
-.hero::after{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(42,122,106,0.06) 0%,transparent 65%);left:-150px;bottom:-150px;pointer-events:none;}
-.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 420px;gap:80px;align-items:center;}
-.hero-tag{display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:28px;animation:fadeUp 0.6s ease both;}
-.hero-tag .dot{width:7px;height:7px;background:var(--teal);border-radius:50%;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
-h1{font-family:'Playfair Display',serif;font-size:clamp(42px,5.5vw,72px);font-weight:900;line-height:1.05;letter-spacing:-2px;margin-bottom:24px;animation:fadeUp 0.6s 0.1s ease both;}
-h1 em{font-style:italic;color:var(--rust);}
-.hero-desc{font-size:17px;line-height:1.75;color:var(--muted);max-width:480px;margin-bottom:44px;font-weight:400;animation:fadeUp 0.6s 0.2s ease both;}
-.hero-cta{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp 0.6s 0.3s ease both;}
-.btn-hero{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;border-radius:14px;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;text-decoration:none;transition:all 0.2s;letter-spacing:0.01em;border:2px solid transparent;}
-.btn-teacher{background:var(--ink);color:var(--cream);box-shadow:0 6px 24px rgba(26,20,16,0.2);}
-.btn-teacher:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(26,20,16,0.28);}
-.btn-student{background:var(--teal);color:#fff;box-shadow:0 6px 24px rgba(42,122,106,0.25);}
-.btn-student:hover{background:#236859;transform:translateY(-2px);box-shadow:0 12px 32px rgba(42,122,106,0.35);}
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-.hero-right{animation:fadeUp 0.6s 0.25s ease both;}
-.session-card{background:var(--paper);border:1px solid var(--border);border-radius:24px;padding:32px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
-.session-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--rust),var(--gold),var(--teal));}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
-.card-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;}
-.status-pill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:0.06em;text-transform:uppercase;}
-.status-active{background:rgba(42,122,106,0.12);color:var(--teal);border:1px solid rgba(42,122,106,0.25);}
-.status-idle{background:var(--warm);color:var(--muted);border:1px solid var(--border);}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;}
-.info-item{background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
-.info-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.info-val{font-size:15px;font-weight:700;color:var(--ink);}
-.info-val.loading{color:var(--muted);font-weight:400;font-style:italic;font-size:13px;}
-.stats-row{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
-.stat{flex:1;padding:14px;text-align:center;border-right:1px solid var(--border);}
-.stat:last-child{border-right:none;}
-.stat-n{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;}
-.stat-n.rust{color:var(--rust);}
-.stat-n.teal{color:var(--teal);}
-.stat-n.gold{color:var(--gold);}
-.stat-lbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;}
-.card-note{font-size:12px;color:var(--muted);text-align:center;line-height:1.6;}
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-.features{padding:100px 48px;background:var(--paper);border-top:1px solid var(--border);}
-.features-inner{max-width:1100px;margin:0 auto;}
-.section-tag{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--rust);margin-bottom:16px;}
-.section-title{font-family:'Playfair Display',serif;font-size:clamp(28px,3.5vw,44px);font-weight:700;letter-spacing:-1px;margin-bottom:56px;max-width:500px;line-height:1.15;}
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
-.feat-card{background:var(--cream);border:1px solid var(--border);border-radius:18px;padding:28px;transition:transform 0.2s,box-shadow 0.2s;}
-.feat-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(26,20,16,0.1);}
-.feat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:18px;}
-.feat-title{font-size:16px;font-weight:700;margin-bottom:8px;}
-.feat-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+  <style>
+    /* ============================================================
+       DESIGN SYSTEM — Unified tokens matching admin/teacher/student
+       ============================================================ */
+    :root {
+      --bg:           #f4f7fb;
+      --surface:      #ffffff;
+      --surface-2:    #f8fbff;
+      --surface-3:    #eef4ff;
+      --text:         #0f172a;
+      --text-muted:   #64748b;
+      --text-faint:   #94a3b8;
+      --primary:      #1d4ed8;
+      --primary-2:    #2563eb;
+      --primary-soft: #dbeafe;
+      --success:      #059669;
+      --success-soft: #d1fae5;
+      --warning:      #d97706;
+      --warning-soft: #ffedd5;
+      --danger:       #dc2626;
+      --danger-soft:  #fee2e2;
+      --purple:       #7c3aed;
+      --purple-soft:  #ede9fe;
+      --border:       #e2e8f0;
+      --border-strong:#cbd5e1;
+      --shadow-sm:    0 2px 10px rgba(15,23,42,0.05);
+      --shadow-md:    0 12px 30px rgba(15,23,42,0.08);
+      --shadow-lg:    0 24px 60px rgba(15,23,42,0.12);
+      --radius-sm:    12px;
+      --radius-md:    16px;
+      --radius-lg:    22px;
+      --gradient-hero: linear-gradient(135deg, #1d4ed8 0%, #2563eb 48%, #3b82f6 100%);
+    }
 
-.how{padding:100px 48px;border-top:1px solid var(--border);}
-.how-inner{max-width:1100px;margin:0 auto;}
-.steps{display:grid;grid-template-columns:1fr 1fr;gap:40px 80px;margin-top:56px;}
-.step{display:flex;gap:20px;}
-.step-num{font-family:'Playfair Display',serif;font-size:52px;font-weight:900;color:var(--border);line-height:1;flex-shrink:0;width:52px;}
-.step-title{font-size:16px;font-weight:700;margin-bottom:6px;}
-.step-desc{font-size:13px;color:var(--muted);line-height:1.7;}
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-.portals-section{padding:100px 48px;background:var(--paper);border-top:1px solid var(--border);}
-.portals-inner{max-width:1100px;margin:0 auto;}
-.portals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:56px;}
-.portal-card{border-radius:20px;padding:32px;border:1px solid var(--border);text-align:center;transition:transform 0.2s,box-shadow 0.2s;}
-.portal-card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(26,20,16,0.12);}
-.portal-card.admin{background:linear-gradient(135deg,rgba(192,82,42,0.06),rgba(184,134,11,0.04));}
-.portal-card.teacher{background:linear-gradient(135deg,rgba(26,20,16,0.04),rgba(26,20,16,0.02));}
-.portal-card.student{background:linear-gradient(135deg,rgba(42,122,106,0.06),rgba(42,122,106,0.02));}
-.portal-icon{font-size:40px;margin-bottom:16px;}
-.portal-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:8px;}
-.portal-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:20px;}
-.portal-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;border-radius:12px;font-size:13px;font-weight:700;text-decoration:none;transition:all 0.2s;border:2px solid transparent;}
-.portal-btn.admin-btn{background:var(--rust);color:#fff;}
-.portal-btn.admin-btn:hover{background:#a8401c;}
-.portal-btn.teacher-btn{background:var(--ink);color:var(--cream);}
-.portal-btn.teacher-btn:hover{background:#2a2018;}
-.portal-btn.student-btn{background:var(--teal);color:#fff;}
-.portal-btn.student-btn:hover{background:#236859;}
+    /* ============================================================
+       SKIP LINK — Accessibility
+       ============================================================ */
+    .skip-link {
+      position: absolute; top: -48px; left: 16px; z-index: 9999;
+      background: var(--primary); color: #fff; padding: 12px 20px;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      font-weight: 700; text-decoration: none; transition: top 0.2s;
+    }
+    .skip-link:focus { top: 0; }
 
-footer{padding:40px 48px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-.footer-logo{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;}
-.footer-note{font-size:12px;color:var(--muted);}
-.footer-links{display:flex;gap:20px;}
-.footer-links a{font-size:12px;color:var(--muted);text-decoration:none;font-weight:500;}
-.footer-links a:hover{color:var(--ink);}
+    /* ============================================================
+       NAVBAR
+       ============================================================ */
+    .site-nav {
+      position: sticky; top: 0; z-index: 500;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text);
+    }
+    .brand-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--gradient-hero);
+      display: grid; place-items: center;
+      font-size: 1.1rem; color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+    .brand-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
+    .brand-sub   { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:900px){.hero-inner{grid-template-columns:1fr;gap:48px;}.hero-right{order:-1;}.features-grid,.portals-grid{grid-template-columns:1fr 1fr;}.steps{grid-template-columns:1fr;}header{padding:16px 24px;}.hero,.features,.how,.portals-section{padding:40px 24px;}footer{padding:28px 24px;}.auth-banner{margin:16px 24px 0;}}
-@media(max-width:560px){.features-grid,.portals-grid{grid-template-columns:1fr;}.info-grid{grid-template-columns:1fr;}h1{letter-spacing:-1px;}.hero-cta{flex-direction:column;}.btn-hero{justify-content:center;}}
-</style>
+    .nav-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .nav-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: 999px;
+      font-size: 0.85rem; font-weight: 600;
+      text-decoration: none; color: var(--text-muted);
+      border: 1px solid transparent;
+      transition: all 0.18s;
+    }
+    .nav-pill:hover { background: var(--surface-3); color: var(--primary); border-color: var(--primary-soft); }
+    .nav-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .navbar-toggler {
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 6px 10px; background: #fff;
+    }
+
+    /* Auth redirect banner */
+    #authBanner {
+      display: none; align-items: center; gap: 10px;
+      background: var(--success-soft); border: 1px solid rgba(5,150,105,0.25);
+      border-radius: var(--radius-md); padding: 12px 20px;
+      font-size: 0.88rem; color: var(--text);
+      margin: 12px 0; animation: fadeSlide 0.25s ease;
+    }
+    #authBanner.show { display: flex; }
+    .auth-spinner {
+      width: 16px; height: 16px; flex-shrink: 0;
+      border: 2px solid rgba(5,150,105,0.3); border-top-color: var(--success);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+
+    /* ============================================================
+       HERO SECTION
+       ============================================================ */
+    .hero-section {
+      background: var(--gradient-hero);
+      color: #fff;
+      padding: 80px 0 100px;
+      position: relative; overflow: hidden;
+    }
+    .hero-section::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px; padding: 6px 16px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 20px; animation: fadeUp 0.5s ease both;
+    }
+    .hero-tag .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #34d399;
+      animation: pulse 2s infinite;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.4rem, 5.5vw, 4rem);
+      font-weight: 900; line-height: 1.08; letter-spacing: -0.02em;
+      margin-bottom: 20px;
+      animation: fadeUp 0.5s 0.08s ease both;
+    }
+    .hero-title em { font-style: italic; color: #93c5fd; }
+    .hero-desc {
+      font-size: 1.05rem; line-height: 1.75; opacity: 0.88;
+      max-width: 500px; margin-bottom: 36px;
+      animation: fadeUp 0.5s 0.16s ease both;
+    }
+    .hero-cta { animation: fadeUp 0.5s 0.24s ease both; }
+
+    .btn-hero-primary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 28px; border-radius: var(--radius-md);
+      background: #fff; color: var(--primary);
+      font-weight: 700; font-size: 0.95rem; font-family: inherit;
+      text-decoration: none; border: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      transition: all 0.2s;
+    }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); color: var(--primary); }
+
+    .btn-hero-secondary {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 28px; border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.15); color: #fff;
+      font-weight: 700; font-size: 0.95rem; font-family: inherit;
+      text-decoration: none; border: 2px solid rgba(255,255,255,0.4);
+      transition: all 0.2s;
+    }
+    .btn-hero-secondary:hover { background: rgba(255,255,255,0.25); color: #fff; transform: translateY(-2px); }
+
+    /* HERO STATS CARD */
+    .hero-card {
+      background: rgba(255,255,255,0.97);
+      border-radius: var(--radius-lg); padding: 28px;
+      box-shadow: var(--shadow-lg);
+      color: var(--text);
+      animation: fadeUp 0.5s 0.2s ease both;
+      position: relative; overflow: hidden;
+    }
+    .hero-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+      background: var(--gradient-hero);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .card-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 5px;
+    }
+    .card-value {
+      font-size: 1.55rem; font-weight: 800; color: var(--text);
+      font-family: 'Playfair Display', serif;
+    }
+    .card-value.loading {
+      font-size: 1.1rem; font-weight: 400; color: var(--text-faint);
+      font-family: inherit; font-style: italic;
+    }
+    .stat-mini { flex: 1; text-align: center; padding: 14px 8px; }
+    .stat-mini-n { font-size: 1.6rem; font-weight: 800; font-family: 'Playfair Display', serif; }
+    .stat-mini-l {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted); margin-top: 2px;
+    }
+    .stat-mini-n.blue   { color: var(--primary); }
+    .stat-mini-n.green  { color: var(--success); }
+    .stat-mini-n.orange { color: var(--warning); }
+
+    /* Status pill */
+    .status-live {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 999px;
+      background: var(--success-soft); color: var(--success);
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      border: 1px solid rgba(5,150,105,0.25);
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+
+    /* ============================================================
+       PORTAL CARDS
+       ============================================================ */
+    .portals-section { padding: 80px 0; }
+    .section-tag {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--primary); margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      font-weight: 700; letter-spacing: -0.03em;
+      color: var(--text); line-height: 1.15; margin-bottom: 8px;
+    }
+    .section-sub { font-size: 0.95rem; color: var(--text-muted); max-width: 520px; }
+
+    .portal-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px 28px;
+      transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+      height: 100%; position: relative; overflow: hidden;
+      text-align: center;
+    }
+    .portal-card::after {
+      content: ''; position: absolute; inset: 0;
+      opacity: 0; transition: opacity 0.22s; pointer-events: none;
+      border-radius: inherit;
+    }
+    .portal-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+    .portal-card:hover::after { opacity: 1; }
+    .portal-card.admin::after   { background: linear-gradient(135deg,rgba(220,38,38,0.04),rgba(124,58,237,0.02)); }
+    .portal-card.teacher::after { background: linear-gradient(135deg,rgba(29,78,216,0.05),rgba(29,78,216,0.02)); }
+    .portal-card.student::after { background: linear-gradient(135deg,rgba(5,150,105,0.05),rgba(5,150,105,0.02)); }
+
+    .portal-icon-wrap {
+      width: 68px; height: 68px; border-radius: 18px;
+      display: grid; place-items: center; font-size: 1.8rem;
+      margin: 0 auto 18px;
+    }
+    .portal-icon-wrap.admin   { background: var(--danger-soft);  color: var(--danger); }
+    .portal-icon-wrap.teacher { background: var(--primary-soft); color: var(--primary); }
+    .portal-icon-wrap.student { background: var(--success-soft); color: var(--success); }
+
+    .portal-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;
+    }
+    .portal-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 22px; }
+
+    .portal-features { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 22px; }
+    .feat-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .feat-pill.red    { background: var(--danger-soft);  color: var(--danger); }
+    .feat-pill.blue   { background: var(--primary-soft); color: var(--primary); }
+    .feat-pill.green  { background: var(--success-soft); color: var(--success); }
+    .feat-pill.purple { background: var(--purple-soft);  color: var(--purple); }
+    .feat-pill.orange { background: var(--warning-soft); color: var(--warning); }
+
+    .btn-portal {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius-md);
+      font-size: 0.9rem; font-weight: 700; font-family: inherit;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: all 0.2s; width: 100%;
+    }
+    .btn-portal:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn-portal.admin   { background: var(--danger);   color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.3); }
+    .btn-portal.teacher { background: var(--gradient-hero); color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,0.3); }
+    .btn-portal.student { background: var(--success);  color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.3); }
+
+    /* ============================================================
+       FEATURES SECTION
+       ============================================================ */
+    .features-section {
+      padding: 80px 0;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .feat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 26px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      height: 100%;
+    }
+    .feat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    .feat-card-icon {
+      width: 48px; height: 48px; border-radius: var(--radius-sm);
+      display: grid; place-items: center; font-size: 1.3rem; margin-bottom: 16px;
+    }
+    .feat-card-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .feat-card-desc  { font-size: 0.85rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ============================================================
+       HOW IT WORKS
+       ============================================================ */
+    .how-section { padding: 80px 0; }
+    .step-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 28px;
+      position: relative; height: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .step-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem; font-weight: 900; line-height: 1;
+      color: var(--border); margin-bottom: 12px;
+    }
+    .step-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .step-desc  { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+    .step-badge {
+      position: absolute; top: 20px; right: 20px;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 0.8rem; font-weight: 800; color: #fff;
+      background: var(--gradient-hero);
+      box-shadow: 0 4px 10px rgba(29,78,216,0.3);
+    }
+
+    /* ============================================================
+       STATS STRIP
+       ============================================================ */
+    .stats-strip { background: var(--gradient-hero); padding: 52px 0; }
+    .stats-strip .stat-item { text-align: center; color: #fff; }
+    .stats-strip .s-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.6rem; font-weight: 900; line-height: 1;
+    }
+    .stats-strip .s-lbl {
+      font-size: 0.8rem; font-weight: 600; opacity: 0.75;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
+    }
+
+    /* ============================================================
+       TESTIMONIALS
+       ============================================================ */
+    .quotes-section {
+      padding: 80px 0;
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+    }
+    .quote-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px;
+      height: 100%; position: relative;
+    }
+    .quote-card::before {
+      content: '\201C'; position: absolute; top: 14px; left: 20px;
+      font-size: 4rem; line-height: 1; color: var(--primary-soft);
+      font-family: Georgia, serif; pointer-events: none;
+    }
+    .quote-text {
+      font-size: 0.92rem; line-height: 1.75; color: var(--text-muted);
+      padding-top: 28px; margin-bottom: 16px; font-style: italic;
+    }
+    .quote-author { display: flex; align-items: center; gap: 10px; }
+    .quote-avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--gradient-hero); color: #fff;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+    }
+    .quote-name { font-weight: 700; font-size: 0.9rem; }
+    .quote-role { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    .site-footer {
+      background: #0f172a; color: rgba(255,255,255,0.7);
+      padding: 52px 0 28px;
+    }
+    .footer-brand {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 6px;
+    }
+    .footer-brand-sub { font-size: 0.82rem; opacity: 0.55; }
+    .footer-heading {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-bottom: 14px;
+    }
+    .footer-link {
+      display: block; color: rgba(255,255,255,0.62);
+      text-decoration: none; font-size: 0.88rem;
+      margin-bottom: 8px; transition: color 0.15s;
+    }
+    .footer-link:hover { color: #fff; }
+    .footer-divider { border-color: rgba(255,255,255,0.08); margin: 28px 0 20px; }
+    .footer-bottom { font-size: 0.8rem; color: rgba(255,255,255,0.38); }
+
+    /* ============================================================
+       ANIMATIONS
+       ============================================================ */
+    @keyframes fadeUp    { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeSlide { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes spin      { to { transform: rotate(360deg); } }
+    @keyframes pulse     { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.5; transform:scale(0.8); } }
+
+    /* Scroll-triggered reveal */
+    .reveal { opacity:0; transform:translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+      .hero-section { padding: 56px 0 72px; }
+      .hero-card    { margin-top: 36px; }
+      .portals-section, .features-section, .how-section, .quotes-section { padding: 56px 0; }
+    }
+    @media (max-width: 480px) {
+      .btn-hero-primary, .btn-hero-secondary { width: 100%; justify-content: center; }
+      .hero-cta { flex-direction: column; gap: 10px; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="auth-banner" id="authBanner">
-  <div class="auth-banner-spinner"></div>
-  <span id="authBannerText">Checking your session…</span>
-</div>
+  <!-- Skip to content — Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-<header>
-  <div class="logo">
-    <div class="logo-mark">📖</div>
-    <div class="logo-text">EduBoard</div>
-  </div>
-  <nav class="header-nav">
-    <a href="admin.html" class="nav-link">Admin</a>
-    <a href="teacher.html" class="nav-link">Teacher</a>
-    <a href="student.html" class="nav-link primary">Student Portal</a>
+  <!-- ============================================================
+       NAVBAR
+       ============================================================ -->
+  <nav class="site-nav navbar navbar-expand-lg" role="navigation" aria-label="Main navigation">
+    <div class="container">
+
+      <a href="index.html" class="nav-brand navbar-brand me-auto" aria-label="EduBoard Home">
+        <div class="brand-icon" aria-hidden="true">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div>
+          <div class="brand-title">EduBoard</div>
+          <div class="brand-sub">School Learning Platform</div>
+        </div>
+      </a>
+
+      <button class="navbar-toggler" type="button"
+              data-bs-toggle="collapse" data-bs-target="#mainNav"
+              aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars" style="color:var(--text-muted);font-size:1rem;"></i>
+      </button>
+
+      <div class="collapse navbar-collapse" id="mainNav">
+        <div class="nav-links ms-auto py-2 py-lg-0">
+          <div id="authBanner" role="status" aria-live="polite">
+            <div class="auth-spinner" aria-hidden="true"></div>
+            <span id="authBannerText">Checking your session…</span>
+          </div>
+          <a href="#portals"     class="nav-pill"><i class="fas fa-door-open"></i> Portals</a>
+          <a href="#features"    class="nav-pill"><i class="fas fa-star"></i> Features</a>
+          <a href="#how"         class="nav-pill"><i class="fas fa-list-ol"></i> How It Works</a>
+          <a href="admin.html"   class="nav-pill" aria-label="Admin portal"><i class="fas fa-shield-halved"></i> Admin</a>
+          <a href="teacher.html" class="nav-pill" aria-label="Teacher portal"><i class="fas fa-chalkboard-user"></i> Teacher</a>
+          <a href="student.html" class="nav-pill active" aria-label="Student portal"><i class="fas fa-user-graduate"></i> Student</a>
+        </div>
+      </div>
+    </div>
   </nav>
-</header>
 
-<section class="hero">
-  <div class="hero-inner">
-    <div class="hero-left">
-      <div class="hero-tag">
-        <span class="dot"></span>
-        Secure School Platform
-      </div>
-      <h1>Where every<br>answer <em>matters.</em></h1>
-      <p class="hero-desc">
-        A real-time quiz platform that connects teachers and students across devices.
-        Secure role-based access. Live monitoring. Instant feedback — all in the browser.
-      </p>
-      <div class="hero-cta">
-        <a href="teacher.html" class="btn-hero btn-teacher">
-          <span>🎓</span> Teacher Dashboard
-        </a>
-        <a href="student.html" class="btn-hero btn-student">
-          <span>✏️</span> Join as Student
-        </a>
-      </div>
-    </div>
-    <div class="hero-right">
-      <div class="session-card">
-        <div class="card-header">
-          <div class="card-title">Platform Status</div>
-          <div class="status-pill status-active" id="sessionStatus">Live</div>
-        </div>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Active Sessions</div>
-            <div class="info-val loading" id="cardSessions">—</div>
+  <!-- ============================================================
+       MAIN CONTENT
+       ============================================================ -->
+  <main id="main-content">
+
+    <!-- HERO -->
+    <section class="hero-section" aria-labelledby="hero-heading">
+      <div class="container">
+        <div class="row align-items-center gy-4">
+
+          <!-- Left: copy -->
+          <div class="col-lg-6">
+            <div class="hero-tag" aria-label="Platform status: live">
+              <span class="pulse-dot" aria-hidden="true"></span>
+              Secure School Platform
+            </div>
+            <h1 id="hero-heading" class="hero-title">
+              Where every<br>answer <em>matters.</em>
+            </h1>
+            <p class="hero-desc">
+              A real-time quiz platform that connects teachers and students across devices.
+              Secure role-based access, live monitoring, and instant feedback — all in the browser.
+            </p>
+            <div class="d-flex flex-wrap gap-3 hero-cta">
+              <a href="teacher.html" class="btn-hero-primary" aria-label="Go to Teacher Dashboard">
+                <i class="fas fa-chalkboard-user" aria-hidden="true"></i>
+                Teacher Dashboard
+              </a>
+              <a href="student.html" class="btn-hero-secondary" aria-label="Join as Student">
+                <i class="fas fa-pencil" aria-hidden="true"></i>
+                Join as Student
+              </a>
+            </div>
           </div>
-          <div class="info-item">
-            <div class="info-label">Teachers</div>
-            <div class="info-val loading" id="cardTeachers">—</div>
+
+          <!-- Right: live status card -->
+          <div class="col-lg-5 offset-lg-1">
+            <div class="hero-card" role="region" aria-label="Platform live statistics">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <span style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;">Platform Status</span>
+                <span class="status-live" id="sessionStatus" aria-live="polite">
+                  <span class="live-dot" aria-hidden="true"></span> Live
+                </span>
+              </div>
+
+              <!-- 2×2 info grid -->
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                    <div class="card-label">Active Sessions</div>
+                    <div class="card-value loading" id="cardSessions" aria-live="polite">—</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                    <div class="card-label">Teachers</div>
+                    <div class="card-value loading" id="cardTeachers" aria-live="polite">—</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                    <div class="card-label">Students</div>
+                    <div class="card-value loading" id="cardStudents" aria-live="polite">—</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+                    <div class="card-label">Grades</div>
+                    <div class="card-value loading" id="cardGrades" aria-live="polite">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats row -->
+              <div class="d-flex" style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px;">
+                <div class="stat-mini" style="border-right:1px solid var(--border);">
+                  <div class="stat-mini-n blue" id="cardQuestions" aria-live="polite">—</div>
+                  <div class="stat-mini-l">Questions</div>
+                </div>
+                <div class="stat-mini" style="border-right:1px solid var(--border);">
+                  <div class="stat-mini-n green" id="cardOnline" aria-live="polite">—</div>
+                  <div class="stat-mini-l">Online Now</div>
+                </div>
+                <div class="stat-mini">
+                  <div class="stat-mini-n orange" id="cardAnswers" aria-live="polite">—</div>
+                  <div class="stat-mini-l">Answers</div>
+                </div>
+              </div>
+
+              <p style="font-size:0.78rem;color:var(--text-faint);text-align:center;margin:0;">
+                <i class="fas fa-circle-info" aria-hidden="true"></i>
+                Statistics update live when you are signed in.
+              </p>
+            </div>
           </div>
-          <div class="info-item">
-            <div class="info-label">Students</div>
-            <div class="info-val loading" id="cardStudents">—</div>
+
+        </div><!-- /row -->
+      </div>
+    </section>
+
+    <!-- PORTALS -->
+    <section class="portals-section" id="portals" aria-labelledby="portals-heading">
+      <div class="container">
+        <div class="row mb-5 reveal">
+          <div class="col-lg-7">
+            <div class="section-tag">Access Portals</div>
+            <h2 id="portals-heading" class="section-title">Choose your role to get started.</h2>
+            <p class="section-sub">Each portal is tailored to a specific role with secure, backend-enforced access control.</p>
           </div>
-          <div class="info-item">
-            <div class="info-label">Grades</div>
-            <div class="info-val loading" id="cardGrades">—</div>
+        </div>
+        <div class="row g-4">
+
+          <!-- Admin -->
+          <div class="col-md-4 reveal">
+            <div class="portal-card admin" role="article" aria-label="Super Admin portal">
+              <div class="portal-icon-wrap admin" aria-hidden="true"><i class="fas fa-shield-halved"></i></div>
+              <h3 class="portal-name">Super Admin</h3>
+              <p class="portal-desc">Full system administration — manage grades, subjects, teachers, students, and all sessions from one control centre.</p>
+              <div class="portal-features" aria-label="Admin features">
+                <span class="feat-pill red"><i class="fas fa-layer-group"></i> Grades</span>
+                <span class="feat-pill purple"><i class="fas fa-book-open"></i> Subjects</span>
+                <span class="feat-pill red"><i class="fas fa-users"></i> Users</span>
+                <span class="feat-pill orange"><i class="fas fa-video"></i> Sessions</span>
+              </div>
+              <a href="admin.html" class="btn-portal admin" aria-label="Enter Admin Portal">
+                <i class="fas fa-arrow-right-to-bracket"></i> Admin Portal
+              </a>
+            </div>
+          </div>
+
+          <!-- Teacher -->
+          <div class="col-md-4 reveal">
+            <div class="portal-card teacher" role="article" aria-label="Teacher portal">
+              <div class="portal-icon-wrap teacher" aria-hidden="true"><i class="fas fa-chalkboard-user"></i></div>
+              <h3 class="portal-name">Teacher</h3>
+              <p class="portal-desc">Create and manage sessions, build question banks, monitor live student activity, and review results with instant feedback tools.</p>
+              <div class="portal-features" aria-label="Teacher features">
+                <span class="feat-pill blue"><i class="fas fa-question-circle"></i> Questions</span>
+                <span class="feat-pill blue"><i class="fas fa-signal"></i> Live Monitor</span>
+                <span class="feat-pill purple"><i class="fas fa-star"></i> Grading</span>
+                <span class="feat-pill orange"><i class="fas fa-file-export"></i> Export</span>
+              </div>
+              <a href="teacher.html" class="btn-portal teacher" aria-label="Enter Teacher Portal">
+                <i class="fas fa-arrow-right-to-bracket"></i> Teacher Portal
+              </a>
+            </div>
+          </div>
+
+          <!-- Student -->
+          <div class="col-md-4 reveal">
+            <div class="portal-card student" role="article" aria-label="Student portal">
+              <div class="portal-icon-wrap student" aria-hidden="true"><i class="fas fa-user-graduate"></i></div>
+              <h3 class="portal-name">Student</h3>
+              <p class="portal-desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time from any device.</p>
+              <div class="portal-features" aria-label="Student features">
+                <span class="feat-pill green"><i class="fas fa-pencil"></i> Answer</span>
+                <span class="feat-pill green"><i class="fas fa-chart-line"></i> Results</span>
+                <span class="feat-pill blue"><i class="fas fa-mobile-screen"></i> Any Device</span>
+                <span class="feat-pill purple"><i class="fas fa-file-pdf"></i> PDF Report</span>
+              </div>
+              <a href="student.html" class="btn-portal student" aria-label="Enter Student Portal">
+                <i class="fas fa-arrow-right-to-bracket"></i> Student Portal
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS STRIP -->
+    <section class="stats-strip" aria-label="Platform highlights">
+      <div class="container">
+        <div class="row g-4 text-center">
+          <div class="col-6 col-md-3 reveal">
+            <div class="stat-item">
+              <div class="s-num">3</div>
+              <div class="s-lbl">Role Portals</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 reveal">
+            <div class="stat-item">
+              <div class="s-num">4</div>
+              <div class="s-lbl">Question Types</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 reveal">
+            <div class="stat-item">
+              <div class="s-num">&lt;1s</div>
+              <div class="s-lbl">Live Sync</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 reveal">
+            <div class="stat-item">
+              <div class="s-num">100%</div>
+              <div class="s-lbl">Browser-Based</div>
+            </div>
           </div>
         </div>
-        <div class="stats-row">
-          <div class="stat"><div class="stat-n rust" id="cardQuestions">—</div><div class="stat-lbl">Questions</div></div>
-          <div class="stat"><div class="stat-n teal" id="cardOnline">—</div><div class="stat-lbl">Online Now</div></div>
-          <div class="stat"><div class="stat-n gold" id="cardAnswers">—</div><div class="stat-lbl">Answers</div></div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-section" id="features" aria-labelledby="features-heading">
+      <div class="container">
+        <div class="row mb-5 reveal">
+          <div class="col-lg-6">
+            <div class="section-tag">What's Inside</div>
+            <h2 id="features-heading" class="section-title">Built for the real classroom.</h2>
+            <p class="section-sub">Every feature is purpose-built for live academic sessions — no filler, no fluff.</p>
+          </div>
         </div>
-        <div class="card-note">Platform statistics update live.</div>
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--primary-soft);color:var(--primary);"><i class="fas fa-list-check"></i></div>
+              <h3 class="feat-card-title">Smart Question Bank</h3>
+              <p class="feat-card-desc">Create open-text, multiple-choice, true/false, and numeric questions. Set points, correct answers, and subject tags — then import or export as JSON or HTML.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--success-soft);color:var(--success);"><i class="fas fa-signal"></i></div>
+              <h3 class="feat-card-title">Live Student Monitor</h3>
+              <p class="feat-card-desc">Watch every student's progress in real time via a Kanban-style board. See who is absent, in progress, or completed the moment their status changes.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--warning-soft);color:var(--warning);"><i class="fas fa-star"></i></div>
+              <h3 class="feat-card-title">Instant Grading</h3>
+              <p class="feat-card-desc">Review each student's answers question-by-question. Assign numeric scores and written feedback that students see immediately on their screen.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--danger-soft);color:var(--danger);"><i class="fas fa-shield-halved"></i></div>
+              <h3 class="feat-card-title">Secure Role Access</h3>
+              <p class="feat-card-desc">Firebase Authentication with Firestore role documents. Every portal enforces backend security rules — not just hidden front-end links.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--purple-soft);color:var(--purple);"><i class="fas fa-mobile-screen"></i></div>
+              <h3 class="feat-card-title">Any Device</h3>
+              <p class="feat-card-desc">Students join from phones, tablets, or laptops. No app install needed — just a browser and a school login to access all quizzes and results.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="feat-card">
+              <div class="feat-card-icon" style="background:var(--primary-soft);color:var(--primary-2);"><i class="fas fa-cloud-arrow-up"></i></div>
+              <h3 class="feat-card-title">Firebase Sync</h3>
+              <p class="feat-card-desc">Powered by Firestore + Realtime Database. The free tier handles hundreds of concurrent users with sub-second sync and full offline resilience.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section" id="how" aria-labelledby="how-heading">
+      <div class="container">
+        <div class="row mb-5 reveal">
+          <div class="col-lg-6">
+            <div class="section-tag">How It Works</div>
+            <h2 id="how-heading" class="section-title">Up and running in minutes.</h2>
+            <p class="section-sub">Four clear steps take you from a blank platform to a live graded session.</p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-3 reveal">
+            <div class="step-card">
+              <div class="step-badge" aria-hidden="true">1</div>
+              <div class="step-num" aria-hidden="true">01</div>
+              <h3 class="step-title">Admin sets up the platform</h3>
+              <p class="step-desc">Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal using the dashboard or bulk Excel import.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3 reveal">
+            <div class="step-card">
+              <div class="step-badge" aria-hidden="true">2</div>
+              <div class="step-num" aria-hidden="true">02</div>
+              <h3 class="step-title">Teacher creates a session</h3>
+              <p class="step-desc">Teacher logs in, creates a session for their assigned grade and subject, builds the question bank, and toggles the session open.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3 reveal">
+            <div class="step-card">
+              <div class="step-badge" aria-hidden="true">3</div>
+              <div class="step-num" aria-hidden="true">03</div>
+              <h3 class="step-title">Students answer live</h3>
+              <p class="step-desc">Students log in securely, see their available quizzes, and submit answers one-by-one. The teacher sees every response arrive in real time.</p>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3 reveal">
+            <div class="step-card">
+              <div class="step-badge" aria-hidden="true">4</div>
+              <div class="step-num" aria-hidden="true">04</div>
+              <h3 class="step-title">Review, grade &amp; feedback</h3>
+              <p class="step-desc">Teachers assign scores and written feedback per question. Students instantly see their full results and can download a detailed PDF report.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="quotes-section" aria-labelledby="quotes-heading">
+      <div class="container">
+        <div class="row mb-5 reveal">
+          <div class="col">
+            <div class="section-tag">Voices from the Classroom</div>
+            <h2 id="quotes-heading" class="section-title">Trusted by educators &amp; learners.</h2>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4 reveal">
+            <div class="quote-card">
+              <p class="quote-text">"Seeing every student's answer roll in while I'm explaining completely changed how I pace my lessons. I can spot confusion the moment it happens."</p>
+              <div class="quote-author">
+                <div class="quote-avatar" aria-hidden="true">A</div>
+                <div>
+                  <div class="quote-name">Ahmed Al-Rashidi</div>
+                  <div class="quote-role">Mathematics Teacher, Grade 10</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="quote-card">
+              <p class="quote-text">"I love that I can see my score and feedback the second the teacher finishes grading. No waiting until next class — it helps me understand what I got wrong."</p>
+              <div class="quote-author">
+                <div class="quote-avatar" aria-hidden="true">S</div>
+                <div>
+                  <div class="quote-name">Sara Mahmoud</div>
+                  <div class="quote-role">Student, Grade 9</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="quote-card">
+              <p class="quote-text">"Setting up the entire school — grades, subjects, all teachers and students — took under an hour with the Excel import. The admin panel is exactly what we needed."</p>
+              <div class="quote-author">
+                <div class="quote-avatar" aria-hidden="true">O</div>
+                <div>
+                  <div class="quote-name">Omran Al Bakkar</div>
+                  <div class="quote-role">System Administrator</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main><!-- /#main-content -->
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="footer-brand">
+            <i class="fas fa-graduation-cap" style="color:#60a5fa;margin-right:8px;" aria-hidden="true"></i>EduBoard
+          </div>
+          <div class="footer-brand-sub">School Learning Platform · 2026</div>
+          <p style="font-size:0.83rem;margin-top:14px;opacity:0.5;line-height:1.7;">
+            A real-time quiz system connecting teachers and students across devices, built on Firebase and designed for the modern classroom.
+          </p>
+        </div>
+        <div class="col-md-2 offset-md-1">
+          <div class="footer-heading">Portals</div>
+          <a href="admin.html"   class="footer-link"><i class="fas fa-shield-halved me-2"></i>Admin</a>
+          <a href="teacher.html" class="footer-link"><i class="fas fa-chalkboard-user me-2"></i>Teacher</a>
+          <a href="student.html" class="footer-link"><i class="fas fa-user-graduate me-2"></i>Student</a>
+        </div>
+        <div class="col-md-2">
+          <div class="footer-heading">Platform</div>
+          <a href="#features" class="footer-link">Features</a>
+          <a href="#how"      class="footer-link">How It Works</a>
+          <a href="#portals"  class="footer-link">Get Started</a>
+        </div>
+        <div class="col-md-3">
+          <div class="footer-heading">Built With</div>
+          <a href="https://firebase.google.com" class="footer-link" target="_blank" rel="noopener">
+            <i class="fas fa-fire me-2" style="color:#f59e0b;"></i>Firebase &amp; Firestore
+          </a>
+          <a href="https://getbootstrap.com" class="footer-link" target="_blank" rel="noopener">
+            <i class="fab fa-bootstrap me-2" style="color:#7c3aed;"></i>Bootstrap 5
+          </a>
+          <a href="https://fontawesome.com" class="footer-link" target="_blank" rel="noopener">
+            <i class="fas fa-icons me-2" style="color:#60a5fa;"></i>Font Awesome 6
+          </a>
+        </div>
+      </div>
+      <hr class="footer-divider" />
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div class="footer-bottom">Developed by <strong style="color:rgba(255,255,255,0.6);">Omran Al Bakkar</strong> — 2026</div>
+        <div class="footer-bottom">EduBoard is for educational use only.</div>
       </div>
     </div>
-  </div>
-</section>
+  </footer>
 
-<section class="portals-section">
-  <div class="portals-inner">
-    <div class="section-tag">Access Portals</div>
-    <div class="section-title">Choose your role to get started.</div>
-    <div class="portals-grid">
-      <div class="portal-card admin">
-        <div class="portal-icon">🛡️</div>
-        <div class="portal-name">Super Admin</div>
-        <div class="portal-desc">Full system administration. Manage grades, subjects, teachers, students, and all sessions across the platform.</div>
-        <a href="admin.html" class="portal-btn admin-btn">Admin Portal →</a>
-      </div>
-      <div class="portal-card teacher">
-        <div class="portal-icon">🎓</div>
-        <div class="portal-name">Teacher</div>
-        <div class="portal-desc">Create and manage sessions, build question banks, monitor live student activity, and review results.</div>
-        <a href="teacher.html" class="portal-btn teacher-btn">Teacher Portal →</a>
-      </div>
-      <div class="portal-card student">
-        <div class="portal-icon">✏️</div>
-        <div class="portal-name">Student</div>
-        <div class="portal-desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time.</div>
-        <a href="student.html" class="portal-btn student-btn">Student Portal →</a>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<section class="features">
-  <div class="features-inner">
-    <div class="section-tag">What's inside</div>
-    <div class="section-title">Built for the real classroom.</div>
-    <div class="features-grid">
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(192,82,42,0.1)">📝</div>
-        <div class="feat-title">Smart Question Bank</div>
-        <div class="feat-desc">Create open-text, multiple choice, true/false, and numeric questions. Set points, correct answers, and subject tags.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(42,122,106,0.1)">🔴</div>
-        <div class="feat-title">Live Student Monitor</div>
-        <div class="feat-desc">See every student's progress in real time. Watch answers roll in the moment students submit, from any device.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(184,134,11,0.1)">⭐</div>
-        <div class="feat-title">Instant Grading</div>
-        <div class="feat-desc">Review each student's answers per question. Add scores and written feedback that students see immediately.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(192,82,42,0.1)">🛡️</div>
-        <div class="feat-title">Secure Role Access</div>
-        <div class="feat-desc">Firebase Authentication with Firestore roles. Every portal enforces backend security rules — not just hidden links.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(42,122,106,0.1)">📱</div>
-        <div class="feat-title">Any Device</div>
-        <div class="feat-desc">Students join from phones, tablets, or laptops. No app install needed — just a browser and a login.</div>
-      </div>
-      <div class="feat-card">
-        <div class="feat-icon" style="background:rgba(184,134,11,0.1)">💾</div>
-        <div class="feat-title">Firebase Sync</div>
-        <div class="feat-desc">Powered by Firestore + Realtime Database. Free tier handles hundreds of concurrent users with sub-second sync.</div>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- Scroll Reveal — Intersection Observer (no library) -->
+  <script>
+    (function () {
+      'use strict';
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              e.target.classList.add('visible');
+              observer.unobserve(e.target);
+            }
+          });
+        },
+        { threshold: 0.12 }
+      );
+      document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+    })();
+  </script>
 
-<section class="how">
-  <div class="how-inner">
-    <div class="section-tag">How it works</div>
-    <div class="section-title">Up and running in minutes.</div>
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
-        <div class="step-body">
-          <div class="step-title">Admin sets up the platform</div>
-          <div class="step-desc">Super Admin creates grades, subjects, teacher accounts, and student accounts from the Admin Portal.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <div class="step-body">
-          <div class="step-title">Teacher creates a session</div>
-          <div class="step-desc">Teacher logs in, creates a session for their assigned grade and subject, and builds the question bank.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <div class="step-body">
-          <div class="step-title">Students answer live</div>
-          <div class="step-desc">Students log in securely, join the open session, and submit answers. The teacher sees progress in real time.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">04</div>
-        <div class="step-body">
-          <div class="step-title">Review, grade & feedback</div>
-          <div class="step-desc">Teachers assign scores and written feedback. Students see their results immediately on their screen.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+  <!-- Firebase Module — Auth redirect + Live stats -->
+  <script type="module">
+    /**
+     * Imports from your shared firebase-config.js.
+     * Make sure this file is in the same folder as index.html.
+     */
+    import {
+      auth, db, rtDB,
+      onAuthStateChanged,
+      getDoc, doc, collection, getCountFromServer,
+      ref, onValue
+    } from './firebase-config.js';
 
-<footer>
-  <div class="footer-logo">EduBoard</div>
-  <div class="footer-links">
-    <a href="admin.html">Admin</a>
-    <a href="teacher.html">Teacher Login</a>
-    <a href="student.html">Student Portal</a>
-  </div>
-  <div class="footer-note">Developed by Omran Al Bakkar 2026</div>
-</footer>
+    /* ── AUTH REDIRECT ─────────────────────────────────────────── */
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) return;
 
-<!-- 1. Load Config First (Standard Script) -->
-<script type="module" src="firebase-config.js"></script>
+      const banner = document.getElementById('authBanner');
+      banner.classList.add('show');
+      document.getElementById('authBannerText').textContent = 'You are signed in. Redirecting…';
 
-<!-- 2. Main App Logic (Module) -->
-<script type="module">
-// Import ready-made variables from our local config file
-import { 
-  auth, db, rtDB, 
-  onAuthStateChanged, 
-  getDoc, doc, collection, getCountFromServer,
-  ref, onValue 
-} from './firebase-config.js';
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        if (snap.exists()) {
+          const role = snap.data().role;
+          if (role === 'superadmin') { window.location.href = 'admin.html';   return; }
+          if (role === 'teacher')    { window.location.href = 'teacher.html'; return; }
+          if (role === 'student')    { window.location.href = 'student.html'; return; }
+        }
+      } catch {
+        banner.classList.remove('show');
+      }
+    });
 
-// ── AUTH REDIRECT: if already logged in, redirect to correct portal ──
-onAuthStateChanged(auth, async (user) => {
-  if (!user) return;
-  const banner = document.getElementById('authBanner');
-  banner.classList.add('show');
-  document.getElementById('authBannerText').textContent = 'You are signed in. Redirecting…';
-  try {
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    if (snap.exists()) {
-      const role = snap.data().role;
-      if (role === 'superadmin') { window.location.href = 'admin.html'; return; }
-      if (role === 'teacher')    { window.location.href = 'teacher.html'; return; }
-      if (role === 'student')    { window.location.href = 'student.html'; return; }
+    /* ── LIVE STATS (only for authenticated users) ─────────────── */
+    async function loadStats() {
+      // Helper: update an element's text and remove loading style
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = val;
+        el.classList.remove('loading');
+      };
+
+      // Firestore collection counts
+      try {
+        const [teachersSnap, studentsSnap, gradesSnap] = await Promise.all([
+          getCountFromServer(collection(db, 'teachers')),
+          getCountFromServer(collection(db, 'students')),
+          getCountFromServer(collection(db, 'grades')),
+        ]);
+        set('cardTeachers', teachersSnap.data().count);
+        set('cardStudents', studentsSnap.data().count);
+        set('cardGrades',   gradesSnap.data().count);
+      } catch { /* non-critical — silently skip */ }
+
+      // Realtime Database live metrics
+      onValue(ref(rtDB, 'sessions'), (snap) => {
+        const sessions = snap.val() || {};
+        const vals     = Object.values(sessions);
+
+        const active  = vals.filter(s => s.config?.active).length;
+        const qCount  = vals.reduce((n, s) => n + Object.keys(s.questions || {}).length, 0);
+        const online  = vals.reduce((n, s) =>
+          n + Object.values(s.students || {}).filter(st => st.online).length, 0);
+        const answers = vals.reduce((n, s) =>
+          n + Object.values(s.students || {}).reduce((m, st) =>
+            m + Object.keys(st.answers || {}).length, 0), 0);
+
+        set('cardSessions',  active);
+        set('cardQuestions', qCount);
+        set('cardOnline',    online);
+        set('cardAnswers',   answers);
+      });
     }
-  } catch(e) {
-    banner.classList.remove('show');
-  }
-});
 
-// ── LIVE STATS from Firestore + RTDB ──
-async function loadStats() {
-  try {
-    const [teachersSnap, studentsSnap, gradesSnap] = await Promise.all([
-      getCountFromServer(collection(db, 'teachers')),
-      getCountFromServer(collection(db, 'students')),
-      getCountFromServer(collection(db, 'grades')),
-    ]);
-    document.getElementById('cardTeachers').textContent = teachersSnap.data().count;
-    document.getElementById('cardTeachers').classList.remove('loading');
-    document.getElementById('cardStudents').textContent = studentsSnap.data().count;
-    document.getElementById('cardStudents').classList.remove('loading');
-    document.getElementById('cardGrades').textContent = gradesSnap.data().count;
-    document.getElementById('cardGrades').classList.remove('loading');
-  } catch(e) { /* silent — stats are non-critical */ }
+    // Trigger stats only when a user is signed in
+    onAuthStateChanged(auth, (user) => {
+      if (user) loadStats();
+    });
+  </script>
 
-  // RTDB live stats
-  onValue(ref(rtDB, 'sessions'), (snap) => {
-    const sessions = snap.val() || {};
-    const active = Object.values(sessions).filter(s => s.config && s.config.active).length;
-    document.getElementById('cardSessions').textContent = active;
-    document.getElementById('cardSessions').classList.remove('loading');
-    const qCount = Object.values(sessions).reduce((n, s) => n + Object.keys(s.questions || {}).length, 0);
-    document.getElementById('cardQuestions').textContent = qCount;
-    const online = Object.values(sessions).reduce((n, s) => {
-      return n + Object.values(s.students || {}).filter(st => st.online).length;
-    }, 0);
-    document.getElementById('cardOnline').textContent = online;
-    const answers = Object.values(sessions).reduce((n, s) => {
-      return n + Object.values(s.students || {}).reduce((m, st) => m + Object.keys(st.answers || {}).length, 0);
-    }, 0);
-    document.getElementById('cardAnswers').textContent = answers;
-  });
-}
-// ── Only load stats if user is authenticated ──
-import { onAuthStateChanged as _onAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-onAuthStateChanged(auth, (user) => {
-  if (user) loadStats();
-});
-</script>
 </body>
 </html>
