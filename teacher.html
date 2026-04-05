@@ -2259,7 +2259,9 @@ window.printReviewAsPDF = async function() {
     
     showToast('Generating PDF...', 'info');
     
+    // Create a temporary container for the PDF content
     const pdfContainer = document.createElement('div');
+    pdfContainer.id = 'pdfExportContainer';
     pdfContainer.style.cssText = `
         position: fixed; left: -9999px; top: 0;
         width: 210mm;
@@ -2325,17 +2327,56 @@ window.printReviewAsPDF = async function() {
             <title>${sessionTitle} - ${studentName}</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Inter', sans-serif; }
-                .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #6366f1; }
+                body { 
+                    font-family: 'Inter', sans-serif;
+                    padding: 0;
+                    margin: 0;
+                }
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 20px; 
+                    padding-bottom: 15px; 
+                    border-bottom: 2px solid #6366f1;
+                }
                 .header h1 { font-size: 22px; margin-bottom: 5px; }
                 .header .subtitle { color: #64748b; font-size: 12px; }
-                .student-info { background: #f1f5f9; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; }
-                .score-summary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 16px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-around; text-align: center; }
+                .student-info { 
+                    background: #f1f5f9; 
+                    border-radius: 12px; 
+                    padding: 12px 16px; 
+                    margin-bottom: 20px; 
+                    display: flex; 
+                    justify-content: space-between; 
+                    flex-wrap: wrap;
+                    gap: 10px;
+                }
+                .score-summary { 
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+                    color: white; 
+                    padding: 16px; 
+                    border-radius: 12px; 
+                    margin-bottom: 20px; 
+                    display: flex; 
+                    justify-content: space-around; 
+                    text-align: center;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                }
                 .score-item { text-align: center; }
                 .score-value { font-size: 24px; font-weight: 800; }
                 .score-label { font-size: 10px; opacity: 0.8; }
-                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-                @media print { body { margin: 0; padding: 0; } }
+                .footer { 
+                    margin-top: 30px; 
+                    text-align: center; 
+                    font-size: 10px; 
+                    color: #94a3b8; 
+                    border-top: 1px solid #e2e8f0; 
+                    padding-top: 12px;
+                }
+                @media print {
+                    body { margin: 0; padding: 0; }
+                    .question-block { break-inside: avoid; page-break-inside: avoid; }
+                }
             </style>
         </head>
         <body>
@@ -2377,33 +2418,91 @@ window.printReviewAsPDF = async function() {
     
     document.body.appendChild(pdfContainer);
     
+    // Wait for MathJax rendering
     if (window.MathJax && MathJax.typesetPromise) {
-        await MathJax.typesetPromise([pdfContainer]);
+        try {
+            await MathJax.typesetPromise([pdfContainer]);
+            console.log('MathJax rendered for PDF');
+        } catch (err) {
+            console.warn('MathJax error in PDF:', err);
+        }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Wait for fonts and rendering
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
         const { jsPDF } = window.jspdf;
-        const canvas = await html2canvas(pdfContainer, { scale: 2, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        const element = pdfContainer;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-        pdf.save(`${studentName}_Review.pdf`);
-        showToast('PDF downloaded successfully!', 'success');
+        // Get element dimensions
+        const elementHeight = element.scrollHeight;
+        const elementWidth = element.scrollWidth;
+        
+        console.log(`Element dimensions: ${elementWidth} x ${elementHeight}`);
+        
+        // Use html2canvas with high quality
+        const canvas = await html2canvas(element, {
+            scale: 2.5,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+            windowWidth: elementWidth,
+            windowHeight: elementHeight
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Create PDF
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // Calculate image dimensions
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        console.log(`PDF dimensions: ${pdfWidth} x ${pdfHeight}, Image: ${imgWidth} x ${imgHeight}`);
+        
+        // Calculate number of pages needed
+        let heightLeft = imgHeight;
+        let position = 0;
+        let pageNum = 1;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        // Add additional pages if needed
+        while (heightLeft > 0) {
+            position -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+            pageNum++;
+        }
+        
+        const fileName = `${studentName}_Review.pdf`;
+        pdf.save(fileName);
+        showToast(`PDF downloaded successfully! (${pageNum} page${pageNum > 1 ? 's' : ''})`, 'success');
     } catch (err) {
-        console.error('PDF error:', err);
-        showToast('Error generating PDF', true);
+        console.error('PDF generation error:', err);
+        showToast('Error generating PDF: ' + err.message, true);
     } finally {
+        // Clean up
         pdfContainer.remove();
     }
 };
 
 
-  // ===== EXPORT ALL RESULTS AS PDF =====
+
+  
+// ===== EXPORT ALL RESULTS AS PDF =====
 window.exportAllResultsPDF = async function() {
     if (!activeSessionId) {
         showToast('No active session', true);
@@ -2517,16 +2616,41 @@ window.exportAllResultsPDF = async function() {
             <title>${sessionTitle} - All Results</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Inter', sans-serif; padding: 0; }
-                .header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #6366f1; }
+                body { 
+                    font-family: 'Inter', sans-serif;
+                    padding: 0;
+                    margin: 0;
+                }
+                .header { 
+                    text-align: center; 
+                    margin-bottom: 20px; 
+                    padding-bottom: 15px; 
+                    border-bottom: 2px solid #6366f1;
+                }
                 .header h1 { font-size: 22px; margin-bottom: 5px; }
                 .header .subtitle { color: #64748b; font-size: 12px; }
-                .info-section { background: #f1f5f9; border-radius: 12px; margin-bottom: 20px; padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; }
+                .info-section { 
+                    background: #f1f5f9; 
+                    border-radius: 12px; 
+                    margin-bottom: 20px; 
+                    padding: 12px 16px; 
+                    display: flex; 
+                    flex-wrap: wrap; 
+                    gap: 16px; 
+                    justify-content: space-between;
+                }
                 .info-item { font-size: 11px; }
-                .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; }
+                .footer { 
+                    margin-top: 30px; 
+                    text-align: center; 
+                    font-size: 10px; 
+                    color: #94a3b8; 
+                    border-top: 1px solid #e2e8f0; 
+                    padding-top: 12px;
+                }
                 @media print {
                     body { margin: 0; padding: 0; }
-                    .question-block { page-break-inside: avoid; }
+                    .question-block { break-inside: avoid; page-break-inside: avoid; }
                 }
             </style>
         </head>
@@ -2558,25 +2682,77 @@ window.exportAllResultsPDF = async function() {
     
     // Render MathJax
     if (window.MathJax && MathJax.typesetPromise) {
-        await MathJax.typesetPromise([pdfContainer]);
+        try {
+            await MathJax.typesetPromise([pdfContainer]);
+        } catch (err) {
+            console.warn('MathJax error:', err);
+        }
     }
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     try {
         const { jsPDF } = window.jspdf;
-        const canvas = await html2canvas(pdfContainer, { scale: 2, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        const element = pdfContainer;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
-        pdf.save(`${sessionTitle}_All_Results.pdf`);
-        showToast('PDF downloaded successfully!', 'success');
+        // Get element dimensions
+        const elementHeight = element.scrollHeight;
+        const elementWidth = element.scrollWidth;
+        
+        console.log(`Element dimensions: ${elementWidth} x ${elementHeight}`);
+        
+        // Use html2canvas with high quality
+        const canvas = await html2canvas(element, {
+            scale: 2.5,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+            windowWidth: elementWidth,
+            windowHeight: elementHeight
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Create PDF
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        // Calculate image dimensions
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        console.log(`PDF dimensions: ${pdfWidth} x ${pdfHeight}, Image: ${imgWidth} x ${imgHeight}`);
+        
+        // Calculate number of pages needed
+        let heightLeft = imgHeight;
+        let position = 0;
+        let pageNum = 1;
+        
+        // Add first page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+        
+        // Add additional pages if needed
+        while (heightLeft > 0) {
+            position -= pdfHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+            pageNum++;
+        }
+        
+        const fileName = `${sessionTitle}_All_Results.pdf`;
+        pdf.save(fileName);
+        showToast(`PDF downloaded successfully! (${pageNum} page${pageNum > 1 ? 's' : ''})`, 'success');
     } catch (err) {
-        console.error('PDF error:', err);
-        showToast('Error generating PDF', true);
+        console.error('PDF generation error:', err);
+        showToast('Error generating PDF: ' + err.message, true);
     } finally {
         pdfContainer.remove();
     }
