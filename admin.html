@@ -1050,6 +1050,16 @@
             min-height: 130px;
         }
 
+        /* Checkbox column styles */
+        .checkbox-col {
+            width: 40px;
+            text-align: center;
+        }
+        .student-checkbox {
+            width: 40px;
+            text-align: center;
+        }
+
         @media (max-width: 1180px) {
             .stats-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1417,6 +1427,9 @@
                             </select>
                         </div>
                         <div class="toolbar-right">
+                            <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" onclick="bulkDeleteStudents()" style="display:none;">
+                                <i class="fas fa-trash-alt"></i> Delete Selected
+                            </button>
                             <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('students')"><i class="fas fa-file-export"></i> Export</button>
                             <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('students')"><i class="fas fa-file-arrow-down"></i> Template</button>
                             <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-students').click()"><i class="fas fa-file-import"></i> Import</button>
@@ -1428,6 +1441,7 @@
                         <table id="students-table">
                             <thead>
                                 <tr>
+                                    <th class="checkbox-col"><input type="checkbox" id="selectAllStudents" onchange="toggleSelectAllStudents()"></th>
                                     <th>Student</th>
                                     <th>Grade</th>
                                     <th>Pending Password</th>
@@ -1592,9 +1606,8 @@
         let allGrades = [];
         let allSubjects = [];
         let allTeachers = [];
-        let liveDataCache = {
-            sessions: null
-        };
+        let liveDataCache = { sessions: null };
+        let selectedStudents = new Set();
 
         const pageMeta = {
             dashboard: ['Dashboard', 'Overview of the entire EduBoard system.'],
@@ -1653,12 +1666,113 @@
         }
 
         function scrollToTopFast() {
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         window.scrollToTopFast = scrollToTopFast;
+
+        // Bulk Delete Functions
+        window.toggleSelectAllStudents = () => {
+            const selectAll = document.getElementById('selectAllStudents');
+            const checkboxes = document.querySelectorAll('.student-select');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                const id = cb.getAttribute('data-id');
+                if (selectAll.checked) {
+                    selectedStudents.add(id);
+                } else {
+                    selectedStudents.delete(id);
+                }
+            });
+            updateBulkDeleteButton();
+        };
+
+        window.toggleStudentSelection = (checkbox) => {
+            const id = checkbox.getAttribute('data-id');
+            if (checkbox.checked) {
+                selectedStudents.add(id);
+            } else {
+                selectedStudents.delete(id);
+                const selectAll = document.getElementById('selectAllStudents');
+                if (selectAll) selectAll.checked = false;
+            }
+            updateBulkDeleteButton();
+        };
+
+        function updateBulkDeleteButton() {
+            const btn = document.getElementById('bulkDeleteBtn');
+            if (btn) {
+                if (selectedStudents.size > 0) {
+                    btn.style.display = 'inline-flex';
+                    btn.innerHTML = `<i class="fas fa-trash-alt"></i> Delete Selected (${selectedStudents.size})`;
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+        }
+
+        window.bulkDeleteStudents = async () => {
+            if (selectedStudents.size === 0) {
+                toast('No students selected', 'error');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${selectedStudents.size} student(s)? This will also delete their Auth accounts and cannot be undone.`)) {
+                return;
+            }
+            
+            showLoading(true);
+            let deleted = 0;
+            let failed = 0;
+            
+            for (const studentId of selectedStudents) {
+                try {
+                    const studentDoc = await getDoc(doc(db, 'students', studentId));
+                    if (studentDoc.exists()) {
+                        const studentData = studentDoc.data();
+                        const uid = studentData.uid || studentId;
+                        
+                        // Delete Auth user
+                        try {
+                            const secondaryApp = initializeApp(firebaseConfig, 'deleteStudent_' + Date.now());
+                            const secondaryAuth = getAuth(secondaryApp);
+                            try {
+                                const userToDelete = await secondaryAuth.signInWithEmailAndPassword(studentData.email, studentData.pendingPassword || 'TempPass123!');
+                                await deleteUser(userToDelete.user);
+                            } catch (authErr) {
+                                console.warn('Auth delete error:', authErr);
+                            }
+                            await signOut(secondaryAuth);
+                            await deleteApp(secondaryApp);
+                        } catch (authErr) {
+                            console.warn('Auth delete error:', authErr);
+                        }
+                        
+                        // Delete users collection document
+                        await deleteDoc(doc(db, 'users', uid));
+                        
+                        // Delete student document
+                        await deleteDoc(doc(db, 'students', studentId));
+                        
+                        deleted++;
+                    } else {
+                        failed++;
+                    }
+                } catch (err) {
+                    console.error('Error deleting student:', studentId, err);
+                    failed++;
+                }
+            }
+            
+            selectedStudents.clear();
+            const selectAll = document.getElementById('selectAllStudents');
+            if (selectAll) selectAll.checked = false;
+            
+            await loadStudents();
+            await initDashboard();
+            
+            showLoading(false);
+            toast(`Deleted: ${deleted} student(s), Failed: ${failed}`, deleted > 0 ? 'success' : 'error');
+        };
 
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value.trim();
@@ -1696,7 +1810,7 @@
                     }
                     currentUser = user;
                     document.getElementById('login-overlay').style.display = 'none';
-                    document.getElementById('app-shell').style.display = window.innerWidth > 980 ? 'block' : 'block';
+                    document.getElementById('app-shell').style.display = 'block';
                     document.getElementById('admin-user-display').textContent = user.email || 'Superadmin';
                     await initDashboard();
                 } else {
@@ -1707,9 +1821,7 @@
             } catch (e) {
                 console.error(e);
                 toast('Auth verification failed: ' + e.message, 'error');
-                try {
-                    await signOut(auth);
-                } catch {}
+                try { await signOut(auth); } catch {}
             } finally {
                 showLoading(false);
             }
@@ -1751,18 +1863,9 @@
                     getDocs(collection(db, 'students'))
                 ]);
 
-                allGrades = gradesSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                allSubjects = subjectsSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                allTeachers = teachersSnap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allGrades = gradesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allSubjects = subjectsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                allTeachers = teachersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
                 document.getElementById('dashGrades').textContent = gradesSnap.size;
                 document.getElementById('dashSubjects').textContent = subjectsSnap.size;
@@ -1806,45 +1909,39 @@
             const sessions = Object.entries(liveDataCache.sessions || {});
 
             if (!sessions.length) {
-                sessionsList.innerHTML = `
-            <div class="empty-shell"><i class="fas fa-video-slash"></i><h3>No active sessions</h3><p>Sessions will appear here when teachers go live.</p></div>`;
-                studentsList.innerHTML = `
-            <div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
+                sessionsList.innerHTML = `<div class="empty-shell"><i class="fas fa-video-slash"></i><h3>No active sessions</h3><p>Sessions will appear here when teachers go live.</p></div>`;
+                studentsList.innerHTML = `<div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
                 return;
             }
 
             sessionsList.innerHTML = sessions.map(([id, s]) => `
-        <div class="list-item">
-            <div>
-                <div class="list-title">${escapeHtml(s.title || 'Untitled Session')}</div>
-                <div class="list-meta">Teacher: ${escapeHtml(s.teacherName || s.ownerTeacherId?.substring(0, 8) || '?')} • Grade: ${escapeHtml(s.gradeLevel || 'N/A')}</div>
-            </div>
-            <span class="pill pill-orange"><i class="fas fa-users"></i> ${s.students ? Object.keys(s.students).length : 0}</span>
-        </div>
-    `).join('');
+                <div class="list-item">
+                    <div>
+                        <div class="list-title">${escapeHtml(s.title || 'Untitled Session')}</div>
+                        <div class="list-meta">Teacher: ${escapeHtml(s.teacherName || s.ownerTeacherId?.substring(0, 8) || '?')} • Grade: ${escapeHtml(s.gradeLevel || 'N/A')}</div>
+                    </div>
+                    <span class="pill pill-orange"><i class="fas fa-users"></i> ${s.students ? Object.keys(s.students).length : 0}</span>
+                </div>
+            `).join('');
 
             const allLiveStudents = [];
             sessions.forEach(([, s]) => {
                 if (s.students) {
                     Object.values(s.students).forEach(st => {
-                        allLiveStudents.push({
-                            ...st,
-                            sessionTitle: s.title || 'Untitled Session'
-                        });
+                        allLiveStudents.push({ ...st, sessionTitle: s.title || 'Untitled Session' });
                     });
                 }
             });
 
             studentsList.innerHTML = allLiveStudents.length ? allLiveStudents.map(st => `
-        <div class="list-item">
-            <div>
-                <div class="list-title">${escapeHtml(st.name || st.displayName || 'Unknown')}</div>
-                <div class="list-meta">In: ${escapeHtml(st.sessionTitle)}</div>
-            </div>
-            <span class="pill pill-green"><i class="fas fa-circle"></i> Online</span>
-        </div>
-    `).join('') : `
-        <div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
+                <div class="list-item">
+                    <div>
+                        <div class="list-title">${escapeHtml(st.name || st.displayName || 'Unknown')}</div>
+                        <div class="list-meta">In: ${escapeHtml(st.sessionTitle)}</div>
+                    </div>
+                    <span class="pill pill-green"><i class="fas fa-circle"></i> Online</span>
+                </div>
+            `).join('') : `<div class="empty-shell"><i class="fas fa-user-slash"></i><h3>No students online</h3><p>Connected students will appear here in realtime.</p></div>`;
         }
 
         function populateGradeFilter() {
@@ -1864,27 +1961,25 @@
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'grades'));
-                allGrades = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allGrades = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 populateGradeFilter();
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     return `
-                <tr>
-                    <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
-                    <td>${escapeHtml(d.nameAr || '')}</td>
-                    <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
-                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="icon-btn" onclick='editItem("grade","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn delete" onclick="deleteItem('grades','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-layer-group"></i><h3>No grades found</h3><p>Add a grade or import a template to get started.</p></div></td></tr>';
+                        <tr>
+                            <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
+                            <td>${escapeHtml(d.nameAr || '')}</td>
+                            <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
+                            <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="icon-btn" onclick='editItem("grade","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteItem('grades','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-layer-group"></i><h3>No grades found</h3><p>Add a grade or import a template to get started.</p></div></tr>';
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
@@ -1896,26 +1991,24 @@
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'subjects'));
-                allSubjects = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allSubjects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     return `
-                <tr>
-                    <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
-                    <td>${escapeHtml(d.nameAr || '')}</td>
-                    <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
-                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="icon-btn" onclick='editItem("subject","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn delete" onclick="deleteItem('subjects','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-book-open"></i><h3>No subjects found</h3><p>Add a subject or import a template to get started.</p></div></td></tr>';
+                        <tr>
+                            <td><div class="row-title">${escapeHtml(d.nameEn || '')}</div></td>
+                            <td>${escapeHtml(d.nameAr || '')}</td>
+                            <td><span class="pill pill-blue mono">${escapeHtml(d.code || '')}</span></td>
+                            <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="icon-btn" onclick='editItem("subject","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteItem('subjects','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-book-open"></i><h3>No subjects found</h3><p>Add a subject or import a template to get started.</p></div></td>';
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
@@ -1924,39 +2017,37 @@
         async function loadTeachers() {
             if (!currentUser) return;
             const tbody = document.querySelector('#teachers-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            tbody.innerHTML = '<td><td colspan="5">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'teachers'));
-                allTeachers = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                allTeachers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     const gradeChips = toArray(d.assignedGrades).map(id => `<span class="chip"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(id, allGrades))}</span>`).join('') || '<span class="muted">No grades</span>';
                     const subjectChips = toArray(d.assignedSubjects).map(id => `<span class="chip"><i class="fas fa-book"></i>${escapeHtml(getNameById(id, allSubjects))}</span>`).join('') || '<span class="muted">No subjects</span>';
                     return `
-                <tr>
-                    <td>
-                        <div class="row-title">${escapeHtml(getDisplayName(d))}</div>
-                        <div class="row-sub">${escapeHtml(d.email || '')}</div>
-                    </td>
-                    <td>
-                        <div class="chips">${gradeChips}</div>
-                        <div class="chips" style="margin-top:8px;">${subjectChips}</div>
-                    </td>
-                    <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
-                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="icon-btn" onclick='editItem("teacher","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn" onclick="openPasswordModal('${docSnap.id}', 'teacher', '${escapeHtml(d.email)}', '${escapeHtml(getDisplayName(d))}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
-                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'teacher')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
-                            <button class="icon-btn delete" onclick="deleteTeacherRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-chalkboard-user"></i><h3>No teachers found</h3><p>Add a teacher or import teacher records from Excel.</p></div></td></tr>';
+                        <tr>
+                            <td>
+                                <div class="row-title">${escapeHtml(getDisplayName(d))}</div>
+                                <div class="row-sub">${escapeHtml(d.email || '')}</div>
+                            </td>
+                            <td>
+                                <div class="chips">${gradeChips}</div>
+                                <div class="chips" style="margin-top:8px;">${subjectChips}</div>
+                            </td>
+                            <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
+                            <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="icon-btn" onclick='editItem("teacher","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn" onclick="openPasswordModal('${docSnap.id}', 'teacher', '${escapeHtml(d.email)}', '${escapeHtml(getDisplayName(d))}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
+                                    <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'teacher')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteTeacherRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                             </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-chalkboard-user"></i><h3>No teachers found</h3><p>Add a teacher or import teacher records from Excel.</p></div></tr>';
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
@@ -1966,7 +2057,7 @@
             if (!currentUser) return;
             const filter = document.getElementById('student-grade-filter')?.value || '';
             const tbody = document.querySelector('#students-table tbody');
-            tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
             try {
                 const snap = await getDocs(collection(db, 'students'));
                 tbody.innerHTML = snap.docs.filter(docSnap => {
@@ -1974,62 +2065,63 @@
                     return !filter || d.gradeLevel === filter;
                 }).map(docSnap => {
                     const d = docSnap.data();
+                    const studentId = docSnap.id;
                     return `
-                <tr>
-                    <td>
-                        <div class="row-title">${escapeHtml(d.name || 'Unnamed')}</div>
-                        <div class="row-sub">${escapeHtml(d.email || '')}</div>
-                    </td>
-                    <td><span class="pill pill-blue"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(d.gradeLevel, allGrades))}</span></td>
-                    <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
-                    <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="icon-btn" onclick='editItem("student","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn" onclick="openPasswordModal('${docSnap.id}', 'student', '${escapeHtml(d.email)}', '${escapeHtml(d.name)}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
-                            <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'student')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
-                            <button class="icon-btn delete" onclick="deleteStudentRecord('${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-                }).join('') || '<tr><td colspan="5"><div class="empty-shell"><i class="fas fa-user-graduate"></i><h3>No students found</h3><p>Add a student or import student records from Excel.</p></div></td></tr>';
+                        <tr data-id="${studentId}">
+                            <td class="student-checkbox"><input type="checkbox" class="student-select" data-id="${studentId}" onchange="toggleStudentSelection(this)"></td>
+                            <td>
+                                <div class="row-title">${escapeHtml(d.name || 'Unnamed')}</div>
+                                <div class="row-sub">${escapeHtml(d.email || '')}</div>
+                             </td>
+                            <td><span class="pill pill-blue"><i class="fas fa-layer-group"></i>${escapeHtml(getNameById(d.gradeLevel, allGrades))}</span></td>
+                            <td><span class="pill pill-purple mono">${escapeHtml(d.pendingPassword || '—')}</span></td>
+                            <td><span class="status-badge ${d.status === 'Inactive' ? 'status-inactive' : 'status-active'}"><i class="fas fa-circle"></i>${escapeHtml(d.status || 'Active')}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="icon-btn" onclick='editItem("student","${studentId}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn" onclick="openPasswordModal('${studentId}', 'student', '${escapeHtml(d.email)}', '${escapeHtml(d.name)}')" title="Change Password Directly"><i class="fas fa-lock"></i></button>
+                                    <button class="icon-btn" onclick="resetUserPassword('${d.email}', 'student')" title="Send Password Reset Email"><i class="fas fa-envelope-circle-check"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteStudentRecord('${studentId}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                             </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="6"><div class="empty-shell"><i class="fas fa-user-graduate"></i><h3>No students found</h3><p>Add a student or import student records from Excel.</p></div></td>';
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="5">Error: ${escapeHtml(e.message)}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
         };
 
         async function loadSessions() {
             if (!currentUser) return;
             const tbody = document.querySelector('#sessions-table tbody');
-            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+            tbody.innerHTML = '<td><td colspan="7">Loading...</td></tr>';
             try {
-                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
                 const snap = await getDocs(collection(db, 'sessions'));
                 tbody.innerHTML = snap.docs.map(docSnap => {
                     const d = docSnap.data();
                     const teacher = allTeachers.find(t => t.id === d.ownerTeacherId);
                     return `
-                <tr>
-                    <td>
-                        <div class="row-title">${escapeHtml(d.title || '')}</div>
-                        <div class="row-sub">${escapeHtml(docSnap.id)}</div>
-                    </td>
-                    <td>${escapeHtml(teacher ? getDisplayName(teacher) : (d.ownerTeacherId || 'Unknown'))}</td>
-                    <td>${escapeHtml(d.gradeLevel || '')}</td>
-                    <td>${escapeHtml(d.subject || '')}</td>
-                    <td>${escapeHtml(formatDate(d.startTime))}</td>
-                    <td><span class="status-badge ${d.isActive ? 'status-active' : 'status-closed'}"><i class="fas fa-circle"></i>${d.isActive ? 'Active' : 'Closed'}</span></td>
-                    <td>
-                        <div class="action-btns">
-                            <button class="icon-btn" onclick='editItem("session","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn delete" onclick="deleteItem('sessions','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                        </div>
-                    </td>
-                </tr>`;
-                }).join('') || '<tr><td colspan="7"><div class="empty-shell"><i class="fas fa-video"></i><h3>No sessions found</h3><p>Create a session or import one from Excel.</p></div></td></tr>';
+                        <tr>
+                            <td>
+                                <div class="row-title">${escapeHtml(d.title || '')}</div>
+                                <div class="row-sub">${escapeHtml(docSnap.id)}</div>
+                             </td>
+                            <td>${escapeHtml(teacher ? getDisplayName(teacher) : (d.ownerTeacherId || 'Unknown'))}</td>
+                            <td>${escapeHtml(d.gradeLevel || '')}</td>
+                            <td>${escapeHtml(d.subject || '')}</td>
+                            <td>${escapeHtml(formatDate(d.startTime))}</td>
+                            <td><span class="status-badge ${d.isActive ? 'status-active' : 'status-closed'}"><i class="fas fa-circle"></i>${d.isActive ? 'Active' : 'Closed'}</span></td>
+                            <td>
+                                <div class="action-btns">
+                                    <button class="icon-btn" onclick='editItem("session","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
+                                    <button class="icon-btn delete" onclick="deleteItem('sessions','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
+                             </td>
+                        </tr>
+                    `;
+                }).join('') || '<tr><td colspan="7"><div class="empty-shell"><i class="fas fa-video"></i><h3>No sessions found</h3><p>Create a session or import one from Excel.</p></div></tr>';
             } catch (e) {
                 tbody.innerHTML = `<tr><td colspan="7">Error: ${escapeHtml(e.message)}</td></tr>`;
             }
@@ -2048,45 +2140,45 @@
 
             if (type === 'grade' || type === 'subject') {
                 html = `
-            <div class="form-row">
-                ${modalFieldWrap('Name (EN) *', `<input name="nameEn" required value="${escapeHtml(data?.nameEn || '')}" />`)}
-                ${modalFieldWrap('Code *', `<input name="code" required value="${escapeHtml(data?.code || '')}" />`)}
-            </div>
-            ${modalFieldWrap('Name (AR)', `<input name="nameAr" value="${escapeHtml(data?.nameAr || '')}" />`)}
-            ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
-        `;
+                    <div class="form-row">
+                        ${modalFieldWrap('Name (EN) *', `<input name="nameEn" required value="${escapeHtml(data?.nameEn || '')}" />`)}
+                        ${modalFieldWrap('Code *', `<input name="code" required value="${escapeHtml(data?.code || '')}" />`)}
+                    </div>
+                    ${modalFieldWrap('Name (AR)', `<input name="nameAr" value="${escapeHtml(data?.nameAr || '')}" />`)}
+                    ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+                `;
             }
 
             if (type === 'teacher') {
                 const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.id)}" ${toArray(data?.assignedGrades).includes(g.id) ? 'selected' : ''}>${escapeHtml(g.nameEn || g.code || g.id)}</option>`).join('');
                 const subjectOpts = allSubjects.map(s => `<option value="${escapeHtml(s.id)}" ${toArray(data?.assignedSubjects).includes(s.id) ? 'selected' : ''}>${escapeHtml(s.nameEn || s.code || s.id)}</option>`).join('');
                 html = `
-            <div class="form-row">
-                ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
-                ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(getDisplayName(data) || '')}" />`)}
-            </div>
-            ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
-            <div class="form-row">
-                ${modalFieldWrap('Assigned Grades', `<select class="multi-select" name="assignedGrades" multiple>${gradeOpts}</select>`, 'Hold Ctrl or Cmd to select multiple grades.')}
-                ${modalFieldWrap('Assigned Subjects', `<select class="multi-select" name="assignedSubjects" multiple>${subjectOpts}</select>`, 'Hold Ctrl or Cmd to select multiple subjects.')}
-            </div>
-            ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
-        `;
+                    <div class="form-row">
+                        ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
+                        ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(getDisplayName(data) || '')}" />`)}
+                    </div>
+                    ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
+                    <div class="form-row">
+                        ${modalFieldWrap('Assigned Grades', `<select class="multi-select" name="assignedGrades" multiple>${gradeOpts}</select>`, 'Hold Ctrl or Cmd to select multiple grades.')}
+                        ${modalFieldWrap('Assigned Subjects', `<select class="multi-select" name="assignedSubjects" multiple>${subjectOpts}</select>`, 'Hold Ctrl or Cmd to select multiple subjects.')}
+                    </div>
+                    ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+                `;
             }
 
             if (type === 'student') {
                 const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.id)}" ${data?.gradeLevel === g.id ? 'selected' : ''}>${escapeHtml(g.nameEn || g.code || g.id)}</option>`).join('');
                 html = `
-            <div class="form-row">
-                ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
-                ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(data?.name || '')}" />`)}
-            </div>
-            ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
-            <div class="form-row">
-                ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
-                ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
-            </div>
-        `;
+                    <div class="form-row">
+                        ${modalFieldWrap('Email *', `<input name="email" type="email" required value="${escapeHtml(data?.email || '')}" ${id ? 'disabled' : ''} />`)}
+                        ${modalFieldWrap('Name *', `<input name="name" required value="${escapeHtml(data?.name || '')}" />`)}
+                    </div>
+                    ${modalFieldWrap('Pending Password *', `<input name="pendingPassword" type="text" required value="${escapeHtml(data?.pendingPassword || '')}" />`, 'This plain text value is stored in Firestore under pendingPassword.')}
+                    <div class="form-row">
+                        ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
+                        ${modalFieldWrap('Status', `<select name="status"><option value="Active" ${(data?.status || 'Active') === 'Active' ? 'selected' : ''}>Active</option><option value="Inactive" ${data?.status === 'Inactive' ? 'selected' : ''}>Inactive</option></select>`)}
+                    </div>
+                `;
             }
 
             if (type === 'session') {
@@ -2096,20 +2188,20 @@
                 const startTime = data?.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toISOString().slice(0, 16) : '';
                 const endTime = data?.endTime?.seconds ? new Date(data.endTime.seconds * 1000).toISOString().slice(0, 16) : '';
                 html = `
-            ${modalFieldWrap('Title *', `<input name="title" required value="${escapeHtml(data?.title || '')}" />`)}
-            <div class="form-row">
-                ${modalFieldWrap('Teacher *', `<select name="ownerTeacherId" required>${teacherOpts || '<option value="">No teachers available</option>'}</select>`)}
-                ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
-            </div>
-            <div class="form-row">
-                ${modalFieldWrap('Subject *', `<select name="subject" required>${subjectOpts || '<option value="">No subjects available</option>'}</select>`)}
-                ${modalFieldWrap('Status', `<select name="isActive"><option value="true" ${data?.isActive ? 'selected' : ''}>Active</option><option value="false" ${!data?.isActive ? 'selected' : ''}>Closed</option></select>`)}
-            </div>
-            <div class="form-row">
-                ${modalFieldWrap('Start Time *', `<input name="startTime" type="datetime-local" required value="${escapeHtml(startTime)}" />`)}
-                ${modalFieldWrap('End Time', `<input name="endTime" type="datetime-local" value="${escapeHtml(endTime)}" />`)}
-            </div>
-        `;
+                    ${modalFieldWrap('Title *', `<input name="title" required value="${escapeHtml(data?.title || '')}" />`)}
+                    <div class="form-row">
+                        ${modalFieldWrap('Teacher *', `<select name="ownerTeacherId" required>${teacherOpts || '<option value="">No teachers available</option>'}</select>`)}
+                        ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
+                    </div>
+                    <div class="form-row">
+                        ${modalFieldWrap('Subject *', `<select name="subject" required>${subjectOpts || '<option value="">No subjects available</option>'}</select>`)}
+                        ${modalFieldWrap('Status', `<select name="isActive"><option value="true" ${data?.isActive ? 'selected' : ''}>Active</option><option value="false" ${!data?.isActive ? 'selected' : ''}>Closed</option></select>`)}
+                    </div>
+                    <div class="form-row">
+                        ${modalFieldWrap('Start Time *', `<input name="startTime" type="datetime-local" required value="${escapeHtml(startTime)}" />`)}
+                        ${modalFieldWrap('End Time', `<input name="endTime" type="datetime-local" value="${escapeHtml(endTime)}" />`)}
+                    </div>
+                `;
             }
 
             document.getElementById('modal-fields').innerHTML = html;
@@ -2133,126 +2225,92 @@
             return data;
         }
 
-        async function createFirestoreOnlyUserRecord(collectionName, role, data) {
-            const payload = {
-                ...data,
-                role,
+        async function createAuthTeacherUser(data) {
+            if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
+
+            const secondaryApp = initializeApp(firebaseConfig, 'teacherCreation_' + Date.now());
+            const secondaryAuth = getAuth(secondaryApp);
+
+            let uid;
+            try {
+                const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+                uid = authResult.user.uid;
+                await signOut(secondaryAuth);
+            } finally {
+                await deleteApp(secondaryApp);
+            }
+
+            const teacherRef = doc(db, 'teachers', uid); 
+            await setDoc(teacherRef, {
+                name: data.name,
+                email: data.email,
+                role: 'teacher',
+                assignedGrades: data.assignedGrades || [],
+                assignedSubjects: data.assignedSubjects || [],
+                status: data.status || 'Active',
+                uid: uid,
+                authProvisioned: true,
                 createdAt: serverTimestamp(),
                 createdBy: currentUser.uid,
                 updatedAt: serverTimestamp(),
-                updatedBy: currentUser.uid,
-                authProvisioned: false
-            };
-            await addDoc(collection(db, collectionName), payload);
+                updatedBy: currentUser.uid
+            });
+
+            await setDoc(doc(db, 'users', uid), {
+                uid: uid,
+                email: data.email,
+                name: data.name,
+                role: 'teacher',
+                teacherDocId: uid,
+                active: true,
+                status: data.status || 'Active',
+                createdAt: serverTimestamp(),
+                createdBy: currentUser.uid
+            });
         }
 
+        async function createAuthStudentUser(data) {
+            if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
 
-async function createAuthTeacherUser(data) {
-    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
+            const secondaryApp = initializeApp(firebaseConfig, 'studentCreation_' + Date.now());
+            const secondaryAuth = getAuth(secondaryApp);
 
-    // Use a SECONDARY app so superadmin session is NOT disturbed
-    const secondaryApp = initializeApp(firebaseConfig, 'teacherCreation_' + Date.now());
-    const secondaryAuth = getAuth(secondaryApp);
+            let uid;
+            try {
+                const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
+                uid = authResult.user.uid;
+                await signOut(secondaryAuth);
+            } finally {
+                await deleteApp(secondaryApp);
+            }
 
-    let uid;
-    try {
-        // 1. Create Auth user in secondary app FIRST to get the UID
-        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
-        uid = authResult.user.uid; // <--- Capture the REAL Auth UID
+            const studentRef = doc(db, 'students', uid); 
+            await setDoc(studentRef, {
+                name: data.name,
+                email: data.email,
+                role: 'student',
+                gradeLevel: data.gradeLevel || '',
+                status: data.status || 'Active',
+                uid: uid,
+                authProvisioned: true,
+                createdAt: serverTimestamp(),
+                createdBy: currentUser.uid,
+                updatedAt: serverTimestamp(),
+                updatedBy: currentUser.uid
+            });
 
-        // 2. Sign out of secondary app immediately
-        await signOut(secondaryAuth);
-    } finally {
-        // 3. Delete secondary app instance
-        await deleteApp(secondaryApp);
-    }
-
-    // 4. Create teachers doc USING THE AUTH UID AS THE DOCUMENT ID
-    // This ensures event.params.teacherId matches the Auth UID later!
-    const teacherRef = doc(db, 'teachers', uid); 
-    
-    await setDoc(teacherRef, {
-        name: data.name,
-        email: data.email,
-        role: 'teacher',
-        assignedGrades: data.assignedGrades || [],
-        assignedSubjects: data.assignedSubjects || [],
-        status: data.status || 'Active',
-        uid: uid, // Store it explicitly for reference
-        authProvisioned: true,
-        createdAt: serverTimestamp(),
-        createdBy: currentUser.uid,
-        updatedAt: serverTimestamp(),
-        updatedBy: currentUser.uid
-    });
-
-    // 5. Create users/<uid> doc (ID matches naturally now)
-    await setDoc(doc(db, 'users', uid), {
-        uid: uid,
-        email: data.email,
-        name: data.name,
-        role: 'teacher',
-        teacherDocId: uid,
-        active: true,
-        status: data.status || 'Active',
-        createdAt: serverTimestamp(),
-        createdBy: currentUser.uid
-    });
-}
-
-        
-async function createAuthStudentUser(data) {
-    if (!data.email || !data.pendingPassword) throw new Error("Email and password required");
-
-    // Secondary app so superadmin session is NOT disturbed
-    const secondaryApp = initializeApp(firebaseConfig, 'studentCreation_' + Date.now());
-    const secondaryAuth = getAuth(secondaryApp);
-
-    let uid;
-    try {
-        // 1. Create Auth user FIRST to get the real UID
-        const authResult = await createUserWithEmailAndPassword(secondaryAuth, data.email, data.pendingPassword);
-        uid = authResult.user.uid; // <--- Capture the REAL Auth UID
-        
-        await signOut(secondaryAuth);
-    } finally {
-        await deleteApp(secondaryApp);
-    }
-
-    // 2. Create students doc USING THE AUTH UID AS THE DOCUMENT ID
-    // This ensures event.params.studentId matches the Auth UID later!
-    const studentRef = doc(db, 'students', uid); 
-    
-    await setDoc(studentRef, {
-        name: data.name,
-        email: data.email,
-        role: 'student',
-        gradeLevel: data.gradeLevel || '',
-        status: data.status || 'Active',
-        uid: uid, // Store it explicitly for reference
-        authProvisioned: true,
-        createdAt: serverTimestamp(),
-        createdBy: currentUser.uid,
-        updatedAt: serverTimestamp(),
-        updatedBy: currentUser.uid
-    });
-
-    // 3. Create users/<uid> doc (ID matches naturally now)
-    await setDoc(doc(db, 'users', uid), {
-        uid: uid,
-        email: data.email,
-        name: data.name,
-        role: 'student',
-        studentDocId: uid,
-        active: true,
-        status: data.status || 'Active',
-        createdAt: serverTimestamp(),
-        createdBy: currentUser.uid
-    });
-}
-        
-
-        
+            await setDoc(doc(db, 'users', uid), {
+                uid: uid,
+                email: data.email,
+                name: data.name,
+                role: 'student',
+                studentDocId: uid,
+                active: true,
+                status: data.status || 'Active',
+                createdAt: serverTimestamp(),
+                createdBy: currentUser.uid
+            });
+        }
 
         window.handleFormSubmit = async (e) => {
             e.preventDefault();
@@ -2282,9 +2340,7 @@ async function createAuthStudentUser(data) {
                 } else if (type === 'teacher') {
                     if (!data.pendingPassword) throw new Error('Pending Password is required.');
                     if (id) {
-                        const updatePayload = {
-                            ...data
-                        };
+                        const updatePayload = { ...data };
                         delete updatePayload.email;
                         await updateDoc(doc(db, 'teachers', id), updatePayload);
                     } else {
@@ -2293,9 +2349,7 @@ async function createAuthStudentUser(data) {
                 } else if (type === 'student') {
                     if (!data.pendingPassword) throw new Error('Pending Password is required.');
                     if (id) {
-                        const updatePayload = {
-                            ...data
-                        };
+                        const updatePayload = { ...data };
                         delete updatePayload.email;
                         await updateDoc(doc(db, 'students', id), updatePayload);
                     } else {
@@ -2306,28 +2360,18 @@ async function createAuthStudentUser(data) {
                     if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
                     data.isActive = data.isActive === 'true';
 
-                    // Prepare data for RTDB (convert Timestamps to ISO strings for RTDB compatibility)
-                    const rtdbData = {
-                        ...data
-                    };
+                    const rtdbData = { ...data };
                     if (rtdbData.startTime?.seconds) rtdbData.startTime = new Date(rtdbData.startTime.seconds * 1000).toISOString();
                     if (rtdbData.endTime?.seconds) rtdbData.endTime = new Date(rtdbData.endTime.seconds * 1000).toISOString();
 
                     if (id) {
-                        // UPDATE: Firestore
                         await updateDoc(doc(db, 'sessions', id), data);
-                        // UPDATE: RTDB
                         await set(ref(rtdb, `liveSessions/${id}`), rtdbData);
                     } else {
-                        // CREATE: Firestore
                         data.createdAt = serverTimestamp();
                         data.createdBy = currentUser.uid;
                         const newSessionRef = await addDoc(collection(db, 'sessions'), data);
-                        // CREATE: RTDB
-                        await set(ref(rtdb, `liveSessions/${newSessionRef.id}`), {
-                            ...rtdbData,
-                            id: newSessionRef.id
-                        });
+                        await set(ref(rtdb, `liveSessions/${newSessionRef.id}`), { ...rtdbData, id: newSessionRef.id });
                     }
                 }
 
@@ -2343,7 +2387,6 @@ async function createAuthStudentUser(data) {
             }
         };
 
-        // NEW: Password Reset Function (Email based)
         window.resetUserPassword = async (email, type) => {
             if (!email) {
                 toast('No email address found for this user.', 'error');
@@ -2353,7 +2396,6 @@ async function createAuthStudentUser(data) {
 
             showLoading(true);
             try {
-                // We use the main auth instance. This sends an email to the user.
                 await sendPasswordResetEmail(auth, email);
                 toast(`Password reset email sent to ${email}.`, 'success');
             } catch (e) {
@@ -2364,12 +2406,10 @@ async function createAuthStudentUser(data) {
             }
         };
 
-        // UPDATED: Delete Teacher (Auth + Users + Teachers)
         window.deleteTeacherRecord = async (docId) => {
             if (!confirm('Delete teacher record? This will also delete their Auth account.')) return;
             showLoading(true);
             try {
-                // 1. Get teacher data to find UID
                 const teacherDoc = await getDoc(doc(db, 'teachers', docId));
                 if (!teacherDoc.exists()) {
                     toast('Teacher not found.', 'error');
@@ -2379,12 +2419,9 @@ async function createAuthStudentUser(data) {
                 const teacherData = teacherDoc.data();
                 const uid = teacherData.uid;
 
-                // 2. Delete Linked User Document
                 if (uid) {
                     await deleteDoc(doc(db, 'users', uid));
                 }
-
-                // 3. Delete Teacher Document
                 await deleteDoc(doc(db, 'teachers', docId));
 
                 toast('Teacher record deleted.', 'success');
@@ -2397,12 +2434,10 @@ async function createAuthStudentUser(data) {
             }
         };
 
-        // UPDATED: Delete Student (Auth + Users + Students)
         window.deleteStudentRecord = async (docId) => {
             if (!confirm('Delete student record? This will also delete their Auth account.')) return;
             showLoading(true);
             try {
-                // 1. Get student data to find UID
                 const studentDoc = await getDoc(doc(db, 'students', docId));
                 if (!studentDoc.exists()) {
                     toast('Student not found.', 'error');
@@ -2412,12 +2447,9 @@ async function createAuthStudentUser(data) {
                 const studentData = studentDoc.data();
                 const uid = studentData.uid;
 
-                // 2. Delete Linked User Document
                 if (uid) {
                     await deleteDoc(doc(db, 'users', uid));
                 }
-
-                // 3. Delete Student Document
                 await deleteDoc(doc(db, 'students', docId));
 
                 toast('Student record deleted.', 'success');
@@ -2430,16 +2462,13 @@ async function createAuthStudentUser(data) {
             }
         };
 
-        // UPDATED: Delete Item (Handles Sessions RTDB Sync)
         window.deleteItem = async (col, id) => {
             if (!confirm('Delete this item?')) return;
             showLoading(true);
             try {
-                // If deleting a session, also delete from RTDB
                 if (col === 'sessions') {
                     await remove(ref(rtdb, `liveSessions/${id}`));
                 }
-
                 await deleteDoc(doc(db, col, id));
                 toast('Item deleted.', 'success');
                 refreshCurrentSection();
@@ -2451,7 +2480,6 @@ async function createAuthStudentUser(data) {
             }
         };
 
-        // NEW: Password Modal Functions
         window.openPasswordModal = (userId, userType, userEmail, userName) => {
             document.getElementById('password-user-id').value = userId;
             document.getElementById('password-user-type').value = userType;
@@ -2474,13 +2502,11 @@ async function createAuthStudentUser(data) {
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
 
-            // Validate passwords match
             if (newPassword !== confirmPassword) {
                 toast('Passwords do not match.', 'error');
                 return;
             }
 
-            // Validate password strength
             if (newPassword.length < 8) {
                 toast('Password must be at least 8 characters.', 'error');
                 return;
@@ -2500,7 +2526,6 @@ async function createAuthStudentUser(data) {
             try {
                 const collectionName = userType === 'teacher' ? 'teachers' : 'students';
 
-                // Update pendingPassword → Cloud Function will sync to Auth
                 await updateDoc(doc(db, collectionName, userId), {
                     pendingPassword: newPassword,
                     updatedAt: serverTimestamp(),
@@ -2509,10 +2534,9 @@ async function createAuthStudentUser(data) {
                     passwordChangedBy: 'superadmin'
                 });
 
-                toast(`Password updated for ${userEmail}. Cloud Function syncing to Auth...`, 'success');
+                toast(`Password updated for ${userEmail}.`, 'success');
                 closePasswordModal();
 
-                // Refresh the table
                 if (currentSection === 'teachers') loadTeachers();
                 if (currentSection === 'students') loadStudents();
             } catch (error) {
@@ -2525,8 +2549,7 @@ async function createAuthStudentUser(data) {
 
         window.downloadTemplate = (type) => {
             const wb = XLSX.utils.book_new();
-            let headers = [],
-                sampleRow = [];
+            let headers = [], sampleRow = [];
             if (type === 'grades') {
                 headers = ['nameEn', 'nameAr', 'code', 'status'];
                 sampleRow = ['Grade 10', 'الصف العاشر', 'G10', 'Active'];
@@ -2557,32 +2580,14 @@ async function createAuthStudentUser(data) {
             }
             showLoading(true);
             try {
-                if (allGrades.length === 0) allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
-                if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                }));
+                if (allGrades.length === 0) allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if ((type === 'teachers' || type === 'sessions') && allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
 
                 const colName = type === 'teachers' ? 'teachers' : type === 'students' ? 'students' : type;
                 const snap = await getDocs(collection(db, colName));
-                const rows = snap.docs.map(d => ({
-                    id: d.id,
-                    ...d.data()
-                })).map(row => {
-                    const {
-                        createdAt,
-                        updatedAt,
-                        createdBy,
-                        updatedBy,
-                        ...cleanRow
-                    } = row;
+                const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).map(row => {
+                    const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
                     if (type === 'teachers') {
                         cleanRow.assignedGrades = toArray(row.assignedGrades).map(id => getNameById(id, allGrades)).join(', ');
                         cleanRow.assignedSubjects = toArray(row.assignedSubjects).map(id => getNameById(id, allSubjects)).join(', ');
@@ -2636,32 +2641,19 @@ async function createAuthStudentUser(data) {
             reader.onload = async (e) => {
                 try {
                     if ((type === 'teachers' || type === 'students') && allGrades.length === 0) {
-                        allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allGrades = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
                     if (type === 'teachers' && allSubjects.length === 0) {
-                        allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
                     if ((type === 'sessions' || type === 'teachers') && allTeachers.length === 0) {
-                        allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({
-                            id: d.id,
-                            ...d.data()
-                        }));
+                        allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
                     }
 
-                    const workbook = XLSX.read(e.target.result, {
-                        type: 'array'
-                    });
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
                     let jsonData = [];
                     for (const sheetName of workbook.SheetNames) {
-                        const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
-                            defval: ''
-                        });
+                        const raw = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
                         if (raw.length > 0) {
                             jsonData = raw;
                             break;
@@ -2688,9 +2680,7 @@ async function createAuthStudentUser(data) {
 
                     let batch = writeBatch(db);
                     let batchCount = 0;
-                    let inserted = 0,
-                        updated = 0,
-                        skipped = 0;
+                    let inserted = 0, updated = 0, skipped = 0;
 
                     for (const row of normalized) {
                         if (!row || (!row.nameen && !row.code && !row.email && !row.title && !row.name)) {
@@ -2733,34 +2723,113 @@ async function createAuthStudentUser(data) {
                                 continue;
                             }
                             targetId = existingMap.get(email) || null;
+                            
+                            if (targetId) {
+                                batch.update(doc(db, 'teachers', targetId), { ...docData, updatedAt: serverTimestamp(), updatedBy: currentUser.uid });
+                                updated++;
+                            } else {
+                                // Create new teacher with Auth
+                                const secondaryApp = initializeApp(firebaseConfig, 'teacherImport_' + Date.now());
+                                const secondaryAuth = getAuth(secondaryApp);
+                                let uid;
+                                try {
+                                    const authResult = await createUserWithEmailAndPassword(secondaryAuth, email, docData.pendingPassword);
+                                    uid = authResult.user.uid;
+                                    await signOut(secondaryAuth);
+                                } finally {
+                                    await deleteApp(secondaryApp);
+                                }
+                                
+                                await setDoc(doc(db, 'teachers', uid), {
+                                    ...docData,
+                                    uid: uid,
+                                    authProvisioned: true,
+                                    createdAt: serverTimestamp(),
+                                    createdBy: currentUser.uid
+                                });
+                                await setDoc(doc(db, 'users', uid), {
+                                    uid: uid,
+                                    email: email,
+                                    name: docData.name,
+                                    role: 'teacher',
+                                    teacherDocId: uid,
+                                    active: true,
+                                    status: docData.status,
+                                    createdAt: serverTimestamp(),
+                                    createdBy: currentUser.uid
+                                });
+                                inserted++;
+                            }
                         } else if (type === 'students') {
                             const email = String(row.email || '').trim().toLowerCase();
                             if (!email || !email.includes('@')) {
                                 skipped++;
                                 continue;
                             }
-                            docData = {
-                                name: row.name || '',
-                                email,
-                                role: 'student',
-                                gradeLevel: resolveNameToId(row.gradelevel || '', allGrades),
-                                pendingPassword: row.pendingpassword || row.password || '',
-                                status: row.status || 'Active',
-                                authProvisioned: false
-                            };
-                            if (!docData.pendingPassword) {
-                                skipped++;
-                                continue;
-                            }
+                            const gradeId = resolveNameToId(row.gradelevel || '', allGrades);
                             targetId = existingMap.get(email) || null;
+                            
+                            if (targetId) {
+                                // Update existing student
+                                docData = {
+                                    name: row.name || '',
+                                    email: email,
+                                    role: 'student',
+                                    gradeLevel: gradeId,
+                                    status: row.status || 'Active',
+                                    updatedAt: serverTimestamp(),
+                                    updatedBy: currentUser.uid
+                                };
+                                batch.update(doc(db, 'students', targetId), docData);
+                                updated++;
+                            } else {
+                                // Create new student with Auth
+                                const secondaryApp = initializeApp(firebaseConfig, 'studentImport_' + Date.now());
+                                const secondaryAuth = getAuth(secondaryApp);
+                                let uid;
+                                try {
+                                    const authResult = await createUserWithEmailAndPassword(secondaryAuth, email, row.pendingpassword || row.password || 'TempPass123!');
+                                    uid = authResult.user.uid;
+                                    await signOut(secondaryAuth);
+                                } finally {
+                                    await deleteApp(secondaryApp);
+                                }
+                                
+                                await setDoc(doc(db, 'students', uid), {
+                                    name: row.name || '',
+                                    email: email,
+                                    role: 'student',
+                                    gradeLevel: gradeId,
+                                    status: row.status || 'Active',
+                                    uid: uid,
+                                    authProvisioned: true,
+                                    createdAt: serverTimestamp(),
+                                    createdBy: currentUser.uid,
+                                    updatedAt: serverTimestamp(),
+                                    updatedBy: currentUser.uid
+                                });
+                                
+                                // ✅ CRITICAL: Create users collection document
+                                await setDoc(doc(db, 'users', uid), {
+                                    uid: uid,
+                                    email: email,
+                                    name: row.name || '',
+                                    role: 'student',
+                                    studentDocId: uid,
+                                    active: true,
+                                    status: row.status || 'Active',
+                                    createdAt: serverTimestamp(),
+                                    createdBy: currentUser.uid
+                                });
+                                inserted++;
+                            }
                         } else if (type === 'sessions') {
                             let teacherId = String(row.ownerteacherid || '').trim();
                             if (teacherId.includes('@')) {
                                 const foundTeacher = allTeachers.find(t => (t.email || '').toLowerCase() === teacherId.toLowerCase());
                                 if (foundTeacher) teacherId = foundTeacher.id;
                             }
-                            let startTime = null,
-                                endTime = null;
+                            let startTime = null, endTime = null;
                             if (row.starttime) {
                                 const d = new Date(row.starttime);
                                 if (!isNaN(d)) startTime = Timestamp.fromDate(d);
@@ -2778,20 +2847,21 @@ async function createAuthStudentUser(data) {
                                 endTime,
                                 isActive: String(row.isactive || '').toLowerCase() === 'true'
                             };
+                            
+                            docData.updatedAt = serverTimestamp();
+                            docData.updatedBy = currentUser.uid;
+                            
+                            if (targetId) {
+                                batch.update(doc(db, 'sessions', targetId), docData);
+                                updated++;
+                            } else {
+                                docData.createdAt = serverTimestamp();
+                                docData.createdBy = currentUser.uid;
+                                batch.set(doc(collection(db, 'sessions')), docData);
+                                inserted++;
+                            }
                         }
-
-                        docData.updatedAt = serverTimestamp();
-                        docData.updatedBy = currentUser.uid;
-
-                        if (targetId) {
-                            batch.update(doc(db, colName, targetId), docData);
-                            updated++;
-                        } else {
-                            docData.createdAt = serverTimestamp();
-                            docData.createdBy = currentUser.uid;
-                            batch.set(doc(collection(db, colName)), docData);
-                            inserted++;
-                        }
+                        
                         batchCount++;
                         if (batchCount >= 400) {
                             await batch.commit();
@@ -2805,6 +2875,9 @@ async function createAuthStudentUser(data) {
                     toast(`Import complete. Inserted: ${inserted}, Updated: ${updated}, Skipped: ${skipped}`, 'success');
                     refreshCurrentSection();
                     initDashboard();
+                    if (type === 'students') {
+                        await loadStudents();
+                    }
                 } catch (err) {
                     console.error(err);
                     toast('Import failed: ' + err.message, 'error');
