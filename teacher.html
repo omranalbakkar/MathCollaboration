@@ -76,39 +76,56 @@ button { cursor: pointer; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 #toast-container { position: fixed; right: 20px; top: 20px; z-index: 6000; display: flex; flex-direction: column; gap: 10px; }
+
+
+    /* Replace the existing .toast styles with this */
 .toast { 
     min-width: 280px; 
     max-width: 420px; 
     padding: 14px 16px; 
-    border-radius: 14px; 
-    color: #000000; /* Forces Black Text */
-    box-shadow: var(--shadow-md); 
+    border-radius: 12px; /* Slightly tighter radius looks more solid */
+    color: #0f172a; /* Dark Slate Black - easier on eyes than pure #000 */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Stronger shadow for "pop" */
     animation: fadeSlide .25s ease; 
     display: flex; 
     align-items: center; 
-    gap: 10px; 
-    font-weight: 600; /* Makes text slightly bolder for readability */
+    gap: 12px; 
+    font-weight: 600; 
+    border: 1px solid transparent; /* Prepare for colored borders */
 }
 
+/* SUCCESS: Light Green Background + Dark Green Text/Border */
 .toast.success { 
-    background: #dcfce7; /* Light Green Background */
-    border: 1px solid #86efac;
+    background: #dcfce7; /* Very light green */
+    border-color: #86efac; 
+    color: #166534; /* Dark green text for better harmony than pure black */
 }
+.toast.success i { color: #166534; }
 
+/* WARNING: Light Orange Background + Dark Orange Text/Border */
 .toast.warning { 
-    background: #ffedd5; /* Light Orange Background */
-    border: 1px solid #fdba74;
+    background: #ffedd5; /* Very light orange */
+    border-color: #fdba74; 
+    color: #9a3412; /* Dark orange text */
 }
+.toast.warning i { color: #9a3412; }
 
+/* ERROR: Light Red Background + Dark Red Text/Border */
 .toast.error { 
-    background: #fee2e2; /* Light Red Background */
-    border: 1px solid #fca5a5;
+    background: #fee2e2; /* Very light red */
+    border-color: #fca5a5; 
+    color: #991b1b; /* Dark red text */
 }
+.toast.error i { color: #991b1b; }
 
+/* INFO: Light Blue Background + Dark Blue Text/Border */
 .toast.info { 
-    background: #dbeafe; /* Light Blue Background */
-    border: 1px solid #93c5fd;
+    background: #dbeafe; /* Very light blue */
+    border-color: #93c5fd; 
+    color: #1e40af; /* Dark blue text */
 }
+.toast.info i { color: #1e40af; }
+    
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Login Screen */
