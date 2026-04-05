@@ -133,146 +133,56 @@
     }
 
     /* ============================================================
-       HERO SECTION
+       HERO — PORTALS (first section, full-width gradient)
        ============================================================ */
-    .hero-section {
+    .hero-portals {
       background: var(--gradient-hero);
-      color: #fff;
-      padding: 80px 0 100px;
+      padding: 72px 0 80px;
       position: relative; overflow: hidden;
     }
-    .hero-section::before {
+    .hero-portals::before {
       content: '';
       position: absolute; inset: 0;
       background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       pointer-events: none;
     }
+
+    /* Hero heading area */
     .hero-tag {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 999px; padding: 6px 16px;
-      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-      margin-bottom: 20px; animation: fadeUp 0.5s ease both;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 999px; padding: 6px 18px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #fff; margin-bottom: 18px;
+      animation: fadeUp 0.5s ease both;
     }
     .hero-tag .pulse-dot {
       width: 8px; height: 8px; border-radius: 50%; background: #34d399;
       animation: pulse 2s infinite;
     }
-    .hero-title {
+    .hero-main-title {
       font-family: 'Playfair Display', serif;
-      font-size: clamp(2.4rem, 5.5vw, 4rem);
-      font-weight: 900; line-height: 1.08; letter-spacing: -0.02em;
-      margin-bottom: 20px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 900; line-height: 1.1; letter-spacing: -0.02em;
+      color: #fff; margin-bottom: 10px;
       animation: fadeUp 0.5s 0.08s ease both;
     }
-    .hero-title em { font-style: italic; color: #93c5fd; }
-    .hero-desc {
-      font-size: 1.05rem; line-height: 1.75; opacity: 0.88;
-      max-width: 500px; margin-bottom: 36px;
+    .hero-main-sub {
+      font-size: 1.05rem; color: rgba(255,255,255,0.8);
+      margin-bottom: 48px; font-weight: 400;
       animation: fadeUp 0.5s 0.16s ease both;
     }
-    .hero-cta { animation: fadeUp 0.5s 0.24s ease both; }
 
-    .btn-hero-primary {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 14px 28px; border-radius: var(--radius-md);
-      background: #fff; color: var(--primary);
-      font-weight: 700; font-size: 0.95rem; font-family: inherit;
-      text-decoration: none; border: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-      transition: all 0.2s;
-    }
-    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); color: var(--primary); }
-
-    .btn-hero-secondary {
-      display: inline-flex; align-items: center; gap: 9px;
-      padding: 14px 28px; border-radius: var(--radius-md);
-      background: rgba(255,255,255,0.15); color: #fff;
-      font-weight: 700; font-size: 0.95rem; font-family: inherit;
-      text-decoration: none; border: 2px solid rgba(255,255,255,0.4);
-      transition: all 0.2s;
-    }
-    .btn-hero-secondary:hover { background: rgba(255,255,255,0.25); color: #fff; transform: translateY(-2px); }
-
-    /* HERO STATS CARD */
-    .hero-card {
-      background: rgba(255,255,255,0.97);
-      border-radius: var(--radius-lg); padding: 28px;
-      box-shadow: var(--shadow-lg);
-      color: var(--text);
-      animation: fadeUp 0.5s 0.2s ease both;
-      position: relative; overflow: hidden;
-    }
-    .hero-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-      background: var(--gradient-hero);
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    }
-    .card-label {
-      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 5px;
-    }
-    .card-value {
-      font-size: 1.55rem; font-weight: 800; color: var(--text);
-      font-family: 'Playfair Display', serif;
-    }
-    .card-value.loading {
-      font-size: 1.1rem; font-weight: 400; color: var(--text-faint);
-      font-family: inherit; font-style: italic;
-    }
-    .stat-mini { flex: 1; text-align: center; padding: 14px 8px; }
-    .stat-mini-n { font-size: 1.6rem; font-weight: 800; font-family: 'Playfair Display', serif; }
-    .stat-mini-l {
-      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--text-muted); margin-top: 2px;
-    }
-    .stat-mini-n.blue   { color: var(--primary); }
-    .stat-mini-n.green  { color: var(--success); }
-    .stat-mini-n.orange { color: var(--warning); }
-
-    /* Status pill */
-    .status-live {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 999px;
-      background: var(--success-soft); color: var(--success);
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-      border: 1px solid rgba(5,150,105,0.25);
-    }
-    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
-
-    /* ============================================================
-       PORTAL CARDS
-       ============================================================ */
-    .portals-section { padding: 80px 0; }
-    .section-tag {
-      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--primary); margin-bottom: 10px;
-    }
-    .section-title {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(1.7rem, 3vw, 2.4rem);
-      font-weight: 700; letter-spacing: -0.03em;
-      color: var(--text); line-height: 1.15; margin-bottom: 8px;
-    }
-    .section-sub { font-size: 0.95rem; color: var(--text-muted); max-width: 520px; }
-
+    /* Portal cards (on gradient bg) */
     .portal-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius-lg); padding: 32px 28px;
-      transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
-      height: 100%; position: relative; overflow: hidden;
-      text-align: center;
+      background: rgba(255,255,255,0.97);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: var(--radius-lg); padding: 32px 26px;
+      transition: transform 0.22s, box-shadow 0.22s;
+      height: 100%; text-align: center;
+      animation: fadeUp 0.5s 0.22s ease both;
     }
-    .portal-card::after {
-      content: ''; position: absolute; inset: 0;
-      opacity: 0; transition: opacity 0.22s; pointer-events: none;
-      border-radius: inherit;
-    }
-    .portal-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
-    .portal-card:hover::after { opacity: 1; }
-    .portal-card.admin::after   { background: linear-gradient(135deg,rgba(220,38,38,0.04),rgba(124,58,237,0.02)); }
-    .portal-card.teacher::after { background: linear-gradient(135deg,rgba(29,78,216,0.05),rgba(29,78,216,0.02)); }
-    .portal-card.student::after { background: linear-gradient(135deg,rgba(5,150,105,0.05),rgba(5,150,105,0.02)); }
+    .portal-card:hover { transform: translateY(-6px); box-shadow: 0 28px 60px rgba(0,0,0,0.18); }
 
     .portal-icon-wrap {
       width: 68px; height: 68px; border-radius: 18px;
@@ -285,11 +195,16 @@
 
     .portal-name {
       font-family: 'Playfair Display', serif;
-      font-size: 1.3rem; font-weight: 700; margin-bottom: 8px;
+      font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: var(--text);
     }
-    .portal-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 22px; }
-
-    .portal-features { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 22px; }
+    .portal-desc {
+      font-size: 0.86rem; color: var(--text-muted);
+      line-height: 1.65; margin-bottom: 20px;
+    }
+    .portal-features {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      justify-content: center; margin-bottom: 22px;
+    }
     .feat-pill {
       display: inline-flex; align-items: center; gap: 5px;
       padding: 4px 10px; border-radius: 999px;
@@ -308,10 +223,39 @@
       text-decoration: none; border: none; cursor: pointer;
       transition: all 0.2s; width: 100%;
     }
-    .btn-portal:hover { transform: translateY(-1px); filter: brightness(1.05); }
-    .btn-portal.admin   { background: var(--danger);   color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.3); }
-    .btn-portal.teacher { background: var(--gradient-hero); color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,0.3); }
-    .btn-portal.student { background: var(--success);  color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.3); }
+    .btn-portal:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .btn-portal.admin   { background: var(--danger);   color: #fff; box-shadow: 0 4px 14px rgba(220,38,38,0.28); }
+    .btn-portal.teacher { background: var(--gradient-hero); color: #fff; box-shadow: 0 4px 14px rgba(29,78,216,0.28); }
+    .btn-portal.student { background: var(--success);  color: #fff; box-shadow: 0 4px 14px rgba(5,150,105,0.28); }
+
+    /* ============================================================
+       SECTION SHARED STYLES
+       ============================================================ */
+    .section-tag {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--primary); margin-bottom: 10px;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      font-weight: 700; letter-spacing: -0.03em;
+      color: var(--text); line-height: 1.15; margin-bottom: 8px;
+    }
+    .section-sub { font-size: 0.95rem; color: var(--text-muted); max-width: 520px; }
+
+    /* ============================================================
+       STATS STRIP
+       ============================================================ */
+    .stats-strip { background: var(--text); padding: 52px 0; }
+    .stats-strip .stat-item { text-align: center; color: #fff; }
+    .stats-strip .s-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.6rem; font-weight: 900; line-height: 1;
+    }
+    .stats-strip .s-lbl {
+      font-size: 0.8rem; font-weight: 600; opacity: 0.55;
+      text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
+    }
 
     /* ============================================================
        FEATURES SECTION
@@ -364,20 +308,6 @@
     }
 
     /* ============================================================
-       STATS STRIP
-       ============================================================ */
-    .stats-strip { background: var(--gradient-hero); padding: 52px 0; }
-    .stats-strip .stat-item { text-align: center; color: #fff; }
-    .stats-strip .s-num {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.6rem; font-weight: 900; line-height: 1;
-    }
-    .stats-strip .s-lbl {
-      font-size: 0.8rem; font-weight: 600; opacity: 0.75;
-      text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;
-    }
-
-    /* ============================================================
        TESTIMONIALS
        ============================================================ */
     .quotes-section {
@@ -389,7 +319,9 @@
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--radius-lg); padding: 28px;
       height: 100%; position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
+    .quote-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
     .quote-card::before {
       content: '\201C'; position: absolute; top: 14px; left: 20px;
       font-size: 4rem; line-height: 1; color: var(--primary-soft);
@@ -397,16 +329,18 @@
     }
     .quote-text {
       font-size: 0.92rem; line-height: 1.75; color: var(--text-muted);
-      padding-top: 28px; margin-bottom: 16px; font-style: italic;
+      padding-top: 32px; margin-bottom: 20px; font-style: italic;
     }
     .quote-author { display: flex; align-items: center; gap: 10px; }
     .quote-avatar {
-      width: 38px; height: 38px; border-radius: 50%;
-      background: var(--gradient-hero); color: #fff;
+      width: 40px; height: 40px; border-radius: 50%;
       display: grid; place-items: center;
-      font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+      font-weight: 700; font-size: 0.9rem; flex-shrink: 0; color: #fff;
     }
-    .quote-name { font-weight: 700; font-size: 0.9rem; }
+    .quote-avatar.admin   { background: var(--gradient-hero); }
+    .quote-avatar.teacher { background: linear-gradient(135deg,#059669,#10b981); }
+    .quote-avatar.student { background: linear-gradient(135deg,#7c3aed,#a78bfa); }
+    .quote-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
     .quote-role { font-size: 0.78rem; color: var(--text-muted); }
 
     /* ============================================================
@@ -450,13 +384,9 @@
        RESPONSIVE
        ============================================================ */
     @media (max-width: 768px) {
-      .hero-section { padding: 56px 0 72px; }
-      .hero-card    { margin-top: 36px; }
-      .portals-section, .features-section, .how-section, .quotes-section { padding: 56px 0; }
-    }
-    @media (max-width: 480px) {
-      .btn-hero-primary, .btn-hero-secondary { width: 100%; justify-content: center; }
-      .hero-cta { flex-direction: column; gap: 10px; }
+      .hero-portals { padding: 52px 0 60px; }
+      .hero-main-sub { margin-bottom: 32px; }
+      .features-section, .how-section, .quotes-section { padding: 56px 0; }
     }
   </style>
 </head>
@@ -489,11 +419,11 @@
 
       <div class="collapse navbar-collapse" id="mainNav">
         <div class="nav-links ms-auto py-2 py-lg-0">
+          <!-- Auth redirect banner sits inline in nav -->
           <div id="authBanner" role="status" aria-live="polite">
             <div class="auth-spinner" aria-hidden="true"></div>
             <span id="authBannerText">Checking your session…</span>
           </div>
-          <a href="#portals"     class="nav-pill"><i class="fas fa-door-open"></i> Portals</a>
           <a href="#features"    class="nav-pill"><i class="fas fa-star"></i> Features</a>
           <a href="#how"         class="nav-pill"><i class="fas fa-list-ol"></i> How It Works</a>
           <a href="admin.html"   class="nav-pill" aria-label="Admin portal"><i class="fas fa-shield-halved"></i> Admin</a>
@@ -509,118 +439,36 @@
        ============================================================ -->
   <main id="main-content">
 
-    <!-- HERO -->
-    <section class="hero-section" aria-labelledby="hero-heading">
+    <!-- ══════════════════════════════════════════════════════════
+         HERO — ACCESS PORTALS (top of page)
+         ══════════════════════════════════════════════════════════ -->
+    <section class="hero-portals" id="portals" aria-labelledby="portals-heading">
       <div class="container">
-        <div class="row align-items-center gy-4">
 
-          <!-- Left: copy -->
-          <div class="col-lg-6">
-            <div class="hero-tag" aria-label="Platform status: live">
-              <span class="pulse-dot" aria-hidden="true"></span>
-              Secure School Platform
-            </div>
-            <h1 id="hero-heading" class="hero-title">
-              Where every<br>answer <em>matters.</em>
-            </h1>
-            <p class="hero-desc">
-              A real-time quiz platform that connects teachers and students across devices.
-              Secure role-based access, live monitoring, and instant feedback — all in the browser.
-            </p>
-            <div class="d-flex flex-wrap gap-3 hero-cta">
-              <a href="teacher.html" class="btn-hero-primary" aria-label="Go to Teacher Dashboard">
-                <i class="fas fa-chalkboard-user" aria-hidden="true"></i>
-                Teacher Dashboard
-              </a>
-              <a href="student.html" class="btn-hero-secondary" aria-label="Join as Student">
-                <i class="fas fa-pencil" aria-hidden="true"></i>
-                Join as Student
-              </a>
-            </div>
+        <!-- Section label + heading -->
+        <div class="text-center mb-5">
+          <div class="hero-tag">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            Access Portals
           </div>
-
-          <!-- Right: live status card -->
-          <div class="col-lg-5 offset-lg-1">
-            <div class="hero-card" role="region" aria-label="Platform live statistics">
-              <div class="d-flex align-items-center justify-content-between mb-3">
-                <span style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;">Platform Status</span>
-                <span class="status-live" id="sessionStatus" aria-live="polite">
-                  <span class="live-dot" aria-hidden="true"></span> Live
-                </span>
-              </div>
-
-              <!-- 2×2 info grid -->
-              <div class="row g-2 mb-3">
-                <div class="col-6">
-                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
-                    <div class="card-label">Active Sessions</div>
-                    <div class="card-value loading" id="cardSessions" aria-live="polite">—</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
-                    <div class="card-label">Teachers</div>
-                    <div class="card-value loading" id="cardTeachers" aria-live="polite">—</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
-                    <div class="card-label">Students</div>
-                    <div class="card-value loading" id="cardStudents" aria-live="polite">—</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
-                    <div class="card-label">Grades</div>
-                    <div class="card-value loading" id="cardGrades" aria-live="polite">—</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Stats row -->
-              <div class="d-flex" style="border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:14px;">
-                <div class="stat-mini" style="border-right:1px solid var(--border);">
-                  <div class="stat-mini-n blue" id="cardQuestions" aria-live="polite">—</div>
-                  <div class="stat-mini-l">Questions</div>
-                </div>
-                <div class="stat-mini" style="border-right:1px solid var(--border);">
-                  <div class="stat-mini-n green" id="cardOnline" aria-live="polite">—</div>
-                  <div class="stat-mini-l">Online Now</div>
-                </div>
-                <div class="stat-mini">
-                  <div class="stat-mini-n orange" id="cardAnswers" aria-live="polite">—</div>
-                  <div class="stat-mini-l">Answers</div>
-                </div>
-              </div>
-
-              <p style="font-size:0.78rem;color:var(--text-faint);text-align:center;margin:0;">
-                <i class="fas fa-circle-info" aria-hidden="true"></i>
-                Statistics update live when you are signed in.
-              </p>
-            </div>
-          </div>
-
-        </div><!-- /row -->
-      </div>
-    </section>
-
-    <!-- PORTALS -->
-    <section class="portals-section" id="portals" aria-labelledby="portals-heading">
-      <div class="container">
-        <div class="row mb-5 reveal">
-          <div class="col-lg-7">
-            <div class="section-tag">Access Portals</div>
-            <h2 id="portals-heading" class="section-title">Choose your role to get started.</h2>
-            <p class="section-sub">Each portal is tailored to a specific role with secure, backend-enforced access control.</p>
-          </div>
+          <h1 id="portals-heading" class="hero-main-title">
+            Choose your role to get started.
+          </h1>
+          <p class="hero-main-sub">
+            Secure, role-based access for every member of your school community.
+          </p>
         </div>
-        <div class="row g-4">
+
+        <!-- Three portal cards -->
+        <div class="row g-4 justify-content-center">
 
           <!-- Admin -->
           <div class="col-md-4 reveal">
-            <div class="portal-card admin" role="article" aria-label="Super Admin portal">
-              <div class="portal-icon-wrap admin" aria-hidden="true"><i class="fas fa-shield-halved"></i></div>
-              <h3 class="portal-name">Super Admin</h3>
+            <div class="portal-card" role="article" aria-label="Super Admin portal">
+              <div class="portal-icon-wrap admin" aria-hidden="true">
+                <i class="fas fa-shield-halved"></i>
+              </div>
+              <h2 class="portal-name">Super Admin</h2>
               <p class="portal-desc">Full system administration — manage grades, subjects, teachers, students, and all sessions from one control centre.</p>
               <div class="portal-features" aria-label="Admin features">
                 <span class="feat-pill red"><i class="fas fa-layer-group"></i> Grades</span>
@@ -636,9 +484,11 @@
 
           <!-- Teacher -->
           <div class="col-md-4 reveal">
-            <div class="portal-card teacher" role="article" aria-label="Teacher portal">
-              <div class="portal-icon-wrap teacher" aria-hidden="true"><i class="fas fa-chalkboard-user"></i></div>
-              <h3 class="portal-name">Teacher</h3>
+            <div class="portal-card" role="article" aria-label="Teacher portal">
+              <div class="portal-icon-wrap teacher" aria-hidden="true">
+                <i class="fas fa-chalkboard-user"></i>
+              </div>
+              <h2 class="portal-name">Teacher</h2>
               <p class="portal-desc">Create and manage sessions, build question banks, monitor live student activity, and review results with instant feedback tools.</p>
               <div class="portal-features" aria-label="Teacher features">
                 <span class="feat-pill blue"><i class="fas fa-question-circle"></i> Questions</span>
@@ -654,9 +504,11 @@
 
           <!-- Student -->
           <div class="col-md-4 reveal">
-            <div class="portal-card student" role="article" aria-label="Student portal">
-              <div class="portal-icon-wrap student" aria-hidden="true"><i class="fas fa-user-graduate"></i></div>
-              <h3 class="portal-name">Student</h3>
+            <div class="portal-card" role="article" aria-label="Student portal">
+              <div class="portal-icon-wrap student" aria-hidden="true">
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <h2 class="portal-name">Student</h2>
               <p class="portal-desc">Join sessions, answer questions, and view your graded results and teacher feedback in real time from any device.</p>
               <div class="portal-features" aria-label="Student features">
                 <span class="feat-pill green"><i class="fas fa-pencil"></i> Answer</span>
@@ -670,11 +522,13 @@
             </div>
           </div>
 
-        </div>
+        </div><!-- /row -->
       </div>
     </section>
 
-    <!-- STATS STRIP -->
+    <!-- ══════════════════════════════════════════════════════════
+         STATS STRIP
+         ══════════════════════════════════════════════════════════ -->
     <section class="stats-strip" aria-label="Platform highlights">
       <div class="container">
         <div class="row g-4 text-center">
@@ -706,7 +560,9 @@
       </div>
     </section>
 
-    <!-- FEATURES -->
+    <!-- ══════════════════════════════════════════════════════════
+         FEATURES
+         ══════════════════════════════════════════════════════════ -->
     <section class="features-section" id="features" aria-labelledby="features-heading">
       <div class="container">
         <div class="row mb-5 reveal">
@@ -763,7 +619,9 @@
       </div>
     </section>
 
-    <!-- HOW IT WORKS -->
+    <!-- ══════════════════════════════════════════════════════════
+         HOW IT WORKS
+         ══════════════════════════════════════════════════════════ -->
     <section class="how-section" id="how" aria-labelledby="how-heading">
       <div class="container">
         <div class="row mb-5 reveal">
@@ -810,59 +668,94 @@
       </div>
     </section>
 
-    <!-- TESTIMONIALS -->
+    <!-- ══════════════════════════════════════════════════════════
+         TESTIMONIALS
+         ══════════════════════════════════════════════════════════ -->
     <section class="quotes-section" aria-labelledby="quotes-heading">
       <div class="container">
         <div class="row mb-5 reveal">
           <div class="col">
             <div class="section-tag">Voices from the Classroom</div>
             <h2 id="quotes-heading" class="section-title">Trusted by educators &amp; learners.</h2>
+            <p class="section-sub">From the admin who set it all up, to the teacher running live sessions, to the students completing quizzes every day.</p>
           </div>
         </div>
+
         <div class="row g-4">
-          <div class="col-md-4 reveal">
-            <div class="quote-card">
-              <p class="quote-text">"Seeing every student's answer roll in while I'm explaining completely changed how I pace my lessons. I can spot confusion the moment it happens."</p>
-              <div class="quote-author">
-                <div class="quote-avatar" aria-hidden="true">A</div>
-                <div>
-                  <div class="quote-name">Ahmed Al-Rashidi</div>
-                  <div class="quote-role">Mathematics Teacher, Grade 10</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 reveal">
-            <div class="quote-card">
-              <p class="quote-text">"I love that I can see my score and feedback the second the teacher finishes grading. No waiting until next class — it helps me understand what I got wrong."</p>
-              <div class="quote-author">
-                <div class="quote-avatar" aria-hidden="true">S</div>
-                <div>
-                  <div class="quote-name">Sara Mahmoud</div>
-                  <div class="quote-role">Student, Grade 9</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4 reveal">
+
+          <!-- Admin — Omran Al Bakkar -->
+          <div class="col-md-6 col-lg-4 reveal">
             <div class="quote-card">
               <p class="quote-text">"Setting up the entire school — grades, subjects, all teachers and students — took under an hour with the Excel import. The admin panel is exactly what we needed."</p>
               <div class="quote-author">
-                <div class="quote-avatar" aria-hidden="true">O</div>
+                <div class="quote-avatar admin" aria-hidden="true">O</div>
                 <div>
                   <div class="quote-name">Omran Al Bakkar</div>
-                  <div class="quote-role">System Administrator</div>
+                  <div class="quote-role">
+                    <i class="fas fa-shield-halved" style="color:var(--primary);font-size:0.7rem;margin-right:4px;"></i>
+                    System Administrator
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+
+          <!-- Teacher — Aya Khaled -->
+          <div class="col-md-6 col-lg-4 reveal">
+            <div class="quote-card">
+              <p class="quote-text">"Seeing every student's answer roll in while I'm explaining completely changed how I pace my lessons. I can spot confusion the moment it happens and adjust instantly."</p>
+              <div class="quote-author">
+                <div class="quote-avatar teacher" aria-hidden="true">A</div>
+                <div>
+                  <div class="quote-name">Aya Khaled</div>
+                  <div class="quote-role">
+                    <i class="fas fa-chalkboard-user" style="color:var(--success);font-size:0.7rem;margin-right:4px;"></i>
+                    Teacher
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Students — Seren & Ali Bakkar -->
+          <div class="col-md-12 col-lg-4 reveal">
+            <div class="quote-card" style="height:100%;">
+              <p class="quote-text">"I love seeing my score and feedback right away. It helps me know what to study next!"</p>
+              <div class="quote-author mb-3">
+                <div class="quote-avatar student" aria-hidden="true">S</div>
+                <div>
+                  <div class="quote-name">Seren Bakkar</div>
+                  <div class="quote-role">
+                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-right:4px;"></i>
+                    Student — Grade 3
+                  </div>
+                </div>
+              </div>
+              <!-- Divider -->
+              <hr style="border-color:var(--border);margin:16px 0;">
+              <p class="quote-text" style="padding-top:0;">"The quizzes are easy to open on my tablet. I can answer all the questions and see if I got them right!"</p>
+              <div class="quote-author">
+                <div class="quote-avatar student" aria-hidden="true">A</div>
+                <div>
+                  <div class="quote-name">Ali Bakkar</div>
+                  <div class="quote-role">
+                    <i class="fas fa-user-graduate" style="color:var(--purple);font-size:0.7rem;margin-right:4px;"></i>
+                    Student — Grade 2
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /row -->
       </div>
     </section>
 
   </main><!-- /#main-content -->
 
-  <!-- FOOTER -->
+  <!-- ============================================================
+       FOOTER
+       ============================================================ -->
   <footer class="site-footer" role="contentinfo">
     <div class="container">
       <div class="row g-4">
@@ -911,7 +804,7 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Scroll Reveal — Intersection Observer (no library) -->
+  <!-- Scroll Reveal — Intersection Observer -->
   <script>
     (function () {
       'use strict';
@@ -930,17 +823,12 @@
     })();
   </script>
 
-  <!-- Firebase Module — Auth redirect + Live stats -->
+  <!-- Firebase Module — Auth redirect only (no stats since card removed) -->
   <script type="module">
-    /**
-     * Imports from your shared firebase-config.js.
-     * Make sure this file is in the same folder as index.html.
-     */
     import {
-      auth, db, rtDB,
+      auth, db,
       onAuthStateChanged,
-      getDoc, doc, collection, getCountFromServer,
-      ref, onValue
+      getDoc, doc
     } from './firebase-config.js';
 
     /* ── AUTH REDIRECT ─────────────────────────────────────────── */
@@ -962,53 +850,6 @@
       } catch {
         banner.classList.remove('show');
       }
-    });
-
-    /* ── LIVE STATS (only for authenticated users) ─────────────── */
-    async function loadStats() {
-      // Helper: update an element's text and remove loading style
-      const set = (id, val) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.textContent = val;
-        el.classList.remove('loading');
-      };
-
-      // Firestore collection counts
-      try {
-        const [teachersSnap, studentsSnap, gradesSnap] = await Promise.all([
-          getCountFromServer(collection(db, 'teachers')),
-          getCountFromServer(collection(db, 'students')),
-          getCountFromServer(collection(db, 'grades')),
-        ]);
-        set('cardTeachers', teachersSnap.data().count);
-        set('cardStudents', studentsSnap.data().count);
-        set('cardGrades',   gradesSnap.data().count);
-      } catch { /* non-critical — silently skip */ }
-
-      // Realtime Database live metrics
-      onValue(ref(rtDB, 'sessions'), (snap) => {
-        const sessions = snap.val() || {};
-        const vals     = Object.values(sessions);
-
-        const active  = vals.filter(s => s.config?.active).length;
-        const qCount  = vals.reduce((n, s) => n + Object.keys(s.questions || {}).length, 0);
-        const online  = vals.reduce((n, s) =>
-          n + Object.values(s.students || {}).filter(st => st.online).length, 0);
-        const answers = vals.reduce((n, s) =>
-          n + Object.values(s.students || {}).reduce((m, st) =>
-            m + Object.keys(st.answers || {}).length, 0), 0);
-
-        set('cardSessions',  active);
-        set('cardQuestions', qCount);
-        set('cardOnline',    online);
-        set('cardAnswers',   answers);
-      });
-    }
-
-    // Trigger stats only when a user is signed in
-    onAuthStateChanged(auth, (user) => {
-      if (user) loadStats();
     });
   </script>
 
