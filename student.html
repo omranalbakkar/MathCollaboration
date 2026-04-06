@@ -2835,6 +2835,7 @@ window.exitSession = async function() {
     document.getElementById('loginPass').value = '';
     document.getElementById('loginErr').style.display = 'none';
     showToast('Logged out successfully');
+    window.location.href = 'index.html'; 
 };
 
         // Enter key on password field
