@@ -1696,7 +1696,7 @@
 
             <div class="admin-card">
                 <div class="admin-role-badge"><i class="fas fa-crown"></i> Superadmin</div>
-                <div class="email" id="admin-user-display"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3c2c7cecacde3c6c7d6c1ccc2d1c78dc0ccce">[email&#160;protected]</a></div>
+                <div class="email" id="admin-user-display">Loading...</div>
             </div>
 
             <div class="menu-label">Navigation</div>
@@ -2087,7 +2087,7 @@
         <div id="sdp-body"></div>
     </div>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+    <script>
         // ── Responsive sidebar toggle ──────────────────────────────
         function openSidebar() {
             document.querySelector('.sidebar').classList.add('open');
@@ -2989,7 +2989,7 @@
             return `<div class="form-group"><label>${label}</label>${fieldHtml}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
         }
 
-        window.openModal = (type, id = null, data = null) => {
+        window.openModal = async (type, id = null, data = null) => {
             document.getElementById('modal-type').value = type;
             document.getElementById('modal-id').value = id || '';
             document.getElementById('modal-title').textContent = `${id ? 'Edit' : 'Add'} ${type.charAt(0).toUpperCase() + type.slice(1)}`;
