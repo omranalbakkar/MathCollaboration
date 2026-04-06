@@ -120,27 +120,29 @@
             gap: 10px;
         }
 
+        /* Toast — matches Teacher.html style: icon + colored border on light bg */
         .toast {
             min-width: 280px;
             max-width: 420px;
             padding: 14px 16px;
-            border-radius: 14px;
-            color: #fff;
-            box-shadow: var(--shadow-md);
+            border-radius: 12px;
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             animation: fadeSlide .25s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
         }
-
-        .toast.success {
-            background: var(--success);
-        }
-
-        .toast.error {
-            background: var(--danger);
-        }
-
-        .toast.info {
-            background: var(--primary);
-        }
+        .toast.success { background: #dcfce7; border-color: #86efac; color: #166534; }
+        .toast.success i { color: #166534; }
+        .toast.warning { background: #ffedd5; border-color: #fdba74; color: #9a3412; }
+        .toast.warning i { color: #9a3412; }
+        .toast.error   { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+        .toast.error i { color: #991b1b; }
+        .toast.info    { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+        .toast.info i  { color: #1e40af; }
 
         @keyframes fadeSlide {
             from {
@@ -964,10 +966,54 @@
             font-weight: 600;
         }
 
-        .empty-shell {
-            padding: 40px 24px;
-            text-align: center;
+        /* ── Session card grid — mirrors Teacher.html ─────────── */
+        .session-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
+        .session-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .session-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .session-card.is-active-session { border-color: var(--success); background: var(--success-soft); }
+        .session-card.is-open-session   { border-color: var(--primary); background: var(--primary-soft); }
+        .sc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .sc-title  { font-weight: 700; font-size: 1.05rem; color: var(--text); }
+        .sc-meta   { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.55; }
+        .sc-stats  { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .sc-stat   { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; font-size: .8rem; font-weight: 600; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .sc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        /* ── Toggle switch — mirrors Teacher.html ──────────────── */
+        .toggle-wrap  { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .toggle-track { width: 44px; height: 24px; background: var(--border-strong); border-radius: 12px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+        .toggle-track.on { background: var(--success); }
+        .toggle-thumb { width: 18px; height: 18px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,.12); }
+        .toggle-track.on .toggle-thumb { left: 23px; }
+
+        /* ── Session detail panel (slide-in) ───────────────────── */
+        #session-detail-panel {
+            position: fixed; top: 0; right: -560px; width: 540px; height: 100vh;
+            background: #fff; border-left: 1px solid var(--border);
+            z-index: 2000; transition: right 0.3s cubic-bezier(.4,0,.2,1);
+            overflow-y: auto; padding: 28px;
+            box-shadow: -10px 0 30px rgba(0,0,0,.06);
+        }
+        #session-detail-panel.open { right: 0; }
+        .sdp-section { margin-bottom: 20px; }
+        .sdp-label   { font-size: .78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+        .sdp-stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .sdp-stat { flex: 1; min-width: 80px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; }
+        .sdp-stat .val { font-size: 1.5rem; font-weight: 800; }
+        .sdp-stat .lbl { font-size: .75rem; color: var(--text-muted); margin-top: 2px; }
 
         .empty-shell i {
             font-size: 2.4rem;
@@ -1650,7 +1696,7 @@
 
             <div class="admin-card">
                 <div class="admin-role-badge"><i class="fas fa-crown"></i> Superadmin</div>
-                <div class="email" id="admin-user-display">admin@eduboard.com</div>
+                <div class="email" id="admin-user-display"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a3c2c7cecacde3c6c7d6c1ccc2d1c78dc0ccce">[email&#160;protected]</a></div>
             </div>
 
             <div class="menu-label">Navigation</div>
@@ -1667,7 +1713,7 @@
             <div class="nav-menu">
                 <button class="nav-link" onclick="openModal('teacher')"><i class="fas fa-plus"></i> New Teacher</button>
                 <button class="nav-link" onclick="openModal('student')"><i class="fas fa-user-plus"></i> New Student</button>
-                <button class="nav-link" onclick="showSection('sessions');openModal('session')"><i class="fas fa-calendar-plus"></i> New Session</button>
+                <button class="nav-link" onclick="showSection('sessions');setTimeout(()=>openModal('session'),100)"><i class="fas fa-calendar-plus"></i> New Session</button>
                 <button class="nav-link" onclick="handleLogout()"><i class="fas fa-arrow-right-from-bracket"></i> Logout</button>
             </div>
         </aside>
@@ -1912,11 +1958,18 @@
                 </section>
 
                 <section id="sessions" class="page-section">
+                    <!-- Session view toggle toolbar -->
                     <div class="toolbar">
                         <div class="toolbar-left">
-                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-sessions" type="text" placeholder="Search sessions..." onkeyup="filterTable('sessions-table', this.value)" /></div>
+                            <div class="search-wrap"><i class="fas fa-search"></i><input id="search-sessions" type="text" placeholder="Search sessions..." oninput="filterSessions(this.value)" /></div>
+                            <select id="session-status-filter" class="filter-select" onchange="filterSessions(document.getElementById('search-sessions').value)">
+                                <option value="">All Statuses</option>
+                                <option value="active">Open / Active</option>
+                                <option value="closed">Closed</option>
+                            </select>
                         </div>
                         <div class="toolbar-right">
+                            <button class="btn btn-secondary btn-sm" id="session-view-toggle" onclick="toggleSessionView()" title="Switch between card and table view"><i class="fas fa-table-cells"></i> Card View</button>
                             <button class="btn btn-secondary btn-sm" onclick="exportCurrentData('sessions')"><i class="fas fa-file-export"></i> Export</button>
                             <button class="btn btn-secondary btn-sm" onclick="downloadTemplate('sessions')"><i class="fas fa-file-arrow-down"></i> Template</button>
                             <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-file-sessions').click()"><i class="fas fa-file-import"></i> Import</button>
@@ -1924,22 +1977,37 @@
                             <button class="btn btn-primary btn-sm" onclick="openModal('session')"><i class="fas fa-plus"></i> Create Session</button>
                         </div>
                     </div>
-                    <div class="table-scroll"><div class="table-shell">
-                        <table id="sessions-table">
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Teacher</th>
-                                    <th>Grade</th>
-                                    <th>Subject</th>
-                                    <th class="col-hide-sm">Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div></div>
+
+                    <!-- Card Grid View (default) -->
+                    <div id="sessions-card-view">
+                        <div class="session-card-grid" id="sessions-card-grid">
+                            <div class="empty-shell" style="grid-column:1/-1; border:1px solid var(--border); border-radius:22px;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <h3>Loading sessions…</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table View (hidden by default) -->
+                    <div id="sessions-table-view" style="display:none;">
+                        <div class="table-scroll"><div class="table-shell">
+                            <table id="sessions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Title / ID</th>
+                                        <th>Teacher</th>
+                                        <th>Grade</th>
+                                        <th>Subject</th>
+                                        <th class="col-hide-sm">Date</th>
+                                        <th>Open</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div></div>
+                    </div>
                 </section>
             </div>
         </main>
@@ -2003,7 +2071,23 @@
         </div>
     </div>
 
-    <script>
+    <!-- Session Detail Slide-in Panel -->
+    <div class="overlay" id="sdp-overlay" onclick="closeSessionDetail()" style="position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(4px);z-index:1500;display:none;"></div>
+    <div id="session-detail-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="margin:0;font-size:1.15rem;" id="sdp-title">Session Details</h3>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <div class="toggle-wrap" id="sdp-toggle-wrap" onclick="adminToggleSessionOpen()">
+                    <div class="toggle-track" id="sdp-toggle-track"><div class="toggle-thumb"></div></div>
+                    <span id="sdp-toggle-label" class="pill" style="font-size:.78rem;">Closed</span>
+                </div>
+                <button class="icon-btn" onclick="closeSessionDetail()"><i class="fas fa-times"></i></button>
+            </div>
+        </div>
+        <div id="sdp-body"></div>
+    </div>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
         // ── Responsive sidebar toggle ──────────────────────────────
         function openSidebar() {
             document.querySelector('.sidebar').classList.add('open');
@@ -2106,11 +2190,11 @@
 
         const pageMeta = {
             dashboard: ['Dashboard', 'Overview of the entire EduBoard system.'],
-            grades: ['Grades', 'Manage grade master records and Excel operations.'],
-            subjects: ['Subjects', 'Manage subject master records and Excel operations.'],
-            teachers: ['Teachers', 'Create Firestore-only teacher records with pendingPassword.'],
-            students: ['Students', 'Create Firestore-only student records with pendingPassword.'],
-            sessions: ['Sessions', 'Manage scheduled and active sessions.']
+            grades:    ['Grades',    'Manage grade master records and Excel operations.'],
+            subjects:  ['Subjects',  'Manage subject master records and Excel operations.'],
+            teachers:  ['Teachers',  'Create and manage teacher accounts with Auth provisioning.'],
+            students:  ['Students',  'Create and manage student accounts with Auth provisioning.'],
+            sessions:  ['Sessions',  'Create, open/close, monitor, and delete exam sessions.']
         };
 
         function showLoading(show) {
@@ -2121,11 +2205,14 @@
             const wrap = document.getElementById('toast-container');
             const el = document.createElement('div');
             el.className = `toast ${type}`;
-            el.textContent = message;
+            const iconMap = { success: 'check-circle', error: 'exclamation-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+            const icon = iconMap[type] || 'info-circle';
+            el.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
             wrap.appendChild(el);
             setTimeout(() => {
                 el.style.opacity = '0';
                 el.style.transform = 'translateY(-6px)';
+                el.style.transition = 'opacity .22s, transform .22s';
                 setTimeout(() => el.remove(), 220);
             }, 3400);
         }
@@ -2587,40 +2674,316 @@
             }
         };
 
+        // ── Session State ────────────────────────────────────────────
+        let sessionViewMode = 'card'; // 'card' | 'table'
+        let allSessionsCache = [];    // raw session docs {id, ...data}
+        let activeDetailSessionId = null;
+
+        // ── View toggle ──────────────────────────────────────────────
+        window.toggleSessionView = () => {
+            const cardView  = document.getElementById('sessions-card-view');
+            const tableView = document.getElementById('sessions-table-view');
+            const btn       = document.getElementById('session-view-toggle');
+            sessionViewMode = sessionViewMode === 'card' ? 'table' : 'card';
+            if (sessionViewMode === 'card') {
+                cardView.style.display  = '';
+                tableView.style.display = 'none';
+                btn.innerHTML = '<i class="fas fa-table-cells"></i> Card View';
+            } else {
+                cardView.style.display  = 'none';
+                tableView.style.display = '';
+                btn.innerHTML = '<i class="fas fa-list"></i> List View';
+                renderSessionTable(allSessionsCache);
+            }
+        };
+
+        // ── Filter sessions (search + status) ───────────────────────
+        window.filterSessions = (queryText) => {
+            const q      = String(queryText || '').toLowerCase();
+            const status = document.getElementById('session-status-filter')?.value || '';
+            const filtered = allSessionsCache.filter(s => {
+                const matchQ = !q || JSON.stringify(s).toLowerCase().includes(q);
+                const matchS = !status
+                    || (status === 'active'  && (s.isOpen || s.isActive))
+                    || (status === 'closed'  && !s.isOpen && !s.isActive);
+                return matchQ && matchS;
+            });
+            if (sessionViewMode === 'card') renderSessionCards(filtered);
+            else renderSessionTable(filtered);
+        };
+
+        // ── Main load function ───────────────────────────────────────
         async function loadSessions() {
             if (!currentUser) return;
-            const tbody = document.querySelector('#sessions-table tbody');
-            tbody.innerHTML = '<td><td colspan="7">Loading...</td></tr>';
+            // Show loading state in both views
+            document.getElementById('sessions-card-grid').innerHTML =
+                `<div class="empty-shell" style="grid-column:1/-1;border:1px solid var(--border);border-radius:22px;"><i class="fas fa-spinner fa-spin"></i><h3>Loading sessions…</h3></div>`;
+
             try {
-                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                // Ensure teachers/grades/subjects are cached
+                if (allTeachers.length === 0)
+                    allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allGrades.length === 0)
+                    allGrades   = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allSubjects.length === 0)
+                    allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
+
                 const snap = await getDocs(collection(db, 'sessions'));
-                tbody.innerHTML = snap.docs.map(docSnap => {
-                    const d = docSnap.data();
-                    const teacher = allTeachers.find(t => t.id === d.ownerTeacherId);
-                    return `
-                        <tr>
-                            <td>
-                                <div class="row-title">${escapeHtml(d.title || '')}</div>
-                                <div class="row-sub">${escapeHtml(docSnap.id)}</div>
-                             </td>
-                            <td>${escapeHtml(teacher ? getDisplayName(teacher) : (d.ownerTeacherId || 'Unknown'))}</td>
-                            <td>${escapeHtml(d.gradeLevel || '')}</td>
-                            <td>${escapeHtml(d.subject || '')}</td>
-                            <td>${escapeHtml(formatDate(d.startTime))}</td>
-                            <td><span class="status-badge ${d.isActive ? 'status-active' : 'status-closed'}"><i class="fas fa-circle"></i>${d.isActive ? 'Active' : 'Closed'}</span></td>
-                            <td>
-                                <div class="action-btns">
-                                    <button class="icon-btn" onclick='editItem("session","${docSnap.id}",${JSON.stringify(d).replace(/'/g, "&#39;")})' title="Edit"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn delete" onclick="deleteItem('sessions','${docSnap.id}')" title="Delete"><i class="fas fa-trash"></i></button>
-                                </div>
-                             </td>
-                        </tr>
-                    `;
-                }).join('') || '<tr><td colspan="7"><div class="empty-shell"><i class="fas fa-video"></i><h3>No sessions found</h3><p>Create a session or import one from Excel.</p></div></tr>';
+
+                // Load per-session stats in parallel
+                const sessionDocs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const statsPromises = sessionDocs.map(async s => {
+                    try {
+                        const [qSnap, stSnap] = await Promise.all([
+                            getDocs(collection(db, 'sessions', s.id, 'questions')),
+                            getDocs(collection(db, 'sessions', s.id, 'students'))
+                        ]);
+                        s._questionCount = qSnap.size;
+                        s._studentCount  = stSnap.size;
+                        // Count answers across all student docs
+                        let answerCount = 0;
+                        stSnap.forEach(sd => {
+                            const answers = sd.data().answers || {};
+                            answerCount += Object.keys(answers).length;
+                        });
+                        s._answerCount = answerCount;
+                    } catch { s._questionCount = 0; s._studentCount = 0; s._answerCount = 0; }
+                    return s;
+                });
+                allSessionsCache = await Promise.all(statsPromises);
+
+                if (sessionViewMode === 'card') renderSessionCards(allSessionsCache);
+                else renderSessionTable(allSessionsCache);
+
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="7">Error: ${escapeHtml(e.message)}</td></tr>`;
+                document.getElementById('sessions-card-grid').innerHTML =
+                    `<div class="empty-shell" style="grid-column:1/-1;border:1px solid var(--border);border-radius:22px;"><i class="fas fa-exclamation-triangle"></i><h3>Error loading sessions</h3><p>${escapeHtml(e.message)}</p></div>`;
             }
         }
+
+        // ── Render: Card Grid ────────────────────────────────────────
+        function renderSessionCards(sessions) {
+            const grid = document.getElementById('sessions-card-grid');
+            if (!sessions.length) {
+                grid.innerHTML = `<div class="empty-shell" style="grid-column:1/-1;border:1px solid var(--border);border-radius:22px;"><i class="fas fa-video-slash"></i><h3>No sessions found</h3><p>Create a session or adjust filters.</p></div>`;
+                return;
+            }
+            grid.innerHTML = sessions.map(s => {
+                const teacher    = allTeachers.find(t => t.id === s.ownerTeacherId);
+                const teacherName= teacher ? (teacher.name || teacher.email || 'Unknown') : (s.ownerTeacherId ? s.ownerTeacherId.substring(0, 12) + '…' : 'Unknown');
+                const dateStr    = s.date || (s.startTime?.seconds ? new Date(s.startTime.seconds * 1000).toLocaleDateString() : '—');
+                const timeStr    = s.startTime ? (s.startTime.seconds
+                    ? new Date(s.startTime.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : s.startTime) : '—';
+                const isOpen     = !!s.isOpen;
+                const isActive   = !!s.isActive;
+                const cardClass  = isActive ? 'is-active-session' : (isOpen ? 'is-open-session' : '');
+                const statusHtml = isOpen
+                    ? `<span class="status-badge status-active"><i class="fas fa-circle"></i>Open</span>`
+                    : `<span class="status-badge status-closed"><i class="fas fa-circle"></i>Closed</span>`;
+                const activePill = isActive
+                    ? `<span class="pill pill-green" style="font-size:.72rem;"><i class="fas fa-bolt"></i>Live</span>` : '';
+                const dataStr = JSON.stringify({ id: s.id, title: s.title, ownerTeacherId: s.ownerTeacherId, gradeLevel: s.gradeLevel, subject: s.subject, classSection: s.classSection, date: s.date, instructions: s.instructions, isOpen: s.isOpen, isActive: s.isActive, startTime: s.startTime, endTime: s.endTime }).replace(/'/g, "&#39;");
+                return `
+                <div class="session-card ${cardClass}">
+                    <div class="sc-header">
+                        <div class="sc-title">${escapeHtml(s.title || 'Untitled Session')}</div>
+                        <div style="display:flex;gap:6px;align-items:center;">${activePill}${statusHtml}</div>
+                    </div>
+                    <div class="sc-meta">
+                        <i class="fas fa-chalkboard-user" style="width:16px;"></i> ${escapeHtml(teacherName)}<br>
+                        <i class="fas fa-layer-group" style="width:16px;"></i> ${escapeHtml(s.gradeLevel || '—')}
+                        ${s.classSection ? ` · ${escapeHtml(s.classSection)}` : ''}
+                        &nbsp;·&nbsp;<i class="fas fa-book"></i> ${escapeHtml(s.subject || '—')}<br>
+                        <i class="fas fa-calendar" style="width:16px;"></i> ${escapeHtml(dateStr)} ${escapeHtml(timeStr)}
+                    </div>
+                    <div class="sc-stats">
+                        <div class="sc-stat"><i class="fas fa-question-circle"></i>${s._questionCount ?? 0} Questions</div>
+                        <div class="sc-stat"><i class="fas fa-users"></i>${s._studentCount ?? 0} Students</div>
+                        <div class="sc-stat"><i class="fas fa-envelope-open-text"></i>${s._answerCount ?? 0} Answers</div>
+                    </div>
+                    <div class="sc-actions">
+                        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick='viewSessionDetail("${escapeHtml(s.id)}")'>
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick='editItem("session","${escapeHtml(s.id)}",${dataStr})' title="Edit">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="adminToggleSessionOpenById('${escapeHtml(s.id)}',${!isOpen})" title="${isOpen ? 'Close session' : 'Open session'}">
+                            <i class="fas fa-${isOpen ? 'lock' : 'lock-open'}"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteSessionFull('${escapeHtml(s.id)}')" title="Delete session">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ── Render: Table View ───────────────────────────────────────
+        function renderSessionTable(sessions) {
+            const tbody = document.querySelector('#sessions-table tbody');
+            if (!tbody) return;
+            if (!sessions.length) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-shell"><i class="fas fa-video-slash"></i><h3>No sessions found</h3><p>Create a session or adjust filters.</p></div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = sessions.map(s => {
+                const teacher     = allTeachers.find(t => t.id === s.ownerTeacherId);
+                const teacherName = teacher ? (teacher.name || teacher.email || '?') : (s.ownerTeacherId || 'Unknown');
+                const dateStr     = s.date || (s.startTime?.seconds ? new Date(s.startTime.seconds * 1000).toLocaleDateString() : '—');
+                const isOpen      = !!s.isOpen;
+                const isActive    = !!s.isActive;
+                const dataStr = JSON.stringify({ id: s.id, title: s.title, ownerTeacherId: s.ownerTeacherId, gradeLevel: s.gradeLevel, subject: s.subject, classSection: s.classSection, date: s.date, instructions: s.instructions, isOpen: s.isOpen, isActive: s.isActive, startTime: s.startTime, endTime: s.endTime }).replace(/'/g, "&#39;");
+                return `<tr>
+                    <td>
+                        <div class="row-title">${escapeHtml(s.title || 'Untitled')}</div>
+                        <div class="row-sub mono" style="font-size:.72rem;">${escapeHtml(s.id)}</div>
+                    </td>
+                    <td>${escapeHtml(teacherName)}</td>
+                    <td>${escapeHtml(s.gradeLevel || '—')}${s.classSection ? ` <span class="muted">· ${escapeHtml(s.classSection)}</span>` : ''}</td>
+                    <td>${escapeHtml(s.subject || '—')}</td>
+                    <td class="col-hide-sm">${escapeHtml(dateStr)}</td>
+                    <td>
+                        <div class="toggle-wrap" onclick="adminToggleSessionOpenById('${escapeHtml(s.id)}',${!isOpen})" title="${isOpen ? 'Click to close' : 'Click to open'}">
+                            <div class="toggle-track ${isOpen ? 'on' : ''}"><div class="toggle-thumb"></div></div>
+                        </div>
+                    </td>
+                    <td>
+                        ${isActive
+                            ? `<span class="status-badge status-active"><i class="fas fa-bolt"></i>Live</span>`
+                            : `<span class="status-badge status-closed"><i class="fas fa-circle"></i>Closed</span>`}
+                    </td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick='viewSessionDetail("${escapeHtml(s.id)}")' title="View details"><i class="fas fa-eye"></i></button>
+                            <button class="icon-btn" onclick='editItem("session","${escapeHtml(s.id)}",${dataStr})' title="Edit"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteSessionFull('${escapeHtml(s.id)}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ── Session Detail Panel ─────────────────────────────────────
+        window.viewSessionDetail = async (sessionId) => {
+            activeDetailSessionId = sessionId;
+            const panel   = document.getElementById('session-detail-panel');
+            const overlay = document.getElementById('sdp-overlay');
+            const body    = document.getElementById('sdp-body');
+            const s       = allSessionsCache.find(x => x.id === sessionId);
+            if (!s) { toast('Session not found in cache.', 'error'); return; }
+
+            const isOpen = !!s.isOpen;
+            document.getElementById('sdp-title').textContent = s.title || 'Session Details';
+            const track = document.getElementById('sdp-toggle-track');
+            const label = document.getElementById('sdp-toggle-label');
+            if (isOpen) { track.classList.add('on'); label.textContent = 'Open'; label.className = 'pill pill-green'; }
+            else         { track.classList.remove('on'); label.textContent = 'Closed'; label.className = 'pill'; }
+
+            const teacher  = allTeachers.find(t => t.id === s.ownerTeacherId);
+            const dateStr  = s.date || (s.startTime?.seconds ? new Date(s.startTime.seconds * 1000).toLocaleDateString() : '—');
+            const startStr = s.cfStart || (s.startTime?.seconds ? new Date(s.startTime.seconds * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—');
+            const endStr   = s.cfEnd   || (s.endTime?.seconds   ? new Date(s.endTime.seconds   * 1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—');
+
+            body.innerHTML = `
+                <div class="sdp-stat-row">
+                    <div class="sdp-stat blue" style="color:var(--primary)"><div class="val">${s._questionCount ?? 0}</div><div class="lbl">Questions</div></div>
+                    <div class="sdp-stat green" style="color:var(--success)"><div class="val">${s._studentCount ?? 0}</div><div class="lbl">Students</div></div>
+                    <div class="sdp-stat orange" style="color:var(--warning)"><div class="val">${s._answerCount ?? 0}</div><div class="lbl">Answers</div></div>
+                </div>
+                <div class="sdp-section">
+                    <div class="sdp-label">Session Info</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+                        <tr><td style="padding:6px 0;color:var(--text-muted);width:38%;">Teacher</td><td style="font-weight:600;">${escapeHtml(teacher ? (teacher.name || teacher.email) : s.ownerTeacherId || '—')}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Grade</td><td style="font-weight:600;">${escapeHtml(s.gradeLevel || '—')}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Class / Section</td><td style="font-weight:600;">${escapeHtml(s.classSection || '—')}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Subject</td><td style="font-weight:600;">${escapeHtml(s.subject || '—')}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Date</td><td style="font-weight:600;">${escapeHtml(dateStr)}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Start → End</td><td style="font-weight:600;">${escapeHtml(startStr)} → ${escapeHtml(endStr)}</td></tr>
+                        <tr><td style="padding:6px 0;color:var(--text-muted);">Session ID</td><td class="mono" style="font-size:.78rem;">${escapeHtml(s.id)}</td></tr>
+                    </table>
+                </div>
+                ${s.instructions ? `<div class="sdp-section"><div class="sdp-label">Student Instructions</div><div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:.9rem;">${escapeHtml(s.instructions)}</div></div>` : ''}
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick='editItem("session","${escapeHtml(s.id)}",${JSON.stringify({id:s.id,title:s.title,ownerTeacherId:s.ownerTeacherId,gradeLevel:s.gradeLevel,subject:s.subject,classSection:s.classSection,date:s.date,instructions:s.instructions,isOpen:s.isOpen,isActive:s.isActive,startTime:s.startTime,endTime:s.endTime}).replace(/'/g,"&#39;")})'>
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteSessionFull('${escapeHtml(s.id)}');closeSessionDetail();">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>`;
+
+            overlay.style.display = 'block';
+            panel.classList.add('open');
+        };
+
+        window.closeSessionDetail = () => {
+            document.getElementById('session-detail-panel').classList.remove('open');
+            document.getElementById('sdp-overlay').style.display = 'none';
+            activeDetailSessionId = null;
+        };
+
+        // ── Toggle session open/closed (from detail panel) ───────────
+        window.adminToggleSessionOpen = async () => {
+            if (!activeDetailSessionId) return;
+            const s = allSessionsCache.find(x => x.id === activeDetailSessionId);
+            if (!s) return;
+            await adminToggleSessionOpenById(activeDetailSessionId, !s.isOpen);
+            // Re-open the refreshed detail
+            await loadSessions();
+            if (allSessionsCache.find(x => x.id === activeDetailSessionId))
+                viewSessionDetail(activeDetailSessionId);
+        };
+
+        // ── Toggle open/closed by ID (used from cards + table) ───────
+        window.adminToggleSessionOpenById = async (sessionId, newOpenState) => {
+            try {
+                await updateDoc(doc(db, 'sessions', sessionId), {
+                    isOpen:    newOpenState,
+                    isActive:  newOpenState, // keep isActive in sync — matches Teacher.html pattern
+                    updatedAt: serverTimestamp(),
+                    updatedBy: currentUser.uid
+                });
+                // Sync RTDB
+                await set(ref(rtdb, `liveSessions/${sessionId}/isOpen`),   newOpenState);
+                await set(ref(rtdb, `liveSessions/${sessionId}/isActive`), newOpenState);
+                toast(`Session ${newOpenState ? 'opened' : 'closed'} successfully.`, 'success');
+                await loadSessions();
+            } catch (e) {
+                toast('Toggle failed: ' + e.message, 'error');
+            }
+        };
+
+        // ── Full session delete (with sub-collection cleanup) ────────
+        window.deleteSessionFull = async (sessionId) => {
+            if (!confirm('Delete this session? This will also remove all questions and student answer records inside it. This cannot be undone.')) return;
+            showLoading(true);
+            try {
+                // Delete questions sub-collection
+                const qSnap = await getDocs(collection(db, 'sessions', sessionId, 'questions'));
+                for (const qDoc of qSnap.docs) await deleteDoc(qDoc.ref);
+
+                // Delete students sub-collection
+                const stSnap = await getDocs(collection(db, 'sessions', sessionId, 'students'));
+                for (const stDoc of stSnap.docs) await deleteDoc(stDoc.ref);
+
+                // Remove from RTDB
+                await remove(ref(rtdb, `liveSessions/${sessionId}`));
+
+                // Delete session doc itself
+                await deleteDoc(doc(db, 'sessions', sessionId));
+
+                toast('Session and all related data deleted.', 'success');
+                allSessionsCache = allSessionsCache.filter(s => s.id !== sessionId);
+                await loadSessions();
+                await initDashboard();
+            } catch (e) {
+                toast('Delete failed: ' + e.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        };
 
         function modalFieldWrap(label, fieldHtml, hint = '') {
             return `<div class="form-group"><label>${label}</label>${fieldHtml}${hint ? `<div class="hint">${hint}</div>` : ''}</div>`;
@@ -2677,25 +3040,49 @@
             }
 
             if (type === 'session') {
-                const teacherOpts = allTeachers.map(t => `<option value="${escapeHtml(t.id)}" ${data?.ownerTeacherId === t.id ? 'selected' : ''}>${escapeHtml(getDisplayName(t))}</option>`).join('');
-                const gradeOpts = allGrades.map(g => `<option value="${escapeHtml(g.nameEn)}" ${data?.gradeLevel === g.nameEn ? 'selected' : ''}>${escapeHtml(g.nameEn)}</option>`).join('');
-                const subjectOpts = allSubjects.map(s => `<option value="${escapeHtml(s.nameEn)}" ${data?.subject === s.nameEn ? 'selected' : ''}>${escapeHtml(s.nameEn)}</option>`).join('');
-                const startTime = data?.startTime?.seconds ? new Date(data.startTime.seconds * 1000).toISOString().slice(0, 16) : '';
-                const endTime = data?.endTime?.seconds ? new Date(data.endTime.seconds * 1000).toISOString().slice(0, 16) : '';
+                // Ensure master data is loaded
+                if (allTeachers.length === 0) allTeachers = (await getDocs(collection(db, 'teachers'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allGrades.length === 0)   allGrades   = (await getDocs(collection(db, 'grades'))).docs.map(d => ({ id: d.id, ...d.data() }));
+                if (allSubjects.length === 0) allSubjects = (await getDocs(collection(db, 'subjects'))).docs.map(d => ({ id: d.id, ...d.data() }));
+
+                const teacherOpts  = allTeachers.map(t => `<option value="${escapeHtml(t.id)}" ${data?.ownerTeacherId === t.id ? 'selected' : ''}>${escapeHtml(t.name || t.email || t.id)}</option>`).join('');
+                const gradeOpts    = allGrades.map(g   => `<option value="${escapeHtml(g.nameEn || g.id)}" ${(data?.gradeLevel === g.nameEn || data?.gradeLevel === g.id) ? 'selected' : ''}>${escapeHtml(g.nameEn || g.code || g.id)}</option>`).join('');
+                const subjectOpts  = allSubjects.map(s => `<option value="${escapeHtml(s.nameEn || s.id)}" ${(data?.subject === s.nameEn || data?.subject === s.id) ? 'selected' : ''}>${escapeHtml(s.nameEn || s.code || s.id)}</option>`).join('');
+
+                // Parse times — Teacher stores date/start/end as plain strings, or from Timestamp
+                let dateVal = data?.date || '';
+                let startVal= data?.cfStart || '';
+                let endVal  = data?.cfEnd   || '';
+                if (!dateVal && data?.startTime?.seconds) {
+                    const d = new Date(data.startTime.seconds * 1000);
+                    dateVal  = d.toISOString().slice(0, 10);
+                    startVal = d.toTimeString().slice(0, 5);
+                }
+                if (!endVal && data?.endTime?.seconds) {
+                    endVal = new Date(data.endTime.seconds * 1000).toTimeString().slice(0, 5);
+                }
+                const isOpen   = data?.isOpen   ?? false;
+                const isActive = data?.isActive  ?? false;
+
                 html = `
-                    ${modalFieldWrap('Title *', `<input name="title" required value="${escapeHtml(data?.title || '')}" />`)}
+                    ${modalFieldWrap('Session Title *', `<input name="title" required value="${escapeHtml(data?.title || '')}" placeholder="e.g. Chapter 5 Quiz" />`)}
                     <div class="form-row">
                         ${modalFieldWrap('Teacher *', `<select name="ownerTeacherId" required>${teacherOpts || '<option value="">No teachers available</option>'}</select>`)}
-                        ${modalFieldWrap('Grade *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
+                        ${modalFieldWrap('Grade Level *', `<select name="gradeLevel" required>${gradeOpts || '<option value="">No grades available</option>'}</select>`)}
                     </div>
                     <div class="form-row">
+                        ${modalFieldWrap('Class / Section', `<input name="classSection" value="${escapeHtml(data?.classSection || '')}" placeholder="e.g. Class A" />`)}
                         ${modalFieldWrap('Subject *', `<select name="subject" required>${subjectOpts || '<option value="">No subjects available</option>'}</select>`)}
-                        ${modalFieldWrap('Status', `<select name="isActive"><option value="true" ${data?.isActive ? 'selected' : ''}>Active</option><option value="false" ${!data?.isActive ? 'selected' : ''}>Closed</option></select>`)}
                     </div>
                     <div class="form-row">
-                        ${modalFieldWrap('Start Time *', `<input name="startTime" type="datetime-local" required value="${escapeHtml(startTime)}" />`)}
-                        ${modalFieldWrap('End Time', `<input name="endTime" type="datetime-local" value="${escapeHtml(endTime)}" />`)}
+                        ${modalFieldWrap('Date', `<input name="date" type="date" value="${escapeHtml(dateVal)}" />`)}
+                        ${modalFieldWrap('Start Time', `<input name="cfStart" type="time" value="${escapeHtml(startVal)}" />`)}
                     </div>
+                    <div class="form-row">
+                        ${modalFieldWrap('End Time', `<input name="cfEnd" type="time" value="${escapeHtml(endVal)}" />`)}
+                        ${modalFieldWrap('Session Open', `<select name="isOpen"><option value="false" ${!isOpen ? 'selected' : ''}>Closed</option><option value="true" ${isOpen ? 'selected' : ''}>Open</option></select>`, 'Students can join when Open.')}
+                    </div>
+                    ${modalFieldWrap('Student Instructions', `<textarea name="instructions" rows="3" placeholder="Optional instructions shown to students when they join…">${escapeHtml(data?.instructions || '')}</textarea>`)}
                 `;
             }
 
@@ -2851,23 +3238,90 @@
                         await createAuthStudentUser(data);
                     }
                 } else if (type === 'session') {
-                    if (data.startTime) data.startTime = Timestamp.fromDate(new Date(data.startTime));
-                    if (data.endTime) data.endTime = Timestamp.fromDate(new Date(data.endTime));
-                    data.isActive = data.isActive === 'true';
+                    // ── Validation matching Teacher.html ──────────────────
+                    if (!data.title?.trim())          throw new Error('Session title is required.');
+                    if (!data.ownerTeacherId)          throw new Error('Please select a teacher.');
+                    if (!data.gradeLevel)              throw new Error('Please select a grade level.');
+                    if (!data.subject)                 throw new Error('Please select a subject.');
+                    if (data.cfStart && data.cfEnd && data.cfStart >= data.cfEnd)
+                        throw new Error('End time must be after start time.');
 
-                    const rtdbData = { ...data };
-                    if (rtdbData.startTime?.seconds) rtdbData.startTime = new Date(rtdbData.startTime.seconds * 1000).toISOString();
-                    if (rtdbData.endTime?.seconds) rtdbData.endTime = new Date(rtdbData.endTime.seconds * 1000).toISOString();
+                    // ── Build Firestore-compatible session document ────────
+                    // Matches Teacher.html fields: title, ownerTeacherId, gradeLevel,
+                    // classSection, subject, date, cfStart, cfEnd, instructions,
+                    // isOpen, isActive, startTime (Timestamp), endTime (Timestamp)
+                    const isOpen   = data.isOpen === 'true';
+                    const isActive = isOpen; // keep in sync, Teacher.html uses isActive = isOpen
+
+                    // Build Timestamps from date + time strings if provided
+                    let startTimestamp = null;
+                    let endTimestamp   = null;
+                    if (data.date && data.cfStart) {
+                        const sDate = new Date(`${data.date}T${data.cfStart}:00`);
+                        if (!isNaN(sDate)) startTimestamp = Timestamp.fromDate(sDate);
+                    }
+                    if (data.date && data.cfEnd) {
+                        const eDate = new Date(`${data.date}T${data.cfEnd}:00`);
+                        if (!isNaN(eDate)) endTimestamp = Timestamp.fromDate(eDate);
+                    }
+
+                    const sessionPayload = {
+                        title:          data.title.trim(),
+                        ownerTeacherId: data.ownerTeacherId,
+                        gradeLevel:     data.gradeLevel,
+                        classSection:   data.classSection || '',
+                        subject:        data.subject,
+                        date:           data.date       || '',
+                        cfStart:        data.cfStart    || '',
+                        cfEnd:          data.cfEnd      || '',
+                        instructions:   data.instructions || '',
+                        isOpen,
+                        isActive,
+                        startTime:      startTimestamp,
+                        endTime:        endTimestamp,
+                        updatedAt:      serverTimestamp(),
+                        updatedBy:      currentUser.uid
+                    };
+
+                    // RTDB mirror (no Timestamps — use plain strings)
+                    const rtdbPayload = {
+                        title:          sessionPayload.title,
+                        ownerTeacherId: sessionPayload.ownerTeacherId,
+                        gradeLevel:     sessionPayload.gradeLevel,
+                        classSection:   sessionPayload.classSection,
+                        subject:        sessionPayload.subject,
+                        date:           sessionPayload.date,
+                        cfStart:        sessionPayload.cfStart,
+                        cfEnd:          sessionPayload.cfEnd,
+                        isOpen,
+                        isActive,
+                        startTime:      data.date && data.cfStart ? `${data.date}T${data.cfStart}` : '',
+                        endTime:        data.date && data.cfEnd   ? `${data.date}T${data.cfEnd}`   : ''
+                    };
 
                     if (id) {
-                        await updateDoc(doc(db, 'sessions', id), data);
-                        await set(ref(rtdb, `liveSessions/${id}`), rtdbData);
+                        await updateDoc(doc(db, 'sessions', id), sessionPayload);
+                        // Merge RTDB so we don't wipe live students list
+                        await set(ref(rtdb, `liveSessions/${id}/title`),        rtdbPayload.title);
+                        await set(ref(rtdb, `liveSessions/${id}/gradeLevel`),   rtdbPayload.gradeLevel);
+                        await set(ref(rtdb, `liveSessions/${id}/classSection`), rtdbPayload.classSection);
+                        await set(ref(rtdb, `liveSessions/${id}/subject`),      rtdbPayload.subject);
+                        await set(ref(rtdb, `liveSessions/${id}/date`),         rtdbPayload.date);
+                        await set(ref(rtdb, `liveSessions/${id}/cfStart`),      rtdbPayload.cfStart);
+                        await set(ref(rtdb, `liveSessions/${id}/cfEnd`),        rtdbPayload.cfEnd);
+                        await set(ref(rtdb, `liveSessions/${id}/isOpen`),       isOpen);
+                        await set(ref(rtdb, `liveSessions/${id}/isActive`),     isActive);
                     } else {
-                        data.createdAt = serverTimestamp();
-                        data.createdBy = currentUser.uid;
-                        const newSessionRef = await addDoc(collection(db, 'sessions'), data);
-                        await set(ref(rtdb, `liveSessions/${newSessionRef.id}`), { ...rtdbData, id: newSessionRef.id });
+                        sessionPayload.createdAt = serverTimestamp();
+                        sessionPayload.createdBy = currentUser.uid;
+                        const newRef = await addDoc(collection(db, 'sessions'), sessionPayload);
+                        await set(ref(rtdb, `liveSessions/${newRef.id}`), { ...rtdbPayload, id: newRef.id });
                     }
+                    // Reload session cache so card/table views are fresh
+                    closeModal();
+                    toast('Session saved successfully.', 'success');
+                    await loadSessions();
+                    return; // skip the generic closeModal/toast/refresh below
                 }
 
                 closeModal();
@@ -2958,12 +3412,11 @@
         };
 
         window.deleteItem = async (col, id) => {
+            // Sessions have sub-collections — use the dedicated full-delete function
+            if (col === 'sessions') { await deleteSessionFull(id); return; }
             if (!confirm('Delete this item?')) return;
             showLoading(true);
             try {
-                if (col === 'sessions') {
-                    await remove(ref(rtdb, `liveSessions/${id}`));
-                }
                 await deleteDoc(doc(db, col, id));
                 toast('Item deleted.', 'success');
                 refreshCurrentSection();
@@ -3058,8 +3511,8 @@
                 headers = ['name', 'email', 'pendingPassword', 'gradeLevel', 'status'];
                 sampleRow = ['Jane Smith', 'jane@school.com', 'TempPass123!', 'Grade 9', 'Active'];
             } else if (type === 'sessions') {
-                headers = ['title', 'ownerTeacherId', 'gradeLevel', 'subject', 'startTime', 'endTime', 'isActive'];
-                sampleRow = ['Mock Exam', 'teacher@school.com', 'Grade 9', 'Math', '2026-04-10 09:00', '2026-04-10 10:30', 'TRUE'];
+                headers   = ['title', 'ownerTeacherId', 'gradeLevel', 'classSection', 'subject', 'date', 'cfStart', 'cfEnd', 'instructions', 'isOpen'];
+                sampleRow = ['Chapter 5 Quiz', 'teacher@school.com', 'Grade 9', 'Class A', 'Math', '2026-04-10', '09:00', '10:30', 'Read all questions carefully.', 'FALSE'];
             }
             const wsEmpty = XLSX.utils.aoa_to_sheet([headers]);
             const wsSample = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
@@ -3084,15 +3537,27 @@
                 const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).map(row => {
                     const { createdAt, updatedAt, createdBy, updatedBy, ...cleanRow } = row;
                     if (type === 'teachers') {
-                        cleanRow.assignedGrades = toArray(row.assignedGrades).map(id => getNameById(id, allGrades)).join(', ');
+                        cleanRow.assignedGrades   = toArray(row.assignedGrades).map(id => getNameById(id, allGrades)).join(', ');
                         cleanRow.assignedSubjects = toArray(row.assignedSubjects).map(id => getNameById(id, allSubjects)).join(', ');
                     }
                     if (type === 'students' && row.gradeLevel) cleanRow.gradeLevel = getNameById(row.gradeLevel, allGrades);
-                    if (type === 'sessions' && row.startTime?.seconds) cleanRow.startTime = new Date(row.startTime.seconds * 1000).toISOString().slice(0, 16).replace('T', ' ');
-                    if (type === 'sessions' && row.endTime?.seconds) cleanRow.endTime = new Date(row.endTime.seconds * 1000).toISOString().slice(0, 16).replace('T', ' ');
-                    if (type === 'sessions' && row.ownerTeacherId) {
-                        const t = allTeachers.find(x => x.id === row.ownerTeacherId);
-                        cleanRow.ownerTeacherId = t ? (t.email || t.name || row.ownerTeacherId) : row.ownerTeacherId;
+                    if (type === 'sessions') {
+                        // Resolve teacher ID → readable email/name
+                        if (row.ownerTeacherId) {
+                            const t = allTeachers.find(x => x.id === row.ownerTeacherId);
+                            cleanRow.ownerTeacherId = t ? (t.email || t.name || row.ownerTeacherId) : row.ownerTeacherId;
+                        }
+                        // Use flat date/time fields when present (Teacher schema)
+                        cleanRow.date    = row.date    || (row.startTime?.seconds ? new Date(row.startTime.seconds * 1000).toISOString().slice(0,10) : '');
+                        cleanRow.cfStart = row.cfStart || (row.startTime?.seconds ? new Date(row.startTime.seconds * 1000).toTimeString().slice(0,5) : '');
+                        cleanRow.cfEnd   = row.cfEnd   || (row.endTime?.seconds   ? new Date(row.endTime.seconds   * 1000).toTimeString().slice(0,5) : '');
+                        cleanRow.classSection = row.classSection || '';
+                        cleanRow.instructions = row.instructions || '';
+                        cleanRow.isOpen       = row.isOpen   ?? false;
+                        cleanRow.isActive     = row.isActive ?? false;
+                        // Remove raw Timestamps from export
+                        delete cleanRow.startTime;
+                        delete cleanRow.endTime;
                     }
                     return cleanRow;
                 });
@@ -3324,35 +3789,58 @@
                                 const foundTeacher = allTeachers.find(t => (t.email || '').toLowerCase() === teacherId.toLowerCase());
                                 if (foundTeacher) teacherId = foundTeacher.id;
                             }
-                            let startTime = null, endTime = null;
-                            if (row.starttime) {
-                                const d = new Date(row.starttime);
-                                if (!isNaN(d)) startTime = Timestamp.fromDate(d);
+
+                            // Parse date and times (Teacher schema: separate date, cfStart, cfEnd)
+                            const dateRaw  = String(row.date || '').trim();
+                            const startRaw = String(row.cfstart || row.starttime || '').trim();
+                            const endRaw   = String(row.cfend   || row.endtime   || '').trim();
+
+                            let startTimestamp = null, endTimestamp = null;
+                            if (dateRaw && startRaw && startRaw.includes(':')) {
+                                const sd = new Date(`${dateRaw}T${startRaw.length === 5 ? startRaw + ':00' : startRaw}`);
+                                if (!isNaN(sd)) startTimestamp = Timestamp.fromDate(sd);
+                            } else if (row.starttime) {
+                                const sd = new Date(row.starttime);
+                                if (!isNaN(sd)) startTimestamp = Timestamp.fromDate(sd);
                             }
-                            if (row.endtime) {
-                                const d = new Date(row.endtime);
-                                if (!isNaN(d)) endTime = Timestamp.fromDate(d);
+                            if (dateRaw && endRaw && endRaw.includes(':')) {
+                                const ed = new Date(`${dateRaw}T${endRaw.length === 5 ? endRaw + ':00' : endRaw}`);
+                                if (!isNaN(ed)) endTimestamp = Timestamp.fromDate(ed);
+                            } else if (row.endtime) {
+                                const ed = new Date(row.endtime);
+                                if (!isNaN(ed)) endTimestamp = Timestamp.fromDate(ed);
                             }
+
+                            const isOpen   = String(row.isopen   || row.isactive || '').toLowerCase() === 'true';
                             docData = {
-                                title: row.title || '',
+                                title:          row.title        || '',
                                 ownerTeacherId: teacherId,
-                                gradeLevel: row.gradelevel || '',
-                                subject: row.subject || '',
-                                startTime,
-                                endTime,
-                                isActive: String(row.isactive || '').toLowerCase() === 'true'
+                                gradeLevel:     row.gradelevel   || '',
+                                classSection:   row.classsection || '',
+                                subject:        row.subject      || '',
+                                date:           dateRaw,
+                                cfStart:        startRaw,
+                                cfEnd:          endRaw,
+                                instructions:   row.instructions || '',
+                                isOpen,
+                                isActive:       isOpen,
+                                startTime:      startTimestamp,
+                                endTime:        endTimestamp
                             };
-                            
+
+                            if (!docData.title) { skipped++; continue; }
+
                             docData.updatedAt = serverTimestamp();
                             docData.updatedBy = currentUser.uid;
-                            
+
                             if (targetId) {
                                 batch.update(doc(db, 'sessions', targetId), docData);
                                 updated++;
                             } else {
                                 docData.createdAt = serverTimestamp();
                                 docData.createdBy = currentUser.uid;
-                                batch.set(doc(collection(db, 'sessions')), docData);
+                                const newDocRef = doc(collection(db, 'sessions'));
+                                batch.set(newDocRef, docData);
                                 inserted++;
                             }
                         }
@@ -3394,9 +3882,9 @@
 
         window.addEventListener('click', (e) => {
             const genericModal = document.getElementById('generic-modal');
-            if (e.target === genericModal) window.closeModal();
+            if (e.target === genericModal) closeModal();
             const passwordModal = document.getElementById('password-modal');
-            if (e.target === passwordModal) window.closePasswordModal();
+            if (e.target === passwordModal) closePasswordModal();
         });
 
     </script>
